@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Native;
+using Servy.Service.Native;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System;
@@ -1560,6 +1561,256 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 Assert.True(result, "SendCtrlC failed to attach to console or signal the process within the retry window.");
                 Assert.Contains(_logger.Infos, m => m.Contains("Sent Ctrl+C to process"));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
+        /// <summary>
+        /// Records every console call <see cref="ProcessWrapper"/> makes while delivering a CTRL+C, and
+        /// returns scripted results for the ones that can fail, so the whole sequence can be observed
+        /// without a real <c>GenerateConsoleCtrlEvent</c> reaching the test host's own console group.
+        /// </summary>
+        private sealed class RecordingConsoleNative : IConsoleCtrlNative
+        {
+            /// <summary>Gets the calls made, in order, in the form the assertions compare against.</summary>
+            public List<string> Calls { get; } = new List<string>();
+
+            /// <summary>Gets or sets what <see cref="AttachConsole"/> returns.</summary>
+            public bool AttachResult { get; set; } = true;
+
+            /// <summary>
+            /// Gets or sets what <see cref="SetConsoleCtrlHandler"/> returns on the pre-signal call,
+            /// which is the first one the wrapper makes.
+            /// </summary>
+            public bool SuppressResult { get; set; } = true;
+
+            /// <summary>
+            /// Gets or sets what <see cref="SetConsoleCtrlHandler"/> returns on the re-assert call the
+            /// wrapper makes from its <c>finally</c>, which is the second one.
+            /// </summary>
+            public bool ReassertResult { get; set; } = true;
+
+            /// <summary>Gets or sets what <see cref="GenerateConsoleCtrlEvent"/> returns.</summary>
+            public bool GenerateResult { get; set; } = true;
+
+            /// <summary>Gets or sets the error code <see cref="GetLastWin32Error"/> reports.</summary>
+            public int LastError { get; set; }
+
+            private int _setHandlerCalls;
+
+            /// <summary>Records the call and reports success.</summary>
+            /// <returns>Always <see langword="true"/>.</returns>
+            public bool FreeConsole()
+            {
+                Calls.Add("FreeConsole");
+                return true;
+            }
+
+            /// <summary>Records the call and reports <see cref="AttachResult"/>.</summary>
+            /// <param name="processId">The identifier the wrapper asked to attach to.</param>
+            /// <returns>The value of <see cref="AttachResult"/>.</returns>
+            public bool AttachConsole(int processId)
+            {
+                Calls.Add("AttachConsole(" + processId + ")");
+                return AttachResult;
+            }
+
+            /// <summary>
+            /// Records the call and reports <see cref="SuppressResult"/> for the first invocation and
+            /// <see cref="ReassertResult"/> for every later one.
+            /// </summary>
+            /// <param name="handlerRoutine">The handler the wrapper passed.</param>
+            /// <param name="add">The add flag the wrapper passed.</param>
+            /// <returns>The scripted result for this invocation.</returns>
+            public bool SetConsoleCtrlHandler(IntPtr handlerRoutine, bool add)
+            {
+                Calls.Add("SetConsoleCtrlHandler(" + handlerRoutine.ToInt64() + "," + add + ")");
+                return ++_setHandlerCalls == 1 ? SuppressResult : ReassertResult;
+            }
+
+            /// <summary>Records the call and reports <see cref="GenerateResult"/>.</summary>
+            /// <param name="ctrlEvent">The event the wrapper asked to send.</param>
+            /// <param name="processGroupId">The console process group the wrapper targeted.</param>
+            /// <returns>The value of <see cref="GenerateResult"/>.</returns>
+            public bool GenerateConsoleCtrlEvent(NativeMethods.CtrlEvents ctrlEvent, uint processGroupId)
+            {
+                Calls.Add("GenerateConsoleCtrlEvent(" + ctrlEvent + "," + processGroupId + ")");
+                return GenerateResult;
+            }
+
+            /// <summary>Reports <see cref="LastError"/>, without recording a call.</summary>
+            /// <returns>The value of <see cref="LastError"/>.</returns>
+            public int GetLastWin32Error()
+            {
+                return LastError;
+            }
+        }
+
+        /// <summary>
+        /// Starts a live windowless child and hands its wrapper the supplied console seam, which is the
+        /// arrangement the console-sequence tests below share.
+        /// </summary>
+        /// <param name="native">The recording seam to install.</param>
+        /// <returns>The started wrapper; the suite's cleanup list disposes its process.</returns>
+        private ProcessWrapper StartWrapperWithConsoleSeam(RecordingConsoleNative native)
+        {
+            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds " + TestTimeouts.ChildSleepSeconds + "\"");
+            wrapper.ConsoleNative = native;
+            Assert.True(wrapper.Start());
+            return wrapper;
+        }
+
+        [Fact]
+        public void SendCtrlC_SignalDelivered_ReassertsIgnoreFlagAndDetaches()
+        {
+            // Arrange
+            var native = new RecordingConsoleNative();
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                var expected = new[]
+                {
+                    "FreeConsole",
+                    "AttachConsole(" + wrapper.Id + ")",
+                    "SetConsoleCtrlHandler(0,True)",
+                    "GenerateConsoleCtrlEvent(CTRL_C_EVENT,0)",
+                    "FreeConsole",
+                    "SetConsoleCtrlHandler(0,True)",   // #4408: re-asserted in the finally, never cleared
+                };
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+
+                // Assert
+                Assert.True((bool)result);
+                Assert.Equal(expected, native.Calls);
+                Assert.Contains(_logger.Infos, m => m.Contains("Sent Ctrl+C to process"));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
+        [Fact]
+        public void SendCtrlC_SuppressHandlerFails_AbortsBeforeSignallingAndDetaches()
+        {
+            // Arrange
+            var native = new RecordingConsoleNative { SuppressResult = false, LastError = Errors.ERROR_GEN_FAILURE };
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                var expected = new[]
+                {
+                    "FreeConsole",
+                    "AttachConsole(" + wrapper.Id + ")",
+                    "SetConsoleCtrlHandler(0,True)",
+                    "FreeConsole",
+                };
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+
+                // Assert
+                Assert.False((bool)result);
+                Assert.Equal(expected, native.Calls);
+                Assert.Contains(_logger.Errors, m => m.Contains("Failed to suppress console control handlers in the service (Win32 Error: " + Errors.ERROR_GEN_FAILURE + ")"));
+                Assert.Contains(_logger.Errors, m => m.Contains("Aborting signal to prevent service self-termination"));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
+        [Fact]
+        public void SendCtrlC_GenerateEventFails_ReportsFalseAndStillDetachesAndReasserts()
+        {
+            // Arrange
+            var native = new RecordingConsoleNative { GenerateResult = false, LastError = Errors.ERROR_INVALID_HANDLE };
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                var expected = new[]
+                {
+                    "FreeConsole",
+                    "AttachConsole(" + wrapper.Id + ")",
+                    "SetConsoleCtrlHandler(0,True)",
+                    "GenerateConsoleCtrlEvent(CTRL_C_EVENT,0)",
+                    "FreeConsole",
+                    "SetConsoleCtrlHandler(0,True)",
+                };
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+
+                // Assert
+                Assert.False((bool)result);   // #2212: a failed signal must report false, not true
+                Assert.Equal(expected, native.Calls);
+                Assert.Contains(_logger.Warnings, m => m.Contains("GenerateConsoleCtrlEvent failed for")
+                    && m.Contains("(Error: " + Errors.ERROR_INVALID_HANDLE + ")")
+                    && m.Contains("Falling through to CloseMainWindow / force-kill"));
+                Assert.DoesNotContain(_logger.Infos, m => m.Contains("Sent Ctrl+C to process"));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
+        [Fact]
+        public void SendCtrlC_ReassertFails_LogsTheFailureAndStillReportsTheSignalSent()
+        {
+            // Arrange
+            var native = new RecordingConsoleNative { ReassertResult = false, LastError = Errors.ERROR_INVALID_HANDLE };
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+
+                // Assert
+                Assert.True((bool)result);
+                Assert.Contains(_logger.Errors, m => m.Contains("Failed to re-assert the service's console control handler (Win32 Error: " + Errors.ERROR_INVALID_HANDLE + ")"));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
+        [Fact]
+        public void SendCtrlC_AttachFailsWithPipeNotConnected_LogsSharedConsoleAndReportsTrue()
+        {
+            // Arrange
+            var native = new RecordingConsoleNative { AttachResult = false, LastError = Errors.ERROR_PIPE_NOT_CONNECTED };
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                var expected = new[] { "FreeConsole", "AttachConsole(" + wrapper.Id + ")" };
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+
+                // Assert
+                Assert.True((bool)result);
+                Assert.Equal(expected, native.Calls);
+                Assert.Contains(_logger.Infos, m => m.Contains("shares a console group. Awaiting graceful shutdown..."));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
+        [Fact]
+        public void TryStopGracefullyOrKill_AttachReportsTheProcessGone_ReturnsNullWithoutKilling()
+        {
+            // Arrange
+            var native = new RecordingConsoleNative { AttachResult = false, LastError = Errors.ERROR_INVALID_PARAMETER };
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                var killed = false;
+                wrapper.ProcessKiller = _ => killed = true;
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "TryStopGracefullyOrKill", wrapper.UnderlyingProcess, TestTimeouts.ProcessWrapperGracefulStopMs, TestTimeouts.ProcessWrapperPostKillWaitMs);
+
+                // Assert
+                Assert.Null(result);
+                Assert.False(killed);
 
                 // Cleanup
                 TestProcessCleanup.KillNow(wrapper);

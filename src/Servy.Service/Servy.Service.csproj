@@ -94,6 +94,8 @@
     <Compile Include="CommandLine\ICommandLineProvider.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelper.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />
+    <Compile Include="Native\ConsoleCtrlNative.cs" />
+    <Compile Include="Native\IConsoleCtrlNative.cs" />
     <Compile Include="Native\IScmNative.cs" />
     <Compile Include="Native\ScmNative.cs" />
     <Compile Include="ProcessManagement\Hook.cs" />
