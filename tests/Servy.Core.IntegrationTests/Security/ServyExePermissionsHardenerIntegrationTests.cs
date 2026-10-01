@@ -758,11 +758,16 @@ namespace Servy.Core.IntegrationTests.Security
         /// <summary>
         /// Asserts the target's two entries on a writable folder: List and Create Files on the folder itself (never
         /// Delete on it), and the rights <see cref="ServyExePermissionsHardener.GetWritableFolderFileRights"/> names on
-        /// the files created in it - without Delete in <c>recovery\</c> (#7241).
+        /// the files created in it - without Delete in <c>recovery\</c> (#7241). Both rules are bounded from above as
+        /// well as from below: neither carries Change Permissions (WRITE_DAC) or Take Ownership, which would let the
+        /// target rewrite the ACL it was just given (#7163).
         /// </summary>
         private static void AssertWritableFolder(string path)
         {
+            // Arrange
             var rules = ExplicitRules(path, TargetSid, AccessControlType.Allow);
+
+            // Assert
             Assert.Equal(2, rules.Count);
 
             var self = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.None);
@@ -770,12 +775,21 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.Delete));
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.DeleteSubdirectoriesAndFiles));
 
+            // WRITE_DAC on the folder would let the target grant itself Delete Subdirectories And Files and then remove
+            // db\Servy.db whatever that file's own protected ACL says, because FILE_DELETE_CHILD overrides the child's.
+            Assert.False(Has((int)self.FileSystemRights, FileSystemRights.ChangePermissions), $"{path} is not re-ACLable by the target");
+            Assert.False(Has((int)self.FileSystemRights, FileSystemRights.TakeOwnership), $"{path} is not re-ownable by the target");
+
             var files = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.ObjectInherit);
             Assert.Equal(PropagationFlags.InheritOnly, files.PropagationFlags);
             var expected = ServyExePermissionsHardener.GetWritableFolderFileRights(Path.GetFileName(path));
             Assert.True(Has((int)files.FileSystemRights, expected));
             if ((expected & FileSystemRights.Delete) == 0)
                 Assert.False(Has((int)files.FileSystemRights, FileSystemRights.Delete), $"the files in {path} are not deletable");
+
+            // Nothing above the rights GetWritableFolderFileRights names on the files created in it either.
+            Assert.False(Has((int)files.FileSystemRights, FileSystemRights.ChangePermissions), $"the files in {path} are not re-ACLable by the target");
+            Assert.False(Has((int)files.FileSystemRights, FileSystemRights.TakeOwnership), $"the files in {path} are not re-ownable by the target");
 
             Assert.False(Has(AllowedRights(path, TargetSid), FileSystemRights.Delete), $"{path} itself is not deletable");
         }
