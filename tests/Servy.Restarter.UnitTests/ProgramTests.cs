@@ -153,6 +153,59 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
+        public void Run_EventSourceRegistered_AsksForAnEventLogEnabledRootLogger()
+        {
+            // Arrange
+            // The event source registers, so Step 1's try must ask for a logger with the Windows Event
+            // Log ON. #7262 added the fake and read its request list from the failure test only, which
+            // left the primary arm's argument unpinned.
+            string serviceName = "GhostServiceWithRegisteredEventSource";
+            var environment = new FakeRestarterBootstrapEnvironment();
+
+            // Act
+            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            // One request, from the try, asking for the event log: flipping the primary argument, or
+            // taking the fallback without a failure, changes this sequence. In production that argument
+            // is what puts every restarter Warn and Error on the Windows Event Log.
+            Assert.Equal(new[] { true }, environment.EventLogLoggerRequests);
+            AssertLogDoesNotContainMessage("Event Log source unavailable; continuing with file logging only.");
+
+            // Best-effort start-up continues to the validation step, as in the fallback test above.
+            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
+        }
+
+        [Fact]
+        public void Run_EventSourceRegistersButEventLogLoggerFails_FallsBackToFileOnlyLogging()
+        {
+            // Arrange
+            // The second way into Step 1's catch: the source registers, so EnsureEventSourceExists
+            // returns, and the primary CreateEventLogLogger(true) is what throws. Until now the fake
+            // could only fail every logger request, so this arm could not be arranged at all.
+            string serviceName = "GhostServiceWithUnbuildableEventLogLogger";
+            var environment = new FakeRestarterBootstrapEnvironment
+            {
+                EventLogLoggerFailure = new InvalidOperationException("the event log logger cannot be built"),
+                FailOnlyEventLogEnabledLogger = true
+            };
+
+            // Act
+            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            AssertLogContainsMessage("Event Log source unavailable; continuing with file logging only.");
+
+            // Both requests in call order are the branch: the try asked for the event log and failed,
+            // then the catch asked for file-only logging and succeeded.
+            Assert.Equal(new[] { true, false }, environment.EventLogLoggerRequests);
+
+            // The fallback logger was built, so start-up carries on rather than reaching the catch-all.
+            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
+            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to initialize or execute.");
+        }
+
+        [Fact]
         public void Run_VulnerableSqliteVersion_LogsFatalAndExitsBeforeTouchingTheDatabase()
         {
             // Arrange
@@ -479,6 +532,13 @@ namespace Servy.Restarter.UnitTests
             /// <summary>Gets or sets the exception <see cref="CreateEventLogLogger"/> raises, if any.</summary>
             public Exception? EventLogLoggerFailure { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating whether <see cref="EventLogLoggerFailure"/> is raised only
+            /// for the event-log-enabled request, which is what lets a test reach Step 1's catch through a
+            /// failing primary logger while the fallback logger still builds.
+            /// </summary>
+            public bool FailOnlyEventLogEnabledLogger { get; set; }
+
             /// <summary>Gets or sets the answer <see cref="IsSqliteVersionSafe"/> gives.</summary>
             public bool SqliteVersionIsSafe { get; set; } = true;
 
@@ -507,12 +567,15 @@ namespace Servy.Restarter.UnitTests
             /// </summary>
             /// <param name="isEventLogEnabled">The argument the start-up path asked for; recorded, not honoured.</param>
             /// <returns>A file-only logger.</returns>
-            /// <exception cref="Exception">The configured <see cref="EventLogLoggerFailure"/>.</exception>
+            /// <exception cref="Exception">
+            /// The configured <see cref="EventLogLoggerFailure"/>, for every request unless
+            /// <see cref="FailOnlyEventLogEnabledLogger"/> narrows it to the event-log-enabled one.
+            /// </exception>
             public IServyLogger CreateEventLogLogger(bool isEventLogEnabled)
             {
                 EventLogLoggerRequests.Add(isEventLogEnabled);
 
-                if (EventLogLoggerFailure != null)
+                if (EventLogLoggerFailure != null && (isEventLogEnabled || !FailOnlyEventLogEnabledLogger))
                 {
                     throw EventLogLoggerFailure;
                 }
