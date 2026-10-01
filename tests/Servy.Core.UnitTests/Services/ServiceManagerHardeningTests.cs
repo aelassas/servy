@@ -17,6 +17,8 @@ namespace Servy.Core.UnitTests.Services
     /// "created" and the "already existed, reconfigured" paths, skipped for Local System and for a failed install.
     /// It also revokes the previous account's access when a reconfigured service moves to another account (#7161),
     /// and the account of the stale-casing row a reinstall drops, on the success paths only (#7191).
+    /// When the service moves to another account, it also takes back the former account's service control rights
+    /// before granting the new account's (#7221).
     /// <see cref="ServiceManager.UninstallServiceAsync"/> revokes the removed service's account after the delete,
     /// including for an orphan database record, and skips it for Local System and for a failed delete. Neither
     /// call is ever allowed to turn a successful install or uninstall into a failed one.
