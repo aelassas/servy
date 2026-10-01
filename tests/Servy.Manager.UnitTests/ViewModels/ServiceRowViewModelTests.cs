@@ -481,13 +481,17 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .Setup(s => s.ConfigureServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("SCM access denied simulation error."));
 
-            // Act
             Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, CancellationToken.None);
 
-            var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), faultyAction);
-            await taskResult;
+            // Act
+            // The file log is captured because the Logger.Error line is the only thing the general
+            // catch (Exception) arm does that the cancellation arm deliberately does not, so it is
+            // the only assertion that tells the two arms apart.
+            var log = await LogCapture.RunAsync(
+                () => (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), faultyAction));
 
             // Assert
+            Assert.Contains("ConfigureCommand failed for FaultyService.", log);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -499,17 +503,22 @@ namespace Servy.Manager.UnitTests.ViewModels
             var service = new Service { Name = "CancelledService" };
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
-            // Act
             // A cancelled action must reach the dedicated catch (OperationCanceledException) arm,
             // which swallows it silently instead of logging it like the general catch (Exception) arm.
             Func<Task> cancelledAction = () => Task.FromException(new OperationCanceledException());
 
-            var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), cancelledAction);
-            await taskResult;
+            // Act
+            var taskResult = Task.CompletedTask;
+            var log = await LogCapture.RunAsync(
+                () => taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), cancelledAction));
 
             // Assert
             // Awaiting without throwing is the proof the cancellation was absorbed, not rethrown.
             Assert.Equal(TaskStatus.RanToCompletion, taskResult.Status);
+            // Deleting the cancellation arm routes this into catch (Exception), which logs this line,
+            // and adding a Logger.Error to the cancellation arm logs it from there. Either way the
+            // silence this arm exists for is gone, and only this assertion sees it.
+            Assert.DoesNotContain("failed for CancelledService", log);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
