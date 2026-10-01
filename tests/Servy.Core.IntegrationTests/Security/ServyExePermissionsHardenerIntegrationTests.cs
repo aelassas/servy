@@ -632,6 +632,32 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
+        public void RevokeIfUnused_VaultIsAJunction_RemovesNothingOnItsTargetAndFails()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: the grant is written on the real directory, before the junction exists,
+            // so the arrange step itself never goes through the link.
+            var realVault = Path.Combine(TempDirectory, "real-vault");
+            Directory.CreateDirectory(realVault);
+            var real = new DirectoryInfo(realVault);
+            var acl = real.GetAccessControl(AccessControlSections.Access);
+            acl.AddAccessRule(new FileSystemAccessRule(TargetSid, FileSystemRights.Modify,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+            real.SetAccessControl(acl);
+            RunCmd($"mklink /J \"{_vault}\" \"{realVault}\"");
+
+            // Act
+            var result = _sut.RevokeIfUnused(TargetAccount, new List<string>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+            Assert.Equal(new[] { _vault }, result.Failed);
+            Assert.Empty(result.Revoked);
+            Assert.NotEmpty(ExplicitRules(realVault, TargetSid, AccessControlType.Allow));
+        }
+
+        [Fact]
         public async Task RevokeIfUnusedAsync_LastServiceOfTheAccountRemoved_RevokesAndReturnsTrue()
         {
             if (!_isElevated) return;
