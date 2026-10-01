@@ -304,6 +304,89 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void AddPoint_CpuPeakAboveTheFixedFloor_ScalesTheAxisWithHeadroom()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    // Stop the background DispatcherTimer so only the value added below reaches the buffer
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // 90 * GraphScaleHeadroom (1.2) is 108, which beats the fixed CPU floor of 100,
+                    // so the headroom product - not the floor - is what the axis is scaled against.
+                    // This is the arm the floor test above cannot reach.
+                    const double cpuValue = 90;
+
+                    // Act
+                    TestReflection.InvokeNonPublic(vm, "AddPoint", cpuValue, MetricType.Cpu);
+
+                    // Assert
+                    // y = GraphHeight - (value / (value * headroom)) * GraphHeight
+                    //   = 200 - (90 / 108) * 200 = 33.333333.
+                    // Without the headroom factor the axis would fall back to the 100 floor and y
+                    // would be 20. The expected value is spelled out as a literal on purpose, for
+                    // the reason the floor test above gives: an assertion that read the constants
+                    // back would move with them and could no longer detect a change to them.
+                    var point = Assert.Single(vm.CpuPointCollection);
+                    Assert.Equal(200d / 6, point.Y, 6);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void OnTickAsync_SmallProcess_ChartsRamInMegabytesAgainstTheRamFloor()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    SynchronizationContext.SetSynchronizationContext(
+                        new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+
+                    var mockService = new PerformanceService { Name = "ServyDaemon", Pid = 2050 };
+                    vm.SelectedService = mockService;
+
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // The PID is unchanged, so the tick charts without resetting the seeded history
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
+                                           .ReturnsAsync(2050);
+
+                    // 5 MB of RAM: 5 * GraphScaleHeadroom (1.2) is 6, which stays under the 10 MB
+                    // floor, so the floor is the axis maximum. The reading is given in bytes,
+                    // which is the unit IProcessHelper reports.
+                    _mockProcessHelper.Setup(p => p.GetProcessTreeMetrics(2050))
+                                      .Returns(new ProcessMetrics(10, 5L * 1024 * 1024));
+
+                    _mockUiDispatcher.Setup(d => d.InvokeAsync(It.IsAny<Action>()))
+                                     .Callback<Action>(action => action())
+                                     .Returns(Task.CompletedTask);
+
+                    // Act
+                    PumpUntilCompleted((Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!);
+
+                    // Assert
+                    // The history keeps its fixed capacity: the selection seeded it with 101 zeros,
+                    // this sample is the 102nd value and the oldest is dequeued for it.
+                    Assert.Equal(101, vm.RamPointCollection.Count);
+
+                    // The sample is the newest value, so it is charted at the right edge:
+                    // x = 100 * (GraphWidth / 100) = 400,
+                    // y = GraphHeight - (5 / 10) * GraphHeight = 100.
+                    // Charting the raw byte count instead of megabytes would scale the axis against
+                    // the sample itself rather than the floor and put y at 33.333333 instead.
+                    var last = vm.RamPointCollection[vm.RamPointCollection.Count - 1];
+                    Assert.Equal(400d, last.X, 6);
+                    Assert.Equal(100d, last.Y, 6);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void OnTickAsync_ServiceStopped_ClearsPidAndDisablesCopyPidCommand()
         {
             Helper.RunOnSTA(() =>
