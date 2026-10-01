@@ -3,6 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
 using System;
 using System.IO;
@@ -127,36 +128,6 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Null(_serializer.Deserialize(xml));
-        }
-
-        [Fact]
-        public void Deserialize_MalformedXml_LogsFailureWithLineInfo()
-        {
-            // Arrange: XmlException path, so FormatLineInfo has coordinates to append.
-            string malformedXml = "<ServiceDto><Name>UnclosedTag";
-
-            // Act
-            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(malformedXml));
-
-            // Assert
-            Assert.Null(result);
-            Assert.Contains("XML Deserialization failed at line", textLogOutput);
-        }
-
-        [Fact]
-        public void Deserialize_WellFormedXmlWithUnconvertibleValue_LogsTheSameFailurePhrase()
-        {
-            // Arrange: FormatException path, so FormatLineInfo returns string.Empty; the entry must
-            // still carry the phrase the line-info branch logs, or half the import failures are
-            // invisible to a grep for it.
-            string xml = "<ServiceDto><Name>S</Name><StartTimeout>abc</StartTimeout></ServiceDto>";
-
-            // Act
-            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(xml));
-
-            // Assert
-            Assert.Null(result);
-            Assert.Contains("XML Deserialization failed.", textLogOutput);
         }
 
         [Fact]
@@ -373,6 +344,63 @@ namespace Servy.Core.UnitTests.Services
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Covers the two <see cref="XmlServiceSerializer.Deserialize"/> failure cases that are only observable
+    /// through the static <c>Logger</c>: the <see cref="XmlException"/> path, which appends coordinates, and the
+    /// <see cref="FormatException"/> path, which cannot and must still carry the same greppable phrase.
+    /// </summary>
+    /// <remarks>
+    /// Asserting on that writer requires <see cref="LoggerCollection"/>, because <see cref="LogCapture"/> shuts
+    /// the static <c>Logger</c> down and re-initialises it against a directory of its own - process-wide state
+    /// that two classes capturing in parallel swap under each other, leaving the loser reading an empty file.
+    /// These two cases therefore live in a class of their own rather than taking the whole of
+    /// <see cref="XmlServiceSerializerTests"/>, which has no other log assertion, out of parallel execution.
+    /// </remarks>
+    [Collection(LoggerCollection.Name)] // the failure entries are asserted through the static Logger
+    public class XmlServiceSerializerLogTests
+    {
+        /// <summary>The serializer under test.</summary>
+        private readonly XmlServiceSerializer _serializer = new XmlServiceSerializer();
+
+        /// <summary>
+        /// Malformed XML reaches the <see cref="XmlException"/> arm, where <c>FormatLineInfo</c> has coordinates
+        /// to append, so the logged entry carries the "at line" phrase.
+        /// </summary>
+        [Fact]
+        public void Deserialize_MalformedXml_LogsFailureWithLineInfo()
+        {
+            // Arrange: XmlException path, so FormatLineInfo has coordinates to append.
+            string malformedXml = "<ServiceDto><Name>UnclosedTag";
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(malformedXml));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("XML Deserialization failed at line", textLogOutput);
+        }
+
+        /// <summary>
+        /// Well-formed XML carrying an unconvertible value reaches the <see cref="FormatException"/> arm, which has
+        /// no coordinates, and must still log the same phrase so a grep finds both halves of the failures.
+        /// </summary>
+        [Fact]
+        public void Deserialize_WellFormedXmlWithUnconvertibleValue_LogsTheSameFailurePhrase()
+        {
+            // Arrange: FormatException path, so FormatLineInfo returns string.Empty; the entry must
+            // still carry the phrase the line-info branch logs, or half the import failures are
+            // invisible to a grep for it.
+            string xml = "<ServiceDto><Name>S</Name><StartTimeout>abc</StartTimeout></ServiceDto>";
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(xml));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("XML Deserialization failed.", textLogOutput);
+        }
     }
 
     /// <summary>

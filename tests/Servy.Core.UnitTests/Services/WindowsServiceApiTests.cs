@@ -1,4 +1,5 @@
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -22,6 +23,15 @@ namespace Servy.Core.UnitTests.Services
     /// anything to write back.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// In <see cref="LoggerCollection"/> because the NULL DACL case asserts through
+    /// <see cref="LogCapture"/>, which shuts the static <c>Logger</c> down and re-initialises it against a
+    /// directory of its own. That is process-wide state, so a class asserting on it must not run in parallel
+    /// with another class doing the same: the two captures swap the writer under each other and the loser
+    /// reads an empty file. Every other class in this assembly that uses <see cref="LogCapture"/> carries the
+    /// same attribute for the same reason.
+    /// </remarks>
+    [Collection(LoggerCollection.Name)] // the NULL DACL warning is asserted through the static Logger
     public class WindowsServiceApiTests
     {
         private const string AccountName = @".\svc-account";
