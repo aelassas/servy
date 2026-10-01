@@ -966,8 +966,8 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             // A transitional Start failure enters recovery; the recovery poll's own status read then
-            // reports the service gone. That is the only way the start-phase catch observes a
-            // ServiceNotFound coming back out of HandleTransitionalError.
+            // reports the service gone, so HandleTransitionalError hands ServiceNotFound back to the
+            // start-phase catch, which must return it.
             var exceptionToThrow = throwInvalidOperation
                 ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
                 : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
