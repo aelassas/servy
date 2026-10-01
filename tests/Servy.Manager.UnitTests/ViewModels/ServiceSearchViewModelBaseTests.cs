@@ -49,6 +49,11 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             public Func<Service, ServiceItemBase> CustomCreateServiceItem { get; set; }
 
+            // Records every exception the pipeline surfaced through HandleSearchExceptionAsync. That
+            // call is the only effect the general catch arm has which the cancellation arm deliberately
+            // does not, so the recording is the only thing that tells the two arms apart.
+            public List<Exception> HandledExceptions { get; } = new List<Exception>();
+
             public TestServiceSearchViewModel(
                 ICursorService cursorService,
                 IUiDispatcher uiDispatcher,
@@ -73,6 +78,12 @@ namespace Servy.Manager.UnitTests.ViewModels
             public void SetCancellationTokenSource(CancellationTokenSource cts)
             {
                 TestReflection.SetField(this, "_searchCts", cts);
+            }
+
+            protected override Task HandleSearchExceptionAsync(Exception ex)
+            {
+                HandledExceptions.Add(ex);
+                return Task.CompletedTask;
             }
         }
 
@@ -203,15 +214,22 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Null(exception);
             Assert.False(_sut.IsBusy);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            // Cancellation is the normal path - every superseding search and every tab-switch Dispose
+            // cancels the running one - so it must never reach the handler the Main and Logs overrides
+            // turn into a modal error dialog. Everything above is done by the Step 7 finally on both
+            // paths, so this is the only assertion the cancellation arm's deletion fails.
+            Assert.Empty(_sut.HandledExceptions);
         }
 
         [Fact]
         public async Task SearchServicesAsync_GenericExceptionThrown_CleansUpState()
         {
             // Arrange
+            var failure = new InvalidOperationException("Database/SCM connection lost");
+
             _serviceCommandsMock
                 .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("Database/SCM connection lost"));
+                .ThrowsAsync(failure);
 
             // Act
             await _sut.SearchCommand.ExecuteAsync(null);
@@ -219,6 +237,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert - Should reach finally block cleanly despite crash
             Assert.False(_sut.IsBusy);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            // The mirror of the cancellation test: a genuine failure does reach the handler, and it is
+            // the same instance the pipeline caught.
+            Assert.Same(failure, Assert.Single(_sut.HandledExceptions));
         }
 
         [Fact]
