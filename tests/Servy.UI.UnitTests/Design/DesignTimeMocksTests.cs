@@ -132,17 +132,21 @@ namespace Servy.UI.UnitTests.Design
         #region UI Services Tests
 
         [Fact]
-        public async Task DesignTimeMessageBoxService_ReturnsTrueAndCompletes()
+        public void DesignTimeMessageBoxService_Methods_ReturnAlreadyCompletedTasks()
         {
             // Arrange
             var service = new DesignTimeMessageBoxService();
 
             // Act & Assert
-            Assert.True(await service.ShowConfirmAsync("Message", "Caption"));
-
-            await service.ShowErrorAsync("Err", "Cap");
-            await service.ShowInfoAsync("Inf", "Cap");
-            await service.ShowWarningAsync("Warn", "Cap");
+            // Capture the tasks instead of awaiting them: awaiting an already-completed task
+            // asserts nothing, while synchronous completion is the property the designer depends
+            // on - a stub that started yielding would leave it awaiting something that never resumes.
+            var confirm = service.ShowConfirmAsync("Message", "Caption");
+            Assert.True(confirm.IsCompletedSuccessfully);
+            Assert.True(confirm.Result);
+            Assert.True(service.ShowErrorAsync("Err", "Cap").IsCompletedSuccessfully);
+            Assert.True(service.ShowInfoAsync("Inf", "Cap").IsCompletedSuccessfully);
+            Assert.True(service.ShowWarningAsync("Warn", "Cap").IsCompletedSuccessfully);
         }
 
         [Fact]
