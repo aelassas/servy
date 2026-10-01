@@ -210,11 +210,12 @@ namespace Servy.Core.Validation
                 var safeHandle = fileStream.SafeFileHandle;
 
                 // Note on Native Fail-Closed Guards:
-                // The following Win32 P/Invoke handle validation checks (IsInvalid, size probe <= 0,
-                // serialization failure, and the surrounding catch block) are defensive native fallbacks.
-                // They ensure that kernel-level handle failures or buffer allocation errors fail closed
-                // rather than bypassing path checks. They are inherently unreachable via managed FileStream
-                // APIs in unit test environments without mocking native P/Invoke calls.
+                // The two handle checks below (IsInvalid, and TryGetFinalPathByHandle returning false when
+                // its native size probe or path query fails) are defensive native fallbacks. They ensure
+                // that kernel-level handle failures fail closed rather than bypassing path checks, and
+                // cannot be reached through managed FileStream APIs in unit tests without mocking native
+                // P/Invoke calls. The catch block below is not one of them: a FileStream that cannot be
+                // opened (a sharing violation, access denied) lands there.
                 if (safeHandle.IsInvalid)
                 {
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, Strings.Msg_SecurityHandleInvalid);
