@@ -208,9 +208,9 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task InstallService_WithoutHardener_InstallsUnderCustomAccount()
+        public async Task InstallService_WithoutHardener_InstallsUnderCustomAccountWithoutAHardeningError()
         {
-            // Arrange
+            // Arrange: the five-argument constructor leaves the hardener null
             ArrangeServiceCreated();
             var manager = new ServiceManager(
                 _ => new Mock<IServiceControllerWrapper>().Object,
@@ -221,11 +221,14 @@ namespace Servy.Core.UnitTests.Services
             var options = CreateOptions(@".\svc-account");
 
             // Act
-            var result = await manager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+            var capture = await LogCapture.RunAsync(() => manager.InstallServiceAsync(options, cancellationToken: CancellationToken.None));
 
             // Assert
-            Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.True(capture.Result.IsSuccess);
+
+            // No hardener means the hardening is skipped, not attempted and swallowed: the null guard is the
+            // only thing keeping a NullReferenceException out of this error line.
+            Assert.DoesNotContain("Hardening Servy's file permissions", capture.Log);
         }
 
         #region Revocation (#7161)
@@ -709,7 +712,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task RevokeVaultAccessIfUnused_WithoutHardener_RevokesNothing()
+        public async Task RevokeVaultAccessIfUnused_WithoutHardener_RevokesNothingAndLogsNoError()
         {
             // Arrange: the five-argument constructor leaves the hardener null
             var manager = new ServiceManager(
@@ -720,12 +723,12 @@ namespace Servy.Core.UnitTests.Services
                 _serviceRepository.Object);
             var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
 
-            // Act
-            var ex = await Record.ExceptionAsync(() => manager.RevokeVaultAccessIfUnusedAsync(record, CancellationToken.None));
+            // Act: an exception out of the revocation would fail the test on its own, so no Record wrapper
+            var log = await LogCapture.RunAsync(() => manager.RevokeVaultAccessIfUnusedAsync(record, CancellationToken.None));
 
-            // Assert
-            Assert.Null(ex);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            // Assert: the null guard returns before the former account is even resolved, so the swallowed
+            // NullReferenceException's error line is the only observable difference if it is removed.
+            Assert.DoesNotContain("Revoking the vault access", log);
         }
 
         /// <summary>
