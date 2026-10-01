@@ -1097,6 +1097,77 @@ namespace Servy.Restarter.UnitTests
             _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Transitional recovery loop exhausted full timeout")), It.IsAny<Exception>()), Times.Once);
         }
 
+        [Fact]
+        public void RestartService_WithLogger_LogsRecoveryLoopPendingWaitAndStartReissue()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)        // settle phase: already stable
+                .Returns(ServiceControllerStatus.Stopped)        // stop-phase entry: nothing to stop
+                .Returns(ServiceControllerStatus.Stopped)        // start-phase check: not Running yet
+                .Returns(ServiceControllerStatus.StartPending)   // recovery poll 1: still transitioning
+                .Returns(ServiceControllerStatus.Stopped)        // post-exception re-probe: still installed
+                .Returns(ServiceControllerStatus.Stopped);       // recovery poll 2: stable, accepts Start again
+
+            var startCallCount = 0;
+            _mockController.Setup(c => c.Start()).Callback(() =>
+            {
+                startCallCount++;
+                if (startCallCount == 1)
+                {
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                }
+            });
+
+            var waitCallCount = 0;
+            _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()))
+                .Callback(() =>
+                {
+                    waitCallCount++;
+                    if (waitCallCount == 1)
+                    {
+                        throw new System.ServiceProcess.TimeoutException("Still transitioning.");
+                    }
+                });
+
+            // Act
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("is currently in pending state") && s.Contains("waiting for transition to complete")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Re-issuing Start command")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("reached target state") && s.Contains("after waiting")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_LogsAnErrorWhenTheRecoveryBudgetExpiresBeforeTheWait()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            var stopCallCount = 0;
+            _mockController.Setup(c => c.Stop()).Callback(() =>
+            {
+                stopCallCount++;
+                if (stopCallCount == 1)
+                {
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                }
+
+                // Burn the whole recovery budget inside the poll, so the pre-wait check fails.
+                System.Threading.Thread.Sleep(TestTimeouts.ServiceRestarterMidLoopExpiryBurn);
+            });
+
+            // Act
+            var ex = Assert.Throws<System.TimeoutException>(() =>
+                _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterMidLoopExpiryBudget));
+
+            // Assert
+            Assert.Contains("the transition may still complete", ex.Message);
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Timeout expired while waiting for service") && s.Contains("to reach 'Stopped'")), It.IsAny<Exception>()), Times.Once);
+        }
+
         #endregion
     }
 }
