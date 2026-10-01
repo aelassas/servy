@@ -620,18 +620,26 @@ namespace Servy.Core.IntegrationTests.Helpers
                          .Returns(() => new MemoryStream(new byte[] { 0x01 }));
 
             // Act
-            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+            // LogCapture routes the static Logger into a private temp directory so the guard's own
+            // message can be read back: it is the only observable difference between the guard and
+            // the framework exception that replaces it when the guard is removed.
+            var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
                 _mockAssembly.Object,
                 "Servy.Resources",
                 "emptydirapp",
                 "exe",
                 stopServices: false,
-                cancellationToken: TestContext.Current.CancellationToken);
+                cancellationToken: TestContext.Current.CancellationToken));
 
             // Assert
             // The guard's IOException is caught by the method's own outer catch, so the observable
             // effect is a false result rather than a propagated exception.
             Assert.False(result);
+
+            // Without the guard, Directory.CreateDirectory("") throws its own ArgumentException into
+            // the same catch and the result is still false, so the result alone pins nothing: only
+            // the guard's message tells the two apart.
+            Assert.Contains("Could not resolve parent directory for extraction", textLogOutput);
         }
 
         #endregion
