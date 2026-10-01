@@ -13,9 +13,10 @@ namespace Servy.UI.Helpers
     public static class ClipboardHelper
     {
         /// <summary>
-        /// Attempts to place <paramref name="text"/> on the system clipboard, retrying transient
-        /// Win32 clipboard failures up to <see cref="AppConfig.ClipboardComMaxRetries"/> times and
-        /// waiting <see cref="AppConfig.ClipboardComRetryDelayMs"/> milliseconds between attempts.
+        /// Attempts to place <paramref name="text"/> on the system clipboard, making at most
+        /// <see cref="AppConfig.ClipboardComMaxRetries"/> attempts in total (the first write plus the
+        /// retries of transient Win32 clipboard failures) and waiting
+        /// <see cref="AppConfig.ClipboardComRetryDelayMs"/> milliseconds between attempts.
         /// </summary>
         /// <param name="text">The text to place on the clipboard.</param>
         /// <param name="dispatcher">
