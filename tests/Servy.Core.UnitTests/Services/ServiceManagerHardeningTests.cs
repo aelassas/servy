@@ -27,6 +27,9 @@ namespace Servy.Core.UnitTests.Services
     /// those failures is swallowed, the log line it writes is the only signal an operator gets that a security
     /// step did not happen, so the five failure arms assert it. Those tests drive the static logger - hence the
     /// sequential logger collection.
+    /// <see cref="ServiceManager.RevokeVaultAccessIfUnusedAsync"/>, the public wrapper the Manager calls after a
+    /// remove, is covered here as well: it passes no current account, so any non-Local-System former account is
+    /// revoked, and a refused or throwing revocation still completes its task (#7190).
     /// </summary>
     [Collection(LoggerCollection.Name)]
     public class ServiceManagerHardeningTests : IDisposable
@@ -627,6 +630,97 @@ namespace Servy.Core.UnitTests.Services
 
             // The exception is swallowed, so the error line is the only trace of it.
             Assert.Contains($@"[ERROR] | Revoking the vault access of '.\svc-account' (service '{ServiceName}') failed.", capture.Log);
+        }
+
+        [Theory]
+        [InlineData(@".\svc-account", @".\svc-account")]
+        [InlineData(@"  DOMAIN\gMSA$  ", @"DOMAIN\gMSA$")]
+        public async Task RevokeVaultAccessIfUnused_RecordUnderCustomAccount_RevokesThatAccount(string account, string expected)
+        {
+            // Arrange: the wrapper is the only caller that passes no current account, which is what makes
+            // every non-Local-System former account eligible for revocation
+            var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = account };
+
+            // Act
+            await _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken);
+
+            // Assert
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(expected, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RevokeVaultAccessIfUnused_NullRecord_RevokesNothing()
+        {
+            // Arrange, Act & Assert
+            await _serviceManager.RevokeVaultAccessIfUnusedAsync(null, TestContext.Current.CancellationToken);
+
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RevokeVaultAccessIfUnused_RecordUnderLocalSystem_RevokesNothing()
+        {
+            // Arrange
+            var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = true, UserAccount = null };
+
+            // Act
+            await _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken);
+
+            // Assert
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RevokeVaultAccessIfUnused_RevocationReportsFailure_DoesNotThrow()
+        {
+            // Arrange: ServiceCommands.RemoveServiceAsync awaits this task and keeps Remove successful,
+            // so a refused revocation must not surface as an exception
+            var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Null(ex);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RevokeVaultAccessIfUnused_RevocationThrows_DoesNotThrow()
+        {
+            // Arrange
+            var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("ACL write failed"));
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Null(ex);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RevokeVaultAccessIfUnused_WithoutHardener_RevokesNothing()
+        {
+            // Arrange: the five-argument constructor leaves the hardener null
+            var manager = new ServiceManager(
+                _ => new Mock<IServiceControllerWrapper>().Object,
+                new Mock<IServiceControllerProvider>().Object,
+                _windowsServiceApi.Object,
+                _win32ErrorProvider.Object,
+                _serviceRepository.Object);
+            var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => manager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Null(ex);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         /// <summary>
