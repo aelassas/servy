@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.UnitTests.Logging;
 using System.Reflection;
 
 namespace Servy.Core.UnitTests.Config
@@ -154,6 +155,56 @@ namespace Servy.Core.UnitTests.Config
             finally
             {
                 CoreSettingsLoader.TestOverride = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Covers the <see cref="CoreSettingsLoader.WarnAboutIgnoredSettings"/> call that passes no
+    /// logger, which warns through the static <see cref="Logger"/>.
+    /// </summary>
+    /// <remarks>
+    /// This is a class of its own so only it joins the sequential logger collection: the static
+    /// logger is global state, while the mock-logger tests above stay parallelizable. The CLI, the
+    /// desktop app and the manager app all take this path.
+    /// </remarks>
+    [Collection(LoggerCollection.Name)] // the no-logger call writes through the static Logger
+    public class CoreSettingsLoaderStaticLoggerTests
+    {
+        [Fact]
+        public void WarnAboutIgnoredSettings_NoLoggerGiven_WarnsThroughTheStaticLogger()
+        {
+            // Arrange
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "ConnectionStrings:DefaultConnection", @"Data Source=D:\old\Servy.db" },
+                })
+                .Build();
+            string fileName = $"CoreSettingsWarnTestLog_{Guid.NewGuid():N}.log";
+            string fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
+
+            try
+            {
+                Logger.Shutdown();
+                Logger.Initialize(fileName);
+
+                // Act
+                var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json");
+                Logger.Shutdown();
+
+                // Assert
+                Assert.Equal(new[] { "ConnectionStrings:DefaultConnection" }, found);
+                var log = File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
+                Assert.Contains(
+                    "appsettings.cli.json sets ConnectionStrings:DefaultConnection, which Servy ignores since v10.2",
+                    log,
+                    StringComparison.Ordinal);
+            }
+            finally
+            {
+                Logger.Shutdown();
+                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
             }
         }
     }
