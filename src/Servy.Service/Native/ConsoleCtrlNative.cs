@@ -1,5 +1,6 @@
 using Servy.Core.Native;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Servy.Service.Native
@@ -45,6 +46,7 @@ namespace Servy.Service.Native
         /// <see langword="true"/> to add the handler; <see langword="false"/> to remove it.
         /// </param>
         /// <returns><see langword="true"/> when the call succeeded; otherwise <see langword="false"/>.</returns>
+        [ExcludeFromCodeCoverage]
         public bool SetConsoleCtrlHandler(IntPtr handlerRoutine, bool add)
         {
             return NativeMethods.SetConsoleCtrlHandler(handlerRoutine, add);
@@ -58,6 +60,7 @@ namespace Servy.Service.Native
         /// The console process group to signal; <c>0</c> means every process sharing the console.
         /// </param>
         /// <returns><see langword="true"/> when the call succeeded; otherwise <see langword="false"/>.</returns>
+        [ExcludeFromCodeCoverage]
         public bool GenerateConsoleCtrlEvent(NativeMethods.CtrlEvents ctrlEvent, uint processGroupId)
         {
             return NativeMethods.GenerateConsoleCtrlEvent(ctrlEvent, processGroupId);
