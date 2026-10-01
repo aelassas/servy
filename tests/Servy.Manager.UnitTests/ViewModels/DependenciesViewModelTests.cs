@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using Xunit;
 using Helper = Servy.Testing.Helper;
 
@@ -812,6 +813,89 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Assert
                         Assert.Equal("200", viewModel.Pid);
                         Assert.Equal(200, mockService.Pid);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void BaseMonitoring_OnTickAsync_SelectionChangesDuringPidLookup_DropsTheTick()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        viewModel = CreateViewModel();
+                        var mockService = new DependencyService { Name = "ActiveService", Pid = 100 };
+                        viewModel.SelectedService = mockService;
+
+                        TestReflection.GetField<DispatcherTimer>(viewModel, "_timer")?.Stop();
+
+                        // The user switches service while the repository call is in flight. The backing field
+                        // is swapped directly so the switch does not restart the monitoring timer mid-test.
+                        var vm = viewModel;
+                        _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                              .Callback(() => TestReflection.SetField(vm, "_selectedService",
+                                                  new DependencyService { Name = "OtherService", Pid = 1 }))
+                                              .ReturnsAsync(200);
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
+                        task.GetAwaiter().GetResult();
+
+                        // Assert - the superseded selection's PID is neither stored on it nor shown
+                        Assert.Equal(100, mockService.Pid);
+                        Assert.NotEqual("200", viewModel.Pid);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void BaseMonitoring_OnTickAsync_MonitoringCancelledDuringPidLookup_DropsTheTick()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        viewModel = CreateViewModel();
+                        var mockService = new DependencyService { Name = "ActiveService", Pid = 100 };
+                        viewModel.SelectedService = mockService;
+
+                        TestReflection.GetField<DispatcherTimer>(viewModel, "_timer")?.Stop();
+
+                        // Monitoring is cancelled while the repository call is in flight, and the selection
+                        // is kept, so the token term of the drop guard is the only thing that can stop
+                        // this tick.
+                        var vm = viewModel;
+                        _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                              .Callback(() => TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts").Cancel())
+                                              .ReturnsAsync(200);
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
+                        task.GetAwaiter().GetResult();
+
+                        // Assert - a tick whose monitoring session was cancelled during the PID lookup
+                        // writes nothing back to the selection it was started for
+                        Assert.Equal(100, mockService.Pid);
+                        Assert.NotEqual("200", viewModel.Pid);
                     }
                     finally
                     {
