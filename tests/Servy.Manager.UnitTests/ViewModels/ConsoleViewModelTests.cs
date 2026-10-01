@@ -405,6 +405,75 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Fact]
+        public async Task OnTickAsync_SelectionChangesDuringStateLookup_DropsTheTick()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
+                    vm.SelectedService = service;
+
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // The user switches service while the repository call is in flight. The backing field is
+                    // swapped directly so the switch does not restart the monitoring timer mid-test.
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                    .Callback(() => TestReflection.SetField(vm, "_selectedService",
+                                        new ConsoleService { Name = "OtherService", Pid = 1 }))
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = 200, ActiveStdoutPath = "stale.txt" });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    await task;
+
+                    // Assert - the superseded selection's PID and log paths are not applied, so the new
+                    // selection's console is not re-tailed onto the previous service's files
+                    Assert.Equal(100, service.Pid);
+                    Assert.Equal("old.txt", service.StdoutPath);
+                    Assert.Equal("old.txt", TestReflection.GetField<string>(vm, "_stdoutPath"));
+                }
+            });
+        }
+
+        [Fact]
+        public async Task OnTickAsync_MonitoringCancelledDuringStateLookup_DropsTheTick()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
+                    vm.SelectedService = service;
+
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // Monitoring is cancelled while the repository call is in flight, and the selection is
+                    // kept, so the token term of the drop guard is the only thing that can stop this tick.
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                    .Callback(() => TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts").Cancel())
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = 200, ActiveStdoutPath = "stale.txt" });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    await task;
+
+                    // Assert - a tick whose monitoring session was cancelled during the state lookup
+                    // writes nothing back to the selection it was started for
+                    Assert.Equal(100, service.Pid);
+                    Assert.Equal("old.txt", service.StdoutPath);
+                    Assert.Equal("old.txt", TestReflection.GetField<string>(vm, "_stdoutPath"));
+                }
+            });
+        }
+
         #endregion
 
         #region Resource Management & Disposal Tests
