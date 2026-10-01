@@ -90,22 +90,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void Initialize_CreatesItsOwnFileSeparateFromTheConfigurationDatabase()
-        {
-            // Arrange
-            using (var conn = OpenConnection())
-            {
-                // Act
-                SQLiteStateDbInitializer.Initialize(conn);
-            }
-
-            // Assert
-            Assert.True(File.Exists(StateDbPath));
-            Assert.Equal("Servy.state.db", Path.GetFileName(StateDbPath));
-            Assert.False(File.Exists(Path.Combine(TempDirectory, AppConfig.DatabaseFileName)));
-        }
-
-        [Fact]
         public void Initialize_NullConnection_Throws()
         {
             // Arrange, Act & Assert
@@ -541,6 +525,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var stateConnection = AppConfig.DefaultStateConnectionString;
 
             // Assert
+            Assert.Equal("Servy.state.db", AppConfig.StateDatabaseFileName);
             Assert.NotEqual(AppConfig.DatabaseFileName, AppConfig.StateDatabaseFileName);
             Assert.Contains(Path.Combine(dbFolder, AppConfig.StateDatabaseFileName), stateConnection);
             Assert.Contains(Path.Combine(dbFolder, AppConfig.DatabaseFileName), AppConfig.DefaultConnectionString);
