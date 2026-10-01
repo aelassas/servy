@@ -5,7 +5,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
+using Servy.Restarter.Bootstrap;
 
 namespace Servy.Restarter
 {
@@ -34,7 +34,13 @@ namespace Servy.Restarter
         /// </summary>
         /// <param name="args">Command line arguments.</param>
         /// <param name="restarter">Optional restarter instance for dependency injection testing.</param>
-        internal static void Run(string[] args, IServiceRestarter? restarter)
+        /// <param name="environment">
+        /// Optional seam over the machine-touching start-up calls (the Windows event source, the event-log
+        /// logger and the SQLite version check), used for testing. When <see langword="null"/> the
+        /// production <see cref="RestarterBootstrapEnvironment"/> is created, and it forwards every call
+        /// unchanged to what this method ran inline before the seam existed.
+        /// </param>
+        internal static void Run(string[] args, IServiceRestarter? restarter, IRestarterBootstrapEnvironment? environment = null)
         {
             string? customLogDir = args.Length > 1 ? args[1] : null;
             Logger.Initialize("Servy.Restarter.log", logDirectory: customLogDir);
@@ -63,17 +69,19 @@ namespace Servy.Restarter
                     return;
                 }
 
+                environment ??= new RestarterBootstrapEnvironment();
+
                 // 1. Event Log source is best-effort: the file logger is already up, and a restart
                 //    must not be blocked by a reporting-channel failure.
                 try
                 {
-                    Helper.EnsureEventSourceExists();
-                    rootLogger = new EventLogLogger(AppConfig.EventSource);
+                    environment.EnsureEventSourceExists();
+                    rootLogger = environment.CreateEventLogLogger(isEventLogEnabled: true);
                 }
                 catch (Exception ex)
                 {
                     Logger.Warn("Event Log source unavailable; continuing with file logging only.", ex);
-                    rootLogger = new EventLogLogger(AppConfig.EventSource, isEventLogEnabled: false);
+                    rootLogger = environment.CreateEventLogLogger(isEventLogEnabled: false);
                 }
 
                 // 2. Load configuration
@@ -112,7 +120,7 @@ namespace Servy.Restarter
                 }
 
                 // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
-                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                if (!environment.IsSqliteVersionSafe(out var detectedVersion))
                 {
                     scopedLogger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
                                           $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
