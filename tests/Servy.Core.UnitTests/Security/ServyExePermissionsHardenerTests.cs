@@ -274,6 +274,49 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Harden_CancelledBeforeTheCall_GrantsNoFolder()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act
+                var ex = Record.Exception(() => sut.Harden("svc", cts.Token));
+
+                // Assert: GrantFolderAccess creates each folder it grants, so the check before the first one
+                // is what keeps every writable folder absent
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+                    Assert.False(Directory.Exists(Path.Combine(TempDirectory, folder)), $"{folder} was granted after cancellation");
+            }
+        }
+
+        [Fact]
+        public void Harden_CancelledDuringTheFirstFile_DoesNotTouchTheNextFile()
+        {
+            // Arrange
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe), "ui");
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceCLIExe), "cli");
+            using (var cts = new CancellationTokenSource())
+            {
+                var sut = new TestableHardener(TempDirectory)
+                {
+                    IsMember = false,
+                    HardLinkCount = _ => { cts.Cancel(); return 1; }
+                };
+
+                // Act
+                var ex = Record.Exception(() => sut.Harden("svc", cts.Token));
+
+                // Assert: the first file finishes, the check before the second one stops the loop
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, sut.HardLinkQueries);
+            }
+        }
+
+        [Fact]
         public void Harden_OneFileThrows_IsReportedAsFailedAndTheNextFileIsStillProcessed()
         {
             // Arrange
@@ -862,6 +905,52 @@ namespace Servy.Core.UnitTests.Security
 
                 // Assert
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
+            }
+        }
+
+        [Fact]
+        public void RevokeIfUnused_CancelledBeforeTheCall_RevokesNoFolder()
+        {
+            // Arrange
+            var db = GrantedFolder(AppConfig.DbFolderName, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory);
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", new List<string>(), cts.Token));
+
+                // Assert: the vault root is revoked before any check, the folder loop's own check stops there
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.True(ItemHasAce(db, LocalServiceSid));
+            }
+        }
+
+        [Fact]
+        public void RevokeIfUnused_CancelledDuringTheFirstFile_DoesNotTouchTheNextFile()
+        {
+            // Arrange
+            var ui = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(ui, "ui");
+            AddAce(ui, LocalServiceSid);
+            var cli = Path.Combine(TempDirectory, AppConfig.ServyServiceCLIExe);
+            File.WriteAllText(cli, "cli");
+            AddAce(cli, LocalServiceSid);
+            using (var cts = new CancellationTokenSource())
+            {
+                var sut = new TestableHardener(TempDirectory)
+                {
+                    HardLinkCount = _ => { cts.Cancel(); return 1; }
+                };
+
+                // Act
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", new List<string>(), cts.Token));
+
+                // Assert: the first file is revoked, the check before the second one stops the loop
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, sut.HardLinkQueries);
+                Assert.True(ItemHasAce(cli, LocalServiceSid));
             }
         }
 
