@@ -335,6 +335,23 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Harden_HardLinkCountUnreadable_IsNotTouchedAndFails()
+        {
+            // Arrange: GetHardLinkCount answers -1 for a file whose link count cannot be read
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe), "ui");
+            var sut = new TestableHardener(TempDirectory) { IsMember = false, HardLinkCount = _ => -1 };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.Harden("svc", CancellationToken.None));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Contains(AppConfig.ServyServiceUIExe, capture.Result.Failed);
+            Assert.DoesNotContain(AppConfig.ServyServiceUIExe, capture.Result.Hardened);
+            Assert.Contains("its hard link count could not be verified", capture.Log);
+        }
+
+        [Fact]
         public async Task Harden_OneFolderCannotBeCreated_IsReportedAsFailedAndTheOtherFoldersAreStillGranted()
         {
             // Arrange: a regular file sits where the logs folder belongs, so creating that folder throws
@@ -894,6 +911,54 @@ namespace Servy.Core.UnitTests.Security
             Assert.True(ItemHasAce(exe, LocalServiceSid));
             Assert.False(ItemHasAce(logs, LocalServiceSid));
             Assert.Contains("it has 2 NTFS hard links", capture.Log);
+        }
+
+        [Fact]
+        public void RevokeIfUnused_HardLinkCountUnreadable_IsNotTouchedAndFails()
+        {
+            // Arrange: GetHardLinkCount answers -1 for a file whose link count cannot be read
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { HardLinkCount = _ => -1 };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, capture.Result.Failed);
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+            Assert.Contains("its hard link count could not be verified", capture.Log);
+        }
+
+        [Fact]
+        public void RevokeIfUnused_OneFileThrows_IsReportedAsFailedAndTheNextFileIsStillRevoked()
+        {
+            // Arrange: the first binary throws from inside RevokeEntries' try; the second does not
+            var ui = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(ui, "ui");
+            AddAce(ui, LocalServiceSid);
+            var cli = Path.Combine(TempDirectory, AppConfig.ServyServiceCLIExe);
+            File.WriteAllText(cli, "cli");
+            AddAce(cli, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory)
+            {
+                HardLinkCount = path => Path.GetFileName(path) == AppConfig.ServyServiceUIExe
+                    ? throw new IOException("The process cannot access the file because it is being used by another process.")
+                    : 1
+            };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, capture.Result.Failed);
+            Assert.Contains(AppConfig.ServyServiceCLIExe, capture.Result.Revoked);
+            Assert.True(ItemHasAce(ui, LocalServiceSid));
+            Assert.False(ItemHasAce(cli, LocalServiceSid));
+            Assert.Contains($"Failed to revoke the access of 'svc' to '{AppConfig.ServyServiceUIExe}'", capture.Log);
         }
 
         [Fact]
