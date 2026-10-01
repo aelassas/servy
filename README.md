@@ -13,12 +13,6 @@ Servy offers a desktop app, a CLI, and a PowerShell module that let you create, 
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is well suited to keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, LLMs, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
-## Demo Video
-
-This video demonstrates Servy 1.0. While Servy has evolved significantly since then with many features like real-time CPU/RAM monitoring, stdout/stderr streaming, heartbeat pings, notifications, and CPU affinity, the core concept remains the same.
-
-[![Servy Demo Video](https://github.com/user-attachments/assets/183a48eb-0763-46b5-aba2-7db01857c942)](https://www.youtube.com/watch?v=biHq17j4RbI)
-
 ## Why?
 
 See [NOTES.md](NOTES.md).
@@ -27,26 +21,23 @@ See [NOTES.md](NOTES.md).
 
 Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:
 
-[![WinGet Package Version](https://img.shields.io/winget/v/aelassas.Servy?color=brightgreen)](https://github.com/microsoft/winget-pkgs/tree/master/manifests/a/aelassas/Servy)
-
+**WinGet**
 ```powershell
 winget install servy
 ```
 
-[![Chocolatey Version](https://img.shields.io/chocolatey/v/servy?color=brightgreen)](https://community.chocolatey.org/packages/servy)
-
+**Chocolatey**
 ```powershell
 choco install -y servy
 ```
 
-[![Scoop Version](https://img.shields.io/scoop/v/servy?bucket=extras&color=brightgreen)](https://scoop.sh/#/apps?q=servy&p=1)
-
+**Scoop**
 ```powershell
 scoop bucket add extras
 scoop install servy
 ```
 
-[![Patch My PC](https://img.shields.io/badge/patch_my_pc-catalog-brightgreen)](https://patchmypc.com/supported-products/)
+**Patch My PC**
 
 Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
