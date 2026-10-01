@@ -1135,6 +1135,30 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(testDir, log, StringComparison.Ordinal);
         }
 
+        [Fact]
+        public void WarnIfDirectoryAclNotHardened_ExecutablePathInUsersModifyDirectory_LogsNoticeForItsDirectory()
+        {
+            // Arrange
+            // Both production callers (Servy App.xaml.cs, Servy.Manager App.xaml.cs) pass the path of an
+            // existing .exe, not a directory, so the check must resolve the file to its containing
+            // directory. Every other test here passes a directory, which takes the other arm of the
+            // ternary. SetBuiltinUsersAccessRule keeps FullControl for the current user, so the file is
+            // written before the DACL is replaced.
+            string testDir = Path.Combine(TempDirectory, "acl_modify_exe_dir");
+            Directory.CreateDirectory(testDir);
+            string exePath = Path.Combine(testDir, "Servy.Manager.exe");
+            File.WriteAllText(exePath, "placeholder");
+            SetBuiltinUsersAccessRule(testDir, FileSystemRights.Modify);
+
+            // Act
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(exePath));
+
+            // Assert
+            // The resolved directory, not the file, is the subject of the notice.
+            Assert.Contains("ACL Security Notice", log, StringComparison.Ordinal);
+            Assert.Contains($"Directory '{testDir}'", log, StringComparison.Ordinal);
+        }
+
         [Theory]
         [InlineData(WellKnownSidType.AuthenticatedUserSid)]
         [InlineData(WellKnownSidType.WorldSid)]
