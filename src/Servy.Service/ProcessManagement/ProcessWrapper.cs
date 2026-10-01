@@ -1,6 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Service.Native;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -61,6 +62,20 @@ namespace Servy.Service.ProcessManagement
         /// The public <see cref="WaitForExit(int)"/> member is deliberately not routed through it.
         /// </remarks>
         internal Func<Process, int, bool> ExitWaiter { get; set; } = (p, ms) => p.WaitForExit(ms);
+
+        /// <summary>
+        /// Gets or sets the console calls <see cref="SendCtrlC"/> delivers a CTRL+C through.
+        /// Defaults to <see cref="ConsoleCtrlNative"/>; substituted by tests so the attach, signal and
+        /// detach sequence and each of its failure arms can be observed without a real
+        /// <c>GenerateConsoleCtrlEvent</c>, which would reach the test host's own console group.
+        /// </summary>
+        /// <remarks>
+        /// The default forwards every member unchanged to <see cref="NativeMethods"/> and
+        /// <see cref="Marshal.GetLastWin32Error"/>, with the same arguments, in the same order and on
+        /// the calling thread, so an unconfigured wrapper behaves exactly as it did before this seam
+        /// existed.
+        /// </remarks>
+        internal IConsoleCtrlNative ConsoleNative { get; set; } = new ConsoleCtrlNative();
 
         #endregion
 
@@ -652,11 +667,11 @@ namespace Servy.Service.ProcessManagement
             lock (ConsoleStateLock)
             {
                 // ALWAYS free the console first to prevent stale locks from previous iterations
-                _ = FreeConsole();
+                _ = ConsoleNative.FreeConsole();
 
-                if (!AttachConsole(process.Id))
+                if (!ConsoleNative.AttachConsole(process.Id))
                 {
-                    int error = Marshal.GetLastWin32Error();   // must be first - HasExited clobbers the last-error slot
+                    int error = ConsoleNative.GetLastWin32Error();   // must be first - HasExited clobbers the last-error slot
 
                     // Double check if the process has actually exited under our feet.
                     // If the process is dead, any attach failure means it's already gone.
@@ -686,11 +701,11 @@ namespace Servy.Service.ProcessManagement
                 // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
                 // Passing 'null' as the handler and 'true' as the add flag tells the OS
                 // to ignore CTRL_C_EVENT for this specific process.
-                if (!SetConsoleCtrlHandler(IntPtr.Zero, true))
+                if (!ConsoleNative.SetConsoleCtrlHandler(IntPtr.Zero, true))
                 {
-                    int error = Marshal.GetLastWin32Error();
+                    int error = ConsoleNative.GetLastWin32Error();
                     _logger?.Error($"Failed to suppress console control handlers in the service (Win32 Error: {error}). Aborting signal to prevent service self-termination.");
-                    _ = FreeConsole();
+                    _ = ConsoleNative.FreeConsole();
                     return false;
                 }
 
@@ -708,9 +723,9 @@ namespace Servy.Service.ProcessManagement
                     // the CTRL + C signal will not be received by processes within
                     // the specified process group.
                     // So passing the specific process group ID instead of 0 will not work.
-                    if (!GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0))
+                    if (!ConsoleNative.GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0))
                     {
-                        int error = Marshal.GetLastWin32Error();
+                        int error = ConsoleNative.GetLastWin32Error();
                         _logger?.Warn(
                             $"GenerateConsoleCtrlEvent failed for '{process.Format()}': " +
                             $"{new Win32Exception(error).Message} (Error: {error}). " +
@@ -723,13 +738,13 @@ namespace Servy.Service.ProcessManagement
                 finally
                 {
                     // Detach from the child's console
-                    _ = FreeConsole();
+                    _ = ConsoleNative.FreeConsole();
 
                     // Re-assert the service's own ignore flag (set in OnStart) - the service must not be
                     // killable by a console control event outside of child-process creation.
-                    if (!SetConsoleCtrlHandler(IntPtr.Zero, true))
+                    if (!ConsoleNative.SetConsoleCtrlHandler(IntPtr.Zero, true))
                     {
-                        int error = Marshal.GetLastWin32Error();
+                        int error = ConsoleNative.GetLastWin32Error();
                         _logger?.Error($"Failed to re-assert the service's console control handler (Win32 Error: {error}).");
                     }
                 }
