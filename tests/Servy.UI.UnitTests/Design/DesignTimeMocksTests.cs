@@ -251,17 +251,23 @@ namespace Servy.UI.UnitTests.Design
         }
 
         [Fact]
-        public async Task InvokeAsync_GenericFunc_ReturnsDefaultValue()
+        public async Task InvokeAsync_GenericFunc_ReturnsDefaultValueWithoutInvokingCallback()
         {
-            // Arrange & Act - Reference type
-            Task<string> refTask = _dispatcher.InvokeAsync(() => "Value");
+            // Arrange
+            bool wasExecuted = false;
 
-            // Arrange & Act - Value type
+            // Act - Reference type. A statement body still returns a value, so it binds to
+            // InvokeAsync<string>(Func<string>); there is no Func<T> overload taking a
+            // DispatcherPriority to compete with it.
+            Task<string> refTask = _dispatcher.InvokeAsync(() => { wasExecuted = true; return "Value"; });
+
+            // Act - Value type
             Task<int> valTask = _dispatcher.InvokeAsync(() => 42);
 
             // Assert
             Assert.Null(await refTask);
             Assert.Equal(0, await valTask);
+            Assert.False(wasExecuted, "Callback should not be executed in design-time mode.");
         }
 
         [Fact]
