@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Services;
 using Servy.Testing;
@@ -13,13 +14,17 @@ namespace Servy.Restarter.UnitTests
     public class ServiceRestarterTests
     {
         private readonly Mock<IServiceControllerWrapper> _mockController;
+        private readonly Mock<IServyLogger> _mockLogger;
         private readonly ServiceRestarter _restarter;
+        private readonly ServiceRestarter _restarterWithLogger;
 
         public ServiceRestarterTests()
         {
             _mockController = new Mock<IServiceControllerWrapper>();
+            _mockLogger = new Mock<IServyLogger>();
             // Inject factory returning the mock controller
             _restarter = new ServiceRestarter(name => _mockController.Object);
+            _restarterWithLogger = new ServiceRestarter(name => _mockController.Object, _mockLogger.Object);
         }
 
         #region Factory Initialization Tests
@@ -808,8 +813,8 @@ namespace Servy.Restarter.UnitTests
             _mockController.SetupSequence(c => c.Refresh())
                 .Throws(probeException) // Recovery poll 1: drives the transitional catch
                 .Throws(probeException) // Re-probe inside that catch: not gone, so the loop must go on
-                .Pass()                 // Recovery poll 2
-                .Pass();                // Start-phase refresh
+                .Pass()                  // Recovery poll 2
+                .Pass();                 // Start-phase refresh
 
             // Act
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
@@ -839,6 +844,260 @@ namespace Servy.Restarter.UnitTests
             Assert.Equal(RestartResult.Restarted, result);
             _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        #endregion
+
+        #region Logger Telemetry Coverage Tests
+
+        [Fact]
+        public void RestartService_WithLogger_LogsFullSuccessfulLifecycle()
+        {
+            // Arrange
+            var currentStatus = ServiceControllerStatus.StartPending;
+            _mockController.Setup(c => c.Status).Returns(() => currentStatus);
+
+            _mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (currentStatus == ServiceControllerStatus.StartPending)
+                {
+                    currentStatus = ServiceControllerStatus.Running;
+                }
+            });
+
+            _mockController.Setup(c => c.Stop()).Callback(() =>
+            {
+                currentStatus = ServiceControllerStatus.Stopped;
+            });
+
+            _mockController.Setup(c => c.Start()).Callback(() =>
+            {
+                currentStatus = ServiceControllerStatus.Running;
+            });
+
+            // Act
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("is currently in pending state")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Issuing Stop command")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("successfully reached Stopped state")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Issuing Start command")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("successfully reached Running state")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_LogsAlreadyStoppedAndAlreadyRunning()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Running);
+
+            // Act
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("is already Stopped; skipping stop phase")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("is already Running; no start required")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_LogsSettlePhaseDisappearanceAndTimeout()
+        {
+            // Arrange - Disappearance in settle phase status read
+            _mockController.Setup(c => c.Status).Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Settle-phase status read failed")), It.IsAny<Exception>()), Times.Once);
+
+            // Arrange - Disappearance in settle phase refresh call
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
+            _mockController.Setup(c => c.Refresh()).Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+
+            result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Settle-phase controller refresh failed")), It.IsAny<Exception>()), Times.Once);
+
+            // Arrange - Settle timeout
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
+
+            Assert.Throws<System.TimeoutException>(() =>
+                _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterStuckInPendingStateTimeout));
+
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Timeout expired while waiting for service")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_LogsStopAndStartPhaseErrorsAndDisappearance()
+        {
+            // 1. Stop entry status failure (disappearance)
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)
+                .Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Stop-phase entry status check failed")), It.IsAny<Exception>()), Times.Once);
+
+            // 2. Stop issued but no budget remaining
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)
+                .Returns(ServiceControllerStatus.Running);
+
+            Assert.Throws<System.TimeoutException>(() => _restarterWithLogger.RestartService("MyService", TimeSpan.Zero));
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Timeout expired before wait could begin for service")), It.IsAny<Exception>()), Times.Once);
+
+            // 3. Stop WaitForStatus timeout
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)
+                .Returns(ServiceControllerStatus.Running);
+            _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()))
+                .Throws<System.ServiceProcess.TimeoutException>();
+
+            Assert.Throws<System.TimeoutException>(() => _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("failed to reach Stopped state within")), It.IsAny<Exception>()), Times.Once);
+
+            // 4. Start initial refresh check failure (disappearance)
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped);
+            _mockController.Setup(c => c.Refresh()).Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+
+            result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Start-phase initial status check failed")), It.IsAny<Exception>()), Times.Once);
+
+            // 5. Start issued but no budget remaining
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped);
+
+            Assert.Throws<System.TimeoutException>(() => _restarterWithLogger.RestartService("MyService", TimeSpan.Zero));
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Timeout expired before wait could begin for service") && s.Contains("Running state")), It.IsAny<Exception>()), Times.Once);
+
+            // 6. Start WaitForStatus timeout
+            _mockController.Reset();
+            _mockLogger.Reset();
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped);
+            _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()))
+                .Throws<System.ServiceProcess.TimeoutException>();
+
+            Assert.Throws<System.TimeoutException>(() => _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("failed to reach Running state within")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_LogsTransitionalRecoveryLoop()
+        {
+            // 1. Direct Stop operation fails -> entering transitional recovery
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)
+                .Returns(ServiceControllerStatus.Running)
+                .Returns(ServiceControllerStatus.Running)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped);
+
+            _mockController.Setup(c => c.Stop()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.Restarted, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Stop operation failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Entering transitional recovery loop")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Re-issuing Stop command")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("reached target state")), It.IsAny<Exception>()), Times.AtLeastOnce());
+
+            // 2. Direct Start operation fails -> entering transitional recovery
+            _mockController.Reset();
+            _mockLogger.Reset();
+
+            var currentStatus = ServiceControllerStatus.Stopped;
+            _mockController.Setup(c => c.Status).Returns(() => currentStatus);
+
+            var startCallCount = 0;
+            _mockController.Setup(c => c.Start()).Callback(() =>
+            {
+                startCallCount++;
+                if (startCallCount == 1)
+                {
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                }
+            });
+
+            // Transition to Running on Refresh inside HandleTransitionalError after the initial Start attempt
+            _mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (startCallCount > 0)
+                {
+                    currentStatus = ServiceControllerStatus.Running;
+                }
+            });
+
+            result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.Restarted, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Start operation failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Entering transitional recovery loop")), It.IsAny<Exception>()), Times.Once);
+
+            // 3. Transitional recovery pending branch and post-exception probe failure
+            _mockController.Reset();
+            _mockLogger.Reset();
+
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)
+                .Returns(ServiceControllerStatus.Running);
+
+            _mockController.Setup(c => c.Stop()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+
+            var probeEx = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _mockController.SetupSequence(c => c.Refresh())
+                .Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                .Throws(probeEx);
+
+            result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Transitional error poll encountered exception")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Post-exception status probe failed")), It.IsAny<Exception>()), Times.Once);
+
+            // 4. Transitional recovery exhausted timeout
+            _mockController.Reset();
+            _mockLogger.Reset();
+
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockController.Setup(c => c.Stop()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+
+            Assert.Throws<System.TimeoutException>(() =>
+                _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterMidLoopExpiryBudget));
+
+            _mockLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Transitional recovery loop exhausted full timeout")), It.IsAny<Exception>()), Times.Once);
         }
 
         #endregion
