@@ -1051,7 +1051,8 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            // Reopen handle now requires SERVICE_READ_CONTROL and SERVICE_WRITE_DAC for GrantServiceControlRights
+            // The reopen, which asks for SERVICE_READ_CONTROL and SERVICE_WRITE_DAC as well so that
+            // GrantServiceControlRights can edit the service DACL, succeeds this time...
             var reopenHandle = _handles.Service(789);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG | SERVICE_READ_CONTROL | SERVICE_WRITE_DAC))
                 .Returns(reopenHandle);
