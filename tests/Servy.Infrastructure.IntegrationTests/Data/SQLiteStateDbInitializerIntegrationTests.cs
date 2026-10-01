@@ -152,6 +152,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     .Select(r => (string)r.name).ToList();
                 Assert.Contains("ActiveStdoutPath", columns);
                 Assert.Contains("ActiveStderrPath", columns);
+                Assert.Contains("PreviousStopTimeout", columns);
             }
         }
 
@@ -230,6 +231,21 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 .Select(r => (string)r.name).ToList();
         }
 
+        /// <summary>
+        /// Reads the declared type of one column of the runtime-state table.
+        /// </summary>
+        /// <remarks>
+        /// The declared type is what decides the column's affinity, so it is the only way to tell a
+        /// column the upgrade path added with its intended type from one it added as TEXT or untyped.
+        /// </remarks>
+        private static string ReadColumnType(DbConnection connection, string column)
+        {
+            return connection.Query($"PRAGMA table_info({StateSqlConstants.ServiceStateTableName});")
+                .Where(r => (string)r.name == column)
+                .Select(r => (string)r.type)
+                .Single();
+        }
+
         [Fact]
         public async Task Repository_RoundTripsTheRuntimeState()
         {
@@ -299,6 +315,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert
                 Assert.Contains("PreviousStopTimeout", ReadColumns(conn));
+                Assert.Equal("INTEGER", ReadColumnType(conn, "PreviousStopTimeout"));
                 Assert.Equal(7, conn.QuerySingle<int>($"SELECT Pid FROM {StateSqlConstants.ServiceStateTableName} WHERE Name = 'svc';"));
                 Assert.Null(conn.QuerySingleOrDefault<int?>($"SELECT PreviousStopTimeout FROM {StateSqlConstants.ServiceStateTableName} WHERE Name = 'svc';"));
             }
