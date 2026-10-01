@@ -338,6 +338,46 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void OnTickAsync_ServiceAlreadyStopped_LeavesGraphsAndLabelsUntouched()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    // The selection has no PID: the service was already stopped before this tick
+                    var mockService = new PerformanceService { Name = "ServyDaemon", Pid = null };
+                    vm.SelectedService = mockService;
+
+                    // Stop the background DispatcherTimer to prevent concurrent automatic ticks
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // Seed state that only ResetGraphsAndResynchronizePid would overwrite
+                    vm.CpuUsage = "50%";
+                    var cpuPoints = vm.CpuPointCollection;
+                    var stalePoint = new Point(-1, -1);
+                    cpuPoints.Add(stalePoint);
+
+                    // The service is still stopped, so the repository reports no PID again
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
+                                           .ReturnsAsync((int?)null);
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    task.GetAwaiter().GetResult();
+
+                    // Assert - a stopped -> stopped tick is a no-op; only the running -> stopped transition resets (#3339)
+                    Assert.Null(mockService.Pid);
+                    Assert.Equal("50%", vm.CpuUsage);
+                    Assert.Same(cpuPoints, vm.CpuPointCollection);
+                    Assert.Contains(stalePoint, vm.CpuPointCollection);
+                    _mockProcessHelper.Verify(p => p.GetProcessTreeMetrics(It.IsAny<int>()), Times.Never);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void OnTickAsync_PidChanged_ResetsGraphsAndCollectsForTheNewPid()
         {
             Helper.RunOnSTA(() =>
