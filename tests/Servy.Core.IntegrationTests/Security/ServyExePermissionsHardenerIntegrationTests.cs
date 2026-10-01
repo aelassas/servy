@@ -307,6 +307,32 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.True(Has((int)deny.FileSystemRights, FileSystemRights.WriteData));
         }
 
+        [Fact]
+        public void Harden_FileOwnedByAnotherAccount_IsReownedByAdministrators()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange - an elevated process creates files owned by BUILTIN\Administrators already, so hand one file a
+            //           different owner first: the current user's own SID, which any token may set as owner.
+            CreateVault();
+            var exe = Path.Combine(_vault, AppConfig.ServyServiceUIExe);
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                var acl = new FileInfo(exe).GetAccessControl();
+                acl.SetOwner(identity.User);
+                new FileInfo(exe).SetAccessControl(acl);
+                Assert.Equal(identity.User, new FileInfo(exe).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+
+                // Act
+                var result = _sut.Harden(TargetAccount, CancellationToken.None);
+
+                // Assert
+                Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
+                Assert.Contains(AppConfig.ServyServiceUIExe, result.Hardened);
+                Assert.Equal(AdministratorsSid, new FileInfo(exe).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+            }
+        }
+
         #endregion
 
         #region Missing and optional files
