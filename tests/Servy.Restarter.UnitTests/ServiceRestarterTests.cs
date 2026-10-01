@@ -846,6 +846,184 @@ namespace Servy.Restarter.UnitTests
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StopReportsServiceGone_ReturnsServiceNotFoundWithoutStart(bool throwInvalidOperation)
+        {
+            // Arrange
+            // Closed #6738 added the gone/non-gone pairs for the status-read catches only; the three
+            // command-site catches were left with no "gone" case, so the Stop command itself reporting
+            // the service as uninstalled was unpinned.
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.Setup(c => c.Stop()).Throws(exceptionToThrow);
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Stop(), Times.Once);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StopRefusedPermanently_PropagatesExceptionWithoutRecoveryOrStart(bool throwInvalidOperation)
+        {
+            // Arrange
+            // Closed #6505: a permanent SCM refusal (access denied, a disabled service, a logon failure)
+            // used to be retried as a pending transition for the whole budget and surfaced as a
+            // TimeoutException with no cause. The stop-phase rethrow is what keeps the real error visible.
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            var refusal = new Win32Exception(Errors.ERROR_ACCESS_DENIED);
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Access denied", refusal)
+                : (Exception)refusal;
+
+            _mockController.Setup(c => c.Stop()).Throws(exceptionToThrow);
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            // The original instance must surface unwrapped, which is what the bare rethrow guarantees.
+            Assert.Same(exceptionToThrow, thrown);
+            Assert.IsNotType<System.TimeoutException>(thrown);
+            // Times.Once is the assertion that pins the rethrow itself: without it the refusal reaches
+            // the recovery loop, which re-issues Stop() on the next poll.
+            _mockController.Verify(c => c.Stop(), Times.Once);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StartReportsServiceGone_ReturnsServiceNotFound(bool throwInvalidOperation)
+        {
+            // Arrange
+            // Stopped throughout skips the stop phase and takes the start-phase pre-check past Running,
+            // so the Start command is the first thing that can fail.
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.Setup(c => c.Start()).Throws(exceptionToThrow);
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_StartRefusedPermanently_PropagatesExceptionWithoutRecovery(bool throwInvalidOperation)
+        {
+            // Arrange
+            // The start-phase half of closed #6505, with the same consequence if the rethrow is lost.
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            var refusal = new Win32Exception(Errors.ERROR_ACCESS_DENIED);
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Access denied", refusal)
+                : (Exception)refusal;
+
+            _mockController.Setup(c => c.Start()).Throws(exceptionToThrow);
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Same(exceptionToThrow, thrown);
+            Assert.IsNotType<System.TimeoutException>(thrown);
+            // Without the rethrow the refusal enters recovery, which re-issues Start() on the next poll.
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_RecoveryPollReportsServiceGone_ReturnsServiceNotFoundFromStartPhase(bool throwInvalidOperation)
+        {
+            // Arrange
+            // A transitional Start failure enters recovery; the recovery poll's own status read then
+            // reports the service gone. That is the only way the start-phase catch observes a
+            // ServiceNotFound coming back out of HandleTransitionalError.
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Service missing", new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST))
+                : (Exception)new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)  // Settle loop check: stable
+                .Returns(ServiceControllerStatus.Stopped)  // Stop-phase entry check: nothing to stop
+                .Returns(ServiceControllerStatus.Stopped)  // Start-phase pre-check: not Running
+                .Throws(exceptionToThrow);                 // Recovery poll 1: the service is gone
+
+            _mockController.Setup(c => c.Start()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+
+            // Act
+            var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            // ServiceNotFound rather than Restarted: the start-phase catch must return what the
+            // recovery reported instead of falling through to its own success result.
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_RecoveryPollRefusedPermanently_PropagatesException(bool throwInvalidOperation)
+        {
+            // Arrange
+            // The recovery-loop half of closed #6505: a permanent refusal raised by the poll itself
+            // must leave the loop at once instead of being polled to the end of the budget.
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            var refusal = new Win32Exception(Errors.ERROR_ACCESS_DENIED);
+            var exceptionToThrow = throwInvalidOperation
+                ? new InvalidOperationException("Access denied", refusal)
+                : (Exception)refusal;
+
+            _mockController.SetupSequence(c => c.Refresh())
+                .Pass()                    // Start-phase refresh
+                .Throws(exceptionToThrow); // Recovery poll 1: permanently refused
+
+            _mockController.Setup(c => c.Start()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+
+            // Act
+            var thrown = Record.Exception(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Same(exceptionToThrow, thrown);
+            Assert.IsNotType<System.TimeoutException>(thrown);
+            // Without the rethrow the loop treats the refusal as a transition and re-issues Start().
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
         #endregion
 
         #region Logger Telemetry Coverage Tests
