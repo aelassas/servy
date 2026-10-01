@@ -182,6 +182,10 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments()
         {
             // Arrange
+            // Every value below differs from the default InstallServiceOptions already initialises the
+            // matching member to, so dropping any one assignment in Service.InstallAsync leaves the
+            // captured option at its default and fails the matching Assert.Equal. A value equal to the
+            // default pins nothing: the assertion compares equal values either way.
             var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
@@ -190,27 +194,27 @@ namespace Servy.Core.UnitTests.Domain
                 ExecutablePath = "C:\\real.exe",
                 StartupDirectory = @"C:\MyApp",
                 Parameters = "--arg1",
-                StartupType = ServiceStartType.Automatic,
-                Priority = ProcessPriority.Normal,
+                StartupType = ServiceStartType.Manual,          // default Automatic
+                Priority = ProcessPriority.AboveNormal,         // default Normal
                 CpuAffinity = "0-3",
-                EnableConsoleUI = false,
+                EnableConsoleUI = true,                         // default false
                 StdoutPath = "C:\\stdout.log",
                 StderrPath = "C:\\stderr.log",
                 EnableSizeRotation = false,
                 RotationSize = 3,
-                EnableDateRotation = false,
-                DateRotationType = DateRotationType.Daily,
+                EnableDateRotation = true,                      // default false
+                DateRotationType = DateRotationType.Weekly,     // default Daily
                 MaxRotations = 5,
-                UseLocalTimeForRotation = false,
+                UseLocalTimeForRotation = true,                 // default false
                 EnableHealthMonitoring = false,
-                HeartbeatInterval = 30,
-                MaxFailedChecks = 3,
+                HeartbeatInterval = 45,                         // default 30
+                MaxFailedChecks = 7,                            // default 3
                 HeartbeatUrl = "http://localhost:8080/health",
-                HeartbeatUrlTimeoutSeconds = 10,
+                HeartbeatUrlTimeoutSeconds = 15,                // default 10
                 EnableHeartbeatUrlFlags = true,
                 RecoveryAction = RecoveryAction.None,
-                RecoveryOnCleanExit = false,
-                MaxRestartAttempts = 3,
+                RecoveryOnCleanExit = true,                     // default false
+                MaxRestartAttempts = 9,                         // default 3
                 RunAsLocalSystem = false,
                 UserAccount = @".\user",
                 Password = "secret",
@@ -220,8 +224,8 @@ namespace Servy.Core.UnitTests.Domain
                 PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
                 PreLaunchStdoutPath = "C:\\pre-launch-stdout.log",
                 PreLaunchStderrPath = "C:\\pre-launch-stderr.log",
-                PreLaunchTimeoutSeconds = 30,
-                PreLaunchRetryAttempts = 0,
+                PreLaunchTimeoutSeconds = 40,                   // default 30
+                PreLaunchRetryAttempts = 2,                     // default 0
                 PreLaunchIgnoreFailure = true,
                 FailureProgramPath = "C:\\failure-program.exe",
                 FailureProgramStartupDirectory = "C:\\failureProgramDir",
