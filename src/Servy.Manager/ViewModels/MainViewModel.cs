@@ -442,9 +442,24 @@ namespace Servy.Manager.ViewModels
                     stopwatch.Stop();
                     Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {stopwatch.ElapsedMilliseconds} ms");
 
+                    // Superseded while the rows were being built (#1796): do not replace the newer search's grid.
+                    if (token.IsCancellationRequested)
+                    {
+                        foreach (var vm in vms) vm.Dispose();
+                        return 0;
+                    }
+
                     // fetchAndApplyAsync 3 of 4: update collection on UI thread
                     await _dispatcher.InvokeAsync(() =>
                     {
+                        // Re-checked on the UI thread: the callback is queued at Background priority, so a newer
+                        // search can cancel this one between the check above and this point.
+                        if (token.IsCancellationRequested)
+                        {
+                            foreach (var vm in vms) vm.Dispose();
+                            return;
+                        }
+
                         // Mutual exclusion: prevents the background refresh thread from
                         // accessing the collection while we are rebuilding it.
                         lock (_servicesLock)
