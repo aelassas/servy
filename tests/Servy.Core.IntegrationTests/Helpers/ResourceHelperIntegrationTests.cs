@@ -572,6 +572,46 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public async Task CopyEmbeddedResource_WhenCopyAbortedAndRestartFails_LogsNotCopied()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                string fileName = "abortrestartfailapp";
+                string extension = "exe";
+                var testServices = new List<string> { "Servy_Service_A" };
+
+                _fakeAssembly.OnGetManifestResourceStream = name => new MemoryStream(new byte[] { 0x01 });
+                _mockServiceHelper.Setup(s => s.GetRunningServyServices()).Returns(testServices);
+
+                // The caller cancels while the services are being stopped, so the cancellation boundary
+                // right before the copy fires and copyDone is never set.
+                _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>()))
+                                  .Returns(() => { cts.Cancel(); return Task.CompletedTask; });
+                _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>()))
+                                  .ThrowsAsync(new InvalidOperationException("restart boom"));
+
+                // Act
+                var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
+                    _fakeAssembly,
+                    "Servy.Resources",
+                    fileName,
+                    extension,
+                    stopServices: true,
+                    cancellationToken: cts.Token));
+
+                // Assert
+                Assert.False(result);
+                Assert.False(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
+
+                // The #1817 wording: an aborted copy must never be reported as copied.
+                Assert.Contains("was NOT copied to", textLogOutput);
+                Assert.DoesNotContain("was successfully copied to", textLogOutput);
+                Assert.Contains("restart boom", textLogOutput);
+            }
+        }
+
+        [Fact]
         public async Task CopyEmbeddedResource_WhenCancelledBeforeTermination_ReturnsFalse()
         {
             // Arrange
