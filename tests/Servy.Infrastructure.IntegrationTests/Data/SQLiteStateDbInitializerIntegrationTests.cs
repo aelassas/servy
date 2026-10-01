@@ -133,7 +133,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_ColumnMissingFromAnExistingTable_IsAddedBack()
         {
-            // Arrange - a table that predates two of the runtime-state columns
+            // Arrange - a table that predates three of the runtime-state columns (every one after Pid)
             using (var conn = OpenConnection())
             {
                 conn.Execute($@"
@@ -177,7 +177,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_NewerSchemaOnDisk_DoesNotAddBackAColumnTheFileDropped()
         {
-            // Arrange - a file written by a newer Servy that no longer carries two of the columns
+            // Arrange - a file written by a newer Servy that no longer carries three of the columns
             // this build knows about. Reconciling it would ADD COLUMN them back, which is the
             // downgrade the warning says does not happen.
             using (var conn = OpenConnection())
