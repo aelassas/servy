@@ -459,6 +459,43 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void OnTickAsync_MonitoringCancelledDuringPidLookup_DropsTheTick()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    var mockService = new PerformanceService { Name = "ServyDaemon", Pid = 2050 };
+                    vm.SelectedService = mockService;
+
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // Seed a label that only the PID-changed branch's graph reset would overwrite
+                    vm.CpuUsage = "50%";
+
+                    // Monitoring is cancelled while the repository call is in flight, and the selection is
+                    // kept, so the token term of the drop guard is the only thing that can stop this tick.
+                    // The repository reports a different PID, which is what the guarded branch would adopt.
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
+                                           .Callback(() => TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts").Cancel())
+                                           .ReturnsAsync(9999);
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    task.GetAwaiter().GetResult();
+
+                    // Assert - a tick whose monitoring session was cancelled during the PID lookup
+                    // writes nothing back to the selection it was started for
+                    Assert.Equal(2050, mockService.Pid);
+                    Assert.Equal("50%", vm.CpuUsage);
+                    _mockProcessHelper.Verify(p => p.GetProcessTreeMetrics(It.IsAny<int>()), Times.Never);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void OnTickAsync_MonitoringCancelledDuringMetricCollection_DropsTheTick()
         {
             Helper.RunOnSTA(() =>
