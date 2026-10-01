@@ -479,8 +479,35 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(1, Environment.ExitCode);
-            // Confirms that the catch-all execution path was hit using the initialized scoped logger
+            // Confirms that the catch-all execution path was hit using the initialized scoped logger.
+            // The service-name prefix is what only the scoped logger can add, so asserting it pins
+            // the "scoped first" half of the scoped > root > static order rather than merely that
+            // some logger reported the failure.
+            AssertLogContainsMessage("[Invalid\\Service/Path:Characters] Servy.Restarter.exe failed to restart the service.");
+        }
+
+        [Fact]
+        public void Run_SettingsFileUnparsable_HitsCatchAllViaRootLogger()
+        {
+            // Arrange
+            // The root logger exists (Step 1 succeeded) but ConfigurationBuilder.Build() throws on the
+            // unparsable file before Step 4 creates the scoped logger, so the catch-all has only the
+            // root logger - the middle arm of scoped > root > static. optional: true covers a missing
+            // file, not a malformed one.
+            string serviceName = "ServiceWithUnparsableRestarterSettings";
+            File.WriteAllText(_tempConfigPath, "{ \"RestartTimeoutSeconds\": ");
+            var environment = new FakeRestarterBootstrapEnvironment();
+
+            // Act
+            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            Assert.Equal(1, Environment.ExitCode);
             AssertLogContainsMessage("Servy.Restarter.exe failed to restart the service.");
+            // The root logger carries no scope, and the static arm is a different sentence: together
+            // these two pin the middle arm specifically.
+            AssertLogDoesNotContainMessage($"[{serviceName}] Servy.Restarter.exe failed to restart the service.");
+            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to initialize or execute.");
         }
 
         #endregion
