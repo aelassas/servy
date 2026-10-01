@@ -909,8 +909,8 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert: the original was never moved aside, so it is still there untouched.
             Assert.Equal("original-content", File.ReadAllText(targetPath));
 
-            // The fallback stages a second "*.tmp" sibling (the backup) beside the staging file, so a
-            // failing call has two of them to clean up rather than one.
+            // No "*.tmp" may be left behind: the finally block removes the staging file, and the backup
+            // the fallback names with the same suffix is never created here, because the move-aside is blocked.
             var leftovers = Directory.GetFiles(tempDir, "*.tmp");
             Assert.Empty(leftovers);
         }
@@ -1193,8 +1193,8 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert: the original was never moved aside, so it is still there untouched.
             Assert.Equal("original-content", File.ReadAllText(targetPath));
 
-            // The fallback stages a second "*.tmp" sibling (the backup) beside the staging file, so a
-            // failing call has two of them to clean up rather than one.
+            // No "*.tmp" may be left behind: the finally block removes the staging file, and the backup
+            // the fallback names with the same suffix is never created here, because the move-aside is blocked.
             var leftovers = Directory.GetFiles(tempDir, "*.tmp");
             Assert.Empty(leftovers);
         }
