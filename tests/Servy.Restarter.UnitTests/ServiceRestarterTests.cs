@@ -170,9 +170,8 @@ namespace Servy.Restarter.UnitTests
             var result = _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
-            // No test up to this point lets Stop() AND WaitForStatus(Stopped, ...) both return normally;
-            // every other Stop-phase test either skips the stop block entirely (already Stopped) or makes
-            // one of the two calls throw to exercise the timeout / transitional-error branches instead.
+            // Stop() and WaitForStatus(Stopped, ...) both return normally, so the stop phase completes
+            // and execution proceeds to the start phase instead of a timeout or transitional-error branch.
             Assert.Equal(RestartResult.Restarted, result);
             _mockController.Verify(c => c.Stop(), Times.Once);
             _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()), Times.Once);
@@ -479,9 +478,8 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             // The handler's catch filter lists System.ServiceProcess.TimeoutException next to
-            // InvalidOperationException and Win32Exception, but no test makes WaitForStatus throw
-            // inside the handler: the two WaitForStatus-throw tests exercise the outer wrap branches
-            // and never reach it. Without that arm a wait timeout inside the handler propagates as a
+            // InvalidOperationException and Win32Exception. Here WaitForStatus throws inside the handler,
+            // which only that term catches: without it a wait timeout inside the handler propagates as a
             // raw ServiceProcess.TimeoutException instead of being retried until the budget expires.
             var currentStatus = ServiceControllerStatus.Running;
             var stopCallCount = 0;
