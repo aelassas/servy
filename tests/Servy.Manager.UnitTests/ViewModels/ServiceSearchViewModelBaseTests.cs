@@ -252,6 +252,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
                 .Returns(tcs.Task);
 
+            // Stands in for the rows the newer search owns. Services is the UI state the #1796 guard
+            // protects, so the stale search must leave this exact row in place.
+            var currentRow = new Mock<ServiceItemBase>().Object;
+            _sut.Services.Add(currentRow);
+
             var executionTask = _sut.SearchCommand.ExecuteAsync(null);
             var executionTokenSource = _sut.GetCancellationTokenSource();
 
@@ -270,6 +275,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.True(_sut.IsBusy);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Never);
             Assert.Equal(Strings.Button_Searching, _sut.SearchButtonText);
+            Assert.Same(currentRow, Assert.Single(_sut.Services));
 
             // Clean up global mock allocations
             racingCts.Dispose();
