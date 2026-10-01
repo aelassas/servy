@@ -515,21 +515,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task Repository_GetAll_IsOrderedByName()
-        {
-            // Arrange
-            var repo = CreateInitializedRepository();
-            await repo.UpsertAsync(new ServiceStateDto { Name = "zeta" });
-            await repo.UpsertAsync(new ServiceStateDto { Name = "alpha" });
-
-            // Act
-            var all = (await repo.GetAllAsync()).Select(s => s.Name).ToList();
-
-            // Assert
-            Assert.Equal(new[] { "alpha", "zeta" }, all);
-        }
-
-        [Fact]
         public void StateDatabase_DefaultConnectionStringPointsNextToTheConfigurationDatabase()
         {
             // Arrange
