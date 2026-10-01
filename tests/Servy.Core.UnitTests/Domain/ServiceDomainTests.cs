@@ -182,10 +182,12 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments()
         {
             // Arrange
-            // Every value below differs from the default InstallServiceOptions already initialises the
-            // matching member to, so dropping any one assignment in Service.InstallAsync leaves the
-            // captured option at its default and fails the matching Assert.Equal. A value equal to the
-            // default pins nothing: the assertion compares equal values either way.
+            // Every value below except EnableSizeRotation and EnableHealthMonitoring differs from the
+            // default InstallServiceOptions already initialises the matching member to, so dropping any
+            // one assignment in Service.InstallAsync leaves the captured option at its default and fails
+            // the matching Assert.Equal. A value equal to the default pins nothing: the assertion compares
+            // equal values either way. The two false values are pinned with true by
+            // Install_ShouldCallServiceManagerWithCorrectArguments_NoWrapperExe instead.
             var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
