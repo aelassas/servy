@@ -181,8 +181,8 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             // The second way into Step 1's catch: the source registers, so EnsureEventSourceExists
-            // returns, and the primary CreateEventLogLogger(true) is what throws. Until now the fake
-            // could only fail every logger request, so this arm could not be arranged at all.
+            // returns, and the primary CreateEventLogLogger(true) is what throws while the fallback
+            // CreateEventLogLogger(false) still builds (FailOnlyEventLogEnabledLogger).
             string serviceName = "GhostServiceWithUnbuildableEventLogLogger";
             var environment = new FakeRestarterBootstrapEnvironment
             {
