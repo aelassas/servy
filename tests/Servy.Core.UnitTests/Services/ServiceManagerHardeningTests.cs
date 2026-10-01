@@ -6,6 +6,8 @@ using Servy.Core.Enums;
 using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.ServiceProcess;
@@ -26,8 +28,12 @@ namespace Servy.Core.UnitTests.Services
     /// before granting the new account's (#7221).
     /// <see cref="ServiceManager.UninstallServiceAsync"/> revokes the removed service's account after the delete,
     /// including for an orphan database record, and skips it for Local System and for a failed delete. Neither
-    /// call is ever allowed to turn a successful install or uninstall into a failed one.
+    /// call is ever allowed to turn a successful install or uninstall into a failed one. Because every one of
+    /// those failures is swallowed, the log line it writes is the only signal an operator gets that a security
+    /// step did not happen, so the five failure arms assert it. Those tests drive the static logger - hence the
+    /// sequential logger collection.
     /// </summary>
+    [Collection(LoggerCollection.Name)]
     public class ServiceManagerHardeningTests : IDisposable
     {
         private const string ServiceName = "HardenedService";
@@ -159,7 +165,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task InstallService_HardeningReportsFailure_InstallStillSucceeds()
+        public async Task InstallService_HardeningReportsFailure_InstallStillSucceedsAndLogsAWarning()
         {
             // Arrange
             var serviceHandle = ArrangeServiceCreated();
@@ -167,15 +173,19 @@ namespace Servy.Core.UnitTests.Services
             var options = CreateOptions(@".\svc-account");
 
             // Act
-            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+            var capture = await LogCapture.RunAsync(() => _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None));
 
             // Assert
-            Assert.True(result.IsSuccess);
+            Assert.True(capture.Result.IsSuccess);
             _windowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Never);
+
+            // The install succeeded either way, so this line is the only thing that tells an operator the
+            // hardening did not fully apply; deleting it makes the two outcomes identical in the log.
+            Assert.Contains($@"[WARN] | Servy's file permissions were not fully hardened for '.\svc-account' (service '{ServiceName}')", capture.Log);
         }
 
         [Fact]
-        public async Task InstallService_HardeningThrows_InstallStillSucceedsAndIsNotRolledBack()
+        public async Task InstallService_HardeningThrows_InstallStillSucceedsIsNotRolledBackAndLogsAnError()
         {
             // Arrange
             var serviceHandle = ArrangeServiceCreated();
@@ -184,11 +194,14 @@ namespace Servy.Core.UnitTests.Services
             var options = CreateOptions(@".\svc-account");
 
             // Act
-            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+            var capture = await LogCapture.RunAsync(() => _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None));
 
             // Assert
-            Assert.True(result.IsSuccess);
+            Assert.True(capture.Result.IsSuccess);
             _windowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Never);
+
+            // The exception is swallowed, so the error line is the only trace of it.
+            Assert.Contains($@"[ERROR] | Hardening Servy's file permissions for '.\svc-account' (service '{ServiceName}') failed.", capture.Log);
         }
 
         [Fact]
@@ -495,7 +508,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task InstallService_RevokingTheServiceControlRightsThrows_InstallStillSucceeds()
+        public async Task InstallService_RevokingTheServiceControlRightsThrows_InstallStillSucceedsAndLogsAnError()
         {
             // Arrange
             ArrangeServiceAlreadyExists();
@@ -505,11 +518,15 @@ namespace Servy.Core.UnitTests.Services
             var options = CreateOptions(@".\svc-account");
 
             // Act
-            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+            var capture = await LogCapture.RunAsync(() => _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None));
 
             // Assert
-            Assert.True(result.IsSuccess);
+            Assert.True(capture.Result.IsSuccess);
             _windowsServiceApi.Verify(x => x.GrantServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\svc-account"), Times.Once);
+
+            // The former account keeps its control over the service object and nothing fails, so without this
+            // line the leftover grant is invisible.
+            Assert.Contains($@"[ERROR] | Revoking the service control rights of '.\old-account' (service '{ServiceName}') failed.", capture.Log);
         }
 
         [Fact]
@@ -581,7 +598,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task UninstallService_RevocationReportsFailure_UninstallStillSucceeds()
+        public async Task UninstallService_RevocationReportsFailure_UninstallStillSucceedsAndLogsAWarning()
         {
             // Arrange
             ArrangeUninstall(deleteSucceeds: true);
@@ -589,14 +606,17 @@ namespace Servy.Core.UnitTests.Services
             _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            var result = await CreateUninstallManager().UninstallServiceAsync(ServiceName, CancellationToken.None);
+            var capture = await LogCapture.RunAsync(() => CreateUninstallManager().UninstallServiceAsync(ServiceName, CancellationToken.None));
 
             // Assert
-            Assert.True(result.IsSuccess);
+            Assert.True(capture.Result.IsSuccess);
+
+            // The uninstalled service's account keeps its vault grant; the warning is the only report of it.
+            Assert.Contains($@"[WARN] | The vault access of '.\svc-account' was not fully revoked after service '{ServiceName}' stopped using it.", capture.Log);
         }
 
         [Fact]
-        public async Task UninstallService_RevocationThrows_UninstallStillSucceeds()
+        public async Task UninstallService_RevocationThrows_UninstallStillSucceedsAndLogsAnError()
         {
             // Arrange
             ArrangeUninstall(deleteSucceeds: true);
@@ -605,10 +625,13 @@ namespace Servy.Core.UnitTests.Services
                 .ThrowsAsync(new InvalidOperationException("ACL write failed"));
 
             // Act
-            var result = await CreateUninstallManager().UninstallServiceAsync(ServiceName, CancellationToken.None);
+            var capture = await LogCapture.RunAsync(() => CreateUninstallManager().UninstallServiceAsync(ServiceName, CancellationToken.None));
 
             // Assert
-            Assert.True(result.IsSuccess);
+            Assert.True(capture.Result.IsSuccess);
+
+            // The exception is swallowed, so the error line is the only trace of it.
+            Assert.Contains($@"[ERROR] | Revoking the vault access of '.\svc-account' (service '{ServiceName}') failed.", capture.Log);
         }
 
         /// <summary>
