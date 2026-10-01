@@ -15,7 +15,8 @@ namespace Servy.Core.UnitTests.Services
     /// Covers the calls <see cref="ServiceManager"/> makes to <see cref="IServyExePermissionsHardener"/>.
     /// <see cref="ServiceManager.InstallServiceAsync"/> hardens for an account other than Local System, on both the
     /// "created" and the "already existed, reconfigured" paths, skipped for Local System and for a failed install.
-    /// It also revokes the previous account's access when a reconfigured service moves to another account (#7161).
+    /// It also revokes the previous account's access when a reconfigured service moves to another account (#7161),
+    /// and the account of the stale-casing row a reinstall drops, on the success paths only (#7191).
     /// <see cref="ServiceManager.UninstallServiceAsync"/> revokes the removed service's account after the delete,
     /// including for an orphan database record, and skips it for Local System and for a failed delete. Neither
     /// call is ever allowed to turn a successful install or uninstall into a failed one.
@@ -335,6 +336,38 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
             _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_StaleCasingRowDroppedThenInstallFails_RestoresTheRowAndRevokesNothing()
+        {
+            // Arrange: the casing-variance block drops the stale row (the SCM no longer has it), then CreateService
+            // fails and the service is not listed either, so the install fails and ExecuteDatabaseRecoveryAsync
+            // restores the row. The restored row still runs under its own account, so nothing may be revoked:
+            // that is why ServiceManager.cs waits for the success paths instead of revoking straight after the drop.
+            const string legacyName = "hardenedservice";
+            _windowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo>());
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = legacyName, RunAsLocalSystem = false, UserAccount = @".\old-account" });
+            _serviceRepository.Setup(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            _windowsServiceApi.Setup(x => x.CreateService(
+                    It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
+                    It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(_handles.Service(0));
+            _win32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5); // ERROR_ACCESS_DENIED
+            var options = CreateOptions(@".\new-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
+            _serviceRepository.Verify(r => r.UpsertAsync(
+                It.Is<ServiceDto>(d => d.Name == legacyName), false, false, CancellationToken.None), Times.Once);
+            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
             _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
