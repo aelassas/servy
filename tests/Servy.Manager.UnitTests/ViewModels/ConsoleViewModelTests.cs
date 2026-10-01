@@ -560,14 +560,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var service = new Service { Name = "EngineService" };
 
                     // Act
-                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as ConsoleService;
+                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service);
 
                     // Assert
-                    var unused = result ?? throw new InvalidOperationException("Result mapping cannot be null");
-                    Assert.Equal("EngineService", result.Name);
-                    Assert.Null(result.Pid);
-                    Assert.Null(result.StdoutPath);
-                    Assert.Null(result.StderrPath);
+                    var item = Assert.IsType<ConsoleService>(result);
+                    Assert.Equal("EngineService", item.Name);
+                    Assert.Null(item.Pid);
+                    Assert.Null(item.StdoutPath);
+                    Assert.Null(item.StderrPath);
                 }
             });
         }

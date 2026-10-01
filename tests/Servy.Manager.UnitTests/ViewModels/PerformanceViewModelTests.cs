@@ -538,12 +538,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var service = new Service { Name = "EngineService", Pid = 4321 };
 
                     // Act
-                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as PerformanceService;
+                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service);
 
                     // Assert
-                    var unused = result ?? throw new InvalidOperationException("Result mapping cannot be null");
-                    Assert.Equal("EngineService", result.Name);
-                    Assert.Equal(4321, result.Pid);
+                    var item = Assert.IsType<PerformanceService>(result);
+                    Assert.Equal("EngineService", item.Name);
+                    Assert.Equal(4321, item.Pid);
                 }
             });
         }
@@ -561,12 +561,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act
                     // The override tolerates a null row via ?. - closed #2843 changed this from throwing,
                     // so the tolerant behaviour is pinned separately from the valid-input mapping.
-                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", (Service)null) as PerformanceService;
+                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", (Service)null);
 
                     // Assert
-                    var unused = result ?? throw new InvalidOperationException("Result mapping cannot be null");
-                    Assert.Null(result.Name);
-                    Assert.Null(result.Pid);
+                    var item = Assert.IsType<PerformanceService>(result);
+                    Assert.Null(item.Name);
+                    Assert.Null(item.Pid);
                 }
             });
         }
