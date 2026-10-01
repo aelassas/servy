@@ -6,7 +6,7 @@ namespace Servy.Core.DTOs
     /// <remarks>
     /// These values live in the separate runtime-state database (<c>Servy.state.db</c>) rather than in
     /// the configuration database (<c>Servy.db</c>). The split exists so a service log-on account can be
-    /// granted write access to its own runtime state without being able to write any service's
+    /// granted write access to the runtime state without being able to write any service's
     /// configuration. Nothing here is configuration: every property is produced by the wrapper at run
     /// time and is meaningless until the service has started at least once.
     /// <para>
