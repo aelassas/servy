@@ -416,6 +416,31 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_ExistingServiceMovedToAnotherAccount_RevokesTheServiceControlRightsBeforeTheGrant()
+        {
+            // Arrange: the revocation must come first. RevokeServiceControlRightsIfAccountChanged skips only on a
+            // case-insensitive string match, so a former account that is the same SID under another spelling
+            // (.\alice -> alice) is still revoked by SID - and granting first would have that revocation take back
+            // the grant just written, leaving the service's own account with no control over its service. Both calls
+            // log and swallow, so only an explicit order assertion can pin the sequence.
+            ArrangeServiceAlreadyExists();
+            ArrangeRecord(@".\old-account");
+            var order = new List<string>();
+            _windowsServiceApi.Setup(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()))
+                .Callback(() => order.Add("revoke"));
+            _windowsServiceApi.Setup(x => x.GrantServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()))
+                .Callback(() => order.Add("grant"));
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal(new[] { "revoke", "grant" }, order);
+        }
+
+        [Fact]
         public async Task InstallService_ExistingServiceMovedToLocalSystem_RevokesThePreviousAccountsServiceControlRights()
         {
             // Arrange: Local System gets no grant of its own, so the former account's is the only one left to remove
