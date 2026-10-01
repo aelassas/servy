@@ -831,7 +831,7 @@ namespace Servy.Core.IntegrationTests.Security
             if ((expected & FileSystemRights.Delete) == 0)
                 Assert.False(Has((int)files.FileSystemRights, FileSystemRights.Delete), $"the files in {path} are not deletable");
 
-            // Nothing above the rights GetWritableFolderFileRights names on the files created in it either.
+            // The rule the files created in it inherit carries neither of those two rights either.
             Assert.False(Has((int)files.FileSystemRights, FileSystemRights.ChangePermissions), $"the files in {path} are not re-ACLable by the target");
             Assert.False(Has((int)files.FileSystemRights, FileSystemRights.TakeOwnership), $"the files in {path} are not re-ownable by the target");
 
