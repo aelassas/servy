@@ -228,19 +228,7 @@ namespace Servy.Core.Validation
                 }
 
                 string normalizedPath = finalPathName;
-                bool unwrappedUnc = false;
-
-                if (normalizedPath.StartsWith(ExtendedUncPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    normalizedPath = @"\\" + normalizedPath.Substring(ExtendedUncPrefix.Length);
-                    unwrappedUnc = true;
-                }
-                else if (normalizedPath.StartsWith(ExtendedPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    normalizedPath = normalizedPath.Substring(ExtendedPrefix.Length);
-                }
-
-                bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
+                bool finalIsUnc = Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc;
 
                 if (normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
                 {
