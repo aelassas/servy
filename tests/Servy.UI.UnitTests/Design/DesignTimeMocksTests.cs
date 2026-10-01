@@ -228,7 +228,7 @@ namespace Servy.UI.UnitTests.Design
             Task task = _dispatcher.InvokeAsync(() => { wasExecuted = true; });
 
             // Assert
-            Assert.True(task.IsCompleted, "Task should be completed immediately.");
+            Assert.True(task.IsCompletedSuccessfully, "Task should be completed immediately.");
             Assert.False(wasExecuted, "Action should not be executed in design-time mode.");
         }
 
@@ -242,7 +242,7 @@ namespace Servy.UI.UnitTests.Design
             Task task = _dispatcher.InvokeAsync(() => wasExecuted = true, DispatcherPriority.Normal);
 
             // Assert
-            Assert.True(task.IsCompleted, "Task should be completed immediately.");
+            Assert.True(task.IsCompletedSuccessfully, "Task should be completed immediately.");
             Assert.False(wasExecuted, "Action should not be executed in design-time mode.");
         }
 
@@ -267,7 +267,7 @@ namespace Servy.UI.UnitTests.Design
             Task task = _dispatcher.YieldAsync();
 
             // Assert
-            Assert.True(task.IsCompleted, "YieldAsync task should return completed state.");
+            Assert.True(task.IsCompletedSuccessfully, "YieldAsync should return an already successfully completed task.");
         }
 
         #endregion
