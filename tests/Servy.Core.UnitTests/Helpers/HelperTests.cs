@@ -1423,6 +1423,33 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HasAncestorReparsePoint_WhenAncestorIsPlainJunction_ReturnsTrue()
+        {
+            // Arrange
+            // A junction whose print name is its own target, so nothing about it is spoofed:
+            // this is the ordinary IO_REPARSE_TAG_MOUNT_POINT shape the three symlink-backed
+            // tests above never create.
+            string realDir = Path.Combine(_testRoot, "RealDirForJunction");
+            string plainJunction = Path.Combine(_testRoot, "PlainJunction");
+            CreateJunctionWithSpoofedPrintName(plainJunction, realDir, Path.GetFullPath(realDir));
+
+            try
+            {
+                string targetPath = Path.Combine(plainJunction, "test.log");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetPath);
+
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(plainJunction, realDir);
+            }
+        }
+
+        [Fact]
         public void HasAncestorReparsePoint_WhenAncestorIsVolumeMountPoint_ReturnsFalse()
         {
             // Arrange: mount the temp directory's own volume on an empty folder under _testRoot, so
@@ -1483,48 +1510,6 @@ namespace Servy.Core.UnitTests.Helpers
         #endregion
 
         #region Reparse Points Management Helpers
-
-        /// <summary>
-        /// Represents the layout of a mount point or junction reparse data buffer for NTFS reparse point operations.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        private struct REPARSE_DATA_BUFFER
-        {
-            /// <summary>
-            /// Reparse point tag indicating the reparse point type (e.g., <see cref="IO_REPARSE_TAG_MOUNT_POINT"/>).
-            /// </summary>
-            public uint ReparseTag;
-
-            /// <summary>
-            /// Size, in bytes, of the reparse data that follows the common header fields.
-            /// </summary>
-            public ushort ReparseDataLength;
-
-            /// <summary>
-            /// Reserved field; unused.
-            /// </summary>
-            public ushort Reserved;
-
-            /// <summary>
-            /// Byte offset within the PathBuffer where the substitute name string begins.
-            /// </summary>
-            public ushort SubstituteNameOffset;
-
-            /// <summary>
-            /// Length, in bytes, of the substitute name string.
-            /// </summary>
-            public ushort SubstituteNameLength;
-
-            /// <summary>
-            /// Byte offset within the PathBuffer where the user-friendly print name string begins.
-            /// </summary>
-            public ushort PrintNameOffset;
-
-            /// <summary>
-            /// Length, in bytes, of the print name string.
-            /// </summary>
-            public ushort PrintNameLength;
-        }
 
         /// <summary>
         /// Creates or opens a file or I/O device.
