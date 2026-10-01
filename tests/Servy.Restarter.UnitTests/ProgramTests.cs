@@ -6,8 +6,10 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
+using Servy.Restarter.Bootstrap;
 using Servy.Testing;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SQLite;
 using System.IO;
@@ -105,19 +107,91 @@ namespace Servy.Restarter.UnitTests
         #region Event Log Fallback & Security Guard Coverage
 
         /*
-         * Note on Helper.EnsureEventSourceExists Exception Fallback Branch:
-         * The catch block around Helper.EnsureEventSourceExists() (Step 1) catches EventLog creation or
-         * access failures and falls back to file-only logging (EventLogLogger(..., isEventLogEnabled: false)).
-         * Because AppConfig.EventSource is a compile-time constant ("Servy") and Helper delegates directly to
-         * static System.Diagnostics.EventLog calls, triggering this exception in an integration test requires
-         * running in an environment without Windows Event Log registry access.
-         *
-         * Note on DatabaseValidator.IsSqliteVersionSafe False Path:
-         * The false branch of DatabaseValidator.IsSqliteVersionSafe inside Program.Main triggers a fatal exit
-         * when the loaded System.Data.SQLite library version is below AppConfig.MinRequiredSqliteVersion.
-         * Forcing this condition at the Program.Main integration level requires substituting the loaded native/managed
-         * SQLite provider assembly at runtime. The underlying version validation rules are fully covered in DatabaseValidatorTests.cs.
+         * The event source, the event-log logger and the SQLite version check are reached through
+         * IRestarterBootstrapEnvironment, so the three branches below no longer need a host without
+         * Windows Event Log registry access or a substituted SQLite provider assembly. The rules the
+         * version check itself applies stay covered by DatabaseValidatorTests.cs; what these tests pin
+         * is what Program.Run does with its answer.
          */
+
+        [Fact]
+        public void Run_EventSourceRegistrationFails_FallsBackToFileOnlyLoggingAndContinues()
+        {
+            // Arrange
+            // The event source cannot be registered, so Step 1's catch must take over: it warns and asks
+            // for a logger with the Windows Event Log turned OFF, then start-up carries on.
+            string serviceName = "GhostServiceWithUnavailableEventSource";
+            var environment = new FakeRestarterBootstrapEnvironment
+            {
+                EventSourceFailure = new InvalidOperationException("event log registry is not reachable")
+            };
+
+            // Act
+            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            AssertLogContainsMessage("Event Log source unavailable; continuing with file logging only.");
+
+            // The fallback's argument is the branch. EnsureEventSourceExists threw before the primary
+            // assignment ran, so the single request recorded is the catch's own, and it must ask for
+            // file-only logging: deleting that assignment, or letting it ask for the event log instead,
+            // changes this sequence.
+            Assert.Equal(new[] { false }, environment.EventLogLoggerRequests);
+
+            // Best-effort means the restart is not abandoned: the pipeline runs on to the validation step.
+            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
+        }
+
+        [Fact]
+        public void Run_VulnerableSqliteVersion_LogsFatalAndExitsBeforeTouchingTheDatabase()
+        {
+            // Arrange
+            // A detected version below AppConfig.MinRequiredSqliteVersion is the CVE-2025-6965 refusal.
+            const string VulnerableVersion = "3.49.0";
+            string serviceName = "ManagedServiceNeverReachedOnVulnerableSqlite";
+            var environment = new FakeRestarterBootstrapEnvironment
+            {
+                SqliteVersionIsSafe = false,
+                DetectedSqliteVersion = VulnerableVersion
+            };
+
+            // Act
+            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage($"[FATAL] Vulnerable SQLite version detected: {VulnerableVersion}. " +
+                                     $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+
+            // The refusal returns: neither the repository validation nor the restart attempt may run, so a
+            // vulnerable engine is never asked to open the database.
+            AssertLogDoesNotContainMessage($"Service '{serviceName}' is not managed by Servy.");
+            AssertLogDoesNotContainMessage("Attempting to restart service");
+        }
+
+        [Fact]
+        public void Run_EventLogFallbackAlsoFails_ReportsThroughTheStaticLoggerArm()
+        {
+            // Arrange
+            // When the file-only fallback cannot be built either, no root logger and no scoped logger ever
+            // exist, so the catch-all has nothing but the static Logger: its else arm.
+            var environment = new FakeRestarterBootstrapEnvironment
+            {
+                EventSourceFailure = new InvalidOperationException("event log registry is not reachable"),
+                EventLogLoggerFailure = new InvalidOperationException("the event log logger cannot be built")
+            };
+
+            // Act
+            Program.Run(new string[] { "AnyServiceName", TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage("Servy.Restarter.exe failed to initialize or execute.");
+
+            // The arm is the branch: with a logger available the catch-all reports the other message, so
+            // this pins the else rather than the if.
+            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to restart the service.");
+        }
 
         #endregion
 
@@ -398,6 +472,73 @@ namespace Servy.Restarter.UnitTests
 
             string logContent = File.ReadAllText(_expectedLogFilePath);
             Assert.DoesNotContain(unexpectedMessage, logContent);
+        }
+
+        #endregion
+
+        #region Test Doubles
+
+        /// <summary>
+        /// An <see cref="IRestarterBootstrapEnvironment"/> that records what the start-up sequence asked of
+        /// it and answers from memory, so no step touches the Windows event log or the loaded SQLite engine.
+        /// </summary>
+        private sealed class FakeRestarterBootstrapEnvironment : IRestarterBootstrapEnvironment
+        {
+            /// <summary>Gets or sets the exception <see cref="EnsureEventSourceExists"/> raises, if any.</summary>
+            public Exception EventSourceFailure { get; set; }
+
+            /// <summary>Gets or sets the exception <see cref="CreateEventLogLogger"/> raises, if any.</summary>
+            public Exception EventLogLoggerFailure { get; set; }
+
+            /// <summary>Gets or sets the answer <see cref="IsSqliteVersionSafe"/> gives.</summary>
+            public bool SqliteVersionIsSafe { get; set; } = true;
+
+            /// <summary>Gets or sets the version <see cref="IsSqliteVersionSafe"/> reports.</summary>
+            public string DetectedSqliteVersion { get; set; } = AppConfig.MinRequiredSqliteVersion.ToString();
+
+            /// <summary>
+            /// Gets the <c>isEventLogEnabled</c> arguments <see cref="CreateEventLogLogger"/> was called
+            /// with, in call order.
+            /// </summary>
+            public List<bool> EventLogLoggerRequests { get; } = new List<bool>();
+
+            /// <summary>Raises <see cref="EventSourceFailure"/> when one is configured.</summary>
+            /// <exception cref="Exception">The configured <see cref="EventSourceFailure"/>.</exception>
+            public void EnsureEventSourceExists()
+            {
+                if (EventSourceFailure != null)
+                {
+                    throw EventSourceFailure;
+                }
+            }
+
+            /// <summary>
+            /// Records the request and returns a logger with the Windows Event Log switched off, which keeps
+            /// the test off the machine's event log whichever argument the start-up path passed.
+            /// </summary>
+            /// <param name="isEventLogEnabled">The argument the start-up path asked for; recorded, not honoured.</param>
+            /// <returns>A file-only logger.</returns>
+            /// <exception cref="Exception">The configured <see cref="EventLogLoggerFailure"/>.</exception>
+            public IServyLogger CreateEventLogLogger(bool isEventLogEnabled)
+            {
+                EventLogLoggerRequests.Add(isEventLogEnabled);
+
+                if (EventLogLoggerFailure != null)
+                {
+                    throw EventLogLoggerFailure;
+                }
+
+                return new EventLogLogger(AppConfig.EventSource, isEventLogEnabled: false);
+            }
+
+            /// <summary>Answers from <see cref="SqliteVersionIsSafe"/>.</summary>
+            /// <param name="detectedVersion">Receives <see cref="DetectedSqliteVersion"/>.</param>
+            /// <returns><see cref="SqliteVersionIsSafe"/>.</returns>
+            public bool IsSqliteVersionSafe(out string detectedVersion)
+            {
+                detectedVersion = DetectedSqliteVersion;
+                return SqliteVersionIsSafe;
+            }
         }
 
         #endregion

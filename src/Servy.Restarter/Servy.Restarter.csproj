@@ -65,6 +65,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bootstrap\IRestarterBootstrapEnvironment.cs" />
+    <Compile Include="Bootstrap\RestarterBootstrapEnvironment.cs" />
     <Compile Include="IServiceRestarter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
