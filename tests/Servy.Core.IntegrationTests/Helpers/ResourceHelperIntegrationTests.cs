@@ -3,6 +3,8 @@ using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Testing;
 using System.Reflection;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -640,6 +642,54 @@ namespace Servy.Core.IntegrationTests.Helpers
             // the same catch and the result is still false, so the result alone pins nothing: only
             // the guard's message tells the two apart.
             Assert.Contains("Could not resolve parent directory for extraction", textLogOutput);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenReplacingAFileWithAnExplicitAce_KeepsTheAceAndTheProtection()
+        {
+            // Arrange
+            // A stale existing extraction carrying one explicit entry the temp folder does not grant.
+            // The owner of a file may rewrite its own DACL, so this needs no elevation.
+            string fileName = "aclapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+            var networkService = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+
+            File.WriteAllText(targetPath, "old content");
+            var before = new FileInfo(targetPath).GetAccessControl();
+            before.AddAccessRule(new FileSystemAccessRule(networkService, FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+            new FileInfo(targetPath).SetAccessControl(before);
+
+            // Push the timestamp back relative to the host exe so ShouldCopyResource forces a replacement
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03 };
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(dummyResourceBytes));
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+
+            // The file really was replaced: WriteFileAtomicAsync moves a freshly staged temp file over
+            // the target, which carries the temp file's security descriptor and not the old file's.
+            Assert.Equal(dummyResourceBytes, File.ReadAllBytes(targetPath));
+
+            var after = new FileInfo(targetPath).GetAccessControl();
+            var explicitRules = after.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+                                     .Cast<FileSystemAccessRule>();
+
+            // RestoreFileSecurity writes the captured ACL back, so the explicit entry survives
+            Assert.Contains(explicitRules, r => r.IdentityReference.Equals(networkService)
+                                                && r.AccessControlType == AccessControlType.Allow
+                                                && (r.FileSystemRights & FileSystemRights.ReadAndExecute) == FileSystemRights.ReadAndExecute);
+
+            // ... and GetExistingFileSecurity's SetAccessRuleProtection keeps the replacement from
+            // falling back to whatever the containing folder grants
+            Assert.True(after.AreAccessRulesProtected);
         }
 
         #endregion
