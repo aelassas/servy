@@ -285,7 +285,8 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Covers Branch 1: string.IsNullOrWhiteSpace(serviceName)
+        /// <see cref="Helper.IsReservedForServyHost(string)"/> matches the Servy host service name only, in any case
+        /// and with surrounding white space, and never a longer name, a blank one or <see langword="null"/>.
         /// </summary>
         [Theory]
         [InlineData("Servy", true)]
@@ -297,9 +298,13 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, false)]
         public void IsReservedForServyHost_MatchesOnlyTheHostServiceName(string name, bool expected)
         {
+            // Arrange, Act & Assert
             Assert.Equal(expected, Helper.IsReservedForServyHost(name));
         }
 
+        /// <summary>
+        /// Covers Branch 1: string.IsNullOrWhiteSpace(serviceName)
+        /// </summary>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
