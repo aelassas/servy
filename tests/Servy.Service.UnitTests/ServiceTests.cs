@@ -1232,6 +1232,9 @@ namespace Servy.Service.UnitTests
 
             var mockPreLaunchProcess = new Mock<IProcessWrapper>();
             mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            // Without this stub an unstubbed mock returns false forever, so the attempt spins out the
+            // whole PreLaunchTimeoutInSeconds and throws TimeoutException instead of ever reading ExitCode.
+            mockPreLaunchProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
             mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(1); // Failed exit
 
             _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
@@ -1242,7 +1245,10 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.True(stopped);
+            scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("exited with code 1")), null), Times.Once);
             scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("failed after all retry attempts")), null), Times.Once);
+            // The exit-code arm is what this test arranges, so a fall-back to the timeout path is a failure.
+            scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("attempt 1 failed")), It.IsAny<Exception>()), Times.Never);
             _mockProcess.Verify(p => p.Start(), Times.Never); // Main process should NOT start
         }
 
@@ -1263,6 +1269,9 @@ namespace Servy.Service.UnitTests
 
             var mockPreLaunchProcess = new Mock<IProcessWrapper>();
             mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            // Without this stub an unstubbed mock returns false forever, so the attempt spins out the
+            // whole PreLaunchTimeoutInSeconds and throws TimeoutException instead of ever reading ExitCode.
+            mockPreLaunchProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
             mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(1); // Failed
 
             _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
@@ -1272,7 +1281,12 @@ namespace Servy.Service.UnitTests
             _service.StartForTest();
 
             // Assert
+            // PreLaunchIgnoreFailure selects the severity, so the exit-code line is a Warn here and an Error above.
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("exited with code 1")), null), Times.Once);
+            scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("exited with code 1")), It.IsAny<Exception>()), Times.Never);
             scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Ignoring pre-launch failure")), null), Times.Once);
+            // The exit-code arm is what this test arranges, so a fall-back to the timeout path is a failure.
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("attempt 1 failed")), It.IsAny<Exception>()), Times.Never);
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process starts anyway
         }
 
