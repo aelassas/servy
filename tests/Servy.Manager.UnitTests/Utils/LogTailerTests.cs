@@ -481,6 +481,57 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// A history load from a file whose last line has no terminating newline must leave that line to
+        /// the live tailer, so the console shows it once and whole instead of a prefix in the history and
+        /// the remainder as a second live line.
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryThenRunFromPosition_UnterminatedLastLine_PublishesItOnceWhole()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "complete\npartial-");
+
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                var history = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: CancellationToken.None);
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+                };
+
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, history.Position, history.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, CancellationToken.None);
+
+                // Act
+                File.AppendAllText(_tempFilePath, "remainder\n");
+
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines) return capturedLines.Count >= 1;
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: CancellationToken.None);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert
+                // The history stops at the last newline, so the torn tail is not in it and Position points
+                // at the tail's first byte rather than at the end of the file.
+                Assert.Equal(new[] { "complete" }, history.Lines.Select(l => l.Text));
+                Assert.Equal("complete\n".Length, (int)history.Position);
+
+                // The live tailer read the tail from that byte, held it until the newline arrived, and
+                // published the whole line once.
+                lock (capturedLines)
+                {
+                    Assert.Equal(new[] { "partial-remainder" }, capturedLines.Select(l => l.Text));
+                }
+            }
+        }
+
         [Fact]
         public async Task RunFromPosition_ThresholdBatchWithUnterminatedLine_HoldsBackTornFragmentUntilNewline()
         {
