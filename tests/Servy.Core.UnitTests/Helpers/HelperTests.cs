@@ -1034,6 +1034,100 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Empty(leftovers);
         }
 
+        [Fact]
+        public void WriteFileAtomic_HardenedTargetFallback_MoveAsideSucceeds_ReplacesTargetAndRemovesBackup()
+        {
+            // Arrange: the target itself is NOT locked, so only the direct overwrite is denied. That is the
+            // hardened-ACL shape the fallback exists for, and it is the one the blocked-move-aside test above
+            // cannot reach: here File.Move(path, backup) succeeds and the staging file is moved in.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+
+            void DeniedMove(string source, string destination)
+            {
+                moveAttempts++;
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            }
+
+            // Act
+            Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+            {
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                {
+                    writer.Write("new-content");
+                }
+            }, DeniedMove, TestContext.Current.CancellationToken);
+
+            // Assert
+            // One attempt only: the fallback completed the replacement itself, so the loop broke without
+            // falling through to a retry.
+            Assert.Equal(1, moveAttempts);
+            Assert.Equal("new-content", File.ReadAllText(targetPath));
+
+            // The backup is named with the same ".{hex}.tmp" suffix as the staging file, so a skipped
+            // File.Delete(backup) shows up here as a leftover copy of the original.
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+        }
+
+        [Fact]
+        public void WriteFileAtomic_HardenedTargetFallback_SecondMoveFails_RestoresOriginalBeforeRetry()
+        {
+            // Arrange: the direct overwrite is denied, and the staging file is held the way an AV scanner holds
+            // it, for the first pass only. So the fallback moves the original aside, its own File.Move(tmp, path)
+            // hits the sharing violation, and the restore arm has to put the original back before the retry.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+            string? contentSeenOnRetry = null;
+            FileStream? stagingLock = null;
+
+            void Move(string source, string destination)
+            {
+                moveAttempts++;
+                if (moveAttempts == 1)
+                {
+                    stagingLock = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None);
+                    throw new UnauthorizedAccessException("Access to the path is denied.");
+                }
+
+                // Second pass: whatever the restore left at the destination is what this reads. Without the
+                // restore the original is still sitting at the backup path and this reads null.
+                contentSeenOnRetry = File.Exists(destination) ? File.ReadAllText(destination) : null;
+                stagingLock!.Dispose();
+                File.Move(source, destination, overwrite: true);
+            }
+
+            try
+            {
+                // Act
+                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                {
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                    {
+                        writer.Write("new-content");
+                    }
+                }, Move, TestContext.Current.CancellationToken);
+            }
+            finally
+            {
+                stagingLock?.Dispose();
+            }
+
+            // Assert
+            // Two attempts: the fallback's failure was handled by the retry arm rather than escaping.
+            Assert.Equal(2, moveAttempts);
+
+            // This is the whole of the restore: it is what keeps the original from being lost when the
+            // move-aside succeeds and the move-in does not.
+            Assert.Equal("original-content", contentSeenOnRetry);
+            Assert.Equal("new-content", File.ReadAllText(targetPath));
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+        }
         #endregion
 
         #region WriteFileAtomicAsync Tests
@@ -1350,6 +1444,83 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Empty(leftovers);
         }
 
+        [Fact]
+        public async Task WriteFileAtomicCore_HardenedTargetFallback_MoveAsideSucceeds_ReplacesTargetAndRemovesBackup()
+        {
+            // Arrange: the asynchronous twin of the synchronous case above. WriteFileAtomicCore carries its own
+            // copy of the fallback, so its success path needs its own witness.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+
+            void DeniedMove(string source, string destination)
+            {
+                moveAttempts++;
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            }
+
+            // Act
+            await Helper.WriteFileAtomicCore(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+            {
+                byte[] payload = Encoding.UTF8.GetBytes("new-content");
+                await stream.WriteAsync(payload, cancellationToken);
+            }, DeniedMove, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(1, moveAttempts);
+            Assert.Equal("new-content", File.ReadAllText(targetPath));
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicCore_HardenedTargetFallback_SecondMoveFails_RestoresOriginalBeforeRetry()
+        {
+            // Arrange: the asynchronous twin of the restore case above. WriteFileAtomicCore has its own copy of
+            // the restore arm, so deleting that copy alone would otherwise leave the suite green.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+            string? contentSeenOnRetry = null;
+            FileStream? stagingLock = null;
+
+            void Move(string source, string destination)
+            {
+                moveAttempts++;
+                if (moveAttempts == 1)
+                {
+                    stagingLock = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None);
+                    throw new UnauthorizedAccessException("Access to the path is denied.");
+                }
+
+                contentSeenOnRetry = File.Exists(destination) ? File.ReadAllText(destination) : null;
+                stagingLock!.Dispose();
+                File.Move(source, destination, overwrite: true);
+            }
+
+            try
+            {
+                // Act
+                await Helper.WriteFileAtomicCore(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                {
+                    byte[] payload = Encoding.UTF8.GetBytes("new-content");
+                    await stream.WriteAsync(payload, cancellationToken);
+                }, Move, TestContext.Current.CancellationToken);
+            }
+            finally
+            {
+                stagingLock?.Dispose();
+            }
+
+            // Assert
+            Assert.Equal(2, moveAttempts);
+            Assert.Equal("original-content", contentSeenOnRetry);
+            Assert.Equal("new-content", File.ReadAllText(targetPath));
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+        }
         #endregion
 
         #region HasAncestorReparsePoint tests
