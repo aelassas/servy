@@ -197,7 +197,7 @@ namespace Servy.CLI
                         var asm = Assembly.GetExecutingAssembly();
 
                         var sh = new ServiceHelper(serviceRepository);
-                        var resourceHelper = new ResourceHelper(sh, processKiller);
+                        var resourceHelper = new ResourceHelper(processKiller);
 
                         var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
 

@@ -12,7 +12,6 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ResourceHelper
     {
-        private readonly IServiceHelper _serviceHelper;
         private readonly IProcessKiller _processKiller;
 
         /// <summary>
@@ -36,15 +35,12 @@ namespace Servy.Core.Helpers
         public bool HasCopiedResources { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the ResourceHelper class using the specified service helper and process killer.
+        /// Initializes a new instance of the ResourceHelper class using the specified process killer.
         /// </summary>
-        /// <param name="serviceHelper">The service helper used to access and manage service states. Cannot be null.</param>
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
-        public ResourceHelper(
-            IServiceHelper serviceHelper,
-            IProcessKiller processKiller)
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="processKiller"/> is <see langword="null"/>.</exception>
+        public ResourceHelper(IProcessKiller processKiller)
         {
-            _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 

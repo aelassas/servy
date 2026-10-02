@@ -371,7 +371,7 @@ namespace Servy.UI.Bootstrapping
 
                     ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
                     var sh = new ServiceHelper(ServiceRepository);
-                    var resourceHelper = new ResourceHelper(sh, _processKiller);
+                    var resourceHelper = new ResourceHelper(_processKiller);
 
                     var ct = _appLifetimeCts.Token;
 

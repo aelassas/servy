@@ -11,18 +11,16 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
-        private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly Mock<Assembly> _mockAssembly;
         private readonly ResourceHelper _resourceHelper;
 
         public ResourceHelperIntegrationTests()
         {
-            _mockServiceHelper = new Mock<IServiceHelper>();
             _mockProcessKiller = new Mock<IProcessKiller>();
             _mockAssembly = new Mock<Assembly>();
 
-            _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
+            _resourceHelper = new ResourceHelper(_mockProcessKiller.Object);
 
             // Point the helper to the test-controlled temp directory
             _resourceHelper.BaseExtractionDirectory = TempDirectory;
@@ -31,26 +29,13 @@ namespace Servy.Core.IntegrationTests.Helpers
         #region Constructor Tests
 
         [Fact]
-        public void Constructor_NullServiceHelper_ThrowsArgumentNullException()
-        {
-            // Arrange
-            IServiceHelper serviceHelper = null!;
-
-            // Act
-            var ex = Assert.Throws<ArgumentNullException>(() => new ResourceHelper(serviceHelper, _mockProcessKiller.Object));
-
-            // Assert
-            Assert.Equal("serviceHelper", ex.ParamName);
-        }
-
-        [Fact]
         public void Constructor_NullProcessKiller_ThrowsArgumentNullException()
         {
             // Arrange
             IProcessKiller processKiller = null!;
 
             // Act
-            var ex = Assert.Throws<ArgumentNullException>(() => new ResourceHelper(_mockServiceHelper.Object, processKiller));
+            var ex = Assert.Throws<ArgumentNullException>(() => new ResourceHelper(processKiller));
 
             // Assert
             Assert.Equal("processKiller", ex.ParamName);
