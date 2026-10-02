@@ -920,14 +920,14 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Automation_LogsFromDatePicker_Name" xml:space="preserve">
-    <value>Filter from date</value>
+    <value>Filter from Date</value>
   </data>
   <data name="Automation_LogsFromDatePicker_HelpText" xml:space="preserve">
     <value>Select the start date to filter log entries from.</value>
   </data>
 
   <data name="Automation_LogsToDatePicker_Name" xml:space="preserve">
-    <value>Filter to date</value>
+    <value>Filter to Date</value>
   </data>
   <data name="Automation_LogsToDatePicker_HelpText" xml:space="preserve">
     <value>Select the end date to filter log entries up to.</value>
