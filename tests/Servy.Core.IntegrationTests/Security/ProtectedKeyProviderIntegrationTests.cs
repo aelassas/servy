@@ -1,4 +1,5 @@
 using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Testing;
 using System;
@@ -552,6 +553,55 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(legacyEncrypted, File.ReadAllBytes(keyPath));
         }
 
+        [Fact]
+        public void GetKey_LockAbandonedByPreviousOwner_TakesOwnershipAndGeneratesTheKey()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("abandoned.key");
+            var ivPath = GetTempFilePath("abandoned.iv");
+
+            // The holder keeps the kernel object alive after the owning thread dies, so the provider
+            // opens the abandoned mutex instead of creating a fresh one of the same name.
+            using (new Mutex(false, KeyVaultMutexName(keyPath)))
+            {
+                var owner = new Thread(() => AbandonKeyVaultMutex(keyPath));
+                owner.Start();
+                owner.Join();
+
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    // Act
+                    var captured = LogCapture.Run(() => provider.GetKey(), LogLevel.Warn);
+
+                    // Assert - the #1808 failure is that this throws instead of generating the key
+                    Assert.Equal(AppConfig.AesKeySizeBytes, captured.Result.Length);
+                    Assert.True(File.Exists(keyPath));
+                    Assert.Contains("was abandoned by a previous owner", captured.Log);
+                }
+            }
+        }
+
+        [Fact]
+        public void GetKey_LockAlreadyCreatedByAnotherHolder_LogsThatItJoinedTheExistingMutex()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("joined.key");
+            var ivPath = GetTempFilePath("joined.iv");
+
+            // The mutex already exists and is unowned, so MutexAcl.Create joins it rather than
+            // creating it, and the DACL it would have applied is the creating process's.
+            using (new Mutex(false, KeyVaultMutexName(keyPath)))
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var captured = LogCapture.Run(() => provider.GetKey(), LogLevel.Debug);
+
+                // Assert
+                Assert.Equal(AppConfig.AesKeySizeBytes, captured.Result.Length);
+                Assert.Contains("Joined existing cross-process mutex", captured.Log);
+            }
+        }
+
         #endregion
 
         #region Test Lifecycle
@@ -571,6 +621,19 @@ namespace Servy.Core.IntegrationTests.Security
             }
 
             return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
+        }
+
+        /// <summary>
+        /// Takes the key vault's mutex and returns without releasing it, so the thread running this
+        /// method abandons the mutex when it exits.
+        /// </summary>
+        /// <param name="keyPath">The key file path whose mutex name is abandoned.</param>
+        private static void AbandonKeyVaultMutex(string keyPath)
+        {
+            // Deliberately neither released nor disposed: a thread that exits while owning the mutex
+            // is what makes the next WaitOne on that name throw AbandonedMutexException.
+            var mutex = new Mutex(false, KeyVaultMutexName(keyPath));
+            mutex.WaitOne();
         }
 
         /// <summary>
