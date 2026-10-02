@@ -9,7 +9,6 @@ using Servy.Core.Services;
 using Servy.Host.Bootstrap;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.IO.Pipes;
 using System.ServiceProcess;
 
@@ -231,6 +230,10 @@ namespace Servy.Host
         {
             try
             {
+                // PROMOTE LOGGER IMMEDIATELY
+                // Now every log from this point forward (including validation errors) is prefixed.
+                _logger = _logger?.CreateScoped(AppConfig.ServyHostServiceName);
+
                 StartListening();
             }
             catch (Exception ex)
@@ -251,6 +254,9 @@ namespace Servy.Host
 
             // Build the DACL before the first instance exists, so no instance is ever created without one
             RefreshPipeSecurityAsync(token).GetAwaiter().GetResult();
+
+            // Log ONCE here at the orchestration level
+            Logger.Info($"[{AppConfig.ServyHostServiceName}] Servy host named pipe listener started ({AppConfig.ServyHostListenerCount} worker instances)...");
 
             // Run the IPC listeners asynchronously in background tasks so OnStart returns promptly to SCM. Several
             // instances wait at once, so a burst of services starting together (at boot) never queues behind one.
