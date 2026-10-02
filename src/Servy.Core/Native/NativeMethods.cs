@@ -665,7 +665,6 @@ namespace Servy.Core.Native
         {
             public const uint POLICY_LOOKUP_NAMES = 0x00000800;
             public const uint POLICY_CREATE_ACCOUNT = 0x00000010;
-            public const uint POLICY_ASSIGN_PRIVILEGE = 0x00000400;
         }
 
         /// <summary>Frees memory allocated by LSA functions.</summary>

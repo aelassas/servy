@@ -496,6 +496,9 @@ namespace Servy.Manager.ViewModels
                         OnPropertyChanged(nameof(HasSelectedServices));
                     }, DispatcherPriority.Background);
 
+                    // Superseded while the apply callback was queued: the callback disposed the rows, so start no refresh.
+                    if (token.IsCancellationRequested) return 0;
+
                     // fetchAndApplyAsync 4 of 4: refresh all service statuses and details in the background.
                     // Cancel any in-flight timer refresh targeting old row ViewModels and assign a fresh token source.
                     var oldCts = Interlocked.Exchange(ref _cts, new CancellationTokenSource());
