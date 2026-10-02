@@ -1128,6 +1128,110 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal("new-content", File.ReadAllText(targetPath));
             Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
         }
+
+        [Fact]
+        public void WriteFileAtomic_HardenedTargetFallback_RetriesExhaustedAfterMoveAside_RestoresOriginal()
+        {
+            // Arrange: every direct overwrite is denied, and the staging file stays locked for the whole call,
+            // so each fallback pass moves the original aside, fails to move the staging file in, and must restore.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+            string? stagingPath = null;
+            FileStream? stagingLock = null;
+
+            void DeniedMove(string source, string destination)
+            {
+                moveAttempts++;
+                stagingPath = source;
+                stagingLock ??= new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None);
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            }
+
+            try
+            {
+                // Act
+                Assert.Throws<AggregateException>(() =>
+                    Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                    {
+                        using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                        {
+                            writer.Write("new-content");
+                        }
+                    }, DeniedMove, TestContext.Current.CancellationToken));
+
+                // Assert
+                // Every pass took the fallback, and the last one threw instead of retrying again.
+                Assert.Equal(AppConfig.WriteFileAtomicMaxRetries + 1, moveAttempts);
+            }
+            finally
+            {
+                stagingLock?.Dispose();
+            }
+
+            // Assert
+            // The restore runs before the retries-exhausted throw, so the original is back at the target
+            // rather than stranded at its backup path. This is #7154's "a move that keeps failing".
+            Assert.True(File.Exists(targetPath), "The original was left at its backup path when the retries ran out.");
+            Assert.Equal("original-content", File.ReadAllText(targetPath));
+
+            // The only leftover ".tmp" is the staging file this test held open, never a backup copy.
+            Assert.Equal(new[] { stagingPath! }, Directory.GetFiles(tempDir, "*.tmp"));
+        }
+
+        [Fact]
+        public void WriteFileAtomic_HardenedTargetFallback_CancelledDuringBackOff_RestoresOriginal()
+        {
+            // Arrange: the first pass moves the original aside and fails its move-in. The token is cancelled
+            // inside that pass, so the back-off wait returns at once and the call leaves through the cancellation.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            int moveAttempts = 0;
+            string? stagingPath = null;
+            FileStream? stagingLock = null;
+
+            void DeniedMove(string source, string destination)
+            {
+                moveAttempts++;
+                stagingPath = source;
+                stagingLock ??= new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None);
+                cts.Cancel();
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            }
+
+            try
+            {
+                // Act
+                Assert.ThrowsAny<OperationCanceledException>(() =>
+                    Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                    {
+                        using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                        {
+                            writer.Write("new-content");
+                        }
+                    }, DeniedMove, cts.Token));
+
+                // Assert
+                // One pass only: the cancellation in the back-off ended the call, not a further retry.
+                Assert.Equal(1, moveAttempts);
+            }
+            finally
+            {
+                stagingLock?.Dispose();
+            }
+
+            // Assert
+            // The restore runs before the back-off, so the cancellation cannot strand the original.
+            // This is #7154's "a cancellation during the back-off".
+            Assert.True(File.Exists(targetPath), "The original was left at its backup path when the back-off was cancelled.");
+            Assert.Equal("original-content", File.ReadAllText(targetPath));
+            Assert.Equal(new[] { stagingPath! }, Directory.GetFiles(tempDir, "*.tmp"));
+        }
         #endregion
 
         #region WriteFileAtomicAsync Tests
@@ -1520,6 +1624,98 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal("original-content", contentSeenOnRetry);
             Assert.Equal("new-content", File.ReadAllText(targetPath));
             Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicCore_HardenedTargetFallback_RetriesExhaustedAfterMoveAside_RestoresOriginal()
+        {
+            // Arrange: the asynchronous twin of the retries-exhausted case above. WriteFileAtomicCore carries
+            // its own copy of the restore arm, so deleting that copy alone would otherwise leave the suite green.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+            string? stagingPath = null;
+            FileStream? stagingLock = null;
+
+            void DeniedMove(string source, string destination)
+            {
+                moveAttempts++;
+                stagingPath = source;
+                stagingLock ??= new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None);
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            }
+
+            try
+            {
+                // Act
+                await Assert.ThrowsAsync<AggregateException>(async () =>
+                    await Helper.WriteFileAtomicCore(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                    {
+                        byte[] payload = Encoding.UTF8.GetBytes("new-content");
+                        await stream.WriteAsync(payload, cancellationToken);
+                    }, DeniedMove, TestContext.Current.CancellationToken));
+
+                // Assert
+                Assert.Equal(AppConfig.WriteFileAtomicMaxRetries + 1, moveAttempts);
+            }
+            finally
+            {
+                stagingLock?.Dispose();
+            }
+
+            // Assert
+            Assert.True(File.Exists(targetPath), "The original was left at its backup path when the retries ran out.");
+            Assert.Equal("original-content", File.ReadAllText(targetPath));
+            Assert.Equal(new[] { stagingPath! }, Directory.GetFiles(tempDir, "*.tmp"));
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicCore_HardenedTargetFallback_CancelledDuringBackOff_RestoresOriginal()
+        {
+            // Arrange: the asynchronous twin of the cancelled-back-off case above. Task.Delay observes the
+            // cancelled token, so the call leaves through TaskCanceledException after a single fallback pass.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            int moveAttempts = 0;
+            string? stagingPath = null;
+            FileStream? stagingLock = null;
+
+            void DeniedMove(string source, string destination)
+            {
+                moveAttempts++;
+                stagingPath = source;
+                stagingLock ??= new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.None);
+                cts.Cancel();
+                throw new UnauthorizedAccessException("Access to the path is denied.");
+            }
+
+            try
+            {
+                // Act
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+                    await Helper.WriteFileAtomicCore(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                    {
+                        byte[] payload = Encoding.UTF8.GetBytes("new-content");
+                        await stream.WriteAsync(payload, cancellationToken);
+                    }, DeniedMove, cts.Token));
+
+                // Assert
+                Assert.Equal(1, moveAttempts);
+            }
+            finally
+            {
+                stagingLock?.Dispose();
+            }
+
+            // Assert
+            Assert.True(File.Exists(targetPath), "The original was left at its backup path when the back-off was cancelled.");
+            Assert.Equal("original-content", File.ReadAllText(targetPath));
+            Assert.Equal(new[] { stagingPath! }, Directory.GetFiles(tempDir, "*.tmp"));
         }
         #endregion
 
