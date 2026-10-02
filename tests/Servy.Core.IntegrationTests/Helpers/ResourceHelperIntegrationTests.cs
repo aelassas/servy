@@ -226,7 +226,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -268,7 +268,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 // Act
                 bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                    _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                    _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(result);
@@ -294,7 +294,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result); // Should return true early
@@ -323,7 +323,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result); // Should return true early without copying
@@ -356,7 +356,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 // Act
                 bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                    _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                    _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(result);
@@ -375,7 +375,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", "missingapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                _mockAssembly.Object, "Servy.Resources", "missingapp", "exe", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -383,7 +383,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenResourceStreamNotFound_StopsNoServiceAndKillsNoProcess()
+        public async Task CopyEmbeddedResource_WhenResourceStreamNotFound_KillsNoProcess()
         {
             // Arrange
             // A stale, existing target, so TryPrepareExtraction asks for a copy and the lock probe runs.
@@ -393,10 +393,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(targetPath, "existing target");
             File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
 
-            var testServices = new List<string> { "Servy_Service_A" };
-            _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
-            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
 
             // The resource is missing from the assembly
@@ -414,7 +410,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                     "Servy.Resources",
                     fileName,
                     extension,
-                    stopServices: true,
                     cancellationToken: TestContext.Current.CancellationToken));
 
                 // Assert
@@ -422,7 +417,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Assert.False(_resourceHelper.HasCopiedResources);
 
                 // The #1851 ordering: nothing is side-effected before the resource is known to exist
-                _mockServiceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
                 _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
 
                 // The guard's own arm, not the outer catch-all that a deleted guard falls into
@@ -446,7 +440,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -459,76 +453,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
 
-        [Theory]
-        [InlineData(false)] // Tests the UI service routing path (isCli: false)
-        [InlineData(true)]  // Tests the CLI service routing path (isCli: true)
-        public async Task CopyEmbeddedResource_WhenStopServicesIsTrue_StopsAndRestartsDependentServices(bool isCli)
-        {
-            // Arrange
-            string fileName = "serviceapp";
-            string extension = "exe";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
-            var testServices = new List<string> { "Servy_Service_A", "Servy_Service_B" };
-
-            // Mock the assembly to return a valid manifest stream so execution passes the initial safeguards
-            var dummyResourceBytes = new byte[] { 0xAA, 0xBB, 0xCC };
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(dummyResourceBytes));
-
-            // Setup the service helper to discover our running mock services based on the CLI layout flag
-            if (isCli)
-            {
-                _mockServiceHelper.Setup(s => s.GetRunningServyCLIServices()).Returns(testServices);
-            }
-            else
-            {
-                _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
-            }
-
-            // Mock the lifecycle control methods to return successful completed tasks
-            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-
-            // Act
-            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object,
-                "Servy.Resources",
-                fileName,
-                extension,
-                stopServices: true,
-                isCli: isCli,
-                cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            // 1. Verify the core copy transaction reported a success state
-            Assert.True(result);
-            Assert.True(File.Exists(targetPath));
-            // The target file does not exist before the Act, so the lock probe short-circuits
-            // and ProcessKiller is never invoked
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
-
-            // 2. Confirm the discovery call matched the isCli routing flag, and the other one was never made
-            if (isCli)
-            {
-                _mockServiceHelper.Verify(s => s.GetRunningServyCLIServices(), Times.Once);
-                _mockServiceHelper.Verify(s => s.GetRunningServyUIServices(), Times.Never);
-            }
-            else
-            {
-                _mockServiceHelper.Verify(s => s.GetRunningServyUIServices(), Times.Once);
-                _mockServiceHelper.Verify(s => s.GetRunningServyCLIServices(), Times.Never);
-            }
-
-            // 3. Confirm that the targeted services were both cleanly stopped and subsequently revived
-            _mockServiceHelper.Verify(s => s.StopServicesAsync(testServices, TestContext.Current.CancellationToken), Times.Once);
-
-            // The asymmetry below is deliberate, not a site the #5362 / #5385 CancellationToken.None sweeps
-            // missed: ResourceHelper restarts with CancellationToken.None on purpose, so an upfront pipeline
-            // cancellation cannot leave the services it stopped orphaned. Do not "fix" this to the test's token.
-            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once,
-                "StartServicesAsync must be called with CancellationToken.None so a cancelled copy still restarts the services it stopped.");
-        }
-
         [Fact]
         public async Task CopyEmbeddedResource_ThrowsException_CaughtByOuterCatch_ReturnsFalse()
         {
@@ -538,7 +462,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                nullAssembly, "Servy.Resources", "crashapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                nullAssembly, "Servy.Resources", "crashapp", "exe", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result); // Caught successfully
@@ -594,84 +518,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenStartServicesAsyncThrows_LogsAndStillReturnsCopyResult()
-        {
-            // Arrange
-            string fileName = "restartfailapp";
-            string extension = "exe";
-            var testServices = new List<string> { "Servy_Service_A" };
-
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x01 }));
-            _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
-            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>()))
-                              .ThrowsAsync(new InvalidOperationException("restart boom"));
-
-            // Act
-            // LogCapture routes the static Logger into a private temp directory (the logDirectory
-            // seam) so the restart-failure entry written inside the finally block can be read back,
-            // without touching the product's own logs directory.
-            var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object,
-                "Servy.Resources",
-                fileName,
-                extension,
-                stopServices: true,
-                cancellationToken: TestContext.Current.CancellationToken));
-
-            // Assert
-            // The restart failure is logged inside the finally block, never rethrown, so the copy's own
-            // outcome is what the method returns.
-            Assert.True(result);
-            Assert.True(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
-            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
-
-            // ... and the "Logs" half of the name: the failure is reported, with its exception
-            // passed through rather than swallowed.
-            Assert.Contains("previously-running services failed to restart", textLogOutput);
-            Assert.Contains("restart boom", textLogOutput);
-        }
-
-        [Fact]
-        public async Task CopyEmbeddedResource_WhenCopyAbortedAndRestartFails_LogsNotCopied()
-        {
-            // Arrange
-            string fileName = "abortrestartfailapp";
-            string extension = "exe";
-            var testServices = new List<string> { "Servy_Service_A" };
-            using var cts = new CancellationTokenSource();
-
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x01 }));
-            _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
-            // The caller cancels while the services are being stopped, so the cancellation boundary
-            // right before the copy fires and copyDone is never set.
-            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>()))
-                              .Returns(() => { cts.Cancel(); return Task.CompletedTask; });
-            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>()))
-                              .ThrowsAsync(new InvalidOperationException("restart boom"));
-
-            // Act
-            var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object,
-                "Servy.Resources",
-                fileName,
-                extension,
-                stopServices: true,
-                cancellationToken: cts.Token));
-
-            // Assert
-            Assert.False(result);
-            Assert.False(File.Exists(Path.Combine(TempDirectory, $"{fileName}.{extension}")));
-
-            // The #1817 wording: an aborted copy must never be reported as copied.
-            Assert.Contains("was NOT copied to", textLogOutput);
-            Assert.DoesNotContain("was successfully copied to", textLogOutput);
-            Assert.Contains("restart boom", textLogOutput);
-        }
-
-        [Fact]
         public async Task CopyEmbeddedResource_WhenCancelledBeforeTermination_ReturnsFalse()
         {
             // Arrange
@@ -699,15 +545,14 @@ namespace Servy.Core.IntegrationTests.Helpers
             using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act
-                // The cancellation check before the process-termination step is not gated on stopServices,
-                // so a pre-cancelled token reaches it even with stopServices: false. LogCapture routes the
-                // static Logger into a private temp directory so the arm that ran can be read back.
+                // The cancellation check sits before the process-termination step, so a pre-cancelled
+                // token reaches it. LogCapture routes the static Logger into a private temp directory
+                // so the arm that ran can be read back.
                 var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
                     _mockAssembly.Object,
                     "Servy.Resources",
                     fileName,
                     extension,
-                    stopServices: false,
                     cancellationToken: cts.Token));
 
                 // Assert
@@ -744,7 +589,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                 "Servy.Resources",
                 "emptydirapp",
                 "exe",
-                stopServices: false,
                 cancellationToken: TestContext.Current.CancellationToken));
 
             // Assert
@@ -783,7 +627,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);

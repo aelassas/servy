@@ -6,20 +6,6 @@ namespace Servy.Core.Helpers
     public interface IServiceHelper
     {
         /// <summary>
-        /// Gets the names of all currently running Servy UI services.
-        /// </summary>
-        /// <returns>A list of service names.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the Service Control Manager cannot be opened or queried.</exception>
-        List<string> GetRunningServyUIServices();
-
-        /// <summary>
-        /// Gets the names of all currently running Servy CLI services.
-        /// </summary>
-        /// <returns>A list of service names.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the Service Control Manager cannot be opened or queried.</exception>
-        List<string> GetRunningServyCLIServices();
-
-        /// <summary>
         /// Gets the names of all currently running Servy services (GUI and CLI).
         /// </summary>
         /// <returns>A list of service names.</returns>

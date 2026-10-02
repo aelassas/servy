@@ -66,28 +66,6 @@ namespace Servy.Core.Helpers
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public List<string> GetRunningServyUIServices()
-        {
-            var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                AppConfig.ServyServiceUIExe
-            };
-            return GetRunningServices(wrapperExes);
-        }
-
-        /// <inheritdoc />
-        [ExcludeFromCodeCoverage]
-        public List<string> GetRunningServyCLIServices()
-        {
-            var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                AppConfig.ServyServiceCLIExe
-            };
-            return GetRunningServices(wrapperExes);
-        }
-
-        /// <inheritdoc />
-        [ExcludeFromCodeCoverage]
         public List<string> GetRunningServyServices()
         {
             var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

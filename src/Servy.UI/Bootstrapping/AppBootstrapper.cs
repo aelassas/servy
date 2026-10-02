@@ -391,7 +391,7 @@ namespace Servy.UI.Bootstrapping
                         }
 
                         // Copy embedded files
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe", cancellationToken: ct))
                         {
                             string resourceName = $"{AppConfig.ServyServiceUIFileName}.exe";
                             throw new InvalidOperationException($"Failed to extract embedded resource '{resourceName}'. " +
@@ -400,14 +400,14 @@ namespace Servy.UI.Bootstrapping
 
                         // The service wrapper launches the restarter from its own folder, so it is extracted next to it.
                         // No running service holds it open, so there is nothing to stop before overwriting it.
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "exe", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "exe", cancellationToken: ct))
                         {
                             throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyRestarterExe}'. " +
                                 "The application cannot start safely - see file log for details.");
                         }
 
                         // The Servy host service serves every Servy service its configuration
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyHostFileName, "exe", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyHostFileName, "exe", cancellationToken: ct))
                         {
                             throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
                                 "The application cannot start safely - see file log for details.");
@@ -417,7 +417,7 @@ namespace Servy.UI.Bootstrapping
                             ? AppConfig.HandleExeARM64FileName
                             : AppConfig.HandleExeX64FileName;
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", cancellationToken: ct))
                         {
                             string resourceName = $"{handleExeFileName}.exe";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -430,7 +430,7 @@ namespace Servy.UI.Bootstrapping
                         }
 
     #if DEBUG
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", cancellationToken: ct))
                         {
                             await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                                 splash ?? (Window?)app.MainWindow,
@@ -440,7 +440,7 @@ namespace Servy.UI.Bootstrapping
                                 MessageBoxImage.Warning));
                         }
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "pdb", cancellationToken: ct))
                         {
                             await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                                 splash ?? (Window?)app.MainWindow,
@@ -450,7 +450,7 @@ namespace Servy.UI.Bootstrapping
                                 MessageBoxImage.Warning));
                         }
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyHostFileName, "pdb", cancellationToken: ct))
                         {
                             await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                                 splash ?? (Window?)app.MainWindow,
