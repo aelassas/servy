@@ -1972,7 +1972,7 @@ namespace Servy.Core.UnitTests.Helpers
         /// <param name="dwCreationDisposition">An action to take on a file or device that exists or does not exist.</param>
         /// <param name="dwFlagsAndAttributes">The file or device attributes and flags.</param>
         /// <param name="hTemplateFile">A valid handle to a template file with the GENERIC_READ access right, or <see cref="IntPtr.Zero"/>.</param>
-        /// <returns>An open handle to the specified file or device if successful; otherwise, <see cref="NativeMethods.INVALID_HANDLE_VALUE"/>.</returns>
+        /// <returns>An open handle to the specified file or device if successful; otherwise, <see cref="Servy.Core.Native.NativeMethods.INVALID_HANDLE_VALUE"/>.</returns>
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern IntPtr CreateFile(
             string lpFileName,
@@ -2195,8 +2195,9 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Centralized teardown engine ensuring that both link anchors and real backup items
-        /// are cleared via safe DeleteDirectoryLink calls rather than divergent inline Directory.Delete overrides.
+        /// Centralized teardown: unlinks the directory link through <see cref="DeleteDirectoryLink"/>, which logs
+        /// and swallows its own failures, then deletes the real target directory recursively, retrying that
+        /// delete on I/O and access errors.
         /// </summary>
         private static void TeardownDirectoryLinkWithRetry(string linkPath, string targetPath)
         {
