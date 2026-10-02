@@ -6,8 +6,8 @@ namespace Servy.Service.Bootstrap
     /// <summary>
     /// Seam over the machine-touching and process-global calls that the production constructor of
     /// <see cref="Servy.Service.Service"/> would otherwise make inline: the global logger, the Windows
-    /// event source, the <c>appsettings.service.json</c> configuration, the core data-layer settings,
-    /// the SQLite version check and the creation of the database and repository stack.
+    /// event source, the <c>appsettings.service.json</c> configuration and the logging configuration. The
+    /// service opens no database: it reads its configuration through the Servy host named pipe.
     /// </summary>
     /// <remarks>
     /// The production implementation is <see cref="ServiceBootstrapEnvironment"/>. Every member forwards
