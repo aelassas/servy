@@ -204,16 +204,7 @@ namespace Servy.Core.Services
 
                     try
                     {
-                        List<string> dependencies;
-                        using (var sc = _serviceControllerProvider.GetService(name))
-                        {
-                            dependencies = sc.GetDependencyNames().ToList();
-                        }
-
-                        if (dependencies.Contains(AppConfig.ServyHostServiceName, StringComparer.OrdinalIgnoreCase))
-                            continue;
-
-                        using (var service = _windowsServiceApi.OpenService(scm, name, SERVICE_CHANGE_CONFIG))
+                        using (var service = _windowsServiceApi.OpenService(scm, name, SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG))
                         {
                             if (service == null || service.IsInvalid)
                             {
@@ -222,6 +213,16 @@ namespace Servy.Core.Services
                                     Logger.Warn($"Could not open service '{name}' to add the '{AppConfig.ServyHostServiceName}' dependency. Win32 error: {err}");
                                 continue;
                             }
+
+                            // The RAW lpDependencies, never ServiceController.ServicesDependedOn: the BCL expands a
+                            // '+Group' load-order entry into the group's current members, so writing that back would
+                            // turn "any member of the group" into "every one of them".
+                            var dependencies = QueryDependencies(service, name);
+                            if (dependencies == null)
+                                continue;
+
+                            if (dependencies.Contains(AppConfig.ServyHostServiceName, StringComparer.OrdinalIgnoreCase))
+                                continue;
 
                             var lpDependencies = ServiceDependenciesParser.ParseWithRequired(string.Join(";", dependencies), AppConfig.ServyHostServiceName);
                             if (!_windowsServiceApi.ChangeServiceConfig(service, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, null, null, IntPtr.Zero, lpDependencies, null, null, null))
@@ -289,6 +290,74 @@ namespace Servy.Core.Services
                 Logger.Warn($"Could not read the '{AppConfig.ServyHostServiceName}' service's executable: {ex.Message}");
                 return (ServyHostServiceState.Unknown, null);
             }
+        }
+
+        /// <summary>
+        /// Reads a service's dependency list with the two-pass <c>QueryServiceConfig</c>, exactly as the Service
+        /// Control Manager stores it.
+        /// </summary>
+        /// <param name="service">A handle opened with <c>SERVICE_QUERY_CONFIG</c>.</param>
+        /// <param name="name">The service name, for the warning logged when the configuration cannot be read.</param>
+        /// <returns>
+        /// The raw dependency entries, or <see langword="null"/> when the configuration cannot be read (logged).
+        /// An entry prefixed with <c>+</c> is a load-order group, and it is returned as written.
+        /// </returns>
+        /// <remarks>
+        /// This is deliberately not <c>ServiceController.ServicesDependedOn</c>: that property resolves a
+        /// <c>+GroupName</c> entry into the services that happen to be in the group, which turns "start after any
+        /// member of the group" into "start after every one of them" as soon as the list is written back.
+        /// </remarks>
+        private List<string>? QueryDependencies(SafeServiceHandle service, string name)
+        {
+            // Pass 1 reports the size; pass 2 fills the buffer
+            _windowsServiceApi.QueryServiceConfig(service, IntPtr.Zero, 0, out int bytesNeeded);
+            if (bytesNeeded <= 0)
+            {
+                Logger.Warn($"Could not read the configuration of service '{name}' to add the '{AppConfig.ServyHostServiceName}' dependency. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                return null;
+            }
+
+            IntPtr buffer = Marshal.AllocHGlobal(bytesNeeded);
+            try
+            {
+                if (!_windowsServiceApi.QueryServiceConfig(service, buffer, bytesNeeded, out _))
+                {
+                    Logger.Warn($"Could not read the configuration of service '{name}' to add the '{AppConfig.ServyHostServiceName}' dependency. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                    return null;
+                }
+
+                var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(buffer);
+                return ReadMultiSz(config.lpDependencies);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        /// <summary>
+        /// Reads a Windows <c>MULTI_SZ</c> value: null-terminated strings in sequence, closed by an empty one.
+        /// </summary>
+        /// <param name="multiSz">A pointer to the first string, or <see cref="IntPtr.Zero"/>.</param>
+        /// <returns>The strings it holds, empty when the pointer is <see cref="IntPtr.Zero"/> or the value is empty.</returns>
+        private static List<string> ReadMultiSz(IntPtr multiSz)
+        {
+            var values = new List<string>();
+            if (multiSz == IntPtr.Zero)
+                return values;
+
+            int offset = 0;
+            while (true)
+            {
+                var value = Marshal.PtrToStringUni(IntPtr.Add(multiSz, offset));
+                if (string.IsNullOrEmpty(value))
+                    break;
+
+                values.Add(value!);
+                offset += (value!.Length + 1) * sizeof(char);
+            }
+
+            return values;
         }
 
         /// <summary>
