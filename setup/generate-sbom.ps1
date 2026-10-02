@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Generates a unified CycloneDX SBOM for the five Servy executables.
+    Generates a unified CycloneDX SBOM for the six Servy executables.
 
 .DESCRIPTION
     Maps solution assembly structures, runs dotnet-CycloneDX dependency tracking per project,
