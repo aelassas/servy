@@ -1087,6 +1087,148 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_NewService_OpensWithDaclRightsAndGrantsTheLogOnAccountControl()
+        {
+            // Arrange
+            // f2247267 added SERVICE_READ_CONTROL | SERVICE_WRITE_DAC to the create access mask, so that the
+            // DACL grant that follows on the same handle can read and rewrite the security descriptor. The
+            // grant receives the trimmed log-on account, not options.Username verbatim.
+            ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("AccountService");
+            options.Username = @"  .\svc-account  ";
+            const uint daclRights = SERVICE_READ_CONTROL | SERVICE_WRITE_DAC;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            // The install has to have reached the grant, or the verifications below would pass vacuously.
+            Assert.True(result.IsSuccess);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(
+                It.IsAny<SafeScmHandle>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.Is<uint>(access => (access & daclRights) == daclRights),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IntPtr>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.GrantServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\svc-account"), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_NewService_WithoutUsername_GrantsLocalSystemControl()
+        {
+            // Arrange
+            // A blank username defaults the log-on account to LocalSystem, and the grant has to receive that
+            // default rather than the blank string it was derived from.
+            ArrangeSuccessfulInstallAndCaptureDto();
+            var options = CreateFullyPopulatedInstallOptions("DefaultAccountService");
+            options.Username = "   ";
+            options.Password = null;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _mockWindowsServiceApi.Verify(x => x.GrantServiceControlRights(It.IsAny<SafeServiceHandle>(), ServiceAccounts.LocalSystem), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_UpdateExistingService_GrantsTheLogOnAccountControlOnTheReopenedHandle()
+        {
+            // Arrange
+            // The update path has its own copy of the grant, on the handle reopened with SERVICE_READ_CONTROL
+            // and SERVICE_WRITE_DAC. The grant runs before the pre-shutdown deadline update, so the known
+            // arrangement in which that update fails is enough to observe it.
+            var scmHandle = _handles.Scm(123);
+            var serviceName = "TestService";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceAccounts.LocalSystem,
+                null))
+                .Returns(_handles.Service(0));
+
+            _mockWindowsServiceApi.Setup(x => x.GetServices())
+                .Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
+
+            var updateHandle = _handles.Service(456);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG))
+                .Returns(updateHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                updateHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceAccounts.LocalSystem,
+                null,
+                It.IsAny<string>()))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                updateHandle,
+                It.IsAny<uint>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            var reopenHandle = _handles.Service(789);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG | SERVICE_READ_CONTROL | SERVICE_WRITE_DAC))
+                .Returns(reopenHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(reopenHandle, It.IsAny<uint>(), It.IsAny<IntPtr>()))
+                .Returns(false);
+
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = "Test Description",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                StartupDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+            };
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            // The reopen happened, so the grant below is observed on a handle the update path really opened.
+            _mockWindowsServiceApi.Verify(x => x.OpenService(scmHandle, serviceName, SERVICE_CHANGE_CONFIG | SERVICE_READ_CONTROL | SERVICE_WRITE_DAC), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.GrantServiceControlRights(reopenHandle, ServiceAccounts.LocalSystem), Times.Once);
+
+            // The pre-shutdown update that follows the grant still fails, which is what this arrangement pins
+            // elsewhere; asserting it here keeps the test honest about the path it actually walked.
+            Assert.False(result.IsSuccess);
+        }
+
+        [Fact]
         public async Task InstallService_RequestPreShutdownTimeout()
         {
             // Arrange
