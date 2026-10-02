@@ -28,6 +28,36 @@ namespace Servy.Core.IntegrationTests.Helpers
             _resourceHelper.BaseExtractionDirectory = TempDirectory;
         }
 
+        #region Constructor Tests
+
+        [Fact]
+        public void Constructor_NullServiceHelper_ThrowsArgumentNullException()
+        {
+            // Arrange
+            IServiceHelper serviceHelper = null!;
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => new ResourceHelper(serviceHelper, _mockProcessKiller.Object));
+
+            // Assert
+            Assert.Equal("serviceHelper", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullProcessKiller_ThrowsArgumentNullException()
+        {
+            // Arrange
+            IProcessKiller processKiller = null!;
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => new ResourceHelper(_mockServiceHelper.Object, processKiller));
+
+            // Assert
+            Assert.Equal("processKiller", ex.ParamName);
+        }
+
+        #endregion
+
         #region IsFileLocked Tests
 
         [Fact]
