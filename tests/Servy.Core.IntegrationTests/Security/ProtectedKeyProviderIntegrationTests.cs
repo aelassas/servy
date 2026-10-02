@@ -457,4 +457,127 @@ namespace Servy.Core.IntegrationTests.Security
 
         #endregion
     }
+
+    /// <summary>
+    /// Integration tests for the cross-process lock failure arms of <see cref="ProtectedKeyProvider"/>.
+    /// Each test squats the provider's own global mutex name with a real kernel object, so the arm under
+    /// test is reached without any production seam. The arms report through the static logger that
+    /// <see cref="LogCapture"/> redirects, which is why these tests join
+    /// <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
+    /// A unique temporary path per test keeps both the mutex name and the provider's static
+    /// migration-failure counter private to that test.
+    /// </summary>
+    [Collection(CoreOsIntegrationCollection.Name)]
+    public class ProtectedKeyProviderLockIntegrationTests : TempDirectoryTestBase
+    {
+        #region Lock Failure Tests
+
+        [Fact]
+        public void GetKey_LockNameSquattedByAnotherObjectType_FailsClosedWithoutWritingTheKey()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("squatted.key");
+            var ivPath = GetTempFilePath("squatted.iv");
+
+            // A named event carrying the mutex's own name makes MutexAcl.Create throw
+            // WaitHandleCannotBeOpenedException: same name, different kernel object type.
+            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutexName(keyPath)))
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var captured = LogCapture.Run(() => Record.Exception(() => provider.GetKey()));
+
+                // Assert
+                var wrapped = Assert.IsType<InvalidOperationException>(captured.Result);
+                Assert.Contains("Could not acquire the cross-process lock", wrapped.Message);
+
+                var lockFailure = Assert.IsType<System.Security.SecurityException>(wrapped.InnerException);
+                Assert.IsType<WaitHandleCannotBeOpenedException>(lockFailure.InnerException);
+                Assert.Contains("CRITICAL: Failed to allocate global synchronization mutex", captured.Log);
+
+                // Fail closed: no key may be generated outside the cross-process lock,
+                // and no silent fallback to a per-session Local\ namespace may stand in for it.
+                Assert.False(File.Exists(keyPath));
+            }
+        }
+
+        [Fact]
+        public void GetKey_LegacyFileWhenMigrationLockFails_ReturnsLegacyDataAndEscalatesOnTheThirdFailure()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("legacy-locked.key");
+            var ivPath = GetTempFilePath("legacy-locked.iv");
+
+            var rawLegacyData = new byte[AppConfig.AesKeySizeBytes];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(rawLegacyData);
+            }
+
+            // A v7.8 file: protected with NO entropy, so the primary machine-entropy unprotect fails,
+            // the null-entropy fallback succeeds, and the provider re-saves under the mutex - which
+            // the squatted name below makes impossible.
+            byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
+            File.WriteAllBytes(keyPath, legacyEncrypted);
+
+            var logs = new List<string>();
+
+            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutexName(keyPath)))
+            {
+                // Act - one fresh provider per attempt, so the instance cache cannot short-circuit the read
+                for (int attempt = 0; attempt < AppConfig.KeyProviderMigrationFailureEscalationThreshold; attempt++)
+                {
+                    using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                    {
+                        var captured = LogCapture.Run(() => provider.GetKey());
+
+                        // The service stays operational: the legacy data is still returned
+                        Assert.Equal(rawLegacyData, captured.Result);
+                        logs.Add(captured.Log);
+                    }
+                }
+            }
+
+            // Assert
+            Assert.Contains("(Attempt 1/" + AppConfig.KeyProviderMigrationFailureEscalationThreshold, logs[0]);
+            Assert.DoesNotContain("PERSISTENT SECURITY DEGRADATION", logs[0]);
+            Assert.Contains("PERSISTENT SECURITY DEGRADATION", logs[logs.Count - 1]);
+
+            // The migration never reached SaveProtected, so the file on disk is untouched
+            Assert.Equal(legacyEncrypted, File.ReadAllBytes(keyPath));
+        }
+
+        #endregion
+
+        #region Test Lifecycle
+
+        /// <summary>
+        /// Mirrors the mutex name <c>ProtectedKeyProvider.RunUnderMutex</c> derives for a path:
+        /// an FNV-1a hash of the lower-cased path in the <c>Global\</c> namespace.
+        /// </summary>
+        /// <param name="path">The key or IV file path the provider locks on.</param>
+        /// <returns>The name of the system mutex the provider will open for <paramref name="path"/>.</returns>
+        private static string KeyVaultMutexName(string path)
+        {
+            uint stableHash = 2166136261;
+            foreach (char c in path.ToLowerInvariant())
+            {
+                stableHash = (stableHash ^ c) * 16777619;
+            }
+
+            return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
+        }
+
+        /// <summary>
+        /// Builds a path inside this test's own temporary directory.
+        /// </summary>
+        /// <param name="fileName">The file name to place in the temporary directory.</param>
+        /// <returns>The absolute path of <paramref name="fileName"/> under the test's temporary directory.</returns>
+        private string GetTempFilePath(string fileName)
+        {
+            return Path.Combine(TempDirectory, fileName);
+        }
+
+        #endregion
+    }
 }
