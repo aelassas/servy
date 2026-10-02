@@ -92,6 +92,42 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
+        /// Scans a file stream backwards for the last <c>\n</c> byte and returns the offset of the byte
+        /// that follows it, that is the first byte of the file's unterminated trailing line.
+        /// </summary>
+        /// <remarks>
+        /// A <c>\n</c> byte never occurs inside a multi-byte UTF-8 sequence, so scanning raw bytes is safe.
+        /// The stream position is left wherever the scan ended; callers seek before reading again.
+        /// </remarks>
+        /// <param name="fs">The open file stream to inspect.</param>
+        /// <returns>
+        /// The offset just past the last <c>\n</c> byte, or <c>0</c> when the file contains none.
+        /// </returns>
+        /// <exception cref="EndOfStreamException">
+        /// Thrown when the stream ends before the expected number of bytes has been read.
+        /// </exception>
+        private static long OffsetAfterLastNewline(FileStream fs)
+        {
+            long pos = fs.Length;
+            byte[] buffer = new byte[AppConfig.LogTailerHistoryScanBufferSize];
+
+            while (pos > 0)
+            {
+                int toRead = (int)Math.Min(pos, buffer.Length);
+                pos -= toRead;
+                fs.Seek(pos, SeekOrigin.Begin);
+                fs.ReadExactly(buffer, 0, toRead);
+
+                for (int i = toRead - 1; i >= 0; i--)
+                {
+                    if (buffer[i] == (byte)'\n') return pos + i + 1;
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// Starts a continuous tailing loop for a specific file, beginning at a designated position.
         /// This method handles file rotation detection and batched UI updates.
         /// </summary>
@@ -404,7 +440,8 @@ namespace Servy.Manager.Utils
                     // Pre-increment the line count if the file does not end with a trailing newline.
                     // This ensures the backward scanner accurately bounds the "last N lines" even when
                     // catching a live log file mid-flush.
-                    int count = EndsWithNewline(fs) ? 0 : 1;
+                    bool tornTail = !EndsWithNewline(fs);
+                    int count = tornTail ? 1 : 0;
 
                     long pos = fs.Length;
                     byte[] buffer = new byte[AppConfig.LogTailerHistoryScanBufferSize];
@@ -428,7 +465,9 @@ namespace Servy.Manager.Utils
                         }
                     }
 
-                    // Read forward from the discovered position
+                    // Read forward from the discovered position. Resolve the torn tail's first byte
+                    // before the StreamReader takes the stream over, so nothing seeks underneath it.
+                    long tornTailStart = tornTail ? OffsetAfterLastNewline(fs) : 0;
                     fs.Seek(pos, SeekOrigin.Begin);
                     using (StreamReader sr = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                     {
@@ -438,6 +477,19 @@ namespace Servy.Manager.Utils
                         {
                             cancellationToken.ThrowIfCancellationRequested();
                             tempLines.Add(line);
+                        }
+
+                        // The file does not end with a newline, so the writer may still be flushing its
+                        // last line. Leave that line out of the history and point the live tailer at its
+                        // first byte instead: RunFromPositionAsync holds an unterminated fragment in
+                        // carryOverFragment and publishes it once, whole, when the newline arrives. Without
+                        // this the history published the torn prefix and the tail published the remainder as
+                        // a second line. While a line is mid-flush the history therefore holds at most
+                        // maxLines - 1 complete lines.
+                        if (tornTail && tempLines.Count > 0)
+                        {
+                            tempLines.RemoveAt(tempLines.Count - 1);
+                            finalPos = tornTailStart;
                         }
 
                         for (int i = 0; i < tempLines.Count; i++)
