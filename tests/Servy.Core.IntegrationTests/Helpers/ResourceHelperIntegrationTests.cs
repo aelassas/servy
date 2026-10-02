@@ -383,6 +383,55 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public async Task CopyEmbeddedResource_WhenResourceStreamNotFound_StopsNoServiceAndKillsNoProcess()
+        {
+            // Arrange
+            // A stale, existing target, so TryPrepareExtraction asks for a copy and the lock probe runs.
+            string fileName = "missingstopapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
+            File.WriteAllText(targetPath, "existing target");
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            var testServices = new List<string> { "Servy_Service_A" };
+            _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
+            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
+
+            // The resource is missing from the assembly
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns((Stream?)null);
+
+            // Lock the target exclusively so the killer would be reached if the guard ran after TerminateBlockingProcesses
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                // LogCapture routes the static Logger into a private temp directory so the guard's own
+                // message can be read back: it is the only observable difference between the guard and
+                // the outer catch-all that a deleted guard falls into (the #7277 shape).
+                var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object,
+                    "Servy.Resources",
+                    fileName,
+                    extension,
+                    stopServices: true,
+                    cancellationToken: TestContext.Current.CancellationToken));
+
+                // Assert
+                Assert.False(result);
+                Assert.False(_resourceHelper.HasCopiedResources);
+
+                // The #1851 ordering: nothing is side-effected before the resource is known to exist
+                _mockServiceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+
+                // The guard's own arm, not the outer catch-all that a deleted guard falls into
+                Assert.Contains("Embedded resource not found", textLogOutput);
+                Assert.DoesNotContain("Failed to copy embedded resource", textLogOutput);
+            }
+        }
+
+        [Fact]
         public async Task CopyEmbeddedResource_Success_WritesFileToDisk()
         {
             // Arrange
