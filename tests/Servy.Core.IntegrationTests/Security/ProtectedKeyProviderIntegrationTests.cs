@@ -544,10 +544,16 @@ namespace Servy.Core.IntegrationTests.Security
                 }
             }
 
-            // Assert
-            Assert.Contains("(Attempt 1/" + AppConfig.KeyProviderMigrationFailureEscalationThreshold, logs[0]);
-            Assert.DoesNotContain("PERSISTENT SECURITY DEGRADATION", logs[0]);
+            // Assert - every attempt below the threshold is a transient warning that names its own attempt number
+            for (int i = 0; i < logs.Count - 1; i++)
+            {
+                Assert.Contains("(Attempt " + (i + 1) + "/" + AppConfig.KeyProviderMigrationFailureEscalationThreshold, logs[i]);
+                Assert.DoesNotContain("PERSISTENT SECURITY DEGRADATION", logs[i]);
+            }
+
+            // Assert - the attempt that reaches the threshold escalates and names the consecutive-failure count
             Assert.Contains("PERSISTENT SECURITY DEGRADATION", logs[logs.Count - 1]);
+            Assert.Contains("Failed " + AppConfig.KeyProviderMigrationFailureEscalationThreshold + " consecutive times", logs[logs.Count - 1]);
 
             // The migration never reached SaveProtected, so the file on disk is untouched
             Assert.Equal(legacyEncrypted, File.ReadAllBytes(keyPath));
