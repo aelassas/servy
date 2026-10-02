@@ -742,9 +742,10 @@ namespace Servy.Core.Services
 
         /// <summary>
         /// Hardens Servy's vault for the account a service was just installed under, unless it is Local System,
-        /// which already has Full Control and needs no hardening.
+        /// which already has Full Control and needs no hardening. The account gets the log folder of this service and
+        /// of every other service it runs, and nothing else under <c>logs\</c>.
         /// </summary>
-        /// <param name="serviceName">The service that was installed, for the log.</param>
+        /// <param name="serviceName">The service that was installed; its log folder is granted to the account.</param>
         /// <param name="account">The account the service runs under, as passed to the Service Control Manager.</param>
         /// <param name="cancellationToken">A token that stops the hardening between two files.</param>
         /// <returns>A task that completes when the hardening has finished or failed.</returns>
@@ -759,7 +760,7 @@ namespace Servy.Core.Services
 
             try
             {
-                if (!await _exePermissionsHardener.HardenAsync(account, cancellationToken))
+                if (!await _exePermissionsHardener.HardenServiceAsync(serviceName, account, _serviceRepository, cancellationToken))
                 {
                     Logger.Warn($"Servy's file permissions were not fully hardened for '{account}' (service '{serviceName}'). " +
                         "See the log above; installing the service again re-applies the hardening.");
@@ -778,10 +779,11 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Revokes the vault access and the Servy host named pipe access of the account a service ran under before it was
-        /// uninstalled or moved to another account, unless a remaining service still runs under it (#7161).
+        /// Revokes the access of the account a service ran under before it was uninstalled or moved to another account
+        /// to that service's log folder, and its vault access and Servy host named pipe access as well unless a
+        /// remaining service still runs under it (#7161).
         /// </summary>
-        /// <param name="serviceName">The service that was uninstalled or reconfigured, for the log.</param>
+        /// <param name="serviceName">The service that was uninstalled or reconfigured; its log folder is revoked.</param>
         /// <param name="formerService">The service's record as it was before the change; <see langword="null"/> when
         /// there was none, which revokes nothing.</param>
         /// <param name="currentAccount">The account the service runs under now, or <see langword="null"/> after an
@@ -805,7 +807,7 @@ namespace Servy.Core.Services
             {
                 try
                 {
-                    if (!await _exePermissionsHardener.RevokeIfUnusedAsync(formerAccount, _serviceRepository, cancellationToken))
+                    if (!await _exePermissionsHardener.RevokeIfUnusedAsync(formerAccount, serviceName, _serviceRepository, cancellationToken))
                     {
                         Logger.Warn($"The vault access of '{formerAccount}' was not fully revoked after service '{serviceName}' stopped using it. " +
                             "See the log above.");

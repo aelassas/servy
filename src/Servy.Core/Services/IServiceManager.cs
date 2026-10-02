@@ -59,8 +59,9 @@ namespace Servy.Core.Services
         Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Revokes the vault access and the Servy host named pipe access that were granted to the account a removed
-        /// service ran under, when no remaining service still runs under that account.
+        /// Revokes the access to the removed service's log folder that was granted to the account it ran under, and the
+        /// vault access and the Servy host named pipe access as well when no remaining service still runs under that
+        /// account.
         /// </summary>
         /// <param name="formerService">
         /// The service's database record as it was before the removal, read with <c>decrypt: false</c>;

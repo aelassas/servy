@@ -5,12 +5,15 @@ namespace Servy.Core.Logging
 {
     /// <summary>
     /// Moves the wrappers' log from its former place, <c>%ProgramData%\Servy\logs\Servy.Service.log</c>, to
-    /// <c>%ProgramData%\Servy\logs\service\Servy.Service.log</c>, the only log folder the service accounts can write.
+    /// <c>%ProgramData%\Servy\logs\service\Servy.Service.log</c>, where it stays.
     /// </summary>
     /// <remarks>
     /// The content is copied into the new file rather than the file being renamed, so the new file gets the ACL of
     /// <c>logs\service\</c> instead of carrying the old folder's entries along. A non-empty former log is appended to
     /// the new one (which, at the first start after the upgrade, does not exist yet); an empty one is just deleted.
+    /// The moved log is kept in <c>logs\service\</c> for the administrators: each wrapper now writes its own log in
+    /// <c>logs\service\&lt;ServiceName&gt;\</c> (<see cref="ServiceLogPaths"/>), and no service account can read or
+    /// write the moved log, which may hold the entries of every service.
     /// </remarks>
     public static class ServiceLogMigrator
     {

@@ -11,9 +11,10 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
-    /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in <c>logs\service\</c>, the
-    /// only folder it writes. The account gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and
-    /// nothing at all on <c>db\</c>, <c>security\</c> and <c>logs\</c> or anything in them.
+    /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in
+    /// <c>logs\service\&lt;ServiceName&gt;\</c> of each of its own services, the only folders it writes. The account
+    /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and nothing at all on <c>db\</c>,
+    /// <c>security\</c> and <c>logs\</c> or anything in them, the log folders of other services included.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -31,10 +32,10 @@ namespace Servy.Core.Security
     /// link is not touched and is reported as failed.
     /// </para>
     /// <para>
-    /// The grants are taken back when the last service using an account goes away: after an uninstall, and after an
-    /// install moves a service to another account, <see cref="Services.ServiceManager"/> calls
-    /// <see cref="RevokeIfUnusedAsync"/>, which removes the account's explicit entries from the vault root, the
-    /// writable folders and every hardened file unless a remaining service still runs under it (#7161).
+    /// The grants are taken back when a service goes away: after an uninstall, and after an install moves a service to
+    /// another account, <see cref="Services.ServiceManager"/> calls <see cref="RevokeIfUnusedAsync"/>, which always
+    /// removes the account's entries from that service's log folder, and removes its explicit entries from the vault
+    /// root, the log folders and every hardened file as well unless a remaining service still runs under it (#7161).
     /// </para>
     /// <para>
     /// The wrapper never opens <c>Servy.db</c> or the encryption key: it reads its own configuration and writes its own
@@ -43,15 +44,20 @@ namespace Servy.Core.Security
     /// <c>db\</c> and <c>security\</c> or on any file in them, and every entry a previous version gave it there (Read and
     /// Write on <c>Servy.db</c>, the folder grant that covered the <c>-wal</c>/<c>-shm</c> files, Read on the key) is
     /// removed when it is hardened again. The same goes for <c>logs\</c>, which holds the logs of the administrative
-    /// tools and the host.
+    /// tools and the host, and for every file and folder under it other than the account's own service log folders:
+    /// the whole tree is walked, so the grant a previous version gave on <c>logs\service\</c> and on the files in it
+    /// (such as the <c>Servy.Service.log</c> the host moved there, which stays there for the administrators) is removed
+    /// as well.
     /// </para>
     /// <para>
-    /// The service writes in one folder only, <c>logs\service\</c>, where the wrapper and the restarter log and rotate
-    /// their files. The account gets List Folder and Create Files on that folder (creating the log, and the new file of a
-    /// rotation, needs Create Files) and Read, Write and Delete on the files in it (<see cref="GetWritableFolderFileRights"/>).
-    /// It never gets Delete on a folder: it can neither rename nor delete a folder, and outside <c>logs\service\</c> it
-    /// can write or delete nothing. An account that a previous version granted Modify on the vault root loses that grant
-    /// when it is hardened again.
+    /// Each service writes in its own folder only, <c>logs\service\&lt;ServiceName&gt;\</c>
+    /// (<see cref="ServiceLogPaths"/>), where its wrapper and its restarter log and rotate their files. The account
+    /// gets List Folder and Create Files on the folder of each service it runs (creating the log, and the new file of a
+    /// rotation, needs Create Files) and Read, Write and Delete on the files in it
+    /// (<see cref="GetWritableFolderFileRights"/>). It never gets Delete on a folder: it can neither rename nor delete a
+    /// folder, and outside its own service log folders it can write or delete nothing, so the logs of a service running
+    /// under one account are out of reach of every other service account. An account that a previous version granted
+    /// Modify on the vault root loses that grant when it is hardened again.
     /// </para>
     /// <para>
     /// The process must be elevated, as every Servy process that installs a service already is.
@@ -107,7 +113,7 @@ namespace Servy.Core.Security
             => !string.IsNullOrWhiteSpace(account) && !ServiceAccounts.LocalSystemAliases.Contains(account!.Trim());
 
         /// <inheritdoc />
-        public virtual async Task<bool> HardenAsync(string targetAccount, CancellationToken cancellationToken)
+        public virtual async Task<bool> HardenAsync(string targetAccount, IReadOnlyCollection<string> serviceNames, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(targetAccount))
             {
@@ -126,7 +132,7 @@ namespace Servy.Core.Security
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                result = await Task.Run(() => Harden(account, cancellationToken), cancellationToken);
+                result = await Task.Run(() => Harden(account, serviceNames ?? Array.Empty<string>(), cancellationToken), cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -143,12 +149,54 @@ namespace Servy.Core.Security
         }
 
         /// <inheritdoc />
+        public virtual async Task<bool> HardenServiceAsync(string serviceName, string targetAccount, IServiceRepository serviceRepository, CancellationToken cancellationToken)
+        {
+            if (serviceRepository == null)
+                throw new ArgumentNullException(nameof(serviceRepository));
+
+            if (string.IsNullOrWhiteSpace(targetAccount))
+            {
+                Logger.Warn("Executable permission hardening skipped: no target account was given.");
+                return false;
+            }
+
+            var account = targetAccount.Trim();
+            if (!IsHardeningCandidate(account))
+            {
+                Logger.Debug($"Executable permission hardening skipped for '{account}': Local System keeps Full Control.");
+                return true;
+            }
+
+            List<string> serviceNames;
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Hardening rewrites every log folder grant of the account, so it must know all of its services
+                var services = await serviceRepository.GetAllAsync(decrypt: false, cancellationToken);
+                serviceNames = await Task.Run(() => GetServiceNamesOf(account, services, serviceName), cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Warn($"Executable permission hardening for '{account}' was cancelled before it completed.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to read the services of '{account}' to apply the executable permission hardening.", ex);
+                return false;
+            }
+
+            return await HardenAsync(account, serviceNames, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public virtual async Task HardenServiceAccountsAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken)
         {
             if (serviceRepository == null)
                 throw new ArgumentNullException(nameof(serviceRepository));
 
-            List<string> accounts;
+            List<ServiceAccountGroup> groups;
             try
             {
                 if (!IsProcessElevated())
@@ -158,7 +206,7 @@ namespace Servy.Core.Security
                 }
 
                 var services = await serviceRepository.GetAllAsync(decrypt: false, cancellationToken);
-                accounts = GetServiceAccounts(services);
+                groups = await Task.Run(() => GetServiceAccountGroups(services), cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -171,17 +219,17 @@ namespace Servy.Core.Security
                 return;
             }
 
-            foreach (var account in accounts)
+            foreach (var group in groups)
             {
                 if (cancellationToken.IsCancellationRequested)
                     return;
 
-                await HardenAsync(account, cancellationToken);
+                await HardenAsync(group.Account, group.ServiceNames, cancellationToken);
             }
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> RevokeIfUnusedAsync(string targetAccount, IServiceRepository serviceRepository, CancellationToken cancellationToken)
+        public virtual async Task<bool> RevokeIfUnusedAsync(string targetAccount, string? serviceName, IServiceRepository serviceRepository, CancellationToken cancellationToken)
         {
             if (serviceRepository == null)
                 throw new ArgumentNullException(nameof(serviceRepository));
@@ -197,8 +245,8 @@ namespace Servy.Core.Security
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var remaining = GetServiceAccounts(await serviceRepository.GetAllAsync(decrypt: false, cancellationToken));
-                result = await Task.Run(() => RevokeIfUnused(account, remaining, cancellationToken), cancellationToken);
+                var remaining = (await serviceRepository.GetAllAsync(decrypt: false, cancellationToken))?.ToList() ?? new List<ServiceDto>();
+                result = await Task.Run(() => RevokeIfUnused(account, serviceName, remaining, cancellationToken), cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -215,15 +263,19 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Removes <paramref name="account"/>'s explicit entries from the vault root, the writable folders and every
-        /// hardened file, unless one of <paramref name="remainingAccounts"/> is the same account.
+        /// Removes <paramref name="account"/>'s entries from the log folder of <paramref name="serviceName"/>, and its
+        /// explicit entries from the vault root, the log folders and every hardened file as well unless one of
+        /// <paramref name="remainingServices"/> still runs under the same account.
         /// </summary>
         /// <param name="account">The trimmed account whose access is revoked.</param>
-        /// <param name="remainingAccounts">The accounts the remaining services run under.</param>
+        /// <param name="serviceName">The service that was removed or moved to another account; its log folder is
+        /// revoked even when the account keeps running other services. <see langword="null"/> or blank revokes no single
+        /// folder.</param>
+        /// <param name="remainingServices">The services that remain.</param>
         /// <param name="cancellationToken">A token checked before each item.</param>
         /// <returns>The outcome, with the items the entries were removed from and those that could not be rewritten.</returns>
         /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-        internal ExePermissionsHardeningResult RevokeIfUnused(string account, IReadOnlyCollection<string> remainingAccounts, CancellationToken cancellationToken)
+        internal ExePermissionsHardeningResult RevokeIfUnused(string account, string? serviceName, IReadOnlyCollection<ServiceDto> remainingServices, CancellationToken cancellationToken)
         {
             var result = new ExePermissionsHardeningResult(account);
 
@@ -238,12 +290,29 @@ namespace Servy.Core.Security
                 return result.Complete(ExePermissionsHardeningStatus.Skipped, "it is a protected administrative principal that keeps Full Control");
 
             // The same account can be written two ways (.\user and MACHINE\user), so the SIDs decide
-            foreach (var other in remainingAccounts ?? (IReadOnlyCollection<string>)Array.Empty<string>())
+            string? inUseAs = null;
+            var keptFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var other in remainingServices ?? (IReadOnlyCollection<ServiceDto>)Array.Empty<ServiceDto>())
             {
-                var otherSid = ResolveAccount(other);
-                if (string.Equals(other, account, StringComparison.OrdinalIgnoreCase) || (otherSid != null && targetSid.Equals(otherSid)))
-                    return result.Complete(ExePermissionsHardeningStatus.InUse, $"another service still runs under it (as '{other}')");
+                if (other == null || other.RunAsLocalSystem == true || !IsHardeningCandidate(other.UserAccount))
+                    continue;
+
+                var otherAccount = other.UserAccount!.Trim();
+                if (!IsSameAccount(account, targetSid, otherAccount))
+                    continue;
+
+                inUseAs = inUseAs ?? otherAccount;
+                if (!string.IsNullOrWhiteSpace(other.Name))
+                    keptFolders.Add(ServiceLogPaths.GetRelativeFolderPath(other.Name));
             }
+
+            // The removed service's folder, unless a remaining service under the same account writes there
+            var serviceFolder = string.IsNullOrWhiteSpace(serviceName) ? null : ServiceLogPaths.GetRelativeFolderPath(serviceName!);
+            if (serviceFolder != null && keptFolders.Contains(serviceFolder))
+                serviceFolder = null;
+
+            if (inUseAs != null && serviceFolder == null)
+                return result.Complete(ExePermissionsHardeningStatus.InUse, $"another service still runs under it (as '{inUseAs}')");
 
             if (!IsProcessElevated())
                 return result.Complete(ExePermissionsHardeningStatus.NotElevated, "the process is not elevated");
@@ -257,15 +326,18 @@ namespace Servy.Core.Security
                 return result.Complete(ExePermissionsHardeningStatus.Failed, "the vault directory is a reparse point (symlink/junction)");
             }
 
-            RevokeEntries(string.Empty, targetSid, result);
-
-            foreach (var folder in GetWritableFolders())
+            if (inUseAs != null)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                RevokeEntries(folder, targetSid, result);
+                // The account keeps its other services, and loses the log folder of this one only
+                RevokeTree(serviceFolder!, targetSid, keptFolders, result, cancellationToken);
+                return result.Complete(result.Failed.Count > 0 ? ExePermissionsHardeningStatus.Failed : ExePermissionsHardeningStatus.InUse,
+                    $"another service still runs under it (as '{inUseAs}')");
             }
 
-            RevokeClosedFolders(targetSid, result, cancellationToken);
+            RevokeEntries(string.Empty, targetSid, result);
+
+            // db\, security\ and the whole logs\ tree, every service log folder included
+            RevokeClosedFolders(targetSid, new HashSet<string>(StringComparer.OrdinalIgnoreCase), result, cancellationToken);
 
             foreach (var target in GetTargetFiles())
             {
@@ -291,13 +363,95 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
+        /// Groups the services by the account they run under, other than Local System, with the names of the services
+        /// of each account. Accounts are compared by SID, so <c>.\user</c> and <c>MACHINE\user</c> are one account, and
+        /// by name when an account cannot be resolved.
+        /// </summary>
+        /// <param name="services">The installed services.</param>
+        /// <returns>One group per account, in first-seen order, named by the first spelling seen.</returns>
+        internal List<ServiceAccountGroup> GetServiceAccountGroups(IEnumerable<ServiceDto> services)
+        {
+            var groups = new List<ServiceAccountGroup>();
+            var bySid = new Dictionary<string, ServiceAccountGroup>(StringComparer.OrdinalIgnoreCase);
+            foreach (var service in services ?? Enumerable.Empty<ServiceDto>())
+            {
+                if (service == null || service.RunAsLocalSystem == true || !IsHardeningCandidate(service.UserAccount))
+                    continue;
+
+                var account = service.UserAccount!.Trim();
+                var key = ResolveAccount(account)?.Value ?? "name:" + account;
+                if (!bySid.TryGetValue(key, out var group))
+                {
+                    group = new ServiceAccountGroup(account);
+                    bySid.Add(key, group);
+                    groups.Add(group);
+                }
+
+                if (!string.IsNullOrWhiteSpace(service.Name))
+                    group.Add(service.Name!);
+            }
+
+            return groups;
+        }
+
+        /// <summary>
+        /// Lists the services that run under <paramref name="account"/>, compared by SID, plus
+        /// <paramref name="serviceName"/>.
+        /// </summary>
+        /// <param name="account">The trimmed account.</param>
+        /// <param name="services">The installed services.</param>
+        /// <param name="serviceName">A service that runs under the account even if the services do not say so yet, such as
+        /// the one being installed; <see langword="null"/> or blank adds none.</param>
+        /// <returns>The distinct service names, compared case-insensitively.</returns>
+        internal List<string> GetServiceNamesOf(string account, IEnumerable<ServiceDto> services, string? serviceName)
+        {
+            var targetSid = ResolveAccount(account);
+            var names = new List<string>();
+            if (!string.IsNullOrWhiteSpace(serviceName))
+                names.Add(serviceName!);
+
+            foreach (var service in services ?? Enumerable.Empty<ServiceDto>())
+            {
+                if (service == null || service.RunAsLocalSystem == true || !IsHardeningCandidate(service.UserAccount) || string.IsNullOrWhiteSpace(service.Name))
+                    continue;
+
+                if (IsSameAccount(account, targetSid, service.UserAccount!.Trim()) && !names.Contains(service.Name!, StringComparer.OrdinalIgnoreCase))
+                    names.Add(service.Name!);
+            }
+
+            return names;
+        }
+
+        /// <summary>
+        /// Determines whether <paramref name="other"/> is the same account as <paramref name="account"/>: the same name,
+        /// compared case-insensitively, or the same SID.
+        /// </summary>
+        /// <param name="account">The trimmed account.</param>
+        /// <param name="accountSid">The account's SID, or <see langword="null"/> when it could not be resolved.</param>
+        /// <param name="other">The trimmed account to compare.</param>
+        /// <returns><see langword="true"/> when both name the same account.</returns>
+        private bool IsSameAccount(string account, SecurityIdentifier? accountSid, string other)
+        {
+            if (string.Equals(other, account, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (accountSid == null)
+                return false;
+
+            var otherSid = ResolveAccount(other);
+            return otherSid != null && accountSid.Equals(otherSid);
+        }
+
+        /// <summary>
         /// Applies the hardening for <paramref name="account"/> and records what happened to each file.
         /// </summary>
         /// <param name="account">The trimmed account to harden for.</param>
+        /// <param name="serviceNames">Every service that runs under the account; each gets its own writable log folder,
+        /// and the account loses its access to every other log folder.</param>
         /// <param name="cancellationToken">A token checked before each file.</param>
         /// <returns>The outcome, with the files in each state.</returns>
         /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-        internal ExePermissionsHardeningResult Harden(string account, CancellationToken cancellationToken)
+        internal ExePermissionsHardeningResult Harden(string account, IReadOnlyCollection<string> serviceNames, CancellationToken cancellationToken)
         {
             var result = new ExePermissionsHardeningResult(account);
 
@@ -336,10 +490,12 @@ namespace Servy.Core.Security
 
             RevokeVaultRootAccess(targetSid, result);
 
-            // Take back everything a previous version granted in db\, security\ and logs\ before granting logs\service\
-            RevokeClosedFolders(targetSid, result, cancellationToken);
+            // Take back everything granted in db\, security\ and logs\ (a previous version's logs\service\ grant, the
+            // folders of services the account no longer runs) before granting the account's own service log folders
+            var writableFolders = GetWritableFolders(serviceNames);
+            RevokeClosedFolders(targetSid, new HashSet<string>(writableFolders, StringComparer.OrdinalIgnoreCase), result, cancellationToken);
 
-            foreach (var folder in GetWritableFolders())
+            foreach (var folder in writableFolders)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 GrantFolderAccess(folder, targetSid, result);
@@ -402,12 +558,18 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the service creates, rewrites and deletes
-        /// files: <c>logs\service\</c>, where the wrapper and the restarter write and rotate their logs.
+        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the services of an account create,
+        /// rewrite and delete files: <c>logs\service\&lt;ServiceName&gt;\</c> of each service, where its wrapper and its
+        /// restarter write and rotate their logs.
         /// </summary>
-        /// <returns>The writable folders.</returns>
-        internal static IReadOnlyList<string> GetWritableFolders()
-            => new[] { Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName) };
+        /// <param name="serviceNames">The services that run under the account; blank names are ignored.</param>
+        /// <returns>The writable folders, one per distinct service, in the order given.</returns>
+        internal static IReadOnlyList<string> GetWritableFolders(IEnumerable<string> serviceNames)
+            => (serviceNames ?? Enumerable.Empty<string>())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(ServiceLogPaths.GetRelativeFolderPath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
         /// <summary>
         /// Lists the folders, relative to <see cref="VaultDirectory"/>, on which and in which the service account must
@@ -426,47 +588,74 @@ namespace Servy.Core.Security
             => FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete;
 
         /// <summary>
-        /// Removes the target's explicit entries from each of the <see cref="GetClosedFolders"/> folders and from every file
-        /// directly in them, such as the grants on <c>db\Servy.db</c> and <c>security\aes_key.dat</c> and the folder
-        /// grants of <c>db\</c> and <c>logs\</c> that earlier versions wrote. The entries the files inherited from those
+        /// Removes the target's explicit entries from each of the <see cref="GetClosedFolders"/> folders and from every
+        /// file and folder under them, such as the grants on <c>db\Servy.db</c> and <c>security\aes_key.dat</c>, the
+        /// folder grants of <c>db\</c>, <c>logs\</c> and <c>logs\service\</c> that earlier versions wrote, and the
+        /// grants on the log folders of services the account no longer runs. The entries the files inherited from those
         /// folder grants go with them.
         /// </summary>
         /// <param name="targetSid">The account whose entries are removed.</param>
+        /// <param name="keptFolders">The folders, relative to <see cref="VaultDirectory"/>, that are left as they are with
+        /// everything in them: the account's own service log folders, which are granted afterwards.</param>
         /// <param name="result">Receives each item the entries were removed from, or that failed.</param>
-        /// <param name="cancellationToken">A token checked before each folder.</param>
-        private void RevokeClosedFolders(SecurityIdentifier targetSid, ExePermissionsHardeningResult result, CancellationToken cancellationToken)
+        /// <param name="cancellationToken">A token checked before each item.</param>
+        private void RevokeClosedFolders(SecurityIdentifier targetSid, ISet<string> keptFolders, ExePermissionsHardeningResult result, CancellationToken cancellationToken)
         {
             foreach (var folder in GetClosedFolders())
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                RevokeTree(folder, targetSid, keptFolders, result, cancellationToken);
+            }
+        }
 
-                var path = Path.Combine(VaultDirectory, folder);
-                if (!Directory.Exists(path))
-                    continue;
+        /// <summary>
+        /// Removes the target's explicit entries from a folder and from every file and folder under it, except the
+        /// <paramref name="keptFolders"/>. A missing folder is ignored, and a linked folder is refused and never walked.
+        /// </summary>
+        /// <param name="relativeFolder">The folder, relative to <see cref="VaultDirectory"/>.</param>
+        /// <param name="targetSid">The account whose entries are removed.</param>
+        /// <param name="keptFolders">The folders, relative to <see cref="VaultDirectory"/>, that are skipped with
+        /// everything in them.</param>
+        /// <param name="result">Receives each item the entries were removed from, or that failed.</param>
+        /// <param name="cancellationToken">A token checked before each item.</param>
+        private void RevokeTree(string relativeFolder, SecurityIdentifier targetSid, ISet<string> keptFolders, ExePermissionsHardeningResult result, CancellationToken cancellationToken)
+        {
+            var path = Path.Combine(VaultDirectory, relativeFolder);
+            if (!Directory.Exists(path))
+                return;
 
-                RevokeEntries(folder, targetSid, result);
+            RevokeEntries(relativeFolder, targetSid, result);
 
-                // A linked folder was refused above; never enumerate through it
-                if ((new DirectoryInfo(path).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-                    continue;
+            // A linked folder was refused above; never enumerate through it
+            if ((new DirectoryInfo(path).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                return;
 
-                string[] files;
-                try
-                {
-                    files = Directory.GetFiles(path);
-                }
-                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
-                {
-                    Logger.Error($"Failed to list '{folder}' to revoke the access of '{result.Account}' to its files.", ex);
-                    result.AddFailed(folder);
-                    continue;
-                }
+            string[] files;
+            string[] folders;
+            try
+            {
+                files = Directory.GetFiles(path);
+                folders = Directory.GetDirectories(path);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Logger.Error($"Failed to list '{relativeFolder}' to revoke the access of '{result.Account}' to its content.", ex);
+                result.AddFailed(relativeFolder);
+                return;
+            }
 
-                foreach (var file in files)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    RevokeEntries(Path.Combine(folder, Path.GetFileName(file)), targetSid, result);
-                }
+            foreach (var file in files)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                RevokeEntries(Path.Combine(relativeFolder, Path.GetFileName(file)), targetSid, result);
+            }
+
+            foreach (var folder in folders)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var child = Path.Combine(relativeFolder, Path.GetFileName(folder));
+                if (!keptFolders.Contains(child))
+                    RevokeTree(child, targetSid, keptFolders, result, cancellationToken);
             }
         }
 
@@ -755,7 +944,9 @@ namespace Servy.Core.Security
                         : $"Revoked the access of '{account}' to Servy's vault: {string.Join(", ", result.Revoked)}.");
                     return true;
                 case ExePermissionsHardeningStatus.InUse:
-                    Logger.Info($"Kept the access of '{account}' to Servy's vault: {result.Reason}.");
+                    Logger.Info(result.Revoked.Count == 0
+                        ? $"Kept the access of '{account}' to Servy's vault: {result.Reason}."
+                        : $"Kept the access of '{account}' to Servy's vault: {result.Reason}. Revoked its access to: {string.Join(", ", result.Revoked)}.");
                     return true;
                 case ExePermissionsHardeningStatus.Skipped:
                     Logger.Info($"Vault access revocation skipped for '{account}': {result.Reason}.");
@@ -900,5 +1091,38 @@ namespace Servy.Core.Security
 
         /// <summary>Gets whether a missing file is skipped rather than reported as missing.</summary>
         public bool Optional { get; }
+    }
+
+    /// <summary>
+    /// One service account and the services that run under it.
+    /// </summary>
+    internal sealed class ServiceAccountGroup
+    {
+        private readonly List<string> _serviceNames = new List<string>();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceAccountGroup"/> class.
+        /// </summary>
+        /// <param name="account">The account, as the first service of the group spells it.</param>
+        public ServiceAccountGroup(string account)
+        {
+            Account = account;
+        }
+
+        /// <summary>Gets the account, as the first service of the group spells it.</summary>
+        public string Account { get; }
+
+        /// <summary>Gets the names of the services that run under the account, in first-seen order.</summary>
+        public IReadOnlyCollection<string> ServiceNames => _serviceNames;
+
+        /// <summary>
+        /// Adds a service to the group, unless a service of that name, compared case-insensitively, is already in it.
+        /// </summary>
+        /// <param name="serviceName">The service name.</param>
+        public void Add(string serviceName)
+        {
+            if (!_serviceNames.Contains(serviceName, StringComparer.OrdinalIgnoreCase))
+                _serviceNames.Add(serviceName);
+        }
     }
 }

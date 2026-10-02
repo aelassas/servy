@@ -2,6 +2,7 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Testing;
 using System.Diagnostics;
@@ -12,8 +13,8 @@ namespace Servy.Core.IntegrationTests.Security
 {
     /// <summary>
     /// Runs <see cref="ServyExePermissionsHardener"/> against a real, temporary vault and reads the resulting ACLs back.
-    /// The target account is <c>NT AUTHORITY\LocalService</c>; <c>NT AUTHORITY\NetworkService</c> plays another
-    /// service account. Rewriting owners and DACLs needs an elevated process, as the product does, so every test that
+    /// The target account is <c>NT AUTHORITY\LocalService</c>, which runs the service <c>svc-one</c>;
+    /// <c>NT AUTHORITY\NetworkService</c> plays another service account, which runs <c>svc-two</c>. Rewriting owners and DACLs needs an elevated process, as the product does, so every test that
     /// hardens a vault or creates a link is skipped when the run is not elevated (CI runners are). The account-resolution
     /// and LocalService membership probes only read the system, and run either way.
     /// </summary>
@@ -22,6 +23,9 @@ namespace Servy.Core.IntegrationTests.Security
     {
         private const string NotElevatedSkipReason = "Rewriting file owners and DACLs requires an elevated process.";
         private const string TargetAccount = @"NT AUTHORITY\LocalService";
+        private const string OtherAccount = @"NT AUTHORITY\NetworkService";
+        private const string ServiceName = "svc-one";
+        private const string OtherServiceName = "svc-two";
 
         private static readonly SecurityIdentifier TargetSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
         private static readonly SecurityIdentifier OtherSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
@@ -32,7 +36,11 @@ namespace Servy.Core.IntegrationTests.Security
         private static readonly string DbFile = Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName);
         private static readonly string KeyFile = Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName);
         private static readonly string HandleFile = AppConfig.HandleExeX64FileName + ".exe";
-        private static readonly string ServiceLogsFolder = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
+        private static readonly string ServiceLogsRoot = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
+        private static readonly string ServiceLogsFolder = ServiceLogPaths.GetRelativeFolderPath(ServiceName);
+        private static readonly string OtherServiceLogsFolder = ServiceLogPaths.GetRelativeFolderPath(OtherServiceName);
+        private static readonly IReadOnlyCollection<string> Services = new[] { ServiceName };
+        private static readonly IReadOnlyCollection<string> OtherServices = new[] { OtherServiceName };
 
         private readonly bool _isElevated = SecurityHelper.IsAdministrator();
         private readonly string _vault;
@@ -56,11 +64,11 @@ namespace Servy.Core.IntegrationTests.Security
             GrantInheritedModify(OtherSid);
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
-            Assert.Equal(ServyExePermissionsHardener.GetWritableFolders(), result.GrantedFolders);
+            Assert.Equal(ServyExePermissionsHardener.GetWritableFolders(Services), result.GrantedFolders);
             Assert.Empty(result.Failed);
             Assert.Empty(result.Missing);
             Assert.Equal(8, result.Hardened.Count);
@@ -68,7 +76,7 @@ namespace Servy.Core.IntegrationTests.Security
             // 1. Nothing on the vault root; List and Create Files on each writable folder, Modify on the files created in it
             Assert.Empty(ExplicitRules(_vault, TargetSid, AccessControlType.Allow));
             Assert.Empty(ExplicitRules(_vault, TargetSid, AccessControlType.Deny));
-            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
             {
                 AssertWritableFolder(Path.Combine(_vault, folder));
             }
@@ -93,7 +101,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             // 4. The database, the encryption key and their folders: nothing at all. The wrapper reads its
             // configuration and writes its runtime state through the Servy host service (#7224, #7248).
-            foreach (var closed in new[] { AppConfig.DbFolderName, DbFile, AppConfig.SecurityFolderName, KeyFile, AppConfig.LogsFolderName })
+            foreach (var closed in new[] { AppConfig.DbFolderName, DbFile, AppConfig.SecurityFolderName, KeyFile, AppConfig.LogsFolderName, ServiceLogsRoot })
             {
                 Assert.Equal(0, AllowedRights(Path.Combine(_vault, closed), TargetSid));
                 Assert.Empty(ExplicitRules(Path.Combine(_vault, closed), TargetSid, AccessControlType.Allow));
@@ -118,21 +126,27 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
 
             // Act
-            _sut.Harden(TargetAccount, CancellationToken.None);
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
             var serviceLog = Path.Combine(_vault, ServiceLogsFolder, "Servy.Service.log");
+            var sharedServiceLog = Path.Combine(_vault, ServiceLogsRoot, "Servy.Service.log");
+            Directory.CreateDirectory(Path.Combine(_vault, OtherServiceLogsFolder));
+            var otherServiceLog = Path.Combine(_vault, OtherServiceLogsFolder, "Servy.Service.log");
             var wal = Path.Combine(_vault, AppConfig.DbFolderName, "Servy.db-wal");
             var adminLog = Path.Combine(_vault, AppConfig.LogsFolderName, "Servy.Manager.log");
             var planted = Path.Combine(_vault, "planted.exe");
             var securityFile = Path.Combine(_vault, AppConfig.SecurityFolderName, "planted.dat");
-            foreach (var file in new[] { serviceLog, wal, adminLog, planted, securityFile })
+            foreach (var file in new[] { serviceLog, sharedServiceLog, otherServiceLog, wal, adminLog, planted, securityFile })
             {
                 File.WriteAllText(file, string.Empty);
             }
 
-            // Assert: the service logs are writable and deletable (log rotation)...
+            // Assert: the service's own logs are writable and deletable (log rotation)...
             Assert.True(Has(AllowedRights(serviceLog, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
 
-            // ...and a file anywhere else, SQLite's side files and the administrative logs included, carries no grant at all
+            // ...and a file anywhere else, logs\service\ itself, another service's folder, SQLite's side files and the
+            // administrative logs included, carries no grant at all
+            Assert.Equal(0, AllowedRights(sharedServiceLog, TargetSid));
+            Assert.Equal(0, AllowedRights(otherServiceLog, TargetSid));
             Assert.Equal(0, AllowedRights(wal, TargetSid));
             Assert.Equal(0, AllowedRights(adminLog, TargetSid));
             Assert.Equal(0, AllowedRights(planted, TargetSid));
@@ -157,7 +171,7 @@ namespace Servy.Core.IntegrationTests.Security
             File.WriteAllText(pdb, "symbols");
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
@@ -174,12 +188,14 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Arrange: what the previous hardening wrote - List and Create Files plus an inherited Modify on db\ and
             // logs\, Read and Write on a protected Servy.db, Read on a protected key - and the files that inherited
-            // the folder grants (SQLite's -wal, the shared log)
+            // the folder grants (SQLite's -wal, the shared log). The 10.1 layout's grant on logs\service\ is there too, with
+            // the wrappers' shared log the host moved into it.
             CreateVault();
             var db = Path.Combine(_vault, AppConfig.DbFolderName);
             var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
-            Directory.CreateDirectory(logs);
-            foreach (var folder in new[] { db, logs })
+            var serviceLogs = Path.Combine(_vault, ServiceLogsRoot);
+            Directory.CreateDirectory(serviceLogs);
+            foreach (var folder in new[] { db, logs, serviceLogs })
             {
                 var folderInfo = new DirectoryInfo(folder);
                 var folderAcl = folderInfo.GetAccessControl(AccessControlSections.Access);
@@ -195,18 +211,23 @@ namespace Servy.Core.IntegrationTests.Security
             File.WriteAllText(wal, "wal");
             var sharedLog = Path.Combine(logs, "Servy.Service.log");
             File.WriteAllText(sharedLog, "log");
+            var movedLog = Path.Combine(serviceLogs, "Servy.Service.log");
+            File.WriteAllText(movedLog, "log");
+            Assert.True(Has(AllowedRights(movedLog, TargetSid), FileSystemRights.Write));
             Assert.True(Has(AllowedRights(wal, TargetSid), FileSystemRights.Write));
             Assert.True(Has(AllowedRights(Path.Combine(_vault, DbFile), TargetSid), FileSystemRights.Write));
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
-            // Assert: the account can neither read nor write anything in db\, security\ or logs\ any more
+            // Assert: the account can neither read nor write anything in db\, security\ or logs\ any more, the moved log
+            // that stays in logs\service\ included
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
-            foreach (var item in new[] { db, Path.Combine(_vault, DbFile), wal, Path.Combine(_vault, AppConfig.SecurityFolderName), Path.Combine(_vault, KeyFile), logs, sharedLog })
+            foreach (var item in new[] { db, Path.Combine(_vault, DbFile), wal, Path.Combine(_vault, AppConfig.SecurityFolderName), Path.Combine(_vault, KeyFile), logs, sharedLog, serviceLogs, movedLog })
                 Assert.Equal(0, AllowedRights(item, TargetSid));
+            Assert.True(File.Exists(movedLog));
 
-            // ... and logs\service\ is the one folder it writes
+            // ... and logs\service\svc-one\ is the one folder it writes
             AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
         }
 
@@ -219,11 +240,11 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
             var outside = Path.Combine(TempDirectory, "outside-logs");
             Directory.CreateDirectory(outside);
-            Directory.CreateDirectory(Path.Combine(_vault, AppConfig.LogsFolderName));
+            Directory.CreateDirectory(Path.Combine(_vault, ServiceLogsRoot));
             RunCmd($"mklink /J \"{Path.Combine(_vault, ServiceLogsFolder)}\" \"{outside}\"");
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -241,8 +262,8 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
 
             // Act
-            var first = _sut.Harden(TargetAccount, CancellationToken.None);
-            var second = _sut.Harden(TargetAccount, CancellationToken.None);
+            var first = _sut.Harden(TargetAccount, Services, CancellationToken.None);
+            var second = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, first.Status);
@@ -263,8 +284,8 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
 
             // Act
-            _sut.Harden(TargetAccount, CancellationToken.None);
-            var second = _sut.Harden(@"NT AUTHORITY\NetworkService", CancellationToken.None);
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
+            var second = _sut.Harden(OtherAccount, OtherServices, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, second.Status);
@@ -277,8 +298,91 @@ namespace Servy.Core.IntegrationTests.Security
             var db = Path.Combine(_vault, DbFile);
             Assert.Equal(0, AllowedRights(db, TargetSid));
             Assert.Equal(0, AllowedRights(db, OtherSid));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow).Count);
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), OtherSid, AccessControlType.Allow).Count);
+            AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
+            AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder), OtherSid);
+        }
+
+        [Fact]
+        public void Harden_TwoAccounts_NeitherCanReachTheLogsOfTheOther()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+
+            // Act
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
+            _sut.Harden(OtherAccount, OtherServices, CancellationToken.None);
+            var ownLog = Path.Combine(_vault, ServiceLogsFolder, "Servy.Service.log");
+            var otherLog = Path.Combine(_vault, OtherServiceLogsFolder, "Servy.Restarter.log");
+            File.WriteAllText(ownLog, "one");
+            File.WriteAllText(otherLog, "two");
+
+            // Assert: each account holds no entry at all on the other's folder or on the files in it
+            Assert.Equal(0, AllowedRights(Path.Combine(_vault, OtherServiceLogsFolder), TargetSid));
+            Assert.Equal(0, AllowedRights(otherLog, TargetSid));
+            Assert.Equal(0, AllowedRights(Path.Combine(_vault, ServiceLogsFolder), OtherSid));
+            Assert.Equal(0, AllowedRights(ownLog, OtherSid));
+            Assert.True(Has(AllowedRights(ownLog, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+            Assert.True(Has(AllowedRights(otherLog, OtherSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+        }
+
+        [Fact]
+        public void Harden_TwoServicesOfOneAccount_GrantsBothFolders()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+
+            // Act
+            var result = _sut.Harden(TargetAccount, new[] { ServiceName, OtherServiceName }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
+            Assert.Equal(new[] { ServiceLogsFolder, OtherServiceLogsFolder }, result.GrantedFolders);
+            AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
+            AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder));
+        }
+
+        [Fact]
+        public void Harden_ServiceTheAccountNoLongerRuns_LosesItsFolder()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the account ran both services, and svc-two has since moved to another account
+            CreateVault();
+            _sut.Harden(TargetAccount, new[] { ServiceName, OtherServiceName }, CancellationToken.None);
+            var otherLog = Path.Combine(_vault, OtherServiceLogsFolder, "Servy.Service.log");
+            File.WriteAllText(otherLog, "two");
+
+            // Act
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
+            Assert.Empty(ExplicitRules(Path.Combine(_vault, OtherServiceLogsFolder), TargetSid, AccessControlType.Allow));
+            Assert.Equal(0, AllowedRights(otherLog, TargetSid));
+            AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
+        }
+
+        [Fact]
+        public void Harden_ServiceNameThatIsNotAFolderName_GrantsItsSafeFolder()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            CreateVault();
+            const string unsafeName = "My:Service*";
+
+            // Act
+            var result = _sut.Harden(TargetAccount, new[] { unsafeName }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
+            var folder = Path.Combine(_vault, ServiceLogsRoot, "My%3AService%2A");
+            Assert.True(Directory.Exists(folder));
+            AssertWritableFolder(folder);
         }
 
         #endregion
@@ -301,7 +405,7 @@ namespace Servy.Core.IntegrationTests.Security
             new FileInfo(exe).SetAccessControl(acl);
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
@@ -326,7 +430,7 @@ namespace Servy.Core.IntegrationTests.Security
             new FileInfo(exe).SetAccessControl(acl);
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
@@ -351,7 +455,7 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(identity.User, new FileInfo(exe).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
@@ -374,7 +478,7 @@ namespace Servy.Core.IntegrationTests.Security
             File.Delete(Path.Combine(_vault, AppConfig.ServyRestarterExe));
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, result.Status);
@@ -396,7 +500,7 @@ namespace Servy.Core.IntegrationTests.Security
             File.Delete(Path.Combine(_vault, ServyExePermissionsHardener.HostSettingsFileName));
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
@@ -423,7 +527,7 @@ namespace Servy.Core.IntegrationTests.Security
             var before = new FileInfo(outside).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -442,7 +546,7 @@ namespace Servy.Core.IntegrationTests.Security
             RunCmd($"mklink /H \"{Path.Combine(TempDirectory, "second-link.exe")}\" \"{exe}\"");
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -461,7 +565,7 @@ namespace Servy.Core.IntegrationTests.Security
             RunCmd($"mklink /J \"{_vault}\" \"{realVault}\"");
 
             // Act
-            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+            var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -487,7 +591,7 @@ namespace Servy.Core.IntegrationTests.Security
             var exeBefore = Sddl(exe);
 
             // Act
-            var result = _sut.Harden(account, CancellationToken.None);
+            var result = _sut.Harden(account, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
@@ -508,7 +612,7 @@ namespace Servy.Core.IntegrationTests.Security
             var vaultBefore = Sddl(_vault);
 
             // Act
-            var result = _sut.Harden(account, CancellationToken.None);
+            var result = _sut.Harden(account, Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
@@ -528,7 +632,7 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
 
             // Act
-            var hardened = await _sut.HardenAsync(TargetAccount, TestContext.Current.CancellationToken);
+            var hardened = await _sut.HardenAsync(TargetAccount, Services, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(hardened);
@@ -547,7 +651,8 @@ namespace Servy.Core.IntegrationTests.Security
             repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
             {
                 new ServiceDto { Name = "local-system", RunAsLocalSystem = true },
-                new ServiceDto { Name = "local-service", RunAsLocalSystem = false, UserAccount = TargetAccount },
+                new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = TargetAccount },
+                new ServiceDto { Name = OtherServiceName, RunAsLocalSystem = false, UserAccount = @"nt authority\localservice" },
             });
 
             // Act
@@ -557,7 +662,33 @@ namespace Servy.Core.IntegrationTests.Security
             var restarter = Path.Combine(_vault, AppConfig.ServyRestarterExe);
             Assert.True(Has(AllowedRights(restarter, TargetSid), FileSystemRights.ReadAndExecute));
             Assert.False(Has(AllowedRights(restarter, TargetSid), FileSystemRights.Delete));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow).Count);
+
+            // Both spellings are one account, so it keeps the folders of both its services
+            AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
+            AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder));
+        }
+
+        [Fact]
+        public async Task HardenServiceAsync_KeepsTheFoldersOfTheOtherServicesOfTheAccount()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: svc-two already runs under the account, and svc-one is being installed under it
+            CreateVault();
+            _sut.Harden(TargetAccount, OtherServices, CancellationToken.None);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = OtherServiceName, RunAsLocalSystem = false, UserAccount = TargetAccount },
+            });
+
+            // Act
+            var hardened = await _sut.HardenServiceAsync(ServiceName, TargetAccount, repository.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(hardened);
+            AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
+            AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder));
         }
 
         #endregion
@@ -572,21 +703,21 @@ namespace Servy.Core.IntegrationTests.Security
             // Arrange
             CreateVault();
             GrantInheritedModify(TargetSid);
-            _sut.Harden(TargetAccount, CancellationToken.None);
-            _sut.Harden(@"NT AUTHORITY\NetworkService", CancellationToken.None);
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
+            _sut.Harden(OtherAccount, OtherServices, CancellationToken.None);
 
             // Act
-            var result = _sut.RevokeIfUnused(TargetAccount, new List<string> { @"NT AUTHORITY\NetworkService" }, CancellationToken.None);
+            var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto> { new ServiceDto { Name = OtherServiceName, UserAccount = OtherAccount } }, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
             Assert.Empty(result.Failed);
             var items = new List<string> { _vault };
-            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
                 items.Add(Path.Combine(_vault, folder));
             foreach (var file in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, HandleFile,
                 ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName,
-                DbFile, KeyFile, AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName })
+                DbFile, KeyFile, AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName, ServiceLogsRoot })
                 items.Add(Path.Combine(_vault, file));
             foreach (var item in items)
             {
@@ -600,10 +731,13 @@ namespace Servy.Core.IntegrationTests.Security
             var laterLog = Path.Combine(_vault, ServiceLogsFolder, "later.log");
             File.WriteAllText(laterLog, "later");
             Assert.Equal(0, AllowedRights(laterLog, TargetSid));
-            Assert.True(Has(AllowedRights(laterLog, OtherSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+            var otherLaterLog = Path.Combine(_vault, OtherServiceLogsFolder, "later.log");
+            File.WriteAllText(otherLaterLog, "later");
+            Assert.Equal(0, AllowedRights(otherLaterLog, TargetSid));
+            Assert.True(Has(AllowedRights(otherLaterLog, OtherSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
             Assert.Equal(0, AllowedRights(Path.Combine(_vault, KeyFile), OtherSid));
             Assert.Equal(0, AllowedRights(Path.Combine(_vault, DbFile), OtherSid));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), OtherSid, AccessControlType.Allow).Count);
+            AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder), OtherSid);
         }
 
         [Fact]
@@ -613,17 +747,43 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Arrange
             CreateVault();
-            _sut.Harden(TargetAccount, CancellationToken.None);
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
             var before = Sddl(Path.Combine(_vault, KeyFile));
 
             // Act
-            var result = _sut.RevokeIfUnused(TargetAccount, new List<string> { @"nt authority\localservice" }, CancellationToken.None);
+            var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto> { new ServiceDto { Name = ServiceName, UserAccount = @"nt authority\localservice" } }, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
+            Assert.Empty(result.Revoked);
             Assert.Equal(before, Sddl(Path.Combine(_vault, KeyFile)));
-            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+            foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
                 AssertWritableFolder(Path.Combine(_vault, folder));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_AccountStillRunsAnotherService_RevokesOnlyTheRemovedServiceFolder()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the account runs both services, and svc-one is removed
+            CreateVault();
+            _sut.Harden(TargetAccount, new[] { ServiceName, OtherServiceName }, CancellationToken.None);
+            var removedLog = Path.Combine(_vault, ServiceLogsFolder, "Servy.Service.log");
+            File.WriteAllText(removedLog, "one");
+            var exeBefore = Sddl(Path.Combine(_vault, AppConfig.ServyServiceUIExe));
+
+            // Act
+            var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto> { new ServiceDto { Name = OtherServiceName, UserAccount = TargetAccount } }, CancellationToken.None);
+
+            // Assert: the removed service's folder and log are out of reach, the remaining one is untouched
+            Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
+            Assert.Equal(new[] { ServiceLogsFolder }, result.Revoked);
+            Assert.Empty(ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow));
+            Assert.Equal(0, AllowedRights(removedLog, TargetSid));
+            Assert.True(File.Exists(removedLog));
+            AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder));
+            Assert.Equal(exeBefore, Sddl(Path.Combine(_vault, AppConfig.ServyServiceUIExe)));
         }
 
         [Fact]
@@ -633,7 +793,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Arrange
             CreateVault();
-            _sut.Harden(TargetAccount, CancellationToken.None);
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
             var outside = Path.Combine(TempDirectory, "outside.exe");
             File.WriteAllText(outside, "outside");
             var outsideAcl = new FileInfo(outside).GetAccessControl(AccessControlSections.Access);
@@ -645,7 +805,7 @@ namespace Servy.Core.IntegrationTests.Security
             var before = new FileInfo(outside).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
 
             // Act
-            var result = _sut.RevokeIfUnused(TargetAccount, new List<string>(), CancellationToken.None);
+            var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto>(), CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -671,7 +831,7 @@ namespace Servy.Core.IntegrationTests.Security
             RunCmd($"mklink /J \"{_vault}\" \"{realVault}\"");
 
             // Act
-            var result = _sut.RevokeIfUnused(TargetAccount, new List<string>(), CancellationToken.None);
+            var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto>(), CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -687,7 +847,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Arrange
             CreateVault();
-            _sut.Harden(TargetAccount, CancellationToken.None);
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
             var repository = new Mock<IServiceRepository>();
             repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
             {
@@ -695,12 +855,13 @@ namespace Servy.Core.IntegrationTests.Security
             });
 
             // Act
-            var revoked = await _sut.RevokeIfUnusedAsync(TargetAccount, repository.Object, TestContext.Current.CancellationToken);
+            var revoked = await _sut.RevokeIfUnusedAsync(TargetAccount, ServiceName, repository.Object, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(revoked);
             Assert.Equal(0, AllowedRights(Path.Combine(_vault, KeyFile), TargetSid));
             Assert.Empty(ExplicitRules(Path.Combine(_vault, AppConfig.DbFolderName), TargetSid, AccessControlType.Allow));
+            Assert.Empty(ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow));
         }
 
         #endregion
@@ -861,14 +1022,15 @@ namespace Servy.Core.IntegrationTests.Security
         /// <summary>
         /// Asserts the target's two entries on a writable folder: List and Create Files on the folder itself (never
         /// Delete on it), and the rights <see cref="ServyExePermissionsHardener.GetWritableFolderFileRights"/> names on
-        /// the files created in it. Both rules are bounded from above as
+        /// the files created in it, for the target account or <paramref name="sid"/>. Both rules are bounded from above as
         /// well as from below: neither carries Change Permissions (WRITE_DAC) or Take Ownership, which would let the
         /// target rewrite the ACL it was just given (#7163).
         /// </summary>
-        private static void AssertWritableFolder(string path)
+        private static void AssertWritableFolder(string path, SecurityIdentifier? sid = null)
         {
             // Arrange
-            var rules = ExplicitRules(path, TargetSid, AccessControlType.Allow);
+            sid = sid ?? TargetSid;
+            var rules = ExplicitRules(path, sid, AccessControlType.Allow);
 
             // Assert
             Assert.Equal(2, rules.Count);
@@ -894,7 +1056,7 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.False(Has((int)files.FileSystemRights, FileSystemRights.ChangePermissions), $"the files in {path} are not re-ACLable by the target");
             Assert.False(Has((int)files.FileSystemRights, FileSystemRights.TakeOwnership), $"the files in {path} are not re-ownable by the target");
 
-            Assert.False(Has(AllowedRights(path, TargetSid), FileSystemRights.Delete), $"{path} itself is not deletable");
+            Assert.False(Has(AllowedRights(path, sid), FileSystemRights.Delete), $"{path} itself is not deletable");
         }
 
         /// <summary>

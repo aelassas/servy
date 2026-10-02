@@ -33,8 +33,8 @@ namespace Servy.Core.UnitTests.Services
 
         public ServiceManagerHostTests()
         {
-            _hardener.Setup(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _hardener.Setup(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _pipes.Setup(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             _serviceRepository.Setup(x => x.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -327,7 +327,7 @@ namespace Servy.Core.UnitTests.Services
             var log = await LogCapture.RunAsync(() => CreateManager(_pipes.Object).RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken));
 
             // Assert
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
             _pipes.Verify(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>()), Times.Once);
             Assert.Contains("the account keeps it only while another service runs under it", log);
         }
@@ -366,7 +366,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess, result.ErrorMessage);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
             _pipes.Verify(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 

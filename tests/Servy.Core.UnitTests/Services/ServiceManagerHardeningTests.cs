@@ -45,8 +45,8 @@ namespace Servy.Core.UnitTests.Services
 
         public ServiceManagerHardeningTests()
         {
-            _hardener.Setup(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _hardener.Setup(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             _serviceRepository.Setup(x => x.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceDto?)null);
@@ -83,8 +83,8 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.HardenAsync(expectedAccount, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenServiceAsync(ServiceName, expectedAccount, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
             _windowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Never);
         }
 
@@ -106,7 +106,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -124,7 +124,7 @@ namespace Servy.Core.UnitTests.Services
             _windowsServiceApi.Verify(x => x.ChangeServiceConfig(
                 It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            _hardener.Verify(h => h.HardenAsync(@".\svc-account", It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), @".\svc-account", It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
-            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -167,7 +167,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var serviceHandle = ArrangeServiceCreated();
-            _hardener.Setup(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            _hardener.Setup(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
             var options = CreateOptions(@".\svc-account");
 
             // Act
@@ -187,7 +187,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var serviceHandle = ArrangeServiceCreated();
-            _hardener.Setup(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _hardener.Setup(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("script host missing"));
             var options = CreateOptions(@".\svc-account");
 
@@ -241,9 +241,9 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.HardenAsync(@".\svc-account", It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), @".\svc-account", It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -259,7 +259,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -275,7 +275,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -291,7 +291,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -306,7 +306,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -331,9 +331,9 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
             _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.HardenAsync(@".\new-account", It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), @".\new-account", It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -357,7 +357,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
             _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -388,8 +388,8 @@ namespace Servy.Core.UnitTests.Services
             _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
             _serviceRepository.Verify(r => r.UpsertAsync(
                 It.Is<ServiceDto>(d => d.Name == legacyName), false, false, CancellationToken.None), Times.Once);
-            _hardener.Verify(h => h.HardenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -406,7 +406,7 @@ namespace Servy.Core.UnitTests.Services
             var order = new List<string>();
             _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Callback(() => order.Add("upsert")).ReturnsAsync(1);
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .Callback(() => order.Add("revoke")).ReturnsAsync(true);
             var options = CreateOptions(@".\svc-account");
 
@@ -415,7 +415,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
             Assert.Equal(new[] { "upsert", "revoke" }, order);
         }
 
@@ -539,7 +539,7 @@ namespace Servy.Core.UnitTests.Services
             var order = new List<string>();
             _serviceRepository.Setup(r => r.DeleteAsync(ServiceName, It.IsAny<CancellationToken>()))
                 .Callback(() => order.Add("delete")).ReturnsAsync(1);
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .Callback(() => order.Add("revoke")).ReturnsAsync(true);
 
             // Act
@@ -548,7 +548,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
             _windowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
             Assert.Equal(new[] { "delete", "revoke" }, order);
         }
 
@@ -564,7 +564,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -579,7 +579,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -595,7 +595,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -604,7 +604,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             ArrangeUninstall(deleteSucceeds: true);
             ArrangeRecord(@".\svc-account");
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
             var capture = await LogCapture.RunAsync(() => CreateUninstallManager().UninstallServiceAsync(ServiceName, TestContext.Current.CancellationToken));
@@ -622,7 +622,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             ArrangeUninstall(deleteSucceeds: true);
             ArrangeRecord(@".\svc-account");
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("ACL write failed"));
 
             // Act
@@ -648,8 +648,8 @@ namespace Servy.Core.UnitTests.Services
             await _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken);
 
             // Assert
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(expected, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(expected, It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -658,7 +658,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange, Act & Assert
             await _serviceManager.RevokeVaultAccessIfUnusedAsync(null, TestContext.Current.CancellationToken);
 
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -671,7 +671,7 @@ namespace Servy.Core.UnitTests.Services
             await _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken);
 
             // Assert
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -680,14 +680,14 @@ namespace Servy.Core.UnitTests.Services
             // Arrange: ServiceCommands.RemoveServiceAsync awaits this task and keeps Remove successful,
             // so a refused revocation must not surface as an exception
             var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
             var ex = await Record.ExceptionAsync(() => _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken));
 
             // Assert
             Assert.Null(ex);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -695,7 +695,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
-            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("ACL write failed"));
 
             // Act
@@ -703,7 +703,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Null(ex);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

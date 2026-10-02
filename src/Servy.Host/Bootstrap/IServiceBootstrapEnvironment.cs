@@ -97,7 +97,8 @@ namespace Servy.Host.Bootstrap
 
         /// <summary>
         /// Moves the content of the wrappers' former log, <c>logs\Servy.Service.log</c>, to
-        /// <c>logs\service\Servy.Service.log</c>.
+        /// <c>logs\service\Servy.Service.log</c>, where it stays for the administrators; the wrappers themselves now
+        /// log in <c>logs\service\&lt;ServiceName&gt;\</c>.
         /// </summary>
         void MigrateLegacyServiceLog();
 

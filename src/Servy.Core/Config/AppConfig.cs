@@ -262,28 +262,30 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// Only administrators and Local System can read or write this folder. The logs the wrappers write under their
-        /// service accounts live in <see cref="ServiceLogsFolderPath"/>.
+        /// service accounts live in the folder of each service under <see cref="ServiceLogsFolderPath"/>.
         /// </remarks>
         public static readonly string LogsFolderPath = Path.Combine(ProgramDataPath, LogsFolderName);
 
         /// <summary>
-        /// The name of the folder, under <see cref="LogsFolderPath"/>, that holds the logs written by the service wrappers
-        /// and the restarter under their service accounts.
+        /// The name of the folder, under <see cref="LogsFolderPath"/>, that holds one folder per service,
+        /// <c>&lt;ServiceName&gt;\</c> (<see cref="Logging.ServiceLogPaths"/>), in which that service's wrapper and restarter
+        /// write their logs under its service account. A service account can write in the folders of its own services
+        /// only, and not in this folder itself.
         /// </summary>
         public const string ServiceLogsFolderName = "service";
 
         /// <summary>
-        /// The path of the folder that holds the logs written under the service accounts; see <see cref="ServiceLogsFolderName"/>.
+        /// The path of the folder that holds the per-service log folders; see <see cref="ServiceLogsFolderName"/>.
         /// </summary>
         public static readonly string ServiceLogsFolderPath = Path.Combine(LogsFolderPath, ServiceLogsFolderName);
 
         /// <summary>
-        /// The file name of the log the service wrappers write in <see cref="ServiceLogsFolderPath"/>.
+        /// The file name of the log a service wrapper writes in its service's log folder under <see cref="ServiceLogsFolderPath"/>.
         /// </summary>
         public const string ServyServiceLogFileName = "Servy.Service.log";
 
         /// <summary>
-        /// The file name of the log the restarter writes in <see cref="ServiceLogsFolderPath"/>.
+        /// The file name of the log the restarter writes in its service's log folder under <see cref="ServiceLogsFolderPath"/>.
         /// </summary>
         public const string ServyRestarterLogFileName = "Servy.Restarter.log";
 

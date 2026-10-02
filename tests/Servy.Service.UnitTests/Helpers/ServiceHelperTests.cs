@@ -560,9 +560,9 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void RestartService_PassesTheServiceNameAndTheServiceLogsFolder()
+        public void RestartService_PassesTheServiceNameAndItsOwnLogFolder()
         {
-            // Arrange: the restarter runs under the service account, which can only write logs\service\
+            // Arrange: the restarter runs under the service account, which can only write logs\service\<ServiceName>\
             var mockLog = new Mock<IServyLogger>();
             ProcessStartInfo? started = null;
 
@@ -578,7 +578,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Assert
                 Assert.NotNull(started);
-                Assert.Equal($"\"My Service\" \"{AppConfig.ServiceLogsFolderPath}\"", started!.Arguments);
+                Assert.Equal($"\"My Service\" \"{Path.Combine(AppConfig.ServiceLogsFolderPath, "My Service")}\"", started!.Arguments);
                 Assert.False(started.UseShellExecute);
             }
         }
