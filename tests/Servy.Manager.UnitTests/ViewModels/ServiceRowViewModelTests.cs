@@ -72,23 +72,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Functional Execution Tests
 
         [Fact]
-        public void CanExecuteServiceCommand_ShouldReturnFalse_WhenInternalServiceNameIsEmpty()
-        {
-            // Arrange
-            var vm = new ServiceRowViewModel(
-                new Service { Name = "" },
-                _serviceCommandsMock.Object,
-                _cursorServiceMock.Object
-            );
-
-            // Act
-            var result = (bool)TestReflection.InvokeNonPublic(vm, "CanExecuteServiceCommand", new object[] { null! })!;
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public async Task StartCommand_ShouldCallStartServiceAsync()
         {
             // Arrange
@@ -282,8 +265,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         /// <summary>
-        /// Reads one row command's predicate, selected by the command's property name, so the theory
-        /// below can vary which command it exercises without reflection.
+        /// Reads one row command's predicate, selected by the command's property name, so the theories
+        /// below can vary which command they exercise without reflection.
         /// </summary>
         /// <param name="vm">The row view model whose command predicate is read.</param>
         /// <param name="commandName">
@@ -291,7 +274,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         /// </param>
         /// <returns><c>true</c> when the selected command can execute; otherwise <c>false</c>.</returns>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// <paramref name="commandName"/> is not one of the state-gated row commands.
+        /// <paramref name="commandName"/> is not one of the row commands.
         /// </exception>
         private static bool CanExecuteByName(ServiceRowViewModel vm, string commandName)
         {
@@ -299,8 +282,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             if (commandName == nameof(ServiceRowViewModel.StopCommand)) return vm.StopCommand.CanExecute(null);
             if (commandName == nameof(ServiceRowViewModel.RestartCommand)) return vm.RestartCommand.CanExecute(null);
             if (commandName == nameof(ServiceRowViewModel.UninstallCommand)) return vm.UninstallCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.ConfigureCommand)) return vm.ConfigureCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.InstallCommand)) return vm.InstallCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.RemoveCommand)) return vm.RemoveCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.ExportXmlCommand)) return vm.ExportXmlCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.ExportJsonCommand)) return vm.ExportJsonCommand.CanExecute(null);
+            if (commandName == nameof(ServiceRowViewModel.CopyPidCommand)) return vm.CopyPidCommand.CanExecute(null);
 
-            throw new ArgumentOutOfRangeException(nameof(commandName), commandName, "Unknown state-gated row command.");
+            throw new ArgumentOutOfRangeException(nameof(commandName), commandName, "Unknown row command.");
         }
 
         [Theory]
@@ -323,6 +312,41 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Assert
             Assert.False(canExecute);
+        }
+
+        [Theory]
+        [InlineData(nameof(ServiceRowViewModel.StartCommand), ServiceStatus.Stopped, "")]
+        [InlineData(nameof(ServiceRowViewModel.StopCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.RestartCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.ConfigureCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.InstallCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.UninstallCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.RemoveCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.ExportXmlCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.ExportJsonCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.CopyPidCommand), ServiceStatus.Running, "")]
+        [InlineData(nameof(ServiceRowViewModel.ConfigureCommand), ServiceStatus.Running, "   ")]
+        public void RowCommands_CanExecute_IsFalseWhenTheServiceHasNoName(string commandName, ServiceStatus status, string name)
+        {
+            // Arrange - IsInstalled, Status and Pid all hold on both rows, so only the name can disable the command
+            var named = new ServiceRowViewModel(
+                new Service { Name = "RowSvc", Pid = 123, IsInstalled = true, Status = status },
+                _serviceCommandsMock.Object,
+                _cursorServiceMock.Object
+            );
+            var unnamed = new ServiceRowViewModel(
+                new Service { Name = name, Pid = 123, IsInstalled = true, Status = status },
+                _serviceCommandsMock.Object,
+                _cursorServiceMock.Object
+            );
+
+            // Act
+            var namedCanExecute = CanExecuteByName(named, commandName);
+            var unnamedCanExecute = CanExecuteByName(unnamed, commandName);
+
+            // Assert - the control row proves the arrange enables the command, so the false below comes from the name
+            Assert.True(namedCanExecute);
+            Assert.False(unnamedCanExecute);
         }
 
         [Fact]
