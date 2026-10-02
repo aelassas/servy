@@ -43,6 +43,7 @@ $projects = @(
     @{ Path = Join-Path $repoRoot 'src\Servy\Servy.csproj';           File = 'sbom-Servy.xml' }
     @{ Path = Join-Path $repoRoot 'src\Servy.CLI\Servy.CLI.csproj';       File = 'sbom-Servy.CLI.xml' }
     @{ Path = Join-Path $repoRoot 'src\Servy.Manager\Servy.Manager.csproj';   File = 'sbom-Servy.Manager.xml' }
+    @{ Path = Join-Path $repoRoot 'src\Servy.Host\Servy.Host.csproj';   File = 'sbom-Servy.Host.xml' }
     @{ Path = Join-Path $repoRoot 'src\Servy.Restarter\Servy.Restarter.csproj'; File = 'sbom-Servy.Restarter.xml' }
     @{ Path = Join-Path $repoRoot 'src\Servy.Service\Servy.Service.csproj';   File = 'sbom-Servy.Service.xml' }
 )
