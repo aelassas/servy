@@ -255,6 +255,8 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\Servy.Host.Net48.pdb" />
+    <EmbeddedResource Include="Resources\Servy.Host.Net48.exe" />
     <EmbeddedResource Include="Resources\Dapper.dll" />
     <EmbeddedResource Include="Resources\e_sqlite3.dll" />
     <EmbeddedResource Include="Resources\Microsoft.Bcl.AsyncInterfaces.dll" />

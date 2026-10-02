@@ -1,0 +1,100 @@
+﻿#Requires -Version 5.0
+
+<#
+.SYNOPSIS
+    Builds the Servy.Host project and optionally signs the output.
+
+.DESCRIPTION
+    This script:
+      1. Locates and builds the Servy.Host csproj using MSBuild.
+      2. Signs the produced executable using SignPath, but ONLY when the
+         build configuration is Release.
+      3. Supports optional pause for manual inspection.
+
+.PARAMETER BuildConfiguration
+    The build configuration to use (Debug or Release).
+    Default: Release.
+
+.PARAMETER pause
+    Pauses the script at the end. Useful when running from Explorer.
+
+.EXAMPLE
+    ./build.ps1
+    Builds Servy.Host in Release mode and signs it.
+
+.EXAMPLE
+    ./build.ps1 -BuildConfiguration Debug
+    Builds in Debug mode. Signing is skipped.
+
+.NOTES
+    Author: Akram El Assas
+    Project: Servy
+
+    Requirements:
+      - MSBuild installed and available in PATH.
+      - signpath.ps1 must exist in ../../setup/.
+      - .NET SDK or corresponding build tools installed.
+#>
+
+param(
+    [string]$BuildConfiguration = "Release",
+    [switch]$Pause
+)
+
+$ErrorActionPreference = "Stop"
+
+function Assert-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
+# ----------------------------------------------------------------------
+# Resolve script directory (absolute path to this script's location)
+# ----------------------------------------------------------------------
+$scriptDir = $PSScriptRoot
+
+# ----------------------------------------------------------------------
+# Absolute paths and configuration
+# ----------------------------------------------------------------------
+$serviceProject   = Join-Path $scriptDir "..\Servy.Host\Servy.Host.csproj" | Resolve-Path
+$platform         = "x64"
+$buildOutput      = Join-Path $scriptDir "..\Servy.Host\bin\$platform\$BuildConfiguration"
+$signPath         = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+
+if (-not (Test-Path $serviceProject)) {
+    Write-Error "CRITICAL: Project file not found at $serviceProject"
+    exit 1
+}
+
+# ----------------------------------------------------------------------
+# Step 1: Build Servy.Host
+# ----------------------------------------------------------------------
+Write-Host "Building Servy.Host in $BuildConfiguration mode..."
+& msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
+Assert-LastExitCode "MSBuild failed"
+
+# ----------------------------------------------------------------------
+# Step 2: Sign the executable only in Release mode
+# ----------------------------------------------------------------------
+if ($BuildConfiguration -eq "Release") {
+    $exePath = Join-Path $buildOutput "Servy.Host.exe" | Resolve-Path
+    if (Test-Path $exePath) {
+        Write-Host "=== Signing Servy.Host.exe ===" -ForegroundColor Cyan
+        & $signPath $exePath
+        Assert-LastExitCode "Code signing failed"
+    }
+    else {
+        Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."
+        exit 1
+    }
+}
+
+Write-Host "Build completed for Servy.Host in $BuildConfiguration mode."
+
+if ($Pause) {
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}

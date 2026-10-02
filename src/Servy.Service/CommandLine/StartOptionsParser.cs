@@ -4,6 +4,7 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,7 +22,7 @@ namespace Servy.Service.CommandLine
         /// Resolves the service name from the command-line arguments, loads that service's stored
         /// configuration from the repository, and projects it into a <see cref="StartOptions"/> instance.
         /// </summary>
-        /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
+        /// <param name="namedPipesService">The named pipes service used to fetch service-specific configurations.</param>
         /// <param name="processHelper">The process helper used to resolve the stored executable and directory paths (environment-variable expansion and normalisation) via <see cref="IProcessHelper.ResolvePath"/>.</param>
         /// <param name="fullArgs">An array of strings representing the command-line arguments. Element 1 is the service name.</param>
         /// <returns>
@@ -34,7 +35,7 @@ namespace Servy.Service.CommandLine
         /// <exception cref="InvalidOperationException">
         /// Thrown when no service with that name exists in the database.
         /// </exception>
-        public static StartOptions Parse(IServiceRepository serviceRepository, IProcessHelper processHelper, string[] fullArgs)
+        public static StartOptions Parse(INamedPipesService namedPipesService, IProcessHelper processHelper, string[] fullArgs)
         {
             if (fullArgs == null || fullArgs.Length == 0)
             {
@@ -49,7 +50,7 @@ namespace Servy.Service.CommandLine
                 throw new ArgumentException("Service name is empty!");
             }
 
-            var serviceDto = serviceRepository.GetByName(serviceName);
+            var serviceDto = namedPipesService.GetByName(serviceName);
 
             if (serviceDto == null)
             {

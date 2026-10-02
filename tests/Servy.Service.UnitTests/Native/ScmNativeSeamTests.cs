@@ -3,6 +3,7 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Native;
 using Servy.Service.CommandLine;
 using Servy.Service.Native;
@@ -344,7 +345,7 @@ namespace Servy.Service.UnitTests.Native
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
-                _ctx.ServiceRepository.Object,
+                _ctx.NamedPipesService.Object,
                 _scm,
                 handle);
 
@@ -377,7 +378,7 @@ namespace Servy.Service.UnitTests.Native
 
             var scopedLogger = new Mock<IServyLogger>();
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "servy.exe" });
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, It.IsAny<string[]>())).Returns(options);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
             _ctx.Logger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(scopedLogger.Object);
             _ctx.Helper.Setup(h => h.ValidateAndLog(options, scopedLogger.Object)).Returns(true);
             _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -451,7 +452,7 @@ namespace Servy.Service.UnitTests.Native
             /// <param name="timerFactory">The timer factory.</param>
             /// <param name="processFactory">The process factory.</param>
             /// <param name="pathValidator">The path validator.</param>
-            /// <param name="serviceRepository">The service repository.</param>
+            /// <param name="namedPipesService">The named pipes service.</param>
             /// <param name="scmNative">The native seam to observe.</param>
             /// <param name="handle">The handle <see cref="GetNativeServiceHandle"/> returns.</param>
             public HandleStubService(
@@ -461,10 +462,10 @@ namespace Servy.Service.UnitTests.Native
                 ITimerFactory timerFactory,
                 IProcessFactory processFactory,
                 IPathValidator pathValidator,
-                IServiceRepository serviceRepository,
+                INamedPipesService namedPipesService,
                 IScmNative scmNative,
                 IntPtr handle)
-                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, scmNative)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, namedPipesService, scmNative)
             {
                 _handle = handle;
             }

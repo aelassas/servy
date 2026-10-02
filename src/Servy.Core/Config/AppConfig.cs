@@ -1669,6 +1669,40 @@ namespace Servy.Core.Config
 
         #endregion
 
+        #region Servy Host IPC Constants
+
+        /// <summary>
+        /// The official Windows Service name for the primary Servy host service.
+        /// </summary>
+        public const string ServyHostServiceName = "Servy";
+
+        /// <summary>
+        /// The name of the local Named Pipe used for inter-process communication between wrapped services and the Servy host.
+        /// </summary>
+        public const string ServyHostNamedPipeName = "SERVY_HOST_IPC_PIPE";
+
+        /// <summary>
+        /// The IPC action identifier for retrieving service configuration and state by service name.
+        /// </summary>
+        public const string ServyHostGetByNameAction = "GetByName";
+
+        /// <summary>
+        /// The IPC action identifier for updating service configuration and runtime state.
+        /// </summary>
+        public const string ServyHostUpdateAction = "Update";
+
+        /// <summary>
+        /// The default connection timeout in milliseconds when connecting to the Servy host Named Pipe server.
+        /// </summary>
+        public const int ServyHostDefaultConnectTimeoutMs = 5000;
+
+        /// <summary>
+        /// The maximum permitted IPC message payload size in bytes (10 MB) to prevent heap overflow exploits or excessive memory allocation.
+        /// </summary>
+        public const long ServyHostMaxAllowedMessageSizeBytes = 10 * BytesInMegabyte;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>

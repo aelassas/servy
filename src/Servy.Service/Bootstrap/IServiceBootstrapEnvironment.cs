@@ -68,33 +68,6 @@ namespace Servy.Service.Bootstrap
         void ReportDebug(string title, string body);
 
         /// <summary>
-        /// Determines whether the SQLite version the process would open its database with is at or above
-        /// the minimum required by the CVE-2025-6965 mitigation.
-        /// </summary>
-        /// <param name="detectedVersion">
-        /// When this method returns, the version string that was detected, or <see langword="null"/> when
-        /// it could not be determined.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> when the detected version is safe to use; otherwise <see langword="false"/>.
-        /// </returns>
-        bool IsSqliteVersionSafe(out string detectedVersion);
-
-        /// <summary>
-        /// Creates the database context, initializes the database schema, and builds the protected key
-        /// provider, the secure-data helper and the service repository on top of it.
-        /// </summary>
-        /// <param name="connectionString">The SQLite connection string to open the database with.</param>
-        /// <param name="aesKeyFilePath">The file path of the AES key used to protect stored secrets.</param>
-        /// <param name="aesIVFilePath">The file path of the AES IV used to protect stored secrets.</param>
-        /// <returns>The four objects the service keeps for its lifetime.</returns>
-        /// <exception cref="System.Exception">
-        /// Any exception the database, key or repository creation raises is allowed to propagate, exactly
-        /// as the inline block did, so the constructor's <c>catch</c> handles it.
-        /// </exception>
-        ServiceDataStack CreateDataStack(string connectionString, string aesKeyFilePath, string aesIVFilePath);
-
-        /// <summary>
         /// Writes an error to the global logger, optionally with the exception that caused it.
         /// </summary>
         /// <param name="message">The error message.</param>

@@ -270,6 +270,70 @@ jobs:
           retention-days: 1
 
       # -----------------------------------------------------
+      # Build UNSIGNED Servy.Host.exe
+      # -----------------------------------------------------
+      - name: Build Servy.Host.exe
+        shell: pwsh
+        run: |
+          $buildConfiguration = $env:BUILD_CONFIG
+          $platform           = $env:PLATFORM
+          $projectPath        = "src/Servy.Host/Servy.Host.csproj"
+
+          msbuild $projectPath `
+            /t:Clean,Rebuild `
+            /p:Configuration=$buildConfiguration `
+            /p:Platform=$platform `
+            /p:AllowUnsafeBlocks=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.Host.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.Host.exe (unsigned)
+        id: unsigned-host
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+        with:
+          name: unsigned-host
+          path: src/Servy.Host/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Host.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit Servy.Host.exe for signing
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-host.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-host'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/Servy.Host'
+
+      - name: Inject signed Servy.Host.exe
+        shell: pwsh
+        run: |
+          $signed = "signed/Servy.Host/Servy.Host.exe"
+          if (-not (Test-Path $signed)) { throw "Signed Servy.Host.exe not found!" }
+
+          $pdb = "src/Servy.Host/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.Host.pdb"
+          if (-not (Test-Path $pdb)) { throw "Servy.Host.pdb not found!" }
+
+          # The desktop app, the Manager and the CLI each embed the host and extract it next to the service wrapper
+          $targets = @(
+              "src/Servy/Resources",
+              "src/Servy.Manager/Resources",
+              "src/Servy.CLI/Resources"
+          )
+
+          # Inject the signed EXE and matching PDB into each resource folder
+          foreach ($target in $targets) {
+              Write-Host "Injecting SIGNED Servy.Host.exe into $target"
+              Copy-Item $signed (Join-Path $target "Servy.Host.Net48.exe") -Force
+              Write-Host "Injecting matching Servy.Host.pdb into $target"
+              Copy-Item $pdb (Join-Path $target "Servy.Host.Net48.pdb") -Force
+          }          
+
+      # -----------------------------------------------------
       # Build UNSIGNED Servy.Restarter.exe
       # -----------------------------------------------------
       - name: Build Servy.Restarter.exe

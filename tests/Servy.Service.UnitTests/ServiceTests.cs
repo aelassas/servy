@@ -4,6 +4,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Native;
 using Servy.Service.CommandLine;
 using Servy.Service.Native;
@@ -75,16 +76,16 @@ namespace Servy.Service.UnitTests
         [InlineData(true, true, true, false, true, true, true, "timerFactory")]
         [InlineData(true, true, true, true, false, true, true, "processFactory")]
         [InlineData(true, true, true, true, true, false, true, "pathValidator")]
-        [InlineData(true, true, true, true, true, true, false, "serviceRepository")]
+        [InlineData(true, true, true, true, true, true, false, "namedPipesService")]
         public void Constructor_WhenDependencyIsNull_ThrowsArgumentNullException(
-            bool useServiceHelper,
-            bool useLogger,
-            bool useStreamWriterFactory,
-            bool useTimerFactory,
-            bool useProcessFactory,
-            bool usePathValidator,
-            bool useServiceRepository,
-            string expectedParamName)
+              bool useServiceHelper,
+              bool useLogger,
+              bool useStreamWriterFactory,
+              bool useTimerFactory,
+              bool useProcessFactory,
+              bool usePathValidator,
+              bool useNamedPipesService,
+              string expectedParamName)
         {
             // Arrange
             var serviceHelper = useServiceHelper ? new Mock<IServiceHelper>().Object : null;
@@ -93,7 +94,7 @@ namespace Servy.Service.UnitTests
             var timerFactory = useTimerFactory ? new Mock<ITimerFactory>().Object : null;
             var processFactory = useProcessFactory ? new Mock<IProcessFactory>().Object : null;
             var pathValidator = usePathValidator ? new Mock<IPathValidator>().Object : null;
-            var serviceRepository = useServiceRepository ? new Mock<IServiceRepository>().Object : null;
+            var namedPipesService = useNamedPipesService ? new Mock<INamedPipesService>().Object : null;
 
             // Act
             var exception = Record.Exception(() => new Service(
@@ -103,7 +104,7 @@ namespace Servy.Service.UnitTests
                 timerFactory,
                 processFactory,
                 pathValidator,
-                serviceRepository
+                namedPipesService
             ));
 
             // Assert
@@ -118,7 +119,7 @@ namespace Servy.Service.UnitTests
         [InlineData(3, "timerFactory")]
         [InlineData(4, "processFactory")]
         [InlineData(5, "pathValidator")]
-        [InlineData(6, "serviceRepository")]
+        [InlineData(6, "namedPipesService")]
         [InlineData(7, "scmNative")]
         public void Constructor_ScmNativeOverload_NullArgument_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
         {
@@ -129,7 +130,7 @@ namespace Servy.Service.UnitTests
             var timerFactory = nullIndex == 3 ? null : new Mock<ITimerFactory>().Object;
             var processFactory = nullIndex == 4 ? null : new Mock<IProcessFactory>().Object;
             var pathValidator = nullIndex == 5 ? null : new Mock<IPathValidator>().Object;
-            var serviceRepository = nullIndex == 6 ? null : new Mock<IServiceRepository>().Object;
+            var namedPipesService = nullIndex == 6 ? null : new Mock<INamedPipesService>().Object;
             var scmNative = nullIndex == 7 ? null : new Mock<IScmNative>().Object;
 
             // Act & Assert
@@ -140,7 +141,7 @@ namespace Servy.Service.UnitTests
                 timerFactory,
                 processFactory,
                 pathValidator,
-                serviceRepository,
+                namedPipesService,
                 scmNative
             ));
 
@@ -150,12 +151,13 @@ namespace Servy.Service.UnitTests
         #region Production Constructor Guard Clauses
 
         [Theory]
-        [InlineData(false, true, true, true, true, true, "serviceHelper")]
-        [InlineData(true, false, true, true, true, true, "logger")]
-        [InlineData(true, true, false, true, true, true, "streamWriterFactory")]
-        [InlineData(true, true, true, false, true, true, "timerFactory")]
-        [InlineData(true, true, true, true, false, true, "processFactory")]
-        [InlineData(true, true, true, true, true, false, "pathValidator")]
+        [InlineData(false, true, true, true, true, true, true, "serviceHelper")]
+        [InlineData(true, false, true, true, true, true, true, "logger")]
+        [InlineData(true, true, false, true, true, true, true, "streamWriterFactory")]
+        [InlineData(true, true, true, false, true, true, true, "timerFactory")]
+        [InlineData(true, true, true, true, false, true, true, "processFactory")]
+        [InlineData(true, true, true, true, true, false, true, "pathValidator")]
+        [InlineData(true, true, true, true, true, true, false, "namedPipesService")]
         public void ProductionConstructor_WhenDependencyIsNull_ThrowsArgumentNullException(
             bool useServiceHelper,
             bool useLogger,
@@ -163,6 +165,7 @@ namespace Servy.Service.UnitTests
             bool useTimerFactory,
             bool useProcessFactory,
             bool usePathValidator,
+            bool useNamedPipesService,
             string expectedParamName)
         {
             // Arrange
@@ -172,6 +175,7 @@ namespace Servy.Service.UnitTests
             var timerFactory = useTimerFactory ? new Mock<ITimerFactory>().Object : null;
             var processFactory = useProcessFactory ? new Mock<IProcessFactory>().Object : null;
             var pathValidator = usePathValidator ? new Mock<IPathValidator>().Object : null;
+            var namedPipesService = useNamedPipesService ? new Mock<INamedPipesService>().Object : null;
 
             // Act
             var exception = Record.Exception(() => new Service(
@@ -180,7 +184,8 @@ namespace Servy.Service.UnitTests
                 streamWriterFactory,
                 timerFactory,
                 processFactory,
-                pathValidator
+                pathValidator,
+                namedPipesService
             ));
 
             // Assert
@@ -212,7 +217,7 @@ namespace Servy.Service.UnitTests
 
             // 1. ServiceHelper flow
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, It.IsAny<string[]>()))
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>()))
                 .Returns(options);
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
@@ -258,7 +263,7 @@ namespace Servy.Service.UnitTests
 
             // 1. Setup the ServiceHelper flow
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs))
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs))
                 .Returns(options);
 
             // 2. Setup Logger Promotion: Root returns Scoped
@@ -301,7 +306,7 @@ namespace Servy.Service.UnitTests
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
 
             // 2. Mock ParseOptions to return null (simulating invalid or missing configuration)
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs))
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs))
                 .Returns((StartOptions)null);
 
             // Act
@@ -362,7 +367,7 @@ namespace Servy.Service.UnitTests
             _service.OnStoppedForTest += () => stopped = true;
 
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs)).Returns(options);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs)).Returns(options);
             _ctx.Logger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
 
             // The path under test: validation reports the options as unusable.
@@ -791,7 +796,7 @@ namespace Servy.Service.UnitTests
             var mockScopedLogger = new Mock<IServyLogger>();
 
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<IServiceRepository>(), It.IsAny<string[]>())).Returns(options);
+            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<INamedPipesService>(), It.IsAny<string[]>())).Returns(options);
             _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
             _ctx.Helper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object)).Returns(true);
             _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -808,8 +813,8 @@ namespace Servy.Service.UnitTests
         public void PersistProcessState_WhenServiceNameIsBlank_ReturnsImmediately()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
-            using (var service = _ctx.BuildService(repositoryMock.Object))
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
+            using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "   ");
 
@@ -817,7 +822,7 @@ namespace Servy.Service.UnitTests
                 TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true });
 
                 // Assert
-                repositoryMock.Verify(r => r.GetByName(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+                namedPipesServiceMock.Verify(r => r.GetByName(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
             }
         }
 
@@ -825,11 +830,11 @@ namespace Servy.Service.UnitTests
         public void PersistProcessState_WhenServiceDtoNotFound_DoesNotUpdateOrThrow()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
-            using (var service = _ctx.BuildService(repositoryMock.Object))
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
+            using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "ServyTest");
-                repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns((ServiceDto)null);
+                namedPipesServiceMock.Setup(r => r.GetByName("ServyTest", It.IsAny<CancellationToken>())).Returns((ServiceDto)null);
 
                 // Act
                 var exception = Record.Exception(() =>
@@ -837,7 +842,7 @@ namespace Servy.Service.UnitTests
 
                 // Assert
                 Assert.Null(exception);
-                repositoryMock.Verify(r => r.Update(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never);
+                namedPipesServiceMock.Verify(r => r.Update(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
             }
         }
 
@@ -847,8 +852,8 @@ namespace Servy.Service.UnitTests
         public void PersistProcessState_WithActivePid_UpdatesPidAndPathsCorrectly(bool setPreviousStopTimeout)
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
-            using (var service = _ctx.BuildService(repositoryMock.Object))
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
+            using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "ServyTest");
 
@@ -862,7 +867,7 @@ namespace Servy.Service.UnitTests
                 TestReflection.SetField(service, "_options", options);
 
                 var testDto = new ServiceDto { Name = "ServyTest" };
-                repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
+                namedPipesServiceMock.Setup(r => r.GetByName("ServyTest", It.IsAny<CancellationToken>())).Returns(testDto);
 
                 // Act
                 TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 9999, setPreviousStopTimeout });
@@ -881,7 +886,7 @@ namespace Servy.Service.UnitTests
                     Assert.Null(testDto.PreviousStopTimeout);
                 }
 
-                repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
+                namedPipesServiceMock.Verify(r => r.Update(testDto, It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -889,8 +894,8 @@ namespace Servy.Service.UnitTests
         public void PersistProcessState_WhenPidIsNull_ClearsActivePaths()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
-            using (var service = _ctx.BuildService(repositoryMock.Object))
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
+            using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "ServyTest");
 
@@ -901,7 +906,7 @@ namespace Servy.Service.UnitTests
                     ActiveStdoutPath = "old_out.log",
                     ActiveStderrPath = "old_err.log"
                 };
-                repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
+                namedPipesServiceMock.Setup(r => r.GetByName("ServyTest", It.IsAny<CancellationToken>())).Returns(testDto);
 
                 // Act
                 TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { null, false });
@@ -911,7 +916,7 @@ namespace Servy.Service.UnitTests
                 Assert.Null(testDto.ActiveStdoutPath);
                 Assert.Null(testDto.ActiveStderrPath);
 
-                repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
+                namedPipesServiceMock.Verify(r => r.Update(testDto, It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -919,15 +924,15 @@ namespace Servy.Service.UnitTests
         public void PersistProcessState_OnRepositoryException_IsCaughtAndLoggedSafely()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
             var loggerMock = new Mock<IServyLogger>();
-            using (var service = _ctx.BuildService(repositoryMock.Object, loggerMock.Object))
+            using (var service = _ctx.BuildService(namedPipesServiceMock.Object, loggerMock.Object))
             {
                 string serviceName = "ServyTest";
                 TestReflection.SetField(service, "_serviceName", serviceName);
 
                 var repositoryException = new InvalidOperationException("Database deadlock or lock failure");
-                repositoryMock.Setup(r => r.GetByName(serviceName, true)).Throws(repositoryException);
+                namedPipesServiceMock.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Throws(repositoryException);
 
                 // Act
                 var testRunException = Record.Exception(() =>
@@ -950,8 +955,8 @@ namespace Servy.Service.UnitTests
         public async Task EmitHeartbeatPing_WithValidUrl_ExecutesFireAndForgetWithoutBlocking()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
-            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
+            using (var serviceInstance = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 // Bind HttpListener with retry logic on ephemeral ports to prevent TOCTOU collisions in CI
                 var (listener, baseAddress) = CreateAndStartHttpListener();
@@ -1016,9 +1021,9 @@ namespace Servy.Service.UnitTests
         public async Task EmitHeartbeatPing_WithNullOrEmptyBaseUrl_ReturnsEarlyWithoutScheduling(string invalidUrl)
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
             var loggerMock = new Mock<IServyLogger>();
-            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
+            using (var serviceInstance = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 var mockOptions = new StartOptions
                 {
@@ -1041,9 +1046,9 @@ namespace Servy.Service.UnitTests
         public async Task EmitHeartbeatPing_WithHealthMonitoringDisabled_ReturnsEarlyWithoutScheduling()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
             var loggerMock = new Mock<IServyLogger>();
-            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
+            using (var serviceInstance = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 var mockOptions = new StartOptions
                 {
@@ -1066,9 +1071,9 @@ namespace Servy.Service.UnitTests
         public async Task EmitHeartbeatPing_WithSuffixAndUrlFlagsDisabled_ReturnsEarlyWithoutScheduling()
         {
             // Arrange
-            var repositoryMock = new Mock<IServiceRepository>();
+            var namedPipesServiceMock = new Mock<INamedPipesService>();
             var loggerMock = new Mock<IServyLogger>();
-            using (var serviceInstance = _ctx.BuildService(repositoryMock.Object))
+            using (var serviceInstance = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 var mockOptions = new StartOptions
                 {
@@ -2177,7 +2182,7 @@ namespace Servy.Service.UnitTests
 
                     // Assert
                     // 1. The fallback was entered, and no SCM status transition was attempted
-                    scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Service handle is null!")), It.IsAny<Exception>()), Times.Once);
+                    scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Service handle is null")), It.IsAny<Exception>()), Times.Once);
                     Assert.Empty(service.StatusStates);
 
                     // 2. The teardown ran synchronously before the host process was terminated
@@ -2473,7 +2478,7 @@ namespace Servy.Service.UnitTests
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
-                _ctx.ServiceRepository.Object);
+                _ctx.NamedPipesService.Object);
 
         /// <summary>
         /// Records the SCM status transitions the service requests. The real UpdateServiceStatus
@@ -2489,7 +2494,7 @@ namespace Servy.Service.UnitTests
                 ITimerFactory timerFactory,
                 IProcessFactory processFactory,
                 IPathValidator pathValidator,
-                IServiceRepository serviceRepository)
+                INamedPipesService serviceRepository)
                 : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
             {
             }

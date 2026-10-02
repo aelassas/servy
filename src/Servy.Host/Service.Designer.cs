@@ -1,0 +1,24 @@
+namespace Servy.Host
+{
+    partial class Service
+    {
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        #region Generated code
+
+        /// <summary> 
+        /// Required method for designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+            this.ServiceName = "Servy";
+        }
+
+        #endregion
+    }
+}

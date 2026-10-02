@@ -25,7 +25,7 @@ namespace Servy.Service.UnitTests
 
             // 1. Setup the ServiceHelper sequence
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs))
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs))
                        .Returns(expectedOptions);
 
             // 2. Setup Logger Promotion (Root -> Scoped)
@@ -45,7 +45,7 @@ namespace Servy.Service.UnitTests
             // Assert
             // Verify the sequence of orchestration
             _ctx.Helper.Verify(h => h.GetArgs(), Times.Once);
-            _ctx.Helper.Verify(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs), Times.Once);
+            _ctx.Helper.Verify(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs), Times.Once);
 
             // Verify logger promotion
             _ctx.Logger.Verify(l => l.CreateScoped(expectedOptions.ServiceName), Times.Once);
@@ -70,7 +70,7 @@ namespace Servy.Service.UnitTests
 
             // 2. Mock ParseOptions to return null
             _ctx.Helper
-                .Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs))
+                .Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs))
                 .Returns((StartOptions)null);
 
             var service = _ctx.Build();
@@ -80,7 +80,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             // Verify we attempted to parse but stopped there
-            _ctx.Helper.Verify(h => h.ParseOptions(_ctx.ServiceRepository.Object, fullArgs), Times.Once);
+            _ctx.Helper.Verify(h => h.ParseOptions(_ctx.NamedPipesService.Object, fullArgs), Times.Once);
 
             // Verify that subsequent steps (Promotion/Validation/WorkingDir) were NEVER reached
             _ctx.Logger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
@@ -111,7 +111,7 @@ namespace Servy.Service.UnitTests
             var mockScopedLogger = new Mock<IServyLogger>();
 
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.ServiceRepository.Object, It.IsAny<string[]>())).Returns(options);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
             _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
             _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
             _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));

@@ -3,6 +3,10 @@
 $setupScript  = Join-Path $PSScriptRoot "..\..\setup\publish-res.ps1"
 $targetFolder = Join-Path $PSScriptRoot "..\Servy.CLI\Resources"
 
+# Servy.Host.Net48.exe: the Servy service host extracted to %ProgramData%\Servy
+& $setupScript -ProjectName "Servy.Host" -TargetResourcesFolder $targetFolder -Configuration "Release"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 # Servy.Service.CLI.Net48.exe: the service wrapper extracted to %ProgramData%\Servy
 & $setupScript -ProjectName "Servy.Service" -TargetResourcesFolder $targetFolder -Configuration "Release" -OutputSuffix "CLI" -IncludeDlls
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

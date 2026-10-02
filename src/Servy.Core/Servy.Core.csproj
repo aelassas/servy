@@ -144,6 +144,10 @@
     <Compile Include="Logging\EventIds.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="NamedPipes\INamedPipesService.cs" />
+    <Compile Include="NamedPipes\IpcRequestDto.cs" />
+    <Compile Include="NamedPipes\IpcResponseDto.cs" />
+    <Compile Include="NamedPipes\NamedPipesService.cs" />
     <Compile Include="Native\Errors.cs" />
     <Compile Include="Native\FileIdentity.cs" />
     <Compile Include="Native\NativeMethodsHelpers.cs" />

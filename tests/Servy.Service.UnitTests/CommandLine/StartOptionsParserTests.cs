@@ -1,26 +1,27 @@
 using Moq;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Security;
+using System.Threading;
 using Xunit;
 
 namespace Servy.Service.UnitTests.CommandLine
 {
     public class StartOptionsParserTests
     {
-        private readonly Mock<IServiceRepository> _mockRepository;
+        private readonly Mock<INamedPipesService> _mockNamedPipesService;
         private readonly Mock<IProcessHelper> _mockProcessHelper;
 
         public StartOptionsParserTests()
         {
-            _mockRepository = new Mock<IServiceRepository>();
+            _mockNamedPipesService = new Mock<INamedPipesService>();
             _mockProcessHelper = new Mock<IProcessHelper>();
 
             // Setup default lenient path resolution to allow standard setup to pass cleanly
@@ -36,7 +37,7 @@ namespace Servy.Service.UnitTests.CommandLine
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() =>
-                StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, null));
+                StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, null));
 
             Assert.Contains("No arguments provided", ex.Message);
         }
@@ -46,7 +47,7 @@ namespace Servy.Service.UnitTests.CommandLine
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() =>
-                StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, new string[0]));
+                StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, new string[0]));
 
             Assert.Contains("No arguments provided", ex.Message);
         }
@@ -60,7 +61,7 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() =>
-                StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args));
+                StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args));
 
             Assert.Contains("Service name is empty!", ex.Message);
         }
@@ -75,7 +76,7 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() =>
-                StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args));
+                StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args));
 
             Assert.Contains("Service name is empty!", ex.Message);
         }
@@ -89,13 +90,13 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Simply pass null directly.
             // Moq's static typing will resolve this to the Returns(ServiceDto) overload.
-            _mockRepository
-                .Setup(r => r.GetByName(serviceName, true))
+            _mockNamedPipesService
+                .Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>()))
                 .Returns((ServiceDto)null);
 
             // Act & Assert
             var ex = Assert.Throws<InvalidOperationException>(() =>
-                StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args));
+                StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args));
 
             Assert.Contains($"Service {serviceName} not found in the database!", ex.Message);
         }
@@ -106,14 +107,13 @@ namespace Servy.Service.UnitTests.CommandLine
             // Arrange
             string serviceName = "SecretsWorker";
             string[] args = { "Servy.Service.exe", serviceName };
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(new ServiceDto());
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(new ServiceDto());
 
             // Act
-            StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert
-            _mockRepository.Verify(r => r.GetByName(serviceName, true), Times.Once);
-            _mockRepository.Verify(r => r.GetByName(It.IsAny<string>(), false), Times.Never);
+            _mockNamedPipesService.Verify(r => r.GetByName(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
@@ -187,10 +187,10 @@ namespace Servy.Service.UnitTests.CommandLine
                 PostStopParameters = "--cleanup"
             };
 
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
 
             // Act
-            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert main mappings
             Assert.Equal(serviceName, result.ServiceName);
@@ -279,10 +279,10 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Leaves all fields at their implicit object defaults so the AppConfig fallback paths are exercised
             var sparseDto = new ServiceDto { Priority = null };
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(sparseDto);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(sparseDto);
 
             // Act
-            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert fallbacks are activated correctly using AppConfig thresholds
             Assert.Equal(StartOptionsParser.MapPriority(AppConfig.DefaultProcessPriority), result.Priority);
@@ -323,10 +323,10 @@ namespace Servy.Service.UnitTests.CommandLine
             string[] args = { "Servy.Service.exe", serviceName };
 
             var serviceDto = new ServiceDto { EnableHealthMonitoring = true, RecoveryAction = null };
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
 
             // Act
-            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert
             Assert.Equal(AppConfig.DefaultRecoveryAction, result.RecoveryAction);
@@ -344,10 +344,10 @@ namespace Servy.Service.UnitTests.CommandLine
                 EnableHealthMonitoring = false,
                 RecoveryAction = 1, // RestartService - Should be completely ignored because monitoring is off
             };
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
 
             // Act
-            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert
             // Short-circuit conditional block validation
@@ -372,10 +372,10 @@ namespace Servy.Service.UnitTests.CommandLine
                 // ensures that the static EnvironmentVariableParser throws a FormatException.
                 EnvironmentVariables = "MALFORMED_VARIABLE_WITHOUT_EQUALS_SIGN_OR_VALUE_TOKEN_CONTEXT"
             };
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
 
             // Act
-            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert
             // The catch (FormatException) block intercepts the parsing failure, outputs an error trace,
@@ -405,7 +405,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 ExecutablePath = brokenPathInput
             };
 
-            _mockRepository.Setup(r => r.GetByName(serviceName, true)).Returns(serviceDto);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
 
             // Force the injected path utility framework to throw targeted exceptions on matching executions
             _mockProcessHelper
@@ -413,7 +413,7 @@ namespace Servy.Service.UnitTests.CommandLine
                 .Throws((Exception)Activator.CreateInstance(exceptionType));
 
             // Act
-            var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
 
             // Assert
             // The catch filters handle the problem, log an error diagnostic, and return the raw configuration text string token intact.

@@ -88,7 +88,6 @@
   <ItemGroup>
     <Compile Include="Bootstrap\IServiceBootstrapEnvironment.cs" />
     <Compile Include="Bootstrap\ServiceBootstrapEnvironment.cs" />
-    <Compile Include="Bootstrap\ServiceDataStack.cs" />
     <Compile Include="CommandLine\CommandLineProvider.cs" />
     <Compile Include="CommandLine\StartOptions.cs" />
     <Compile Include="CommandLine\ICommandLineProvider.cs" />

@@ -3,6 +3,7 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
@@ -95,7 +96,7 @@ namespace Servy.Service.UnitTests
             var scopedLogger = new Mock<IServyLogger>();
 
             _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "servy.exe" });
-            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<IServiceRepository>(), It.IsAny<string[]>())).Returns(options);
+            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<INamedPipesService>(), It.IsAny<string[]>())).Returns(options);
             _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(scopedLogger.Object);
             _ctx.Helper.Setup(h => h.ValidateAndLog(options, scopedLogger.Object)).Returns(true);
 
@@ -530,7 +531,7 @@ namespace Servy.Service.UnitTests
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
-                _ctx.ServiceRepository.Object);
+                _ctx.NamedPipesService.Object);
         }
 
         /// <summary>
@@ -558,7 +559,7 @@ namespace Servy.Service.UnitTests
             /// <param name="timerFactory">The factory for the health-check and rotation timers.</param>
             /// <param name="processFactory">The factory for the child process wrappers.</param>
             /// <param name="pathValidator">The validator the base service checks configured paths with.</param>
-            /// <param name="serviceRepository">The repository the base service reads its configuration from.</param>
+            /// <param name="namedPipesService">The named pipes service the base service reads its configuration from.</param>
             public HookKillingService(
                 Action<Process> kill,
                 Func<Process, bool> hasExited,
@@ -569,8 +570,8 @@ namespace Servy.Service.UnitTests
                 Servy.Service.Timers.ITimerFactory timerFactory,
                 IProcessFactory processFactory,
                 Servy.Service.Validation.IPathValidator pathValidator,
-                Servy.Core.Data.IServiceRepository serviceRepository)
-                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
+                Servy.Core.NamedPipes.INamedPipesService namedPipesService)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, namedPipesService)
             {
                 _kill = kill;
                 _hasExited = hasExited;
