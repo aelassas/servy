@@ -774,7 +774,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             before.AddAccessRule(new FileSystemAccessRule(networkService, FileSystemRights.ReadAndExecute, AccessControlType.Allow));
             new FileInfo(targetPath).SetAccessControl(before);
 
-            // Push the timestamp back relative to the host exe so ShouldCopyResource forces a replacement
+            // Push the timestamp back relative to the host exe so TryPrepareExtraction forces a replacement
             File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
 
             var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03 };
