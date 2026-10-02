@@ -1,4 +1,5 @@
 using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 
 namespace Servy.Core.UnitTests.Logging
@@ -88,6 +89,11 @@ namespace Servy.Core.UnitTests.Logging
         [InlineData("LPT9", "%4CPT9")]
         [InlineData("nul.log", "%6Eul.log")]
         [InlineData("CON .txt", "%43ON .txt")]
+        [InlineData("COM¹", "%43OM¹")]
+        [InlineData("COM²", "%43OM²")]
+        [InlineData("LPT³", "%4CPT³")]
+        [InlineData("CONIN$", "%43ONIN$")]
+        [InlineData("conout$.log", "%63onout$.log")]
         public void GetFolderName_ReservedDeviceName_HasItsFirstCharacterEncoded(string serviceName, string expected)
         {
             // Act
@@ -95,6 +101,21 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert
             Assert.Equal(expected, folder);
+        }
+
+        [Fact]
+        public void GetFolderName_EveryNameInTheSharedReservedList_IsMadeSafe()
+        {
+            // Arrange: the shared list is the one every other caller guards against, so the folder name of
+            // each of its entries must differ from the entry itself, whatever is added to the list later
+            var reserved = ReservedNames.ReservedDeviceNames;
+
+            // Act
+            var unchanged = reserved.Where(name => ServiceLogPaths.GetFolderName(name) == name).ToList();
+
+            // Assert
+            Assert.NotEmpty(reserved);
+            Assert.Empty(unchanged);
         }
 
         [Fact]
