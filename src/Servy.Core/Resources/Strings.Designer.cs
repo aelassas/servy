@@ -718,7 +718,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;, and non-printable characters..
+        ///   Looks up a localized string similar to Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;, &apos;;&apos;, and non-printable characters..
         /// </summary>
         public static string Msg_InvalidServiceName {
             get {
