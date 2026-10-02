@@ -69,6 +69,7 @@ jobs:
           $runtime = $env:MATRIX_RUNTIME
 
           $projects = @(
+            "src\Servy.Host\Servy.Host.csproj",
             "src\Servy.Restarter\Servy.Restarter.csproj",
             "src\Servy.Service\Servy.Service.csproj",
             "src\Servy\Servy.csproj",
