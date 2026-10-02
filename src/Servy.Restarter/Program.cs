@@ -42,7 +42,7 @@ namespace Servy.Restarter
         internal static void Run(string[] args, IServiceRestarter restarter, IRestarterBootstrapEnvironment environment = null)
         {
             string customLogDir = args.Length > 1 ? args[1] : null;
-            // The wrapper passes logs\service\, the only log folder its service account can write
+            // The wrapper passes logs\service\<ServiceName>\, the only log folder its service account can write
             Logger.Initialize(AppConfig.ServyRestarterLogFileName, logDirectory: customLogDir);
 
             IServyLogger rootLogger = null; // Declare as nullable for safe finally disposal

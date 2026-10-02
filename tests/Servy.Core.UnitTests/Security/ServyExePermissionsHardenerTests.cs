@@ -30,8 +30,17 @@ namespace Servy.Core.UnitTests.Security
     [Collection(LoggerCollection.Name)]
     public class ServyExePermissionsHardenerTests : TempDirectoryTestBase
     {
-        /// <summary>The only folder the hardening lets a service account write, relative to the vault.</summary>
-        private static readonly string ServiceLogsFolder = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
+        /// <summary>The service the tests harden an account for.</summary>
+        private const string ServiceName = "svc-one";
+
+        /// <summary>The folder that holds one log folder per service, relative to the vault.</summary>
+        private static readonly string ServiceLogsRoot = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
+
+        /// <summary>The only folder the hardening lets the account of <see cref="ServiceName"/> write, relative to the vault.</summary>
+        private static readonly string ServiceLogsFolder = Path.Combine(ServiceLogsRoot, ServiceName);
+
+        /// <summary>The services the tests harden an account for.</summary>
+        private static readonly IReadOnlyCollection<string> Services = new[] { ServiceName };
 
         private static readonly SecurityIdentifier LocalServiceSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
 
@@ -124,7 +133,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Elevated = false };
 
             // Act
-            var result = sut.Harden("svc", CancellationToken.None);
+            var result = sut.Harden("svc", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.NotElevated, result.Status);
@@ -139,7 +148,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(Path.Combine(TempDirectory, "absent"));
 
             // Act
-            var result = sut.Harden("svc", CancellationToken.None);
+            var result = sut.Harden("svc", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.VaultNotFound, result.Status);
@@ -154,7 +163,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Sid = null };
 
             // Act
-            var result = sut.Harden("nobody", CancellationToken.None);
+            var result = sut.Harden("nobody", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
@@ -173,7 +182,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Sid = sid };
 
             // Act
-            var result = sut.Harden("group", CancellationToken.None);
+            var result = sut.Harden("group", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
@@ -191,7 +200,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Sid = sid };
 
             // Act
-            var result = sut.Harden("admin", CancellationToken.None);
+            var result = sut.Harden("admin", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
@@ -207,7 +216,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { IsMember = true };
 
             // Act
-            var result = sut.Harden("admin-member", CancellationToken.None);
+            var result = sut.Harden("admin-member", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
@@ -223,7 +232,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { IsMember = false };
 
             // Act
-            var result = sut.Harden("svc", CancellationToken.None);
+            var result = sut.Harden("svc", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, result.Status);
@@ -252,7 +261,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { IsMember = null };
 
             // Act
-            var capture = await LogCapture.RunAsync(() => Task.FromResult(sut.Harden("svc", CancellationToken.None)));
+            var capture = await LogCapture.RunAsync(() => Task.FromResult(sut.Harden("svc", Services, CancellationToken.None)));
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, capture.Result.Status);
@@ -270,7 +279,7 @@ namespace Servy.Core.UnitTests.Security
                 cts.Cancel();
 
                 // Act
-                var ex = Record.Exception(() => sut.Harden("svc", cts.Token));
+                var ex = Record.Exception(() => sut.Harden("svc", Services, cts.Token));
 
                 // Assert
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
@@ -287,12 +296,12 @@ namespace Servy.Core.UnitTests.Security
                 cts.Cancel();
 
                 // Act
-                var ex = Record.Exception(() => sut.Harden("svc", cts.Token));
+                var ex = Record.Exception(() => sut.Harden("svc", Services, cts.Token));
 
                 // Assert: GrantFolderAccess creates each folder it grants, so the check before the first one
                 // is what keeps every writable folder absent
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
-                foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
+                foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
                     Assert.False(Directory.Exists(Path.Combine(TempDirectory, folder)), $"{folder} was granted after cancellation");
             }
         }
@@ -312,7 +321,7 @@ namespace Servy.Core.UnitTests.Security
                 };
 
                 // Act
-                var ex = Record.Exception(() => sut.Harden("svc", cts.Token));
+                var ex = Record.Exception(() => sut.Harden("svc", Services, cts.Token));
 
                 // Assert: the first file finishes, the check before the second one stops the loop
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
@@ -335,7 +344,7 @@ namespace Servy.Core.UnitTests.Security
             };
 
             // Act
-            var result = sut.Harden("svc", CancellationToken.None);
+            var result = sut.Harden("svc", Services, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
@@ -352,7 +361,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { IsMember = false, HardLinkCount = _ => -1 };
 
             // Act
-            var capture = LogCapture.Run(() => sut.Harden("svc", CancellationToken.None));
+            var capture = LogCapture.Run(() => sut.Harden("svc", Services, CancellationToken.None));
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
@@ -364,14 +373,14 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public async Task Harden_ServiceLogsFolderCannotBeCreated_IsReportedAsFailedAndTheFilesAreStillHardened()
         {
-            // Arrange: a regular file sits where logs\service\ belongs, so creating that folder throws
-            Directory.CreateDirectory(Path.Combine(TempDirectory, AppConfig.LogsFolderName));
+            // Arrange: a regular file sits where logs\service\svc-one\ belongs, so creating that folder throws
+            Directory.CreateDirectory(Path.Combine(TempDirectory, ServiceLogsRoot));
             File.WriteAllText(Path.Combine(TempDirectory, ServiceLogsFolder), "not a folder");
             File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe), "ui");
             var sut = new TestableHardener(TempDirectory) { IsMember = false };
 
             // Act
-            var capture = await LogCapture.RunAsync(() => Task.FromResult(sut.Harden("svc", CancellationToken.None)));
+            var capture = await LogCapture.RunAsync(() => Task.FromResult(sut.Harden("svc", Services, CancellationToken.None)));
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
@@ -397,18 +406,32 @@ namespace Servy.Core.UnitTests.Security
             File.WriteAllText(key, "key");
             AddAce(key, LocalServiceSid);
             var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+
+            // ... and the 10.1 layout: the shared logs\service\ grant, the log moved into it, and the folder of a service
+            // the account no longer runs
+            var serviceLogs = GrantedFolder(ServiceLogsRoot, LocalServiceSid);
+            var movedLog = Path.Combine(serviceLogs, AppConfig.ServyServiceLogFileName);
+            File.WriteAllText(movedLog, "log");
+            AddAce(movedLog, LocalServiceSid);
+            var formerService = GrantedFolder(Path.Combine(ServiceLogsRoot, "former-svc"), LocalServiceSid);
+            var formerLog = Path.Combine(formerService, AppConfig.ServyServiceLogFileName);
+            File.WriteAllText(formerLog, "log");
+            AddAce(formerLog, LocalServiceSid);
+            AddAce(formerLog, NetworkServiceSid);
             var sut = new TestableHardener(TempDirectory) { IsMember = false };
 
             // Act
-            var result = sut.Harden("svc", CancellationToken.None);
+            var result = sut.Harden("svc", Services, CancellationToken.None);
 
             // Assert
             Assert.Empty(result.Failed);
-            foreach (var item in new[] { db, database, key, logs })
+            foreach (var item in new[] { db, database, key, logs, serviceLogs, movedLog, formerService, formerLog })
                 Assert.False(ItemHasAce(item, LocalServiceSid), $"{item} still names the account");
             Assert.True(ItemHasAce(database, NetworkServiceSid));
+            Assert.True(ItemHasAce(formerLog, NetworkServiceSid));
+            Assert.True(File.Exists(movedLog));
 
-            // ... and the only folder it can write is logs\service\
+            // ... and the only folder it can write is logs\service\svc-one\
             Assert.Equal(new[] { ServiceLogsFolder }, result.GrantedFolders);
             Assert.True(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsFolder), LocalServiceSid));
         }
@@ -418,13 +441,57 @@ namespace Servy.Core.UnitTests.Security
         #region GetTargetFiles
 
         [Fact]
-        public void GetWritableFolders_IsOnlyTheServiceLogsFolder()
+        public void GetWritableFolders_IsTheLogFolderOfEachService()
         {
             // Act
-            var folders = ServyExePermissionsHardener.GetWritableFolders();
+            var folders = ServyExePermissionsHardener.GetWritableFolders(new[] { "svc-one", "SVC-ONE", "  ", null, "My:Svc" });
 
-            // Assert: the database, the keys, the administrative logs and the vault root are deliberately absent
-            Assert.Equal(new[] { Path.Combine("logs", "service") }, folders);
+            // Assert: one folder per distinct service; logs\service\ itself, the database, the keys, the administrative
+            // logs and the vault root are deliberately absent
+            Assert.Equal(new[] { Path.Combine("logs", "service", "svc-one"), Path.Combine("logs", "service", "My%3ASvc") }, folders);
+        }
+
+        [Fact]
+        public void GetWritableFolders_NoService_IsEmpty()
+        {
+            // Act
+            var folders = ServyExePermissionsHardener.GetWritableFolders(null);
+
+            // Assert
+            Assert.Empty(folders);
+        }
+
+        [Fact]
+        public void Harden_TwoServices_GrantsBothFoldersAndNotTheSharedOne()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var result = sut.Harden("svc", new[] { "svc-one", "svc-two" }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(new[] { Path.Combine(ServiceLogsRoot, "svc-one"), Path.Combine(ServiceLogsRoot, "svc-two") }, result.GrantedFolders);
+            Assert.True(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsRoot, "svc-one"), LocalServiceSid));
+            Assert.True(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsRoot, "svc-two"), LocalServiceSid));
+            Assert.False(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsRoot), LocalServiceSid));
+        }
+
+        [Fact]
+        public void Harden_AnotherServiceFolderGrantedToAnotherAccount_IsLeftAlone()
+        {
+            // Arrange
+            var other = GrantedFolder(Path.Combine(ServiceLogsRoot, "svc-two"), NetworkServiceSid);
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var result = sut.Harden("svc", Services, CancellationToken.None);
+
+            // Assert
+            Assert.Empty(result.Failed);
+            Assert.True(ItemHasAce(other, NetworkServiceSid));
+            Assert.False(ItemHasAce(other, LocalServiceSid));
+            Assert.DoesNotContain(Path.Combine(ServiceLogsRoot, "svc-two"), result.Revoked);
         }
 
         [Fact]
@@ -578,7 +645,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var result = await sut.HardenAsync(account, CancellationToken.None);
+            var result = await sut.HardenAsync(account, Services, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -594,7 +661,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var result = await sut.HardenAsync(account, CancellationToken.None);
+            var result = await sut.HardenAsync(account, Services, CancellationToken.None);
 
             // Assert
             Assert.True(result);
@@ -609,7 +676,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { IsMember = false };
 
             // Act
-            var capture = await LogCapture.RunAsync(() => sut.HardenAsync(@"  .\svc-servy  ", CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => sut.HardenAsync(@"  .\svc-servy  ", Services, CancellationToken.None));
 
             // Assert
             Assert.True(capture.Result);
@@ -624,7 +691,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { ResolveException = new InvalidOperationException("LSA unavailable") };
 
             // Act
-            var capture = await LogCapture.RunAsync(() => sut.HardenAsync("svc", CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => sut.HardenAsync("svc", Services, CancellationToken.None));
 
             // Assert
             Assert.False(capture.Result);
@@ -642,7 +709,7 @@ namespace Servy.Core.UnitTests.Security
                 cts.Cancel();
 
                 // Act
-                var capture = await LogCapture.RunAsync(() => sut.HardenAsync("svc", cts.Token));
+                var capture = await LogCapture.RunAsync(() => sut.HardenAsync("svc", Services, cts.Token));
 
                 // Assert
                 Assert.False(capture.Result);
@@ -658,7 +725,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Elevated = false };
 
             // Act
-            var capture = await LogCapture.RunAsync(() => sut.HardenAsync("svc", CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => sut.HardenAsync("svc", Services, CancellationToken.None));
 
             // Assert
             Assert.False(capture.Result);
@@ -690,14 +757,21 @@ namespace Servy.Core.UnitTests.Security
                 new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = @".\SVC-ONE" },
                 new ServiceDto { Name = "c", RunAsLocalSystem = true },
                 new ServiceDto { Name = "d", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\NetworkService" },
+                new ServiceDto { Name = "e", RunAsLocalSystem = false, UserAccount = @"HOST\svc-one" },
             });
-            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+            var sut = new TestableHardener(TempDirectory)
+            {
+                RecordOnly = true,
+                Resolver = a => a.IndexOf("NetworkService", StringComparison.Ordinal) >= 0 ? NetworkServiceSid : LocalServiceSid,
+            };
 
             // Act
             await sut.HardenServiceAccountsAsync(repository.Object, CancellationToken.None);
 
-            // Assert
+            // Assert: one call per account, compared by SID, with every service of that account
             Assert.Equal(new[] { @".\svc-one", @"NT AUTHORITY\NetworkService" }, sut.HardenedAccounts);
+            Assert.Equal(new[] { "a", "b", "e" }, sut.HardenedServiceNames[0]);
+            Assert.Equal(new[] { "d" }, sut.HardenedServiceNames[1]);
             repository.Verify(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -762,13 +836,155 @@ namespace Servy.Core.UnitTests.Security
                     new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "first" },
                     new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = "second" },
                 });
-                var sut = new TestableHardener(TempDirectory) { RecordOnly = true, OnHarden = cts.Cancel };
+                var sut = new TestableHardener(TempDirectory)
+                {
+                    RecordOnly = true,
+                    OnHarden = cts.Cancel,
+                    Resolver = a => a == "first" ? LocalServiceSid : NetworkServiceSid,
+                };
 
                 // Act
                 await sut.HardenServiceAccountsAsync(repository.Object, cts.Token);
 
                 // Assert
                 Assert.Equal(new[] { "first" }, sut.HardenedAccounts);
+            }
+        }
+
+        [Fact]
+        public async Task HardenServiceAccountsAsync_UnresolvableAccounts_AreGroupedByName()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "ghost" },
+                new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = "GHOST" },
+                new ServiceDto { Name = "c", RunAsLocalSystem = false, UserAccount = "phantom" },
+            });
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true, Sid = null };
+
+            // Act
+            await sut.HardenServiceAccountsAsync(repository.Object, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(new[] { "ghost", "phantom" }, sut.HardenedAccounts);
+            Assert.Equal(new[] { "a", "b" }, sut.HardenedServiceNames[0]);
+        }
+
+        #endregion
+
+        #region HardenServiceAsync
+
+        [Fact]
+        public async Task HardenServiceAsync_NullRepository_Throws()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => sut.HardenServiceAsync(ServiceName, "svc", null, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task HardenServiceAsync_BlankAccount_ReturnsFalseWithoutReadingTheRepository(string account)
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+
+            // Act
+            var result = await sut.HardenServiceAsync(ServiceName, account, repository.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.Empty(sut.HardenedAccounts);
+        }
+
+        [Fact]
+        public async Task HardenServiceAsync_LocalSystem_ReturnsTrueWithoutReadingTheRepository()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+
+            // Act
+            var result = await sut.HardenServiceAsync(ServiceName, "LocalSystem", repository.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.Empty(sut.HardenedAccounts);
+        }
+
+        [Fact]
+        public async Task HardenServiceAsync_HardensWithEveryServiceOfTheAccount()
+        {
+            // Arrange: two other services run under the same account under two spellings, one runs under another
+            // account, and the installed service is listed once already
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "same-case", RunAsLocalSystem = false, UserAccount = @" .\SVC " },
+                new ServiceDto { Name = "same-sid", RunAsLocalSystem = false, UserAccount = @"HOST\svc" },
+                new ServiceDto { Name = "other", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\NetworkService" },
+                new ServiceDto { Name = "system", RunAsLocalSystem = true, UserAccount = @".\svc" },
+                new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc" },
+            });
+            var sut = new TestableHardener(TempDirectory)
+            {
+                RecordOnly = true,
+                Resolver = a => a.IndexOf("NetworkService", StringComparison.Ordinal) >= 0 ? NetworkServiceSid : LocalServiceSid,
+            };
+
+            // Act
+            var result = await sut.HardenServiceAsync(ServiceName, @"  .\svc  ", repository.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(new[] { @".\svc" }, sut.HardenedAccounts);
+            Assert.Equal(new[] { ServiceName, "same-case", "same-sid" }, sut.HardenedServiceNames[0]);
+        }
+
+        [Fact]
+        public async Task HardenServiceAsync_RepositoryThrows_ReturnsFalseAndHardensNothing()
+        {
+            // Arrange: hardening with the installed service alone would take the other services' folders away
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("database locked"));
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+
+            // Act
+            var capture = await LogCapture.RunAsync(() => sut.HardenServiceAsync(ServiceName, "svc", repository.Object, CancellationToken.None));
+
+            // Assert
+            Assert.False(capture.Result);
+            Assert.Empty(sut.HardenedAccounts);
+            Assert.Contains("Failed to read the services of 'svc'", capture.Log);
+            Assert.Contains("database locked", capture.Log);
+        }
+
+        [Fact]
+        public async Task HardenServiceAsync_Cancelled_ReturnsFalseWithoutReadingTheRepository()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act
+                var capture = await LogCapture.RunAsync(() => sut.HardenServiceAsync(ServiceName, "svc", repository.Object, cts.Token));
+
+                // Assert
+                Assert.False(capture.Result);
+                repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.Empty(sut.HardenedAccounts);
+                Assert.Contains("was cancelled", capture.Log);
             }
         }
 
@@ -785,7 +1001,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Sid = null };
 
             // Act
-            var result = sut.RevokeIfUnused("ghost", new List<string>(), CancellationToken.None);
+            var result = sut.RevokeIfUnused("ghost", ServiceName, NoServices, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
@@ -805,7 +1021,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Sid = sid };
 
             // Act
-            var result = sut.RevokeIfUnused("principal", new List<string>(), CancellationToken.None);
+            var result = sut.RevokeIfUnused("principal", ServiceName, NoServices, CancellationToken.None);
 
             // Assert
             Assert.Equal(expected, result.Status);
@@ -820,7 +1036,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var result = sut.RevokeIfUnused(@".\svc", new List<string> { @".\SVC" }, CancellationToken.None);
+            var result = sut.RevokeIfUnused(@".\svc", ServiceName, Remaining(("remaining", @".\SVC")), CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
@@ -836,7 +1052,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Resolver = _ => LocalServiceSid };
 
             // Act
-            var result = sut.RevokeIfUnused(@".\svc", new List<string> { @"HOST\svc" }, CancellationToken.None);
+            var result = sut.RevokeIfUnused(@".\svc", ServiceName, Remaining(("remaining", @"HOST\svc")), CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
@@ -865,16 +1081,89 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Resolver = a => a == "other" ? NetworkServiceSid : LocalServiceSid };
 
             // Act
-            var result = sut.RevokeIfUnused("svc", new List<string> { "other" }, CancellationToken.None);
+            var result = sut.RevokeIfUnused("svc", ServiceName, Remaining(("other-svc", "other")), CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
-            Assert.Equal(new[] { TempDirectory, ServiceLogsFolder, AppConfig.DbFolderName, Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName), AppConfig.LogsFolderName, AppConfig.ServyServiceUIExe }, result.Revoked);
+            Assert.Equal(new[] { TempDirectory, AppConfig.DbFolderName, Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName), AppConfig.LogsFolderName, ServiceLogsFolder, AppConfig.ServyServiceUIExe }, result.Revoked);
             Assert.Empty(result.Failed);
             foreach (var item in new[] { TempDirectory, serviceLogs, db, database, logs, exe })
                 Assert.False(ItemHasAce(item, LocalServiceSid), $"{item} still names the account");
             Assert.True(ItemHasAce(logs, NetworkServiceSid));
             Assert.True(ItemHasAce(exe, NetworkServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_AccountStillRunsAnotherService_RevokesOnlyTheRemovedServiceFolder()
+        {
+            // Arrange
+            var removed = GrantedFolder(ServiceLogsFolder, LocalServiceSid);
+            var removedLog = Path.Combine(removed, AppConfig.ServyServiceLogFileName);
+            File.WriteAllText(removedLog, "log");
+            AddAce(removedLog, LocalServiceSid);
+            var kept = GrantedFolder(Path.Combine(ServiceLogsRoot, "svc-two"), LocalServiceSid);
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", ServiceName, Remaining(("svc-two", "svc")), CancellationToken.None));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.InUse, capture.Result.Status);
+            Assert.Equal(new[] { ServiceLogsFolder, Path.Combine(ServiceLogsFolder, AppConfig.ServyServiceLogFileName) }, capture.Result.Revoked);
+            Assert.False(ItemHasAce(removed, LocalServiceSid));
+            Assert.False(ItemHasAce(removedLog, LocalServiceSid));
+            Assert.True(ItemHasAce(kept, LocalServiceSid));
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_SameServiceStillRunsUnderTheAccount_KeepsItsFolder()
+        {
+            // Arrange: the service was reinstalled under another spelling of the same account
+            var folder = GrantedFolder(ServiceLogsFolder, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { Elevated = false };
+
+            // Act
+            var result = sut.RevokeIfUnused(@".\svc", ServiceName, Remaining((ServiceName.ToUpperInvariant(), @"HOST\svc")), CancellationToken.None);
+
+            // Assert: decided before anything is touched, so not even elevation is needed
+            Assert.Equal(ExePermissionsHardeningStatus.InUse, result.Status);
+            Assert.Empty(result.Revoked);
+            Assert.True(ItemHasAce(folder, LocalServiceSid));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_AccountStillRunsAnotherServiceButNotElevated_ChangesNothing()
+        {
+            // Arrange
+            var removed = GrantedFolder(ServiceLogsFolder, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { Elevated = false };
+
+            // Act
+            var result = sut.RevokeIfUnused("svc", ServiceName, Remaining(("svc-two", "svc")), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.NotElevated, result.Status);
+            Assert.True(ItemHasAce(removed, LocalServiceSid));
+        }
+
+        [Fact]
+        public void ReportRevokeResult_InUseWithARevokedFolder_NamesIt()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("svc");
+            result.AddRevoked(ServiceLogsFolder);
+            result.Complete(ExePermissionsHardeningStatus.InUse, "another service still runs under it (as 'svc')");
+
+            // Act
+            var capture = LogCapture.Run(() => ServyExePermissionsHardener.ReportRevokeResult(result));
+
+            // Assert
+            Assert.True(capture.Result);
+            Assert.Contains($"Revoked its access to: {ServiceLogsFolder}.", capture.Log);
         }
 
         [Fact]
@@ -885,7 +1174,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var result = sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None);
+            var result = sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
@@ -901,7 +1190,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { Elevated = false };
 
             // Act
-            var result = sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None);
+            var result = sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.NotElevated, result.Status);
@@ -915,7 +1204,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(Path.Combine(TempDirectory, "missing"));
 
             // Act
-            var result = sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None);
+            var result = sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.VaultNotFound, result.Status);
@@ -932,7 +1221,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { HardLinkCount = _ => 2 };
 
             // Act
-            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None));
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None));
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
@@ -952,7 +1241,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory) { HardLinkCount = _ => -1 };
 
             // Act
-            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None));
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None));
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
@@ -979,7 +1268,7 @@ namespace Servy.Core.UnitTests.Security
             };
 
             // Act
-            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", new List<string>(), CancellationToken.None));
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None));
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
@@ -1000,7 +1289,7 @@ namespace Servy.Core.UnitTests.Security
                 cts.Cancel();
 
                 // Act
-                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", new List<string>(), cts.Token));
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, cts.Token));
 
                 // Assert
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
@@ -1018,7 +1307,7 @@ namespace Servy.Core.UnitTests.Security
                 cts.Cancel();
 
                 // Act
-                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", new List<string>(), cts.Token));
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, cts.Token));
 
                 // Assert: the vault root is revoked before any check, the folder loop's own check stops there
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
@@ -1044,7 +1333,7 @@ namespace Servy.Core.UnitTests.Security
                 };
 
                 // Act
-                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", new List<string>(), cts.Token));
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, cts.Token));
 
                 // Assert: the first file is revoked, the check before the second one stops the loop
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
@@ -1077,7 +1366,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => sut.RevokeIfUnusedAsync("svc", null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => sut.RevokeIfUnusedAsync("svc", ServiceName, null, CancellationToken.None));
         }
 
         [Theory]
@@ -1091,7 +1380,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var revoked = await sut.RevokeIfUnusedAsync(account, repository.Object, CancellationToken.None);
+            var revoked = await sut.RevokeIfUnusedAsync(account, ServiceName, repository.Object, CancellationToken.None);
 
             // Assert
             Assert.True(revoked);
@@ -1112,7 +1401,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync(@"  .\svc  ", repository.Object, CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync(@"  .\svc  ", ServiceName, repository.Object, CancellationToken.None));
 
             // Assert
             Assert.True(capture.Result);
@@ -1134,7 +1423,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync(@".\svc", repository.Object, CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync(@".\svc", ServiceName, repository.Object, CancellationToken.None));
 
             // Assert
             Assert.True(capture.Result);
@@ -1152,7 +1441,7 @@ namespace Servy.Core.UnitTests.Security
             var sut = new TestableHardener(TempDirectory);
 
             // Act
-            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync("svc", repository.Object, CancellationToken.None));
+            var capture = await LogCapture.RunAsync(() => sut.RevokeIfUnusedAsync("svc", ServiceName, repository.Object, CancellationToken.None));
 
             // Assert
             Assert.False(capture.Result);
@@ -1171,7 +1460,7 @@ namespace Servy.Core.UnitTests.Security
                 cts.Cancel();
 
                 // Act
-                var revoked = await sut.RevokeIfUnusedAsync("svc", repository.Object, cts.Token);
+                var revoked = await sut.RevokeIfUnusedAsync("svc", ServiceName, repository.Object, cts.Token);
 
                 // Assert
                 Assert.False(revoked);
@@ -1180,6 +1469,15 @@ namespace Servy.Core.UnitTests.Security
         }
 
         #endregion
+
+        /// <summary>No remaining service.</summary>
+        private static readonly IReadOnlyCollection<ServiceDto> NoServices = new List<ServiceDto>();
+
+        /// <summary>
+        /// Builds the remaining services from name and account pairs.
+        /// </summary>
+        private static IReadOnlyCollection<ServiceDto> Remaining(params (string Name, string Account)[] services)
+            => services.Select(s => new ServiceDto { Name = s.Name, RunAsLocalSystem = false, UserAccount = s.Account }).ToList();
 
         /// <summary>
         /// Creates a writable folder in the vault carrying the two entries the hardening grants <paramref name="sid"/>.
@@ -1279,12 +1577,16 @@ namespace Servy.Core.UnitTests.Security
 
             public List<string> HardenedAccounts { get; } = new List<string>();
 
-            public override Task<bool> HardenAsync(string targetAccount, CancellationToken cancellationToken)
+            /// <summary>The service names each recorded <see cref="HardenAsync"/> call was given, in call order.</summary>
+            public List<List<string>> HardenedServiceNames { get; } = new List<List<string>>();
+
+            public override Task<bool> HardenAsync(string targetAccount, IReadOnlyCollection<string> serviceNames, CancellationToken cancellationToken)
             {
                 if (!RecordOnly)
-                    return base.HardenAsync(targetAccount, cancellationToken);
+                    return base.HardenAsync(targetAccount, serviceNames, cancellationToken);
 
                 HardenedAccounts.Add(targetAccount);
+                HardenedServiceNames.Add(serviceNames.ToList());
                 OnHarden?.Invoke();
                 return Task.FromResult(true);
             }

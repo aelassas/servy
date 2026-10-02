@@ -29,8 +29,9 @@ namespace Servy.Service.Bootstrap
         /// Initializes the process-global <see cref="Logger"/> with the given log file name, in the given folder.
         /// </summary>
         /// <param name="logFileName">The name of the log file the service writes its own diagnostics to.</param>
-        /// <param name="logDirectory">The folder the log file is written in: <see cref="Servy.Core.Config.AppConfig.ServiceLogsFolderPath"/>,
-        /// the only log folder a service account can write.</param>
+        /// <param name="logDirectory">The folder the log file is written in: the service's own log folder,
+        /// <c>logs\service\&lt;ServiceName&gt;\</c> (<see cref="Servy.Core.Logging.ServiceLogPaths.GetFolderPath"/>), the only log
+        /// folder its service account can write.</param>
         void InitializeLogger(string logFileName, string logDirectory);
 
         /// <summary>

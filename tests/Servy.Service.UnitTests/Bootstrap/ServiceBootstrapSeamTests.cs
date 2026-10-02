@@ -146,14 +146,35 @@ namespace Servy.Service.UnitTests.Bootstrap
 
         /// <summary>
         /// The service log file is initialized before the <c>try</c>, which is what lets the catch-all log
-        /// a construction failure at all, and in <c>logs\service\</c>, the only log folder the service account
-        /// can write.
+        /// a construction failure at all, and in the service's own folder, <c>logs\service\&lt;ServiceName&gt;\</c>,
+        /// the only log folder the service account can write.
         /// </summary>
         [Fact]
-        public void Constructor_InitializesTheServiceLogFileInTheServiceLogsFolder()
+        public void Constructor_InitializesTheServiceLogFileInTheServiceOwnLogFolder()
+        {
+            // Arrange: element 1 of the command line is the service name, as StartOptionsParser reads it
+            var env = new FakeBootstrapEnvironment();
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "Servy.Service.exe", "My:Service" });
+
+            // Act
+            Build(env);
+
+            // Assert
+            var expected = Path.Combine(AppConfig.LogsFolderPath, "service", "My%3AService");
+            Assert.Equal(new[] { ("Servy.Service.log", expected) }, env.InitializedLoggers);
+            Assert.Equal(ServiceLogPaths.GetFolderPath("My:Service"), expected);
+        }
+
+        /// <summary>
+        /// A command line that names no service falls back to <c>logs\service\</c>; such a wrapper fails to
+        /// start in <c>OnStart</c> anyway.
+        /// </summary>
+        [Fact]
+        public void Constructor_NoServiceOnTheCommandLine_InitializesTheServiceLogFileInTheServiceLogsFolder()
         {
             // Arrange
             var env = new FakeBootstrapEnvironment();
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "Servy.Service.exe" });
 
             // Act
             Build(env);
@@ -161,6 +182,45 @@ namespace Servy.Service.UnitTests.Bootstrap
             // Assert
             Assert.Equal(new[] { ("Servy.Service.log", AppConfig.ServiceLogsFolderPath) }, env.InitializedLoggers);
             Assert.Equal(Path.Combine(AppConfig.LogsFolderPath, "service"), AppConfig.ServiceLogsFolderPath);
+        }
+
+        /// <summary>Command lines that name no service.</summary>
+        public static TheoryData<string[]> CommandLinesWithoutAService => new TheoryData<string[]>
+        {
+            new string[0],
+            new[] { "Servy.Service.exe" },
+            new[] { "Servy.Service.exe", "   " },
+        };
+
+        [Theory]
+        [MemberData(nameof(CommandLinesWithoutAService))]
+        public void GetLogDirectory_NoServiceName_IsTheServiceLogsFolder(string[] args)
+        {
+            // Act
+            var directory = Service.GetLogDirectory(args);
+
+            // Assert
+            Assert.Equal(AppConfig.ServiceLogsFolderPath, directory);
+        }
+
+        [Fact]
+        public void GetLogDirectory_NoCommandLine_IsTheServiceLogsFolder()
+        {
+            // Act
+            var directory = Service.GetLogDirectory(null);
+
+            // Assert
+            Assert.Equal(AppConfig.ServiceLogsFolderPath, directory);
+        }
+
+        [Fact]
+        public void GetLogDirectory_ServiceName_IsThatServiceFolder()
+        {
+            // Act
+            var directory = Service.GetLogDirectory(new[] { "Servy.Service.exe", "MyService", "ignored" });
+
+            // Assert
+            Assert.Equal(Path.Combine(AppConfig.ServiceLogsFolderPath, "MyService"), directory);
         }
 
         /// <summary>

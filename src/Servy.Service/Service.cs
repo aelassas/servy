@@ -279,7 +279,8 @@ namespace Servy.Service
             _scmNative = new ScmNative();
             _options = null;
 
-            _bootstrapEnvironment.InitializeLogger(AppConfig.ServyServiceLogFileName, AppConfig.ServiceLogsFolderPath);
+            // Each service logs in its own folder, the only log folder its service account can write
+            _bootstrapEnvironment.InitializeLogger(AppConfig.ServyServiceLogFileName, GetLogDirectory(_serviceHelper.GetArgs()));
 
             try
             {
@@ -332,6 +333,22 @@ namespace Servy.Service
                 // the custom exit code immediately, completely preventing the 1053 timeout hang.
                 TerminateProcess(Environment.ExitCode);
             }
+        }
+
+        /// <summary>
+        /// Gets the folder the wrapper writes its log in: the log folder of the service named on its command line,
+        /// <c>logs\service\&lt;ServiceName&gt;\</c> (<see cref="ServiceLogPaths.GetFolderPath"/>).
+        /// </summary>
+        /// <param name="args">The wrapper's command line, as <see cref="Helpers.IServiceHelper.GetArgs"/> returns it;
+        /// element 1 is the service name, as <see cref="CommandLine.StartOptionsParser.Parse"/> reads it.</param>
+        /// <returns>
+        /// The service's log folder, or <see cref="AppConfig.ServiceLogsFolderPath"/> when the command line names no
+        /// service; such a wrapper fails to start in <see cref="OnStart(string[])"/> anyway.
+        /// </returns>
+        internal static string GetLogDirectory(string[] args)
+        {
+            var serviceName = args != null && args.Length > 1 ? args[1] : null;
+            return string.IsNullOrWhiteSpace(serviceName) ? AppConfig.ServiceLogsFolderPath : ServiceLogPaths.GetFolderPath(serviceName);
         }
 
         #endregion

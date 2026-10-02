@@ -145,6 +145,7 @@
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Logging\ServiceLogMigrator.cs" />
+    <Compile Include="Logging\ServiceLogPaths.cs" />
     <Compile Include="NamedPipes\INamedPipeServerVerifier.cs" />
     <Compile Include="NamedPipes\INamedPipesService.cs" />
     <Compile Include="NamedPipes\IpcRequestDto.cs" />

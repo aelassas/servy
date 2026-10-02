@@ -205,7 +205,8 @@ namespace Servy.Host
                 _secureData = dataStack.SecureData;
                 _serviceRepository = dataStack.ServiceRepository;
 
-                // The wrappers now log under logs\service\; move what they wrote to logs\ before.
+                // The wrappers now log under logs\service\<ServiceName>\; move what they wrote to logs\ before into
+                // logs\service\, where it stays readable by the administrators only.
                 _bootstrapEnvironment.MigrateLegacyServiceLog();
 
                 CanShutdown = true;
