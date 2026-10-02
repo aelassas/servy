@@ -171,8 +171,9 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Whether debug logs are enabled.
         /// When enabled, environment variables and process parameters are recorded in the local
-        /// log file at <c>%ProgramData%\Servy\logs\Servy.Service.log</c>. Sensitive data is
-        /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
+        /// log file at <c>%ProgramData%\Servy\logs\service\Servy.Service.log</c>. Sensitive data is
+        /// never written to the Windows Event Log; the CLI <c>show</c> command and <c>Show-ServyService</c> mask it
+        /// unless <c>--decrypt</c> / <c>-Decrypt</c> is passed.
         /// Not recommended for production environments, as the local log file may contain
         /// sensitive information.
         /// </summary>
