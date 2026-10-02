@@ -323,9 +323,9 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
 
             // The Servy host service owns this name, and every Servy service depends on it
-            if (string.Equals(options.ServiceName.Trim(), AppConfig.ServyHostServiceName, StringComparison.OrdinalIgnoreCase))
+            if (Helper.IsReservedForServyHost(options.ServiceName))
             {
-                string reservedError = $"The service name '{options.ServiceName}' is reserved for the Servy host service.";
+                string reservedError = string.Format(Strings.Msg_ServiceNameReservedForServyHost, options.ServiceName);
                 Logger.Error(reservedError);
                 return OperationResult.Failure(reservedError);
             }

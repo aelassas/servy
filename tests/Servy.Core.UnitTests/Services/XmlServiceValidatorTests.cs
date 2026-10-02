@@ -229,6 +229,27 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void TryValidate_ServiceNamedServy_IsRefusedAsReservedForTheHost()
+        {
+            // Arrange: an export from an earlier version could carry a service named after the host service
+            var dto = new ServiceDto
+            {
+                Name = "Servy",
+                ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
+                StopTimeout = 30
+            };
+            var xml = _serializer.Serialize(dto);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(xml, out var error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(string.Format(Strings.Msg_ServiceNameReservedForServyHost, "Servy"), error);
+        }
+
+        [Fact]
         public void TryValidate_ValidXml_ReturnsTrue()
         {
             // Arrange

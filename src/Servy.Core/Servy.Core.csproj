@@ -197,6 +197,8 @@
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Services\ServiceDtoSerializer.cs" />
     <Compile Include="Services\ServyHostInstaller.cs" />
+    <Compile Include="Services\ServyHostServiceState.cs" />
+    <Compile Include="Services\ServyServicesPause.cs" />
     <Compile Include="Validation\PathSecurityGuard.cs" />
     <Compile Include="Validation\PathSecurityResult.cs" />
     <Compile Include="Validation\ServiceDtoImportValidator.cs" />

@@ -371,123 +371,141 @@ namespace Servy.UI.Bootstrapping
 
                     var ct = _appLifetimeCts.Token;
 
-                    // Binary Resource Extraction
-                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: ct))
-                    {
-                        string resourceName = $"{AppConfig.HandleExeFileName}.exe";
-                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window)app.MainWindow,
-                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                            _options.ResourceExtractionWarningTitle,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
-                    }
-
-                    var resourceItems = new List<ResourceItem>
-                    {
-                        new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceUIFileName, Extension= "exe"},
-                        // The service wrapper launches the restarter from its own folder, so it is extracted next to it
-                        new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyRestarterFileName, Extension= "exe"}
-                    };
-
-#if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
-                    {
-                        string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
-                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window)app.MainWindow,
-                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                            _options.ResourceExtractionWarningTitle,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
-                    }
-
-                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: ct))
-                    {
-                        string resourceName = $"{AppConfig.ServyRestarterFileName}.pdb";
-                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window)app.MainWindow,
-                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                            _options.ResourceExtractionWarningTitle,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
-                    }
-
-                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: ct))
-                    {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window)app.MainWindow,
-                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyHostFileName}.pdb"),
-                            _options.ResourceExtractionWarningTitle,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
-                    }
-#else
-                    // Runtime DLL requirements
-                    resourceItems.AddRange(new List<ResourceItem>
-                    {
-                        new ResourceItem{ FileNameWithoutExtension = "Dapper", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "Microsoft.Bcl.AsyncInterfaces", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "Newtonsoft.Json", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "Servy.Core", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "Servy.Infrastructure", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Buffers", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Collections.Immutable", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Data.SQLite", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Memory", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Numerics.Vectors", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Security.AccessControl", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Security.Principal.Windows", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Threading.AccessControl", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll" },
-                    });
-#endif
-                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems, cancellationToken: ct))
-                    {
-                        throw new InvalidOperationException($"Failed to extract embedded resources. The application cannot start safely - see file log for details.");
-                    }
-
-                    // The Servy host service serves every Servy service its configuration. Replacing it stops every
-                    // running Servy service and the host first, and starts them again afterwards.
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                     var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
-                    if (!await resourceHelper.CopyServyHostAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, hostInstaller, ct))
+                    var pause = new ServyServicesPause(sh, hostInstaller);
+                    try
                     {
-                        throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
-                            "The application cannot start safely - see file log for details.");
-                    }
+                        // Binary Resource Extraction
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: ct))
+                        {
+                            string resourceName = $"{AppConfig.HandleExeFileName}.exe";
+                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
+                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                                splash ?? (Window)app.MainWindow,
+                                string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                                _options.ResourceExtractionWarningTitle,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning));
+                        }
+
+                        var resourceItems = new List<ResourceItem>
+                        {
+                            new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceUIFileName, Extension= "exe"},
+                            // The service wrapper launches the restarter from its own folder, so it is extracted next to it
+                            new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyRestarterFileName, Extension= "exe"}
+                        };
+
+#if DEBUG
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
+                        {
+                            string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
+                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
+                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                                splash ?? (Window)app.MainWindow,
+                                string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                                _options.ResourceExtractionWarningTitle,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning));
+                        }
+
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: ct))
+                        {
+                            string resourceName = $"{AppConfig.ServyRestarterFileName}.pdb";
+                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'.");
+                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                                splash ?? (Window)app.MainWindow,
+                                string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
+                                _options.ResourceExtractionWarningTitle,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning));
+                        }
+
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: ct))
+                        {
+                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                                splash ?? (Window)app.MainWindow,
+                                string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyHostFileName}.pdb"),
+                                _options.ResourceExtractionWarningTitle,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning));
+                        }
+#else
+                        // Runtime DLL requirements
+                        resourceItems.AddRange(new List<ResourceItem>
+                        {
+                            new ResourceItem{ FileNameWithoutExtension = "Dapper", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "Microsoft.Bcl.AsyncInterfaces", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "Newtonsoft.Json", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "Servy.Core", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "Servy.Infrastructure", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Buffers", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Collections.Immutable", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Data.SQLite", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Memory", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Numerics.Vectors", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Security.AccessControl", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Security.Principal.Windows", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Threading.AccessControl", Extension= "dll" },
+                            new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll" },
+                        });
+#endif
+                        // Replacing the service wrapper, a DLL it loads or the host needs every running Servy service and the
+                        // host stopped. They are stopped once for all the files and the host reinstall, and started once at
+                        // the end, rather than once per file: after an upgrade on a machine with many services that would
+                        // delay start-up a lot.
+                        if (resourceItems.Any(item => resourceHelper.IsExtractionNeeded(_options.ResourcesNamespace, item.FileNameWithoutExtension, item.Extension))
+                            || resourceHelper.IsExtractionNeeded(_options.ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
+                        {
+                            await pause.PauseAsync(ct);
+                        }
+
+                        if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems, stopServices: false, cancellationToken: ct))
+                        {
+                            throw new InvalidOperationException($"Failed to extract embedded resources. The application cannot start safely - see file log for details.");
+                        }
+
+                        // The Servy host service serves every Servy service its configuration
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "exe", false, cancellationToken: ct))
+                        {
+                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
+                                "The application cannot start safely - see file log for details.");
+                        }
 
 #if !DEBUG
-                    // A file newly extracted into the vault carries no grant for the service accounts, so grant them
-                    // their access to it again. Debug builds extract next to the executable instead.
-                    if (resourceHelper.HasCopiedResources)
-                    {
-                        await new ServyExePermissionsHardener().HardenServiceAccountsAsync(ServiceRepository, ct);
-                    }
+                        // A file newly extracted into the vault carries no grant for the service accounts, so grant them
+                        // their access to it again. Debug builds extract next to the executable instead.
+                        if (resourceHelper.HasCopiedResources)
+                        {
+                            await new ServyExePermissionsHardener().HardenServiceAccountsAsync(ServiceRepository, ct);
+                        }
 #endif
-                    // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
-                    var hostExePath = Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe);
-                    var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(hostExePath, sh, ct);
-                    if (hostResult.IsSuccess)
-                    {
-                        // Services installed by an earlier version do not depend on the host yet
-                        var installed = await ServiceRepository.GetAllAsync(decrypt: false, ct);
-                        await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), ct);
+                        // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
+                        var hostExePath = Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe);
+                        var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(hostExePath, sh, ct);
+                        if (hostResult.IsSuccess)
+                        {
+                            // Services installed by an earlier version do not depend on the host yet
+                            var installed = await ServiceRepository.GetAllAsync(decrypt: false, ct);
+                            await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), ct);
+                        }
+                        else
+                        {
+                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                                splash ?? (Window)app.MainWindow,
+                                string.Format(Resources.Strings.Msg_ServyHostUnavailable, hostResult.ErrorMessage),
+                                _options.ResourceExtractionWarningTitle,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning));
+                        }
                     }
-                    else
+                    finally
                     {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window)app.MainWindow,
-                            string.Format(Resources.Strings.Msg_ServyHostUnavailable, hostResult.ErrorMessage),
-                            _options.ResourceExtractionWarningTitle,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
+                        await pause.ResumeAsync();
                     }
+
                     stopwatch.Stop();
 
                     // Prevent "splash screen flicker" by ensuring it stays visible for a minimum duration

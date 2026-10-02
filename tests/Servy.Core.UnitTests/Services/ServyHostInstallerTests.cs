@@ -79,161 +79,11 @@ namespace Servy.Core.UnitTests.Services
 
         #region EnsureInstalledAndRunningAsync
 
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_NotInstalled_CreatesAnAutomaticLocalSystemServiceAndStartsIt()
-        {
-            // Arrange
-            var scm = _handles.Scm(1);
-            var created = _handles.Service(2);
-            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE)).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(_handles.Service(0));
-            _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
-            _api.Setup(a => a.CreateService(scm, "Servy", "Servy", HostAccess, (uint)SERVICE_WIN32_OWN_PROCESS, (uint)SERVICE_AUTO_START,
-                SERVICE_ERROR_NORMAL, $"\"{_hostExe}\"", null, IntPtr.Zero, null, null, null)).Returns(created);
-            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
-
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.True(result.IsSuccess, result.ErrorMessage);
-            _api.Verify(a => a.CreateService(scm, "Servy", "Servy", HostAccess, (uint)SERVICE_WIN32_OWN_PROCESS, (uint)SERVICE_AUTO_START,
-                SERVICE_ERROR_NORMAL, $"\"{_hostExe}\"", null, IntPtr.Zero, null, null, null), Times.Once);
-            _api.Verify(a => a.ChangeServiceConfig2(created, (uint)SERVICE_CONFIG_DESCRIPTION, ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Once);
-            _host.Verify(h => h.Start(), Times.Once);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_Installed_SetsAutomaticAndTheExtractedPathAndStartsItWhenStopped()
-        {
-            // Arrange
-            var scm = _handles.Scm(1);
-            var existing = _handles.Service(3);
-            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE)).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(existing);
-            _api.Setup(a => a.ChangeServiceConfig(existing, SERVICE_NO_CHANGE, (uint)SERVICE_AUTO_START, SERVICE_NO_CHANGE, $"\"{_hostExe}\"",
-                null, IntPtr.Zero, null, ServiceAccounts.LocalSystem, null, null)).Returns(true);
-            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.StartPending, ServiceControllerStatus.Running);
-
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.True(result.IsSuccess, result.ErrorMessage);
-            _api.Verify(a => a.ChangeServiceConfig(existing, SERVICE_NO_CHANGE, (uint)SERVICE_AUTO_START, SERVICE_NO_CHANGE, $"\"{_hostExe}\"",
-                null, IntPtr.Zero, null, ServiceAccounts.LocalSystem, null, null), Times.Once);
-            _api.Verify(a => a.ChangeServiceConfig2(existing, (uint)SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
-                ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
-            _api.Verify(a => a.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
-                It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _host.Verify(h => h.Start(), Times.Once);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_AlreadyRunning_DoesNotStartItAgain()
-        {
-            // Arrange
-            var scm = _handles.Scm(1);
-            var existing = _handles.Service(3);
-            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(existing);
-            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(true);
-            HostStatuses(ServiceControllerStatus.Running);
-
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.True(result.IsSuccess);
-            _host.Verify(h => h.Start(), Times.Never);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_ExecutableMissing_FailsWithoutTouchingTheScm()
-        {
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(Path.Combine(TempDirectory, "absent.exe"), _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Contains("does not exist", result.ErrorMessage);
-            _api.Verify(a => a.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_OpenServiceFailsForAnotherReason_FailsWithoutCreating()
-        {
-            // Arrange: access denied is not "not installed"
-            var scm = _handles.Scm(1);
-            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(_handles.Service(0));
-            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
-
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            _api.Verify(a => a.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
-                It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_ScmCannotBeOpened_Fails()
-        {
-            // Arrange
-            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(_handles.Scm(0));
-            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
-
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Contains("Failed to install or start the 'Servy' service", result.ErrorMessage);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_ServiceNeverStarts_FailsAfterTheTimeout()
-        {
-            // Arrange
-            var scm = _handles.Scm(1);
-            var existing = _handles.Service(3);
-            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(existing);
-            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(true);
-            HostStatuses(ServiceControllerStatus.Stopped);
-
-            // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Contains("did not reach the Running state", result.ErrorMessage);
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_BlankPath_Throws()
-        {
-            await Assert.ThrowsAsync<ArgumentException>(() => Create().EnsureInstalledAndRunningAsync("  ", _serviceHelper.Object, CancellationToken.None));
-        }
-
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_NullServiceHelper_Throws()
-        {
-            await Assert.ThrowsAsync<ArgumentNullException>(() => Create().EnsureInstalledAndRunningAsync(_hostExe, null, CancellationToken.None));
-        }
-
-        #endregion
-
-        #region Registered path
-
         /// <summary>
         /// Makes the Service Control Manager report the host service as registered with <paramref name="binaryPath"/>,
         /// through the two-pass QueryServiceConfig the installer uses, and accept any reconfiguration.
         /// </summary>
+        /// <returns>The handle the installer reconfigures the service through.</returns>
         private SafeServiceHandle RegisteredAs(string binaryPath)
         {
             var queryHandle = _handles.Service(7);
@@ -260,11 +110,76 @@ namespace Servy.Core.UnitTests.Services
             return existing;
         }
 
+        /// <summary>Makes the Service Control Manager report that no service is named Servy.</summary>
+        private void NotRegistered()
+        {
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(() => _handles.Scm(1));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", It.IsAny<uint>())).Returns(() => _handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+        }
+
+        /// <summary>Asserts that the Servy service was neither reconfigured, stopped, started nor created.</summary>
+        private void AssertNothingTouched()
+        {
+            _api.Verify(a => a.ChangeServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _api.Verify(a => a.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
+                It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _host.Verify(h => h.Stop(), Times.Never);
+            _host.Verify(h => h.Start(), Times.Never);
+            _serviceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [Fact]
-        public async Task EnsureInstalledAndRunningAsync_RegisteredWithTheExpectedPath_TouchesNoService()
+        public async Task EnsureInstalledAndRunningAsync_NotInstalled_CreatesAnAutomaticLocalSystemServiceAndStartsIt()
+        {
+            // Arrange
+            NotRegistered();
+            var created = _handles.Service(2);
+            _api.Setup(a => a.CreateService(It.IsAny<SafeScmHandle>(), "Servy", "Servy", HostAccess, (uint)SERVICE_WIN32_OWN_PROCESS, (uint)SERVICE_AUTO_START,
+                SERVICE_ERROR_NORMAL, $"\"{_hostExe}\"", null, IntPtr.Zero, null, null, null)).Returns(created);
+            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _api.Verify(a => a.CreateService(It.IsAny<SafeScmHandle>(), "Servy", "Servy", HostAccess, (uint)SERVICE_WIN32_OWN_PROCESS, (uint)SERVICE_AUTO_START,
+                SERVICE_ERROR_NORMAL, $"\"{_hostExe}\"", null, IntPtr.Zero, null, null, null), Times.Once);
+            _api.Verify(a => a.ChangeServiceConfig2(created, (uint)SERVICE_CONFIG_DESCRIPTION, ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Once);
+            _host.Verify(h => h.Start(), Times.Once);
+            _serviceHelper.Verify(s => s.GetRunningServyServices(), Times.Never);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_InstalledWithTheExpectedPath_SetsAutomaticAndStartsItWhenStopped()
         {
             // Arrange
             var existing = RegisteredAs($"\"{_hostExe}\"");
+            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.StartPending, ServiceControllerStatus.Running);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _api.Verify(a => a.ChangeServiceConfig(existing, SERVICE_NO_CHANGE, (uint)SERVICE_AUTO_START, SERVICE_NO_CHANGE, $"\"{_hostExe}\"",
+                null, IntPtr.Zero, null, ServiceAccounts.LocalSystem, null, null), Times.Once);
+            _api.Verify(a => a.ChangeServiceConfig2(existing, (uint)SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
+            _api.Verify(a => a.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
+                It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _host.Verify(h => h.Start(), Times.Once);
+            _host.Verify(h => h.Stop(), Times.Never);
+            _serviceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_AlreadyRunningFromTheExpectedPath_TouchesNoService()
+        {
+            // Arrange
+            RegisteredAs($"\"{_hostExe}\"");
             HostStatuses(ServiceControllerStatus.Running);
 
             // Act
@@ -272,12 +187,10 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess, result.ErrorMessage);
-            _host.Verify(h => h.Stop(), Times.Never);
             _host.Verify(h => h.Start(), Times.Never);
+            _host.Verify(h => h.Stop(), Times.Never);
             _serviceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
             _serviceHelper.Verify(s => s.StartServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
-            _api.Verify(a => a.ChangeServiceConfig(existing, SERVICE_NO_CHANGE, (uint)SERVICE_AUTO_START, SERVICE_NO_CHANGE, $"\"{_hostExe}\"",
-                null, IntPtr.Zero, null, ServiceAccounts.LocalSystem, null, null), Times.Once);
         }
 
         [Fact]
@@ -288,19 +201,13 @@ namespace Servy.Core.UnitTests.Services
             var calls = new List<string>();
             var existing = RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"");
             _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
-            var net48Service = new Mock<IServiceControllerWrapper>();
-            net48Service.SetupGet(s => s.ServiceName).Returns("Net48Service");
-            net48Service.SetupGet(s => s.Status).Returns(ServiceControllerStatus.Running);
-            net48Service.Setup(s => s.GetDependencyNames()).Returns(new[] { "Servy" });
-            var unrelated = new Mock<IServiceControllerWrapper>();
-            unrelated.SetupGet(s => s.ServiceName).Returns("Spooler");
-            unrelated.SetupGet(s => s.Status).Returns(ServiceControllerStatus.Running);
-            unrelated.Setup(s => s.GetDependencyNames()).Returns(new[] { "RPCSS" });
-            var uiServiceAgain = new Mock<IServiceControllerWrapper>();
-            uiServiceAgain.SetupGet(s => s.ServiceName).Returns("UiService");
-            uiServiceAgain.SetupGet(s => s.Status).Returns(ServiceControllerStatus.Running);
-            uiServiceAgain.Setup(s => s.GetDependencyNames()).Returns(new[] { "Servy" });
-            _controllers.Setup(c => c.GetServices()).Returns(new[] { net48Service.Object, unrelated.Object, uiServiceAgain.Object });
+            _controllers.Setup(c => c.GetServices()).Returns(new[]
+            {
+                Controller("Net48Service", ServiceControllerStatus.Running, "Servy"),
+                Controller("Spooler", ServiceControllerStatus.Running, "RPCSS"),
+                Controller("UiService", ServiceControllerStatus.Running, "Servy"),
+                Controller("StoppedServyService", ServiceControllerStatus.Stopped, "Servy"),
+            });
 
             IEnumerable<string> stopped = null;
             IEnumerable<string> started = null;
@@ -350,46 +257,166 @@ namespace Servy.Core.UnitTests.Services
             _serviceHelper.Verify(s => s.StartServicesAsync(It.Is<IEnumerable<string>>(n => n.Single() == "UiService"), CancellationToken.None), Times.Once);
         }
 
-        [Fact]
-        public async Task EnsureInstalledAndRunningAsync_RegisteredPathUnreadable_KeepsTheServicesRunning()
+        [Theory]
+        [InlineData("\"C:\\Apps\\MyApp\\MyApp.exe\" --serve")]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.exe\" \"Servy\"")]
+        [InlineData("C:\\Tools\\NotServy.Host.exe")]
+        public async Task EnsureInstalledAndRunningAsync_NameTakenByAnotherProgram_IsReportedAndLeftUntouched(string commandLine)
         {
-            // Arrange: the configuration cannot be read, which must not stop every service on each start of the app
-            var scm = _handles.Scm(1);
-            var existing = _handles.Service(3);
-            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Servy", SERVICE_QUERY_CONFIG)).Returns(_handles.Service(8));
-            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(existing);
-            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            // Arrange: a service an earlier version let a user install under the name, before it was reserved (#7294)
+            RegisteredAs(commandLine);
             HostStatuses(ServiceControllerStatus.Running);
 
             // Act
             var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
-            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("already exists and runs", result.ErrorMessage);
+            Assert.Contains(commandLine, result.ErrorMessage);
+            AssertNothingTouched();
             _serviceHelper.Verify(s => s.GetRunningServyServices(), Times.Never);
-            _host.Verify(h => h.Stop(), Times.Never);
         }
 
         [Fact]
-        public void GetRegisteredExecutablePath_NotInstalled_ReturnsNull()
+        public async Task EnsureInstalledAndRunningAsync_ExecutableCannotBeRead_FailsAndTouchesNothing()
+        {
+            // Arrange: the service opens, but its configuration cannot be read, so it cannot be confirmed to be the host
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(() => _handles.Scm(1));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", SERVICE_QUERY_CONFIG)).Returns(_handles.Service(8));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", HostAccess)).Returns(_handles.Service(3));
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("could not be read", result.ErrorMessage);
+            AssertNothingTouched();
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_OpenServiceFailsForAnotherReason_FailsAndTouchesNothing()
+        {
+            // Arrange: access denied is not "not installed"
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(() => _handles.Scm(1));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", It.IsAny<uint>())).Returns(() => _handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            AssertNothingTouched();
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_ScmCannotBeOpened_FailsAndTouchesNothing()
         {
             // Arrange
-            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(_handles.Scm(1));
-            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", SERVICE_QUERY_CONFIG)).Returns(_handles.Service(0));
-            _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(() => _handles.Scm(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
 
-            // Act & Assert
-            Assert.Null(Create().GetRegisteredExecutablePath());
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            AssertNothingTouched();
         }
 
         [Fact]
-        public void GetRegisteredExecutablePath_Installed_ReturnsTheCommandLine()
+        public async Task EnsureInstalledAndRunningAsync_ServiceNeverStarts_FailsAfterTheTimeout()
+        {
+            // Arrange
+            RegisteredAs($"\"{_hostExe}\"");
+            HostStatuses(ServiceControllerStatus.Stopped);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("did not reach the Running state", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_ExecutableMissing_FailsWithoutTouchingTheScm()
+        {
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(Path.Combine(TempDirectory, "absent.exe"), _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("does not exist", result.ErrorMessage);
+            _api.Verify(a => a.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_BlankPath_Throws()
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => Create().EnsureInstalledAndRunningAsync("  ", _serviceHelper.Object, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_NullServiceHelper_Throws()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => Create().EnsureInstalledAndRunningAsync(_hostExe, null, CancellationToken.None));
+        }
+
+        #endregion
+
+        #region Registration
+
+        private static IServiceControllerWrapper Controller(string name, ServiceControllerStatus status, params string[] dependencies)
+        {
+            var controller = new Mock<IServiceControllerWrapper>();
+            controller.SetupGet(s => s.ServiceName).Returns(name);
+            controller.SetupGet(s => s.Status).Returns(status);
+            controller.Setup(s => s.GetDependencyNames()).Returns(dependencies);
+            return controller.Object;
+        }
+
+        [Theory]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"", ServyHostServiceState.ServyHost)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"", ServyHostServiceState.ServyHost)]
+        [InlineData("C:\\Dev\\bin\\Debug\\SERVY.HOST.EXE", ServyHostServiceState.ServyHost)]
+        [InlineData("\"C:\\Apps\\MyApp.exe\"", ServyHostServiceState.Foreign)]
+        public void GetState_RegisteredService_IsTheHostOnlyWhenItRunsAServyHostExecutable(string commandLine, ServyHostServiceState expected)
+        {
+            RegisteredAs(commandLine);
+
+            Assert.Equal(expected, Create().GetState());
+        }
+
+        [Fact]
+        public void GetState_NotInstalled_ReturnsNotInstalled()
+        {
+            NotRegistered();
+
+            Assert.Equal(ServyHostServiceState.NotInstalled, Create().GetState());
+        }
+
+        [Fact]
+        public void ReadRegistration_Installed_ReturnsTheCommandLine()
         {
             RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"");
 
-            Assert.Equal("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"", Create().GetRegisteredExecutablePath());
+            Assert.Equal((ServyHostServiceState.ServyHost, "\"C:\\ProgramData\\Servy\\Servy.Host.exe\""), Create().ReadRegistration());
+        }
+
+        [Theory]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"", true)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\" --debug", true)]
+        [InlineData("C:\\ProgramData\\Servy\\servy.host.exe", true)]
+        [InlineData("C:\\ProgramData\\Servy\\Servy.Host.exe.bat", false)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.exe\" \"Servy\"", false)]
+        [InlineData("C:\\Tools\\NotServy.Host.exe", false)]
+        public void IsServyHostExecutable_RecognizesBothBuildsOfTheHost(string commandLine, bool expected)
+        {
+            Assert.Equal(expected, ServyHostInstaller.IsServyHostExecutable(commandLine));
         }
 
         [Theory]
@@ -399,35 +426,46 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\" --flag", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
         [InlineData("\"C:\\Dev\\bin\\Debug\\Servy.Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
-        [InlineData("\"C:\\Pro|gram\\Servy.Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
         public void IsSameExecutable_ComparesTheCommandLinesExecutable(string commandLine, string exePath, bool expected)
         {
             Assert.Equal(expected, ServyHostInstaller.IsSameExecutable(commandLine, exePath));
         }
 
-        #endregion
-
-        #region IsRunning / StopAsync / StartAsync
-
-        [Theory]
-        [InlineData(ServiceControllerStatus.Running, true)]
-        [InlineData(ServiceControllerStatus.StartPending, true)]
-        [InlineData(ServiceControllerStatus.Stopped, false)]
-        [InlineData(ServiceControllerStatus.StopPending, false)]
-        public void IsRunning_ReflectsTheStatus(ServiceControllerStatus status, bool expected)
+        [Fact]
+        public void GetRunningServyServices_JoinsTheWrapperServicesAndTheRunningDependentsWithoutDuplicates()
         {
-            HostStatuses(status);
+            // Arrange
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService", "CliService" });
+            _controllers.Setup(c => c.GetServices()).Returns(new[]
+            {
+                Controller("uiservice", ServiceControllerStatus.Running, "Servy"),
+                Controller("Net48Service", ServiceControllerStatus.StartPending, "Tcpip", "servy"),
+                Controller("StoppedDependent", ServiceControllerStatus.Stopped, "Servy"),
+                Controller("Spooler", ServiceControllerStatus.Running, "RPCSS"),
+            });
 
-            Assert.Equal(expected, Create().IsRunning());
+            // Act
+            var names = Create().GetRunningServyServices(_serviceHelper.Object);
+
+            // Assert
+            Assert.Equal(new[] { "UiService", "CliService", "Net48Service" }, names);
         }
 
         [Fact]
-        public void IsRunning_NotInstalled_ReturnsFalse()
+        public void GetRunningServyServices_ServicesCannotBeListed_KeepsTheWrapperServices()
         {
-            _host.SetupGet(h => h.Status).Throws(new InvalidOperationException("not installed"));
+            // Arrange
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            _controllers.Setup(c => c.GetServices()).Throws(new InvalidOperationException("SCM unavailable"));
 
-            Assert.False(Create().IsRunning());
+            // Act & Assert
+            Assert.Equal(new[] { "UiService" }, Create().GetRunningServyServices(_serviceHelper.Object));
         }
+
+        #endregion
+
+        #region StopAsync / StartAsync
 
         [Fact]
         public async Task StopAsync_Running_StopsAndWaitsForStopped()
