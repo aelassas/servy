@@ -31,8 +31,11 @@ namespace Servy.Core.Config
         public const string EventLogTruncationSuffix = "...[truncated]";
 
         /// <summary>
-        /// The name of the Windows service and the associated Event Log source.
-        /// Used for service registration and writing logs to the Windows Event Viewer.
+        /// The Event Log source under which Servy writes to the <see cref="EventLogName"/> log in the
+        /// Windows Event Viewer, and the <c>ServiceBase.ServiceName</c> the Servy.Service host process
+        /// reports to the Service Control Manager. It is not what registers a service: the Servy host
+        /// service is registered under <see cref="ServyHostServiceName"/>, and a user service under the
+        /// name its own configuration carries.
         /// </summary>
         public const string EventSource = "Servy";
 
