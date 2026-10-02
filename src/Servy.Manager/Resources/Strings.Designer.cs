@@ -619,7 +619,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Filter from date.
+        ///   Looks up a localized string similar to Filter from Date.
         /// </summary>
         public static string Automation_LogsFromDatePicker_Name {
             get {
@@ -799,7 +799,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Filter to date.
+        ///   Looks up a localized string similar to Filter to Date.
         /// </summary>
         public static string Automation_LogsToDatePicker_Name {
             get {
