@@ -18,9 +18,10 @@ namespace Servy.Restarter
     {
         /// <summary>
         /// Main method. Expects one required argument: the service name to restart.
-        /// An optional second argument can specify a custom logging directory (primarily for testing isolation).
+        /// An optional second argument names the logging directory: the wrapper passes the service's own
+        /// <c>logs\service\&lt;ServiceName&gt;\</c> folder, the only log folder its service account can write.
         /// </summary>
-        /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies custom log directory.</param>
+        /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies the log directory.</param>
         public static void Main(string[] args)
         {
             Run(args, restarter: null);
