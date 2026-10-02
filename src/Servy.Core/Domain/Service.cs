@@ -483,7 +483,9 @@ namespace Servy.Core.Domain
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceControllerStatus"/> value representing the current service status,
-        /// or <c>null</c> if the service is not installed.
+        /// or <c>null</c> if the status could not be determined: the service is not installed, or it could not
+        /// be opened (for example access denied). A <c>null</c> is not proof of absence; use
+        /// <see cref="IsInstalled"/> to distinguish.
         /// </returns>
         public ServiceControllerStatus? GetStatus(CancellationToken cancellationToken = default)
         {
