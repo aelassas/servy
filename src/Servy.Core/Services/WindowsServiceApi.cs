@@ -417,5 +417,29 @@ namespace Servy.Core.Services
                 DisplayName = s.DisplayName
             });
         }
+
+        /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
+        public int GetServiceProcessId(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                return 0;
+
+            using (var scm = NativeMethods.OpenSCManager(null, null, SC_MANAGER_CONNECT))
+            {
+                if (scm == null || scm.IsInvalid)
+                    return 0;
+
+                using (var service = NativeMethods.OpenService(scm, serviceName, (uint)SERVICE_QUERY_STATUS))
+                {
+                    if (service == null || service.IsInvalid)
+                        return 0;
+
+                    return QueryServiceStatusEx(service, SC_STATUS_PROCESS_INFO, out var status, Marshal.SizeOf(typeof(SERVICE_STATUS_PROCESS)), out _)
+                        ? status.dwProcessId
+                        : 0;
+                }
+            }
+        }
     }
 }

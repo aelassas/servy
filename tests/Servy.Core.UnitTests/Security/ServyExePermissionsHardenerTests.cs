@@ -24,6 +24,9 @@ namespace Servy.Core.UnitTests.Security
     [Collection(LoggerCollection.Name)]
     public class ServyExePermissionsHardenerTests : TempDirectoryTestBase
     {
+        /// <summary>The only folder the hardening lets a service account write, relative to the vault.</summary>
+        private static readonly string ServiceLogsFolder = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
+
         private static readonly SecurityIdentifier LocalServiceSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
 
         #region Constructor and candidates
@@ -218,7 +221,7 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, result.Status);
-            Assert.Equal(new[] { AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName }, result.GrantedFolders);
+            Assert.Equal(new[] { ServiceLogsFolder }, result.GrantedFolders);
             Assert.False(TargetHasVaultAce(LocalServiceSid));
             foreach (var folder in result.GrantedFolders)
             {
@@ -230,9 +233,10 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains(AppConfig.ServyServiceUIExe, result.Missing);
             Assert.Contains(AppConfig.ServyServiceCLIExe, result.Missing);
             Assert.Contains(AppConfig.ServyRestarterExe, result.Missing);
-            Assert.Contains(Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName), result.Missing);
-            Assert.Contains(Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName), result.Missing);
-            Assert.Equal(new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName }, result.Skipped);
+            Assert.Contains(AppConfig.ServyHostExe, result.Missing);
+            Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.DbFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
+            Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.SecurityFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
+            Assert.Equal(new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName }, result.Skipped);
         }
 
         [Fact]
@@ -246,7 +250,7 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, capture.Result.Status);
-            Assert.Equal(3, capture.Result.GrantedFolders.Count);
+            Assert.Single(capture.Result.GrantedFolders);
             Assert.Contains("Could not rule out that 'svc' is a member of Administrators", capture.Log);
         }
 
@@ -352,10 +356,12 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
-        public async Task Harden_OneFolderCannotBeCreated_IsReportedAsFailedAndTheOtherFoldersAreStillGranted()
+        public async Task Harden_ServiceLogsFolderCannotBeCreated_IsReportedAsFailedAndTheFilesAreStillHardened()
         {
-            // Arrange: a regular file sits where the logs folder belongs, so creating that folder throws
-            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.LogsFolderName), "not a folder");
+            // Arrange: a regular file sits where logs\service\ belongs, so creating that folder throws
+            Directory.CreateDirectory(Path.Combine(TempDirectory, AppConfig.LogsFolderName));
+            File.WriteAllText(Path.Combine(TempDirectory, ServiceLogsFolder), "not a folder");
+            File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe), "ui");
             var sut = new TestableHardener(TempDirectory) { IsMember = false };
 
             // Act
@@ -363,9 +369,42 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
-            Assert.Contains(AppConfig.LogsFolderName, capture.Result.Failed);
-            Assert.Equal(new[] { AppConfig.DbFolderName, AppConfig.RecoveryFolderName }, capture.Result.GrantedFolders);
-            Assert.Contains($"Failed to grant 'svc' access to '{AppConfig.LogsFolderName}'", capture.Log);
+            Assert.Contains(ServiceLogsFolder, capture.Result.Failed);
+            Assert.Empty(capture.Result.GrantedFolders);
+            Assert.Contains(AppConfig.ServyServiceUIExe, capture.Result.Hardened);
+            Assert.Contains($"Failed to grant 'svc' access to '{ServiceLogsFolder}'", capture.Log);
+        }
+
+        [Fact]
+        public void Harden_PreviousVersionGrants_AreRemovedFromTheDatabaseTheKeysAndTheLogs()
+        {
+            // Arrange: what earlier versions granted - the db\ and logs\ folder grants, Read and Write on Servy.db,
+            // Read on the key - plus another account's entries, which must stay
+            var db = GrantedFolder(AppConfig.DbFolderName, LocalServiceSid);
+            var database = Path.Combine(db, AppConfig.DatabaseFileName);
+            File.WriteAllText(database, "db");
+            AddAce(database, LocalServiceSid);
+            AddAce(database, NetworkServiceSid);
+            var security = Path.Combine(TempDirectory, AppConfig.SecurityFolderName);
+            Directory.CreateDirectory(security);
+            var key = Path.Combine(security, AppConfig.AESKeyFileName);
+            File.WriteAllText(key, "key");
+            AddAce(key, LocalServiceSid);
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var result = sut.Harden("svc", CancellationToken.None);
+
+            // Assert
+            Assert.Empty(result.Failed);
+            foreach (var item in new[] { db, database, key, logs })
+                Assert.False(ItemHasAce(item, LocalServiceSid), $"{item} still names the account");
+            Assert.True(ItemHasAce(database, NetworkServiceSid));
+
+            // ... and the only folder it can write is logs\service\
+            Assert.Equal(new[] { ServiceLogsFolder }, result.GrantedFolders);
+            Assert.True(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsFolder), LocalServiceSid));
         }
 
         #endregion
@@ -373,38 +412,33 @@ namespace Servy.Core.UnitTests.Security
         #region GetTargetFiles
 
         [Fact]
-        public void GetWritableFolders_AreTheDatabaseTheLogsAndTheRecoveryState()
+        public void GetWritableFolders_IsOnlyTheServiceLogsFolder()
         {
             // Act
             var folders = ServyExePermissionsHardener.GetWritableFolders();
 
-            // Assert: the security folder and the vault root are deliberately absent
-            Assert.Equal(new[] { "db", "logs", "recovery" }, folders);
+            // Assert: the database, the keys, the administrative logs and the vault root are deliberately absent
+            Assert.Equal(new[] { Path.Combine("logs", "service") }, folders);
         }
 
-        [Theory]
-        [InlineData("db")]
-        [InlineData("logs")]
-        public void GetWritableFolderFileRights_DatabaseAndLogs_AreReadWriteDelete(string folder)
+        [Fact]
+        public void GetClosedFolders_AreTheDatabaseTheKeysAndTheLogs()
         {
             // Act
-            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights(folder);
+            var folders = ServyExePermissionsHardener.GetClosedFolders();
 
-            // Assert: SQLite deletes its side files and the logger rotates its files, so Delete is needed here
+            // Assert
+            Assert.Equal(new[] { "db", "security", "logs" }, folders);
+        }
+
+        [Fact]
+        public void GetWritableFolderFileRights_ServiceLogs_AreReadWriteDelete()
+        {
+            // Act
+            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights(ServiceLogsFolder);
+
+            // Assert: the logger rotates its files, so Delete is needed here
             Assert.Equal(FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete, rights);
-        }
-
-        [Theory]
-        [InlineData("recovery")]
-        [InlineData("RECOVERY")]
-        public void GetWritableFolderFileRights_Recovery_IsReadWriteWithoutDelete(string folder)
-        {
-            // Act
-            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights(folder);
-
-            // Assert: the restart-attempts counter is rewritten in place, so it never needs Delete (#7241)
-            Assert.Equal(FileSystemRights.Read | FileSystemRights.Write, rights);
-            Assert.Equal(0, (int)(rights & FileSystemRights.Delete));
         }
 
         [Fact]
@@ -417,26 +451,22 @@ namespace Servy.Core.UnitTests.Security
             var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
 
             // Assert
-            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe })
+            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, "Servy.Host.exe" })
             {
                 Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
                 Assert.False(targets[exe].Optional);
             }
 
-            foreach (var settings in new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName })
+            foreach (var settings in new[] { "appsettings.service.json", "appsettings.restarter.json", "appsettings.host.json" })
             {
                 Assert.Equal(FileSystemRights.Read, targets[settings].Rights);
                 Assert.True(targets[settings].Optional);
+                Assert.Equal(0, (int)(targets[settings].Rights & (FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.Delete)));
             }
 
-            var db = targets[Path.Combine("db", "Servy.db")];
-            Assert.Equal(FileSystemRights.Read | FileSystemRights.Write, db.Rights);
-            Assert.False(db.Optional);
-
-            var key = targets[Path.Combine("security", "aes_key.dat")];
-            Assert.Equal(FileSystemRights.Read, key.Rights);
-            Assert.False(key.Optional);
-            Assert.Equal(0, (int)(key.Rights & (FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.Delete)));
+            // Nothing in db\ or security\ is granted any more: the wrapper reads through the Servy host
+            Assert.DoesNotContain(targets.Keys, k => k.StartsWith("db" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(targets.Keys, k => k.StartsWith("security" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
         }
 
         [Theory]
@@ -823,10 +853,14 @@ namespace Servy.Core.UnitTests.Security
         {
             // Arrange
             AddAce(TempDirectory, LocalServiceSid);
+            var serviceLogs = GrantedFolder(ServiceLogsFolder, LocalServiceSid);
             var db = GrantedFolder(AppConfig.DbFolderName, LocalServiceSid);
-            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var database = Path.Combine(db, AppConfig.DatabaseFileName);
+            File.WriteAllText(database, "db");
+            AddAce(database, LocalServiceSid);
+            var logs = Path.Combine(TempDirectory, AppConfig.LogsFolderName);
+            AddAce(logs, LocalServiceSid);
             AddAce(logs, NetworkServiceSid);
-            var recovery = GrantedFolder(AppConfig.RecoveryFolderName, LocalServiceSid);
             var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
             File.WriteAllText(exe, "ui");
             AddAce(exe, LocalServiceSid);
@@ -840,9 +874,9 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
-            Assert.Equal(new[] { TempDirectory, AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName, AppConfig.ServyServiceUIExe }, result.Revoked);
+            Assert.Equal(new[] { TempDirectory, ServiceLogsFolder, AppConfig.DbFolderName, Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName), AppConfig.LogsFolderName, AppConfig.ServyServiceUIExe }, result.Revoked);
             Assert.Empty(result.Failed);
-            foreach (var item in new[] { TempDirectory, db, logs, recovery, exe })
+            foreach (var item in new[] { TempDirectory, serviceLogs, db, database, logs, exe })
                 Assert.False(ItemHasAce(item, LocalServiceSid), $"{item} still names the account");
             Assert.True(ItemHasAce(logs, NetworkServiceSid));
             Assert.True(ItemHasAce(exe, NetworkServiceSid));

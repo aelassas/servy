@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Services;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.AccessControl;
@@ -63,7 +64,7 @@ namespace Servy.Core.Helpers
         /// Failures to restart previously-running services do not affect the return value;
         /// they are surfaced via <see cref="Logger.Error(string, Exception)"/>.
         /// </returns>
-        public async Task<bool> CopyEmbeddedResourceAsync(
+        public Task<bool> CopyEmbeddedResourceAsync(
             Assembly assembly,
             string resourceNamespace,
             string fileName,
@@ -72,11 +73,77 @@ namespace Servy.Core.Helpers
             bool isCli = false,
             CancellationToken cancellationToken = default)
         {
+            Func<List<string>>? getServicesToStop = null;
+            if (stopServices)
+            {
+                // CLI-installed services are installed with Servy.Service.CLI.exe and UI-installed services are installed with Servy.Service.exe
+                getServicesToStop = isCli
+                    ? (Func<List<string>>)_serviceHelper.GetRunningServyCLIServices
+                    : _serviceHelper.GetRunningServyUIServices;
+            }
+
+            return CopyEmbeddedResourceCoreAsync(assembly, resourceNamespace, fileName, extension, fileName, getServicesToStop, hostInstaller: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Copies the Servy host service executable (<c>Servy.Host.exe</c>) from the assembly to disk. When the file has to be
+        /// replaced, every running Servy service (UI and CLI) is stopped, then the <c>Servy</c> host service, which they all
+        /// depend on; the file is written; and the host and the services are started again.
+        /// </summary>
+        /// <param name="assembly">The assembly containing the resource.</param>
+        /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
+        /// <param name="resourceFileName">The resource's file name without extension.</param>
+        /// <param name="hostInstaller">Stops and starts the Servy host service around the copy.</param>
+        /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
+        /// <returns>True if the copy succeeded (or was not needed); otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="hostInstaller"/> is <see langword="null"/>.</exception>
+        public Task<bool> CopyServyHostAsync(
+            Assembly assembly,
+            string resourceNamespace,
+            string resourceFileName,
+            IServyHostInstaller hostInstaller,
+            CancellationToken cancellationToken = default)
+        {
+            if (hostInstaller == null) throw new ArgumentNullException(nameof(hostInstaller));
+
+            return CopyEmbeddedResourceCoreAsync(
+                assembly,
+                resourceNamespace,
+                resourceFileName,
+                "exe",
+                AppConfig.ServyHostFileName,
+                _serviceHelper.GetRunningServyServices,
+                hostInstaller,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Copies an embedded resource to disk, stopping the given services (and the Servy host service) around the write.
+        /// </summary>
+        /// <param name="assembly">The assembly containing the resource.</param>
+        /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
+        /// <param name="fileName">The resource's file name without extension.</param>
+        /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
+        /// <param name="targetFileName">The file name, without extension, the resource is written to.</param>
+        /// <param name="getServicesToStop">Lists the running services to stop before the write and start after it; <see langword="null"/> stops none.</param>
+        /// <param name="hostInstaller">When not <see langword="null"/>, the Servy host service is stopped after the services and started before them.</param>
+        /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
+        /// <returns>True if the copy succeeded (or was not needed); otherwise, false.</returns>
+        private async Task<bool> CopyEmbeddedResourceCoreAsync(
+            Assembly assembly,
+            string resourceNamespace,
+            string fileName,
+            string extension,
+            string targetFileName,
+            Func<List<string>>? getServicesToStop,
+            IServyHostInstaller? hostInstaller,
+            CancellationToken cancellationToken)
+        {
             bool copyDone = false; // Tracks if the physical file copy succeeded
 
             try
             {
-                if (!TryPrepareExtraction(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
+                if (!TryPrepareExtraction(resourceNamespace, fileName, extension, targetFileName, out var targetPath, out var resourceName))
                     return true;
 
                 // Capture pre-existing explicit ACLs BEFORE stopping services, killing processes, or staging files
@@ -94,14 +161,9 @@ namespace Servy.Core.Helpers
                 using (resourceStream)
                 {
                     // Get running services before the inner try block
-                    var runningServices = new List<string>();
-                    if (stopServices)
-                    {
-                        // CLI-installed services are installed with Servy.Service.CLI.exe and UI-installed services are installed with Servy.Service.exe
-                        runningServices = isCli
-                            ? _serviceHelper.GetRunningServyCLIServices()
-                            : _serviceHelper.GetRunningServyUIServices();
-                    }
+                    var runningServices = getServicesToStop?.Invoke() ?? new List<string>();
+                    bool stopServices = getServicesToStop != null;
+                    bool hostWasRunning = hostInstaller != null && hostInstaller.IsRunning();
 
                     try
                     {
@@ -110,6 +172,13 @@ namespace Servy.Core.Helpers
                             Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                             // Forward the cancellation token to the polling routine
                             await _serviceHelper.StopServicesAsync(runningServices, cancellationToken);
+                        }
+
+                        // The Servy services depend on the host, so it is stopped after them
+                        if (hostWasRunning)
+                        {
+                            Logger.Info($"Stopping the '{AppConfig.ServyHostServiceName}' service before copying resource '{resourceName}'.");
+                            await hostInstaller!.StopAsync(cancellationToken);
                         }
 
                         // Check cancellation boundary right before process execution checks
@@ -129,6 +198,20 @@ namespace Servy.Core.Helpers
                     }
                     finally
                     {
+                        // ... and started before them
+                        if (hostWasRunning)
+                        {
+                            try
+                            {
+                                Logger.Info($"Starting the '{AppConfig.ServyHostServiceName}' service after copying resource '{resourceName}'.");
+                                await hostInstaller!.StartAsync(CancellationToken.None);
+                            }
+                            catch (Exception hostEx)
+                            {
+                                Logger.Error($"The '{AppConfig.ServyHostServiceName}' service failed to restart after copying resource '{resourceName}'.", hostEx);
+                            }
+                        }
+
                         if (stopServices && runningServices.Count > 0)
                         {
                             try
@@ -298,6 +381,7 @@ namespace Servy.Core.Helpers
         /// <param name="resourceNamespace">The namespace where the resource is located within the assembly.</param>
         /// <param name="fileName">The base name of the file to extract (without extension).</param>
         /// <param name="extension">The file extension (e.g., "exe", "dll").</param>
+        /// <param name="targetFileName">The base name, without extension, of the file the resource is written to.</param>
         /// <param name="targetPath">Output parameter containing the full destination path on disk.</param>
         /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
         /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
@@ -305,10 +389,11 @@ namespace Servy.Core.Helpers
             string resourceNamespace,
             string fileName,
             string extension,
+            string targetFileName,
             out string targetPath,
             out string resourceName)
         {
-            var targetFileName = fileName + "." + extension;
+            targetFileName = targetFileName + "." + extension;
 
             // Use the explicit extraction root instead of assembly-relative logic
             targetPath = Path.Combine(BaseExtractionDirectory, targetFileName);

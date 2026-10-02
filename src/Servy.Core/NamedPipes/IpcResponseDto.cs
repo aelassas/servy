@@ -18,7 +18,8 @@ namespace Servy.Core.NamedPipes
         public string? ErrorMessage { get; set; }
 
         /// <summary>
-        /// Gets or sets the service configuration payload returned by the host service.
+        /// Gets or sets the service configuration returned by the host service, or <see langword="null"/> when the
+        /// service has no row.
         /// </summary>
         public ServiceDto? Data { get; set; }
 
@@ -26,5 +27,10 @@ namespace Servy.Core.NamedPipes
         /// Gets or sets the number of records updated by the host service, if applicable.
         /// </summary>
         public int? UpdateData { get; set; }
+
+        /// <summary>
+        /// Gets or sets the restart attempts counter returned by the host service, if applicable.
+        /// </summary>
+        public RestartAttemptsDto? RestartAttempts { get; set; }
     }
 }

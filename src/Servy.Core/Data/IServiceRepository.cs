@@ -20,7 +20,7 @@ namespace Servy.Core.Data
         /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
         /// <param name="service">The DTO containing updated values.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The number of affected records.</returns>
@@ -30,7 +30,7 @@ namespace Servy.Core.Data
         /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
         /// <param name="service">The DTO containing updated values.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <returns>The number of affected records.</returns>
         int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials);
@@ -39,7 +39,7 @@ namespace Servy.Core.Data
         /// Adds or updates a <see cref="ServiceDto"/> record depending on whether it exists.
         /// </summary>
         /// <param name="service">The DTO to upsert.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The ID of the upserted service.</returns>
@@ -136,6 +136,37 @@ namespace Servy.Core.Data
         /// or changed its active log targets, minimizing database I/O and memory allocations.
         /// </remarks>
         Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string? name, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Writes only the runtime state columns of a service's row: <c>Pid</c>, <c>ActiveStdoutPath</c>,
+        /// <c>ActiveStderrPath</c>, and <c>PreviousStopTimeout</c> when <see cref="ServiceRuntimeStateDto.UpdatePreviousStopTimeout"/> is set.
+        /// The configuration columns are never touched.
+        /// </summary>
+        /// <param name="name">The unique name of the service.</param>
+        /// <param name="state">The runtime state to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The number of rows updated; 0 when the service has no row.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="state"/> is <see langword="null"/>.</exception>
+        Task<int> UpdateRuntimeStateAsync(string? name, ServiceRuntimeStateDto state, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reads the restart attempts counter of a service.
+        /// </summary>
+        /// <param name="name">The unique name of the service.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The counter (0 when never written) and the UTC time it was last written; <see langword="null"/> when the service has no row.</returns>
+        Task<RestartAttemptsDto?> GetRestartAttemptsAsync(string? name, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Writes the restart attempts counter of a service and the time it was written.
+        /// </summary>
+        /// <param name="name">The unique name of the service.</param>
+        /// <param name="attempts">The counter value; must not be negative.</param>
+        /// <param name="updatedAtUtc">The UTC time of the write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The number of rows updated; 0 when the service has no row.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="attempts"/> is negative.</exception>
+        Task<int> UpdateRestartAttemptsAsync(string? name, int attempts, DateTime updatedAtUtc, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all <see cref="ServiceDto"/> records in the repository.

@@ -32,6 +32,7 @@ namespace Servy.Core.IntegrationTests.Security
         private static readonly string DbFile = Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName);
         private static readonly string KeyFile = Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName);
         private static readonly string HandleFile = AppConfig.HandleExeX64FileName + ".exe";
+        private static readonly string ServiceLogsFolder = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
 
         private readonly bool _isElevated = SecurityHelper.IsAdministrator();
         private readonly string _vault;
@@ -72,8 +73,8 @@ namespace Servy.Core.IntegrationTests.Security
                 AssertWritableFolder(Path.Combine(_vault, folder));
             }
 
-            // 2. Binaries: Read & Execute, no write, no Delete
-            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, HandleFile })
+            // 2. Binaries, the Servy host included: Read & Execute, no write, no Delete
+            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, HandleFile })
             {
                 var rights = AllowedRights(Path.Combine(_vault, exe), TargetSid);
                 Assert.True(Has(rights, FileSystemRights.ReadAndExecute), $"{exe} is Read & Execute");
@@ -81,30 +82,22 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.False(Has(rights, FileSystemRights.Delete), $"{exe} is not deletable");
             }
 
-            // 3. Settings files: Read only
-            foreach (var settings in new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName })
+            // 3. Settings files, the host's included: Read only
+            foreach (var settings in new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName })
             {
                 var rights = AllowedRights(Path.Combine(_vault, settings), TargetSid);
                 Assert.True(Has(rights, FileSystemRights.Read), $"{settings} is readable");
                 Assert.False(Has(rights, FileSystemRights.WriteData), $"{settings} is not writable");
+                Assert.False(Has(rights, FileSystemRights.Delete), $"{settings} is not deletable");
             }
 
-            // 4. The database: Read and Write, no Delete. Another account's vault-wide grant from a previous version
-            // is not carried onto it: that account gets its own grant when it is hardened.
-            var db = Path.Combine(_vault, DbFile);
-            var dbRights = AllowedRights(db, TargetSid);
-            Assert.True(Has(dbRights, FileSystemRights.Read) && Has(dbRights, FileSystemRights.Write));
-            Assert.False(Has(dbRights, FileSystemRights.Delete));
-            Assert.Equal(0, AllowedRights(db, OtherSid));
-
-            // 5. The encryption key: Read only, and no inherited grant of another account is carried onto it
-            var key = Path.Combine(_vault, KeyFile);
-            var keyRights = AllowedRights(key, TargetSid);
-            Assert.True(Has(keyRights, FileSystemRights.Read));
-            Assert.False(Has(keyRights, FileSystemRights.WriteData));
-            Assert.False(Has(keyRights, FileSystemRights.AppendData));
-            Assert.False(Has(keyRights, FileSystemRights.Delete));
-            Assert.Equal(0, AllowedRights(key, OtherSid));
+            // 4. The database, the encryption key and their folders: nothing at all. The wrapper reads its
+            // configuration and writes its runtime state through the Servy host service (#7224, #7248).
+            foreach (var closed in new[] { AppConfig.DbFolderName, DbFile, AppConfig.SecurityFolderName, KeyFile, AppConfig.LogsFolderName })
+            {
+                Assert.Equal(0, AllowedRights(Path.Combine(_vault, closed), TargetSid));
+                Assert.Empty(ExplicitRules(Path.Combine(_vault, closed), TargetSid, AccessControlType.Allow));
+            }
 
             // 6. Every hardened file stops inheriting, is owned by Administrators and keeps Full Control for it
             foreach (var file in result.Hardened)
@@ -126,25 +119,22 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Act
             _sut.Harden(TargetAccount, CancellationToken.None);
+            var serviceLog = Path.Combine(_vault, ServiceLogsFolder, "Servy.Service.log");
             var wal = Path.Combine(_vault, AppConfig.DbFolderName, "Servy.db-wal");
-            var log = Path.Combine(_vault, AppConfig.LogsFolderName, "Servy.Service.log");
-            var recovery = Path.Combine(_vault, AppConfig.RecoveryFolderName, "svc_restartAttempts.dat");
+            var adminLog = Path.Combine(_vault, AppConfig.LogsFolderName, "Servy.Manager.log");
             var planted = Path.Combine(_vault, "planted.exe");
             var securityFile = Path.Combine(_vault, AppConfig.SecurityFolderName, "planted.dat");
-            foreach (var file in new[] { wal, log, recovery, planted, securityFile })
+            foreach (var file in new[] { serviceLog, wal, adminLog, planted, securityFile })
             {
                 File.WriteAllText(file, string.Empty);
             }
 
-            // Assert: SQLite's side files and the logs are writable and deletable...
-            Assert.True(Has(AllowedRights(wal, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
-            Assert.True(Has(AllowedRights(log, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
+            // Assert: the service logs are writable and deletable (log rotation)...
+            Assert.True(Has(AllowedRights(serviceLog, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
 
-            // ...the recovery state is writable but not deletable, since it is rewritten in place (#7241)...
-            Assert.True(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Read | FileSystemRights.Write));
-            Assert.False(Has(AllowedRights(recovery, TargetSid), FileSystemRights.Delete), "the recovery state is not deletable");
-
-            // ...and a file anywhere else carries no grant at all
+            // ...and a file anywhere else, SQLite's side files and the administrative logs included, carries no grant at all
+            Assert.Equal(0, AllowedRights(wal, TargetSid));
+            Assert.Equal(0, AllowedRights(adminLog, TargetSid));
             Assert.Equal(0, AllowedRights(planted, TargetSid));
             Assert.Equal(0, AllowedRights(securityFile, TargetSid));
         }
@@ -178,6 +168,49 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
+        public void Harden_GrantsOfThePreviousLayout_AreRemovedFromTheDatabaseTheKeyAndTheLogs()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: what the previous hardening wrote - List and Create Files plus an inherited Modify on db\ and
+            // logs\, Read and Write on a protected Servy.db, Read on a protected key - and the files that inherited
+            // the folder grants (SQLite's -wal, the shared log)
+            CreateVault();
+            var db = Path.Combine(_vault, AppConfig.DbFolderName);
+            var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
+            Directory.CreateDirectory(logs);
+            foreach (var folder in new[] { db, logs })
+            {
+                var folderInfo = new DirectoryInfo(folder);
+                var folderAcl = folderInfo.GetAccessControl(AccessControlSections.Access);
+                folderAcl.AddAccessRule(new FileSystemAccessRule(TargetSid, FileSystemRights.Read | FileSystemRights.CreateFiles, AccessControlType.Allow));
+                folderAcl.AddAccessRule(new FileSystemAccessRule(TargetSid, FileSystemRights.Modify,
+                    InheritanceFlags.ObjectInherit, PropagationFlags.InheritOnly, AccessControlType.Allow));
+                folderInfo.SetAccessControl(folderAcl);
+            }
+
+            ProtectWithGrant(Path.Combine(_vault, DbFile), FileSystemRights.Read | FileSystemRights.Write);
+            ProtectWithGrant(Path.Combine(_vault, KeyFile), FileSystemRights.Read);
+            var wal = Path.Combine(db, "Servy.db-wal");
+            File.WriteAllText(wal, "wal");
+            var sharedLog = Path.Combine(logs, "Servy.Service.log");
+            File.WriteAllText(sharedLog, "log");
+            Assert.True(Has(AllowedRights(wal, TargetSid), FileSystemRights.Write));
+            Assert.True(Has(AllowedRights(Path.Combine(_vault, DbFile), TargetSid), FileSystemRights.Write));
+
+            // Act
+            var result = _sut.Harden(TargetAccount, CancellationToken.None);
+
+            // Assert: the account can neither read nor write anything in db\, security\ or logs\ any more
+            Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
+            foreach (var item in new[] { db, Path.Combine(_vault, DbFile), wal, Path.Combine(_vault, AppConfig.SecurityFolderName), Path.Combine(_vault, KeyFile), logs, sharedLog })
+                Assert.Equal(0, AllowedRights(item, TargetSid));
+
+            // ... and logs\service\ is the one folder it writes
+            AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
+        }
+
+        [Fact]
         public void Harden_WritableFolderIsAJunction_IsNotGrantedAndFails()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
@@ -186,15 +219,16 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
             var outside = Path.Combine(TempDirectory, "outside-logs");
             Directory.CreateDirectory(outside);
-            RunCmd($"mklink /J \"{Path.Combine(_vault, AppConfig.LogsFolderName)}\" \"{outside}\"");
+            Directory.CreateDirectory(Path.Combine(_vault, AppConfig.LogsFolderName));
+            RunCmd($"mklink /J \"{Path.Combine(_vault, ServiceLogsFolder)}\" \"{outside}\"");
 
             // Act
             var result = _sut.Harden(TargetAccount, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
-            Assert.Equal(new[] { AppConfig.LogsFolderName }, result.Failed);
-            Assert.DoesNotContain(AppConfig.LogsFolderName, result.GrantedFolders);
+            Assert.Equal(new[] { ServiceLogsFolder }, result.Failed);
+            Assert.DoesNotContain(ServiceLogsFolder, result.GrantedFolders);
             Assert.Empty(ExplicitRules(outside, TargetSid, AccessControlType.Allow));
         }
 
@@ -214,9 +248,10 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, first.Status);
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, second.Status);
             Assert.Empty(ExplicitRules(_vault, TargetSid, AccessControlType.Allow));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, AppConfig.LogsFolderName), TargetSid, AccessControlType.Allow).Count);
+            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow).Count);
             Assert.Single(ExplicitRules(Path.Combine(_vault, AppConfig.ServyServiceUIExe), TargetSid, AccessControlType.Allow));
-            Assert.Single(ExplicitRules(Path.Combine(_vault, KeyFile), TargetSid, AccessControlType.Allow));
+            Assert.Single(ExplicitRules(Path.Combine(_vault, AppConfig.ServyHostExe), TargetSid, AccessControlType.Allow));
+            Assert.Empty(ExplicitRules(Path.Combine(_vault, KeyFile), TargetSid, AccessControlType.Allow));
         }
 
         [Fact]
@@ -237,13 +272,13 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.True(Has(AllowedRights(exe, TargetSid), FileSystemRights.ReadAndExecute));
             Assert.True(Has(AllowedRights(exe, OtherSid), FileSystemRights.ReadAndExecute));
             var key = Path.Combine(_vault, KeyFile);
-            Assert.True(Has(AllowedRights(key, TargetSid), FileSystemRights.Read));
-            Assert.True(Has(AllowedRights(key, OtherSid), FileSystemRights.Read));
-            Assert.False(Has(AllowedRights(key, OtherSid), FileSystemRights.WriteData));
+            Assert.Equal(0, AllowedRights(key, TargetSid));
+            Assert.Equal(0, AllowedRights(key, OtherSid));
             var db = Path.Combine(_vault, DbFile);
-            Assert.True(Has(AllowedRights(db, TargetSid), FileSystemRights.Write));
-            Assert.True(Has(AllowedRights(db, OtherSid), FileSystemRights.Write));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, AppConfig.LogsFolderName), OtherSid, AccessControlType.Allow).Count);
+            Assert.Equal(0, AllowedRights(db, TargetSid));
+            Assert.Equal(0, AllowedRights(db, OtherSid));
+            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow).Count);
+            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), OtherSid, AccessControlType.Allow).Count);
         }
 
         #endregion
@@ -358,13 +393,14 @@ namespace Servy.Core.IntegrationTests.Security
             CreateVault();
             File.Delete(Path.Combine(_vault, ServyExePermissionsHardener.ServiceSettingsFileName));
             File.Delete(Path.Combine(_vault, ServyExePermissionsHardener.RestarterSettingsFileName));
+            File.Delete(Path.Combine(_vault, ServyExePermissionsHardener.HostSettingsFileName));
 
             // Act
             var result = _sut.Harden(TargetAccount, CancellationToken.None);
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
-            Assert.Equal(2, result.Skipped.Count);
+            Assert.Equal(3, result.Skipped.Count);
             Assert.Empty(result.Missing);
         }
 
@@ -496,7 +532,8 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Assert
             Assert.True(hardened);
-            Assert.False(Has(AllowedRights(Path.Combine(_vault, KeyFile), TargetSid), FileSystemRights.WriteData));
+            Assert.Equal(0, AllowedRights(Path.Combine(_vault, KeyFile), TargetSid));
+            Assert.True(Has(AllowedRights(Path.Combine(_vault, AppConfig.ServyHostExe), TargetSid), FileSystemRights.ReadAndExecute));
         }
 
         [Fact]
@@ -520,7 +557,7 @@ namespace Servy.Core.IntegrationTests.Security
             var restarter = Path.Combine(_vault, AppConfig.ServyRestarterExe);
             Assert.True(Has(AllowedRights(restarter, TargetSid), FileSystemRights.ReadAndExecute));
             Assert.False(Has(AllowedRights(restarter, TargetSid), FileSystemRights.Delete));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, AppConfig.RecoveryFolderName), TargetSid, AccessControlType.Allow).Count);
+            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), TargetSid, AccessControlType.Allow).Count);
         }
 
         #endregion
@@ -547,8 +584,9 @@ namespace Servy.Core.IntegrationTests.Security
             var items = new List<string> { _vault };
             foreach (var folder in ServyExePermissionsHardener.GetWritableFolders())
                 items.Add(Path.Combine(_vault, folder));
-            foreach (var file in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, HandleFile,
-                ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, DbFile, KeyFile })
+            foreach (var file in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, HandleFile,
+                ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName,
+                DbFile, KeyFile, AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName })
                 items.Add(Path.Combine(_vault, file));
             foreach (var item in items)
             {
@@ -557,15 +595,15 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.Equal(0, AllowedRights(item, TargetSid));
             }
 
-            // The key and the database are no longer readable, a file the service writes later inherits nothing,
-            // and the account that still runs a service keeps exactly what it had
-            var laterLog = Path.Combine(_vault, AppConfig.LogsFolderName, "later.log");
+            // A file the service writes later inherits nothing, and the account that still runs a service keeps
+            // exactly what it had - which, for the database and the key, is nothing either
+            var laterLog = Path.Combine(_vault, ServiceLogsFolder, "later.log");
             File.WriteAllText(laterLog, "later");
             Assert.Equal(0, AllowedRights(laterLog, TargetSid));
             Assert.True(Has(AllowedRights(laterLog, OtherSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
-            Assert.True(Has(AllowedRights(Path.Combine(_vault, KeyFile), OtherSid), FileSystemRights.Read));
-            Assert.True(Has(AllowedRights(Path.Combine(_vault, DbFile), OtherSid), FileSystemRights.Write));
-            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, AppConfig.RecoveryFolderName), OtherSid, AccessControlType.Allow).Count);
+            Assert.Equal(0, AllowedRights(Path.Combine(_vault, KeyFile), OtherSid));
+            Assert.Equal(0, AllowedRights(Path.Combine(_vault, DbFile), OtherSid));
+            Assert.Equal(2, ExplicitRules(Path.Combine(_vault, ServiceLogsFolder), OtherSid, AccessControlType.Allow).Count);
         }
 
         [Fact]
@@ -784,13 +822,28 @@ namespace Servy.Core.IntegrationTests.Security
             Directory.CreateDirectory(Path.Combine(_vault, AppConfig.SecurityFolderName));
             foreach (var file in new[]
             {
-                AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, HandleFile,
-                ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName,
+                AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, HandleFile,
+                ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName,
                 DbFile, KeyFile,
             })
             {
                 File.WriteAllText(Path.Combine(_vault, file), "test");
             }
+        }
+
+        /// <summary>
+        /// Gives a file the protected ACL an earlier hardening wrote: no inheritance, Full Control for Administrators and
+        /// Local System, and <paramref name="rights"/> for the target account.
+        /// </summary>
+        private static void ProtectWithGrant(string file, FileSystemRights rights)
+        {
+            var info = new FileInfo(file);
+            var acl = info.GetAccessControl(AccessControlSections.Access);
+            acl.SetAccessRuleProtection(true, false);
+            acl.AddAccessRule(new FileSystemAccessRule(AdministratorsSid, FileSystemRights.FullControl, AccessControlType.Allow));
+            acl.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), FileSystemRights.FullControl, AccessControlType.Allow));
+            acl.AddAccessRule(new FileSystemAccessRule(TargetSid, rights, AccessControlType.Allow));
+            info.SetAccessControl(acl);
         }
 
         /// <summary>
@@ -808,7 +861,7 @@ namespace Servy.Core.IntegrationTests.Security
         /// <summary>
         /// Asserts the target's two entries on a writable folder: List and Create Files on the folder itself (never
         /// Delete on it), and the rights <see cref="ServyExePermissionsHardener.GetWritableFolderFileRights"/> names on
-        /// the files created in it - without Delete in <c>recovery\</c> (#7241). Both rules are bounded from above as
+        /// the files created in it. Both rules are bounded from above as
         /// well as from below: neither carries Change Permissions (WRITE_DAC) or Take Ownership, which would let the
         /// target rewrite the ACL it was just given (#7163).
         /// </summary>
@@ -826,13 +879,13 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.DeleteSubdirectoriesAndFiles));
 
             // WRITE_DAC on the folder would let the target grant itself Delete Subdirectories And Files and then remove
-            // db\Servy.db whatever that file's own protected ACL says, because FILE_DELETE_CHILD overrides the child's.
+            // another service's log whatever that file's own ACL says, because FILE_DELETE_CHILD overrides the child's.
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.ChangePermissions), $"{path} is not re-ACLable by the target");
             Assert.False(Has((int)self.FileSystemRights, FileSystemRights.TakeOwnership), $"{path} is not re-ownable by the target");
 
             var files = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.ObjectInherit);
             Assert.Equal(PropagationFlags.InheritOnly, files.PropagationFlags);
-            var expected = ServyExePermissionsHardener.GetWritableFolderFileRights(Path.GetFileName(path));
+            var expected = ServyExePermissionsHardener.GetWritableFolderFileRights(ServiceLogsFolder);
             Assert.True(Has((int)files.FileSystemRights, expected));
             if ((expected & FileSystemRights.Delete) == 0)
                 Assert.False(Has((int)files.FileSystemRights, FileSystemRights.Delete), $"the files in {path} are not deletable");

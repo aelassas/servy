@@ -9,6 +9,7 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
@@ -151,7 +152,8 @@ namespace Servy.CLI
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
                         serviceRepository,
-                        new ServyExePermissionsHardener()
+                        new ServyExePermissionsHardener(),
+                        new NamedPipesService()
                         );
 
                     var processHelper = new ProcessHelper();
@@ -212,6 +214,15 @@ namespace Servy.CLI
                                 "CLI cannot start safely - see file log for details.");
                         }
 
+                        // Copy the Servy host service. Replacing it stops every running Servy service and the host
+                        // first, and starts them again afterwards.
+                        var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
+                        if (!await resourceHelper.CopyServyHostAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, hostInstaller, cts.Token))
+                        {
+                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
+                                "CLI cannot start safely - see file log for details.");
+                        }
+
                         // Copy Sysinternals from embedded resources
                         var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
                             ? AppConfig.HandleExeARM64FileName
@@ -232,6 +243,11 @@ namespace Servy.CLI
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
                         }
+
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: cts.Token))
+                        {
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
+                        }
 #else
                         // A file newly extracted into the vault carries no grant for the service accounts, so grant them
                         // their access to it again. Debug builds extract next to the executable instead.
@@ -240,6 +256,18 @@ namespace Servy.CLI
                             await new ServyExePermissionsHardener().HardenServiceAccountsAsync(serviceRepository, cts.Token);
                         }
 #endif
+                        // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
+                        var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), cts.Token);
+                        if (hostResult.IsSuccess)
+                        {
+                            // Services installed by an earlier version do not depend on the host yet
+                            var installed = await serviceRepository.GetAllAsync(decrypt: false, cts.Token);
+                            await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), cts.Token);
+                        }
+                        else
+                        {
+                            Logger.Warn($"{hostResult.ErrorMessage} Servy services cannot start until the '{AppConfig.ServyHostServiceName}' service runs.");
+                        }
                     }
 
                     // Helper to defer targeted runtime initialization until AFTER successful argument parsing

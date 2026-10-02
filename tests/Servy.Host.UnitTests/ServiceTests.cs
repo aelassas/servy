@@ -1,7 +1,413 @@
+using Moq;
+using Servy.Core.Config;
+using Servy.Core.Data;
+using Servy.Core.DTOs;
+using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
+using Servy.Core.Services;
+using System.IO.Pipes;
+using System.Security.AccessControl;
+using System.Security.Principal;
+
 namespace Servy.Host.UnitTests
 {
-    public class ServiceTests
+    /// <summary>
+    /// Unit tests for the request handling of the Servy host service: who may ask for what, what each action reads and
+    /// writes, and how the named pipe's DACL is rebuilt from the accounts of the installed services.
+    /// </summary>
+    public class ServiceTests : IDisposable
     {
-        // TODO: Implement unit tests for the Servy Host service, focusing on its behavior and interactions with dependencies.
+        private const string ServiceName = "MyApp";
+        private const int ServicePid = 4242;
+
+        private readonly Mock<IServyLogger> _logger = new Mock<IServyLogger>();
+        private readonly Mock<INamedPipesService> _pipes = new Mock<INamedPipesService>();
+        private readonly Mock<IServiceRepository> _repository = new Mock<IServiceRepository>();
+        private readonly Mock<IWindowsServiceApi> _api = new Mock<IWindowsServiceApi>();
+        private readonly Mock<IPipeCallerIdentifier> _identifier = new Mock<IPipeCallerIdentifier>();
+        private readonly Service _sut;
+
+        private static readonly PipeCaller TheServiceProcess = new PipeCaller(ServicePid, isAdministrator: false);
+        private static readonly PipeCaller AnotherProcess = new PipeCaller(9999, isAdministrator: false);
+        private static readonly PipeCaller Administrator = new PipeCaller(1111, isAdministrator: true);
+
+        public ServiceTests()
+        {
+            _api.Setup(a => a.GetServiceProcessId(ServiceName)).Returns(ServicePid);
+            _repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(Enumerable.Empty<ServiceDto>());
+            _sut = new Service(_logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object);
+        }
+
+        public void Dispose() => _sut.Dispose();
+
+        private static IpcRequestDto Request(string action, string? serviceName = ServiceName) => new IpcRequestDto { Action = action, ServiceName = serviceName };
+
+        #region Constructor
+
+        [Fact]
+        public void Constructor_NullArguments_Throw()
+        {
+            Assert.Throws<ArgumentNullException>(() => new Service(null!, _pipes.Object, _repository.Object, _api.Object, _identifier.Object));
+            Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, null!, _repository.Object, _api.Object, _identifier.Object));
+            Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, _pipes.Object, (IServiceRepository)null!, _api.Object, _identifier.Object));
+            Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, _pipes.Object, _repository.Object, null!, _identifier.Object));
+            Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, _pipes.Object, _repository.Object, _api.Object, null!));
+        }
+
+        [Fact]
+        public void Constructor_RunsAsTheServyService()
+        {
+            Assert.Equal(AppConfig.ServyHostServiceName, _sut.ServiceName);
+            Assert.Equal("Servy", _sut.ServiceName);
+            Assert.Equal(AppConfig.ServyHostNamedPipeName, _sut.PipeName);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_NullArguments_Throw()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ProcessRequestAsync(null!, TheServiceProcess, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ProcessRequestAsync(new IpcRequestDto(), null!, CancellationToken.None));
+        }
+
+        #endregion
+
+        #region Authorization
+
+        [Theory]
+        [InlineData(AppConfig.ServyHostGetByNameAction)]
+        [InlineData(AppConfig.ServyHostUpdateRuntimeStateAction)]
+        [InlineData(AppConfig.ServyHostGetRestartAttemptsAction)]
+        [InlineData(AppConfig.ServyHostUpdateRestartAttemptsAction)]
+        public async Task ProcessRequestAsync_AnotherServicesProcess_IsRefusedWithoutReadingTheDatabase(string action)
+        {
+            // Arrange: a service account asks about a service it does not run
+            var request = Request(action);
+            request.RuntimeState = new ServiceRuntimeStateDto();
+            request.RestartAttempts = 1;
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, AnotherProcess, CancellationToken.None);
+
+            // Assert
+            Assert.False(response.Success);
+            Assert.Equal("Access denied.", response.ErrorMessage);
+            Assert.Null(response.Data);
+            _repository.VerifyNoOtherCalls();
+            _logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Refused IPC request") && s.Contains("process 9999") && s.Contains(ServiceName)), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_CallerWithoutAProcessId_IsRefusedWithoutAskingTheScm()
+        {
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), new PipeCaller(0, false), CancellationToken.None);
+
+            // Assert
+            Assert.False(response.Success);
+            _api.Verify(a => a.GetServiceProcessId(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_ServiceNotRunning_RefusesEvenAMatchingProcessIdOfZero()
+        {
+            // Arrange: the SCM reports 0 for a stopped service, which must never match a caller
+            _api.Setup(a => a.GetServiceProcessId("Stopped")).Returns(0);
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction, "Stopped"), new PipeCaller(0, false), CancellationToken.None);
+
+            // Assert
+            Assert.False(response.Success);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_Administrator_MayAskAboutAnyService()
+        {
+            // Arrange
+            _repository.Setup(r => r.GetByNameAsync("Other", true, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "Other" });
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction, "Other"), Administrator, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            _api.Verify(a => a.GetServiceProcessId(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_RefreshFromAServiceAccount_IsRefused()
+        {
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostRefreshPipeAccessAction, null), TheServiceProcess, CancellationToken.None);
+
+            // Assert: only an administrator may change who can connect
+            Assert.False(response.Success);
+            Assert.Equal("Access denied.", response.ErrorMessage);
+            _repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("Update")]
+        [InlineData("getbyname")]
+        public async Task ProcessRequestAsync_UnknownAction_Fails(string? action)
+        {
+            var response = await _sut.ProcessRequestAsync(new IpcRequestDto { Action = action, ServiceName = ServiceName }, Administrator, CancellationToken.None);
+
+            Assert.False(response.Success);
+            Assert.Equal($"Unknown IPC action: {action}", response.ErrorMessage);
+            _repository.VerifyNoOtherCalls();
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task ProcessRequestAsync_NoServiceName_Fails(string? serviceName)
+        {
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction, serviceName), Administrator, CancellationToken.None);
+
+            Assert.False(response.Success);
+            Assert.Equal("A service name is required.", response.ErrorMessage);
+        }
+
+        #endregion
+
+        #region Actions
+
+        [Fact]
+        public async Task GetByName_TheServicesOwnProcess_GetsItsDecryptedConfigurationWithoutThePassword()
+        {
+            // Arrange
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, Parameters = "--token abc", Password = "p@ss", UserAccount = @".\svc" });
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            Assert.Equal("--token abc", response.Data!.Parameters);
+            Assert.Null(response.Data.Password);
+        }
+
+        [Fact]
+        public async Task GetByName_NoRow_SucceedsWithNoData()
+        {
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
+
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None);
+
+            Assert.True(response.Success);
+            Assert.Null(response.Data);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_WritesOnlyTheRuntimeState()
+        {
+            // Arrange
+            var state = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = "o", UpdatePreviousStopTimeout = true, PreviousStopTimeout = 5 };
+            _repository.Setup(r => r.UpdateRuntimeStateAsync(ServiceName, state, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = state;
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            Assert.Equal(1, response.UpdateData);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName, state, It.IsAny<CancellationToken>()), Times.Once);
+            _repository.Verify(r => r.UpdateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repository.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_NoState_Fails()
+        {
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostUpdateRuntimeStateAction), TheServiceProcess, CancellationToken.None);
+
+            Assert.False(response.Success);
+            Assert.Equal("The runtime state is required.", response.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task GetRestartAttempts_ReturnsTheStoredCounter()
+        {
+            var when = new DateTime(2026, 10, 2, 9, 0, 0, DateTimeKind.Utc);
+            _repository.Setup(r => r.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync(new RestartAttemptsDto { Attempts = 2, UpdatedAtUtc = when });
+
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction), TheServiceProcess, CancellationToken.None);
+
+            Assert.True(response.Success);
+            Assert.Equal(2, response.RestartAttempts!.Attempts);
+            Assert.Equal(when, response.RestartAttempts.UpdatedAtUtc);
+        }
+
+        [Fact]
+        public async Task GetRestartAttempts_NoRow_ReturnsZero()
+        {
+            _repository.Setup(r => r.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync((RestartAttemptsDto?)null);
+
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction), TheServiceProcess, CancellationToken.None);
+
+            Assert.True(response.Success);
+            Assert.Equal(0, response.RestartAttempts!.Attempts);
+            Assert.Null(response.RestartAttempts.UpdatedAtUtc);
+        }
+
+        [Fact]
+        public async Task UpdateRestartAttempts_StampsTheWriteWithTheHostsClock()
+        {
+            // Arrange
+            var now = new DateTime(2026, 10, 2, 10, 0, 0, DateTimeKind.Utc);
+            _sut.UtcNow = () => now;
+            _repository.Setup(r => r.UpdateRestartAttemptsAsync(ServiceName, 3, now, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            var request = Request(AppConfig.ServyHostUpdateRestartAttemptsAction);
+            request.RestartAttempts = 3;
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            Assert.Equal(1, response.UpdateData);
+            _repository.Verify(r => r.UpdateRestartAttemptsAsync(ServiceName, 3, now, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(-1)]
+        public async Task UpdateRestartAttempts_MissingOrNegativeCounter_Fails(int? attempts)
+        {
+            var request = Request(AppConfig.ServyHostUpdateRestartAttemptsAction);
+            request.RestartAttempts = attempts;
+
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            Assert.False(response.Success);
+            Assert.Equal("A non-negative restart attempts counter is required.", response.ErrorMessage);
+            _repository.Verify(r => r.UpdateRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_RepositoryThrows_FailsAndLogs()
+        {
+            // Arrange
+            var failure = new InvalidOperationException("database is locked");
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.False(response.Success);
+            Assert.Equal("The request failed: database is locked", response.ErrorMessage);
+            _logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("IPC request 'GetByName' for 'MyApp' failed.")), failure), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessRequestAsync_Cancelled_Propagates()
+        {
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None));
+        }
+
+        #endregion
+
+        #region Pipe DACL
+
+        [Fact]
+        public async Task RefreshPipeAccess_Administrator_RebuildsTheDaclFromTheServiceAccounts()
+        {
+            // Arrange
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var networkService = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new[]
+            {
+                new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "svc-a" },
+                new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = "SVC-A" },
+                new ServiceDto { Name = "c", RunAsLocalSystem = true },
+                new ServiceDto { Name = "d", RunAsLocalSystem = false, UserAccount = "svc-d" },
+            });
+            _sut.ResolveAccount = a => a.Equals("svc-a", StringComparison.OrdinalIgnoreCase) ? localService : networkService;
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostRefreshPipeAccessAction, null), Administrator, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            var rules = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+            Assert.Single(rules, r => localService.Equals(r.IdentityReference));
+            Assert.Single(rules, r => networkService.Equals(r.IdentityReference));
+            _repository.Verify(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_AccountRemoved_IsNoLongerGranted()
+        {
+            // Arrange
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            _sut.ResolveAccount = _ => localService;
+            _repository.SetupSequence(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "svc" } })
+                .ReturnsAsync(Enumerable.Empty<ServiceDto>());
+
+            // Act
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+            var before = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Count(r => localService.Equals(r.IdentityReference));
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+            var after = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Count(r => localService.Equals(r.IdentityReference));
+
+            // Assert
+            Assert.Equal(1, before);
+            Assert.Equal(0, after);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_RepositoryFailsFirst_FallsBackToAdministratorsAndSystemOnly()
+        {
+            // Arrange
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("locked"));
+
+            // Act
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+
+            // Assert: never wider than the closed DACL
+            var rules = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+            Assert.Equal(3, rules.Count);
+            _logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Failed to read the service accounts")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_RepositoryFailsLater_KeepsThePreviousDacl()
+        {
+            // Arrange
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            _sut.ResolveAccount = _ => localService;
+            _repository.SetupSequence(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "svc" } })
+                .ThrowsAsync(new InvalidOperationException("locked"));
+
+            // Act
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+            var first = _sut.CurrentPipeSecurity;
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+
+            // Assert
+            Assert.Same(first, _sut.CurrentPipeSecurity);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_Cancelled_Propagates()
+        {
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.RefreshPipeSecurityAsync(CancellationToken.None));
+        }
+
+        #endregion
     }
 }

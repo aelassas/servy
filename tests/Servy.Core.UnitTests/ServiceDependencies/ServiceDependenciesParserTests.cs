@@ -75,5 +75,30 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         }
 
         #endregion
+
+        #region ParseWithRequired
+
+        [Theory]
+        [InlineData(null, "Servy\0\0")]
+        [InlineData("", "Servy\0\0")]
+        [InlineData("  ;\n", "Servy\0\0")]
+        [InlineData("ServiceA;ServiceB", "ServiceA\0ServiceB\0Servy\0\0")]
+        [InlineData("ServiceA;Servy", "ServiceA\0Servy\0\0")]          // already named: not added twice
+        [InlineData("SERVY;ServiceA", "SERVY\0ServiceA\0\0")]          // case-insensitive, the configured spelling kept
+        public void ParseWithRequired_AlwaysNamesTheRequiredDependencyOnce(string? input, string expected)
+        {
+            Assert.Equal(expected, ServiceDependenciesParser.ParseWithRequired(input, "Servy"));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void ParseWithRequired_BlankRequiredDependency_Throws(string? required)
+        {
+            Assert.Throws<ArgumentException>(() => ServiceDependenciesParser.ParseWithRequired("ServiceA", required!));
+        }
+
+        #endregion
     }
 }

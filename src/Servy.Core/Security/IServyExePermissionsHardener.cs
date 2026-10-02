@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// Hardens the permissions Servy's vault (<c>%ProgramData%\Servy</c>), binaries, configuration files, database,
-    /// encryption key, logs and recovery state grant to a service account.
+    /// Hardens the permissions Servy's vault (<c>%ProgramData%\Servy</c>), binaries, settings files and logs grant to a
+    /// service account, and keeps it out of the database, the encryption keys and the administrative logs.
     /// </summary>
     public interface IServyExePermissionsHardener
     {

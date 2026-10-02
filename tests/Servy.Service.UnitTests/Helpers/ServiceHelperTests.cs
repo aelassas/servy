@@ -560,6 +560,30 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void RestartService_PassesTheServiceNameAndTheServiceLogsFolder()
+        {
+            // Arrange: the restarter runs under the service account, which can only write logs\service\
+            var mockLog = new Mock<IServyLogger>();
+            ProcessStartInfo? started = null;
+
+            using (new PlaceholderRestarter())
+            {
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => started = psi)
+                    .Returns((Process?)null);
+
+                // Act
+                _helper.RestartService("My Service", mockLog.Object);
+
+                // Assert
+                Assert.NotNull(started);
+                Assert.Equal($"\"My Service\" \"{AppConfig.ServiceLogsFolderPath}\"", started!.Arguments);
+                Assert.False(started.UseShellExecute);
+            }
+        }
+
+        [Fact]
         public void RestartService_RestarterExeMissing_LogsErrorAndAborts()
         {
             // Arrange

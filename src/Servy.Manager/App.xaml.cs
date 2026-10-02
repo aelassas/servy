@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
@@ -196,7 +197,8 @@ namespace Servy.Manager
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
                         ServiceRepository!,
-                        new ServyExePermissionsHardener()
+                        new ServyExePermissionsHardener(),
+                        new NamedPipesService()
                     );
 
                     var fileDialogService = new FileDialogService();

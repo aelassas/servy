@@ -262,5 +262,15 @@ namespace Servy.Core.Services
         /// </summary>
         /// <returns>An enumerable of <see cref="WindowsServiceInfo"/> representing installed services.</returns>
         IEnumerable<WindowsServiceInfo> GetServices();
+
+        /// <summary>
+        /// Gets the identifier of the process a service runs in.
+        /// </summary>
+        /// <param name="serviceName">The name of the service.</param>
+        /// <returns>
+        /// The process identifier the Service Control Manager reports for the service, including while it is starting
+        /// or stopping; 0 when the service is stopped, is not installed, or its status cannot be queried.
+        /// </returns>
+        int GetServiceProcessId(string serviceName);
     }
 }

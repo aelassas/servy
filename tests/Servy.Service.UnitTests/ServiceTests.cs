@@ -590,193 +590,6 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
-        #region Null, Empty, and Standard Sanitization Tests
-
-        [Theory]
-        [InlineData(null, "_")]
-        [InlineData("", "_")]
-        public void MakeFilenameSafe_NullOrEmptyInput_ReturnsSafeFallback(string? input, string expectedBase)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(input!);
-
-            // Assert
-            Assert.StartsWith(expectedBase, result);
-
-            // The result length minus the expected base prefix length must equal
-            // exactly 6 characters (the length of our deterministic hex short hash).
-            Assert.Equal(6, result.Length - expectedBase.Length);
-        }
-
-        [Fact]
-        public void MakeFilenameSafe_ValidStandardName_AppendsHashSuffix()
-        {
-            // Arrange
-            string input = "service_runtime_log.txt";
-
-            // Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert
-            Assert.StartsWith("service_runtime_log.txt_", result);
-            // Verify hash part length is exactly 6 hex characters
-            string hashPart = result.Substring("service_runtime_log.txt_".Length);
-            Assert.Equal(6, hashPart.Length);
-        }
-
-        [Fact]
-        public void MakeFilenameSafe_WithInvalidCharacters_ReplacesThemAndAppendsHash()
-        {
-            // Arrange
-            string input = "log:service/v1*production?.txt";
-            string expectedPrefix = "log_service_v1_production_.txt_";
-
-            // Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        #endregion
-
-        #region DOS Reserved Device Names & Multi-Extension Edge Cases
-
-        [Theory]
-        [InlineData("CON")]
-        [InlineData("PRN")]
-        [InlineData("AUX")]
-        [InlineData("NUL")]
-        [InlineData("COM1")]
-        [InlineData("LPT5")]
-        public void MakeFilenameSafe_ExactReservedDeviceName_PrependsUnderscore(string reservedName)
-        {
-            // Arrange
-            string expectedPrefix = "_" + reservedName + "_";
-
-            // Act
-            string result = Service.MakeFilenameSafe(reservedName);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        [Theory]
-        [InlineData("CON.log", "_CON.log_")]
-        [InlineData("NUL.txt", "_NUL.txt_")]
-        [InlineData("LPT1.dat", "_LPT1.dat_")]
-        public void MakeFilenameSafe_SingleExtensionReservedDeviceName_PrependsUnderscore(string input, string expectedPrefix)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        [Theory]
-        [InlineData("CON.log.gz", "_CON.log.gz_")]
-        [InlineData("NUL.bak.tmp", "_NUL.bak.tmp_")]
-        [InlineData("LPT1.foo.bar", "_LPT1.foo.bar_")]
-        [InlineData("AUX.spec.json.zip", "_AUX.spec.json.zip_")]
-        public void MakeFilenameSafe_MultiExtensionReservedDeviceName_SuccessfullyCatchesAndPrependsUnderscore(string input, string expectedPrefix)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        [Theory]
-        [InlineData("CONSTANT.log", "CONSTANT.log_")]
-        [InlineData("NULLED.bak", "NULLED.bak_")]
-        [InlineData("COMPASS.json", "COMPASS.json_")]
-        [InlineData("A.CON.log", "A.CON.log_")]
-        public void MakeFilenameSafe_NamesContainingReservedWordsAsSubstrings(string safeName, string expectedPrefix)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(safeName);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        #endregion
-
-        #region Disambiguation & Namespace Collision Resolution
-
-        [Theory]
-        [InlineData("CON", "_CON_")]
-        [InlineData("_CON", "__CON_")]
-        [InlineData("__CON", "___CON_")]
-        [InlineData("CON.log.gz", "_CON.log.gz_")]
-        [InlineData("_CON.log.gz", "__CON.log.gz_")]
-        public void MakeFilenameSafe_CollidingNamespaceInputs_ResolvesToUniqueFilenames(string input, string expectedPrefix)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        [Theory]
-        [InlineData("CON  ", "_CON_")]
-        [InlineData("CON...", "_CON_")]
-        [InlineData("CON.log.gz  ", "_CON.log.gz_")]
-        [InlineData("正常_service_name.log.  ", "正常_service_name.log_")]
-        public void MakeFilenameSafe_WithTrailingSpacesOrPeriods_NormalizesAndEscapesCorrectly(string input, string expectedPrefix)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert
-            Assert.StartsWith(expectedPrefix, result);
-        }
-
-        [Fact]
-        public void MakeFilenameSafe_TrailingVariationsProduceUniqueOutputs()
-        {
-            // Arrange: Inputs that would natively collide on Win32 filesystems due to trailing strip behaviors
-            string nameBase = "MyService";
-            string nameWithSpace = "MyService ";
-            string nameWithDot = "MyService.";
-            string nameWithSpaces = "MyService   ";
-
-            // Act
-            string outBase = Service.MakeFilenameSafe(nameBase);
-            string outSpace = Service.MakeFilenameSafe(nameWithSpace);
-            string outDot = Service.MakeFilenameSafe(nameWithDot);
-            string outSpaces = Service.MakeFilenameSafe(nameWithSpaces);
-
-            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely.
-            // Asserting over the whole set covers all six pairs, including outBase/outSpaces and
-            // outDot/outSpaces, and keeps the comparison count correct if a fifth variant is added.
-            var all = new[] { outBase, outSpace, outDot, outSpaces };
-            Assert.Equal(all.Length, all.Distinct(StringComparer.Ordinal).Count());
-
-            // All must preserve base readability prefixing
-            Assert.All(all, o => Assert.StartsWith("MyService_", o));
-        }
-
-        [Theory]
-        [InlineData(".")]
-        [InlineData("..")]
-        [InlineData("...")]
-        [InlineData(" \t. ")]
-        public void MakeFilenameSafe_PathTraversalAndEmptyTrimsAreNeutralized(string input)
-        {
-            // Arrange & Act
-            string result = Service.MakeFilenameSafe(input);
-
-            // Assert: Directory traversal markers or blank nodes reduce to safe baseline anchors plus hash codes
-            Assert.StartsWith("__", result);
-            Assert.False(result.Contains(".."), "Output must not contain directory traversal paths.");
-        }
-
-        #endregion
-
         #region Private Test Helpers
 
         /// <summary>
@@ -815,37 +628,42 @@ namespace Servy.Service.UnitTests
                 TestReflection.InvokeNonPublic(service, "PersistProcessState", new object?[] { 1234, true });
 
                 // Assert
-                namedPipesServiceMock.Verify(r => r.GetByName(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+                namedPipesServiceMock.Verify(r => r.UpdateRuntimeState(It.IsAny<string>(), It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()), Times.Never);
             }
         }
 
         [Fact]
-        public void PersistProcessState_WhenServiceDtoNotFound_DoesNotUpdateOrThrow()
+        public void PersistProcessState_SendsOnlyTheRuntimeStateAndNeverReadsTheConfiguration()
         {
-            // Arrange
-            var namedPipesServiceMock = new Mock<INamedPipesService>();
+            // Arrange: the wrapper must not round-trip its configuration through the host to write four columns
+            var namedPipesServiceMock = new Mock<INamedPipesService>(MockBehavior.Strict);
+            namedPipesServiceMock
+                .Setup(r => r.UpdateRuntimeState("ServyTest", It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()))
+                .Returns(1);
             using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "ServyTest");
-                namedPipesServiceMock.Setup(r => r.GetByName("ServyTest", It.IsAny<CancellationToken>())).Returns((ServiceDto)null!);
 
                 // Act
-                var exception = Record.Exception(() =>
-                    TestReflection.InvokeNonPublic(service, "PersistProcessState", new object?[] { 1234, true }));
+                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object?[] { 1234, false });
 
-                // Assert
-                Assert.Null(exception);
-                namedPipesServiceMock.Verify(r => r.Update(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
+                // Assert: the strict mock fails on any other call, GetByName included
+                namedPipesServiceMock.Verify(r => r.UpdateRuntimeState("ServyTest", It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void PersistProcessState_WithActivePid_UpdatesPidAndPathsCorrectly(bool setPreviousStopTimeout)
+        public void PersistProcessState_WithActivePid_SendsPidAndPathsCorrectly(bool setPreviousStopTimeout)
         {
             // Arrange
             var namedPipesServiceMock = new Mock<INamedPipesService>();
+            ServiceRuntimeStateDto? sent = null;
+            namedPipesServiceMock
+                .Setup(r => r.UpdateRuntimeState("ServyTest", It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()))
+                .Callback<string, ServiceRuntimeStateDto, CancellationToken>((name, state, token) => sent = state)
+                .Returns(1);
             using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "ServyTest");
@@ -859,27 +677,24 @@ namespace Servy.Service.UnitTests
                 };
                 TestReflection.SetField(service, "_options", options);
 
-                var testDto = new ServiceDto { Name = "ServyTest" };
-                namedPipesServiceMock.Setup(r => r.GetByName("ServyTest", It.IsAny<CancellationToken>())).Returns(testDto);
-
                 // Act
                 TestReflection.InvokeNonPublic(service, "PersistProcessState", new object?[] { 9999, setPreviousStopTimeout });
 
                 // Assert
-                Assert.Equal(9999, testDto.Pid);
-                Assert.Equal("C:\\stdout.log", testDto.ActiveStdoutPath);
-                Assert.Equal("C:\\stderr.log", testDto.ActiveStderrPath);
+                Assert.NotNull(sent);
+                Assert.Equal(9999, sent!.Pid);
+                Assert.Equal("C:\\stdout.log", sent.ActiveStdoutPath);
+                Assert.Equal("C:\\stderr.log", sent.ActiveStderrPath);
+                Assert.Equal(setPreviousStopTimeout, sent.UpdatePreviousStopTimeout);
 
                 if (setPreviousStopTimeout)
                 {
-                    Assert.Equal(30, testDto.PreviousStopTimeout);
+                    Assert.Equal(30, sent.PreviousStopTimeout);
                 }
                 else
                 {
-                    Assert.Null(testDto.PreviousStopTimeout);
+                    Assert.Null(sent.PreviousStopTimeout);
                 }
-
-                namedPipesServiceMock.Verify(r => r.Update(testDto, It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -888,33 +703,30 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var namedPipesServiceMock = new Mock<INamedPipesService>();
+            ServiceRuntimeStateDto? sent = null;
+            namedPipesServiceMock
+                .Setup(r => r.UpdateRuntimeState("ServyTest", It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()))
+                .Callback<string, ServiceRuntimeStateDto, CancellationToken>((name, state, token) => sent = state)
+                .Returns(1);
             using (var service = _ctx.BuildService(namedPipesServiceMock.Object))
             {
                 TestReflection.SetField(service, "_serviceName", "ServyTest");
-
-                var testDto = new ServiceDto
-                {
-                    Name = "ServyTest",
-                    Pid = 5555,
-                    ActiveStdoutPath = "old_out.log",
-                    ActiveStderrPath = "old_err.log"
-                };
-                namedPipesServiceMock.Setup(r => r.GetByName("ServyTest", It.IsAny<CancellationToken>())).Returns(testDto);
+                TestReflection.SetField(service, "_options", new StartOptions { StdoutPath = "out.log", StderrPath = "err.log" });
 
                 // Act
                 TestReflection.InvokeNonPublic(service, "PersistProcessState", new object?[] { null, false });
 
                 // Assert
-                Assert.Null(testDto.Pid);
-                Assert.Null(testDto.ActiveStdoutPath);
-                Assert.Null(testDto.ActiveStderrPath);
-
-                namedPipesServiceMock.Verify(r => r.Update(testDto, It.IsAny<CancellationToken>()), Times.Once);
+                Assert.NotNull(sent);
+                Assert.Null(sent!.Pid);
+                Assert.Null(sent.ActiveStdoutPath);
+                Assert.Null(sent.ActiveStderrPath);
+                Assert.False(sent.UpdatePreviousStopTimeout);
             }
         }
 
         [Fact]
-        public void PersistProcessState_OnRepositoryException_IsCaughtAndLoggedSafely()
+        public void PersistProcessState_OnPipeException_IsCaughtAndLoggedSafely()
         {
             // Arrange
             var namedPipesService = new Mock<INamedPipesService>();
@@ -924,8 +736,10 @@ namespace Servy.Service.UnitTests
                 string serviceName = "ServyTest";
                 TestReflection.SetField(service, "_serviceName", serviceName);
 
-                var repositoryException = new InvalidOperationException("Database deadlock or lock failure");
-                namedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Throws(repositoryException);
+                var pipeException = new TimeoutException("The Servy host did not answer.");
+                namedPipesService
+                    .Setup(r => r.UpdateRuntimeState(serviceName, It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()))
+                    .Throws(pipeException);
 
                 // Act
                 var testRunException = Record.Exception(() =>
@@ -935,7 +749,7 @@ namespace Servy.Service.UnitTests
                 Assert.Null(testRunException); // Confirms the exception branch is swallowed inside the try-catch block
                 loggerMock.Verify(l => l.Error(
                     It.Is<string>(msg => msg.Contains($"Failed to persist PID 1234 for service '{serviceName}'.")),
-                    repositoryException),
+                    pipeException),
                     Times.Once);
             }
         }
@@ -2409,10 +2223,10 @@ namespace Servy.Service.UnitTests
                 .Setup(l => l.Error(It.Is<string>(s => s.Contains("Background restart-attempts reset failed")), It.IsAny<Exception>()))
                 .Callback(() => logged.Set());
 
-            // ConditionalResetRestartAttemptsAsync awaits _fileSemaphore outside its own try, and nothing
+            // ConditionalResetRestartAttemptsAsync awaits _restartAttemptsSemaphore outside its own try, and nothing
             // else on the synchronous start path takes it, so disposing it faults the reset task and only
             // the reset task
-            TestReflection.GetField<SemaphoreSlim>(_service, "_fileSemaphore").Dispose();
+            TestReflection.GetField<SemaphoreSlim>(_service, "_restartAttemptsSemaphore").Dispose();
 
             // Act
             _service.StartForTest();

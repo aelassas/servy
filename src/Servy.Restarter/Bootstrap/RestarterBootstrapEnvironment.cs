@@ -1,7 +1,8 @@
+using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Infrastructure.Helpers;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Restarter.Bootstrap
 {
@@ -36,18 +37,29 @@ namespace Servy.Restarter.Bootstrap
         }
 
         /// <summary>
-        /// Calls <see cref="DatabaseValidator.IsSqliteVersionSafe"/>.
+        /// Reads <c>ImagePath</c> from the service's key under
+        /// <c>HKLM\SYSTEM\CurrentControlSet\Services</c>, which every account can read.
         /// </summary>
-        /// <param name="detectedVersion">
-        /// When this method returns, the version string that was detected, or <see langword="null"/> when
-        /// it could not be determined.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> when the detected version is safe to use; otherwise <see langword="false"/>.
-        /// </returns>
-        public bool IsSqliteVersionSafe(out string? detectedVersion)
+        /// <param name="serviceName">The service name.</param>
+        /// <returns>The command line, or <see langword="null"/> when the service is not installed or it cannot be read.</returns>
+        [ExcludeFromCodeCoverage]
+        public string? GetServiceImagePath(string serviceName)
         {
-            return DatabaseValidator.IsSqliteVersionSafe(out detectedVersion);
+            if (string.IsNullOrWhiteSpace(serviceName) || serviceName.IndexOfAny(new[] { '\\', '/' }) >= 0)
+                return null;
+
+            try
+            {
+                using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\" + serviceName, writable: false))
+                {
+                    return key?.GetValue("ImagePath", null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
+                }
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException || ex is UnauthorizedAccessException || ex is IOException)
+            {
+                Logger.Warn($"Could not read the executable of service '{serviceName}'.", ex);
+                return null;
+            }
         }
     }
 }

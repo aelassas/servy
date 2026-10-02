@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.DTOs;
 using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Service.Bootstrap;
@@ -16,7 +17,6 @@ using Servy.Service.Validation;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
 using System.Timers;
@@ -30,11 +30,10 @@ namespace Servy.Service
         #region Synchronization Primitives
 
         /// <summary>
-        /// Ensures thread-safe, asynchronous access during file I/O operations.
-        /// This semaphore prevents concurrent read/write conflicts (such as updating persistent restart attempts on disk)
-        /// without blocking the thread pool or the Windows Service Control Manager (SCM).
+        /// Serializes the read-evaluate-write sequences on the persistent restart attempts counter (startup reset,
+        /// health-check increments) without blocking the thread pool or the Windows Service Control Manager (SCM).
         /// </summary>
-        private readonly SemaphoreSlim _fileSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _restartAttemptsSemaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Acts as an asynchronous gatekeeper for health monitoring and recovery orchestration.
@@ -125,7 +124,7 @@ namespace Servy.Service
         private int _maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _recoveryActionEnabled = false;
-        private string? _restartAttemptsFile;
+        private string? _restartAttemptsServiceName;
         private bool _preLaunchEnabled = false;
         private StartOptions? _options;
         private CancellationTokenSource? _cancellationSource;
@@ -292,7 +291,7 @@ namespace Servy.Service
             _scmNative = new ScmNative();
             _options = null;
 
-            _bootstrapEnvironment.InitializeLogger("Servy.Service.log");
+            _bootstrapEnvironment.InitializeLogger(AppConfig.ServyServiceLogFileName, AppConfig.ServiceLogsFolderPath);
 
             try
             {
@@ -436,8 +435,8 @@ namespace Servy.Service
                     _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeoutInSeconds + AppConfig.ScmStartupRequestBufferSeconds), _logger);
                 }
 
-                // Set up attempts file
-                SetupAttemptsFile(options);
+                // Set up the persistent restart attempts counter
+                SetupRestartAttempts(options);
 
                 // Set up service logging
                 HandleLogWriters(options);
@@ -748,150 +747,62 @@ namespace Servy.Service
         #region Restart Attempts Persistence
 
         /// <summary>
-        /// Initializes the path to the restart attempts file for the current service,
-        /// located under the %ProgramData%\Servy\recovery directory.
-        /// The filename is unique per service based on its name to prevent conflicts
-        /// when multiple services are managed by Servy on the same machine.
+        /// Remembers which service's restart attempts counter this instance reads and writes. The counter lives in
+        /// <c>Servy.db</c> and is read and written through the Servy host service
+        /// (<see cref="INamedPipesService.GetRestartAttemptsAsync"/> and <see cref="INamedPipesService.UpdateRestartAttemptsAsync"/>);
+        /// the service account has no access to the database itself.
         /// </summary>
         /// <param name="options">The service startup options containing the service name.</param>
-        private void SetupAttemptsFile(StartOptions options)
+        private void SetupRestartAttempts(StartOptions options)
         {
-            SecurityHelper.CreateSecureDirectory(AppConfig.RecoveryFolderPath, breakInheritance: false); // ensures folder exists
-
-            string safeServiceName = MakeFilenameSafe(options.ServiceName!);
-            _restartAttemptsFile = Path.Combine(AppConfig.RecoveryFolderPath, $"{safeServiceName}_restartAttempts.dat");
+            _restartAttemptsServiceName = options.ServiceName;
         }
 
         /// <summary>
-        /// Sanitizes a string to be safe for use as a filename by replacing
-        /// all invalid filename characters with underscores ('_'). Handles DOS reserved device names
-        /// and prevents filename namespace collisions.
+        /// Internal unprotected read logic. Assumes _restartAttemptsSemaphore is held by the caller.
         /// </summary>
-        /// <param name="name">The original string to sanitize.</param>
-        /// <returns>A sanitized string safe for use as a filename.</returns>
-        public static string MakeFilenameSafe(string name)
+        /// <param name="ct">The cancellation token.</param>
+        /// <returns>The counter and the time it was last written; 0 attempts and no time when it was never written.</returns>
+        private async Task<RestartAttemptsDto> ReadAttemptsInternalAsync(CancellationToken ct)
         {
-            // If null or empty, treat the base name as an underscore but still
-            // append the short hash to satisfy the unique signature layout requirement
-            if (string.IsNullOrEmpty(name))
+            var state = await _namedPipesService!.GetRestartAttemptsAsync(_restartAttemptsServiceName!, ct) ?? new RestartAttemptsDto();
+            if (state.Attempts < 0)
             {
-                return $"_{ComputeShortHash(string.Empty)}";
-            }
-
-            // 1. Strip trailing spaces, tabs, and periods as Windows ignores these on disk handles (Issue #2069 mitigation)
-            string sanitized = name.TrimEnd(' ', '.', '\t');
-
-            // Explicit guard against directory traversal sequences or inputs that normalize to empty/dots
-            if (string.IsNullOrEmpty(sanitized))
-            {
-                sanitized = "_";
-            }
-
-            // 2. Replace invalid character markers
-            var invalidChars = Path.GetInvalidFileNameChars();
-            foreach (var c in invalidChars)
-            {
-                sanitized = sanitized.Replace(c, '_');
-            }
-
-            // 3. Prevent Reserved DOS Name collisions and User-supplied namespace overlaps (Issue #2118 & #2080)
-            int firstDotIndex = sanitized.IndexOf('.');
-            string leadingSegment = firstDotIndex >= 0 ? sanitized.Substring(0, firstDotIndex) : sanitized;
-
-            // Isolate the base word by stripping all leading underscores
-            string baseSegment = leadingSegment.TrimStart('_');
-
-            // Only escape if the underlying base keyword is an actual hardware reserved name
-            if (ReservedNames.IsReservedDeviceName(baseSegment))
-            {
-                // Count how many leading underscores the user already had in their input segment
-                int existingUnderscores = leadingSegment.Length - baseSegment.Length;
-
-                // Prepend exactly one more underscore than what currently exists to break the collision chain
-                string protectionPrefix = new string('_', existingUnderscores + 1);
-
-                sanitized = protectionPrefix + baseSegment + (firstDotIndex >= 0 ? sanitized.Substring(firstDotIndex) : string.Empty);
-            }
-
-            // 4. Collision Insurance: Append a deterministic short hash of the ORIGINAL raw name input string.
-            // This guarantees unique on-disk allocations for variations such as "MyService", "MyService ", and "MyService."
-            string shortHash = ComputeShortHash(name);
-
-            return $"{sanitized}_{shortHash}";
-        }
-
-        /// <summary>
-        /// Computes a deterministic 6-character hex string hash from an input value.
-        /// </summary>
-        private static string ComputeShortHash(string input)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-                // 3 bytes maps cleanly to a highly unique 6-character hex identifier
-                return BitConverter.ToString(bytes, 0, 3).Replace("-", "").ToLowerInvariant();
-            }
-        }
-
-        /// <summary>
-        /// Internal unprotected read logic. Assumes _fileSemaphore is held by the caller.
-        /// </summary>
-        private async Task<int> ReadAttemptsInternalAsync(CancellationToken ct)
-        {
-            if (!File.Exists(_restartAttemptsFile))
-            {
-                _logger?.Warn("Restart attempts file not found. Initializing counter to 0.");
+                _logger?.Warn("Invalid restart attempts counter received. Resetting counter to 0.");
                 await WriteAttemptsInternalAsync(0, ct);
-                return 0;
+                return new RestartAttemptsDto();
             }
 
-            string content = (await File.ReadAllTextAsync(_restartAttemptsFile, ct)).Trim();
-
-            if (int.TryParse(content, NumberStyles.Integer, CultureInfo.InvariantCulture, out var attempts) && attempts >= 0)
-                return attempts;
-
-            _logger?.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
-            await WriteAttemptsInternalAsync(0, ct);
-            return 0;
+            return state;
         }
 
         /// <summary>
-        /// Internal unprotected write logic. Assumes _fileSemaphore is held by the caller.
+        /// Internal unprotected write logic. Assumes _restartAttemptsSemaphore is held by the caller.
         /// </summary>
         /// <param name="attempts">The number of restart attempts to persist.</param>
         /// <param name="ct">The cancellation token.</param>
         /// <remarks>
-        /// The file is rewritten in place (<see cref="FileMode.Create"/> truncates an existing file) rather than through
-        /// a temporary file and a rename: a rename needs Delete on both files, and the service account only has Read and
-        /// Write on the files in <c>recovery\</c> (#7241). A crash in the middle of the write can leave the file empty or
-        /// truncated; <see cref="ReadAttemptsInternalAsync"/> reads that as corrupt content and resets the counter to 0.
+        /// The Servy host stamps the write with the current UTC time; writing the unchanged count therefore anchors the
+        /// counter to the current OS session.
         /// </remarks>
         private async Task WriteAttemptsInternalAsync(int attempts, CancellationToken ct)
         {
-            using (var fs = new FileStream(_restartAttemptsFile!, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                // BOM-less UTF8, the same encoding the counter has always been written in
-                using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
-                {
-                    await sw.WriteAsync(attempts.ToString(CultureInfo.InvariantCulture).AsMemory(), ct);
-                }
-
-                // Force the counter to disk, as the atomic helper did before the rename
-                fs.Flush(flushToDisk: true);
-            }
+            await _namedPipesService!.UpdateRestartAttemptsAsync(_restartAttemptsServiceName!, attempts, ct);
         }
 
         /// <summary>
-        /// Ensures the restart attempts tracking file exists and retrieves the current counter value safely.
+        /// Retrieves the current restart attempts counter safely.
         /// </summary>
-        private async Task<int?> EnsureRestartAttemptsFileAsync(CancellationToken ct = default)
+        /// <param name="ct">The cancellation token.</param>
+        /// <returns>The counter; 0 when the service is shutting down; <see langword="null"/> when it cannot be read.</returns>
+        private async Task<int?> GetRestartAttemptsAsync(CancellationToken ct = default)
         {
-            if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return 0;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return 0;
 
-            await _fileSemaphore.WaitAsync(ct);
+            await _restartAttemptsSemaphore.WaitAsync(ct);
             try
             {
-                return await ReadAttemptsInternalAsync(ct);
+                return (await ReadAttemptsInternalAsync(ct)).Attempts;
             }
             catch (OperationCanceledException)
             {
@@ -900,27 +811,27 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Restart attempts file '{_restartAttemptsFile}' is unreadable ({ex.Message}); the MaxRestartAttempts cap cannot be enforced.");
+                _logger?.Error($"The restart attempts counter of '{_restartAttemptsServiceName}' is unreadable ({ex.Message}); the MaxRestartAttempts cap cannot be enforced.");
                 return null;
             }
             finally
             {
-                ReleaseSafe(_fileSemaphore);
+                ReleaseSafe(_restartAttemptsSemaphore);
             }
         }
 
         /// <summary>
-        /// Asynchronously saves the current number of restart attempts to the persistent tracking file.
+        /// Asynchronously saves the current number of restart attempts through the Servy host.
         /// </summary>
         /// <param name="attempts">The restart attempts count to persist.</param>
-        /// <param name="ct">A cancellation token to observe while waiting for the semaphore or I/O.</param>
+        /// <param name="ct">A cancellation token to observe while waiting for the semaphore or the host.</param>
         /// <returns>A task representing the asynchronous save operation.</returns>
         private async Task SaveRestartAttemptsAsync(int attempts, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return;
 
             // Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
-            await _fileSemaphore.WaitAsync(ct);
+            await _restartAttemptsSemaphore.WaitAsync(ct);
             try
             {
                 await WriteAttemptsInternalAsync(attempts, ct);
@@ -931,12 +842,11 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                // Include the path in the error message to assist with field troubleshooting
-                _logger?.Error($"Failed to save restart attempts to '{_restartAttemptsFile}': {ex.Message}");
+                _logger?.Error($"Failed to save the restart attempts counter of '{_restartAttemptsServiceName}': {ex.Message}");
             }
             finally
             {
-                ReleaseSafe(_fileSemaphore);
+                ReleaseSafe(_restartAttemptsSemaphore);
             }
         }
 
@@ -952,9 +862,10 @@ namespace Servy.Service
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Reboot Detection:</b> Compares the last write time of the restart file against the system boot time
-        /// (calculated via <see cref="Environment.TickCount64"/>). If the file was modified before the current OS session,
-        /// the count is maintained because the service is likely starting due to a "Restart Computer" recovery action.
+        /// <b>Reboot Detection:</b> Compares the time the counter was last written (kept with it in <c>Servy.db</c>)
+        /// against the system boot time (calculated via <see cref="Environment.TickCount64"/>). If it was written before the
+        /// current OS session, the count is maintained because the service is likely starting due to a "Restart Computer"
+        /// recovery action.
         /// </description>
         /// </item>
         /// <item>
@@ -968,31 +879,33 @@ namespace Servy.Service
         /// </remarks>
         private async Task ConditionalResetRestartAttemptsAsync(StartOptions options, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return;
 
             // Wait for the lock to secure the entire transaction
-            await _fileSemaphore.WaitAsync(cancellationToken);
+            await _restartAttemptsSemaphore.WaitAsync(cancellationToken);
             try
             {
                 // 1. Protected Read (Exit early if already 0)
-                if ((await ReadAttemptsInternalAsync(cancellationToken)) == 0) return;
+                var state = await ReadAttemptsInternalAsync(cancellationToken);
+                if (state.Attempts == 0) return;
 
-                DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
+                // A counter that was never stamped is treated as written before this boot
+                DateTime lastWriteUtc = state.UpdatedAtUtc ?? DateTime.MinValue;
 
                 // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
                 // is mathematically protected against runtime overflow exceptions for ~292 million years.
                 DateTime systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
 
                 // 2. Session Persistence Check
-                // If the file's last modification occurred before the current system boot,
+                // If the counter was last written before the current system boot,
                 // the service is starting in a new OS session. We maintain the existing counter
                 // to ensure recovery quotas (like RestartComputer) are respected across reboots.
                 if (lastWriteUtc < systemBootTimeUtc)
                 {
                     // We are running in a new OS session for the first time.
-                    // Touch the file to anchor it to the current session so future
+                    // Rewrite the unchanged counter to anchor it to the current session so future
                     // stability checks can decide based on in-session uptime.
-                    File.SetLastWriteTimeUtc(_restartAttemptsFile, DateTime.UtcNow);
+                    await WriteAttemptsInternalAsync(state.Attempts, cancellationToken);
                     return;
                 }
 
@@ -1042,7 +955,7 @@ namespace Servy.Service
             }
             finally
             {
-                ReleaseSafe(_fileSemaphore);
+                ReleaseSafe(_restartAttemptsSemaphore);
             }
         }
 
@@ -2014,32 +1927,18 @@ namespace Servy.Service
 
             try
             {
-                // We need to fetch the full unencrypted service DTO in order to update the runtime state fields.
-                // We cannot use decrypt:false here because encrypted fields (like Parameters and EnvironmentVariables)
-                // are not marked to be ignored during update, and the update operation requires the full DTO to avoid overwriting existing values with wrong values.
-                // This is a bit inefficient, but PersistProcessState only runs on service start/stop and process exit,
-                // so the performance impact should be minimal in the grand scheme of things.
-                var serviceDto = _namedPipesService!.GetByName(_serviceName);
-
-                if (serviceDto != null)
+                // Only the runtime state crosses the pipe: the host writes these columns and nothing else, so the
+                // service account can never change its own (or any other) service's configuration.
+                var state = new ServiceRuntimeStateDto
                 {
-                    serviceDto.Pid = pid;
-                    if (setPreviousStopTimeout)
-                        serviceDto.PreviousStopTimeout = _options?.StopTimeoutInSeconds;
+                    Pid = pid,
+                    ActiveStdoutPath = pid == null ? null : _options?.StdoutPath,
+                    ActiveStderrPath = pid == null ? null : _options?.StderrPath,
+                    UpdatePreviousStopTimeout = setPreviousStopTimeout,
+                    PreviousStopTimeout = setPreviousStopTimeout ? _options?.StopTimeoutInSeconds : null,
+                };
 
-                    if (pid == null)
-                    {
-                        serviceDto.ActiveStdoutPath = null;
-                        serviceDto.ActiveStderrPath = null;
-                    }
-                    else
-                    {
-                        serviceDto.ActiveStdoutPath = _options?.StdoutPath;
-                        serviceDto.ActiveStderrPath = _options?.StderrPath;
-                    }
-
-                    _namedPipesService.Update(serviceDto);
-                }
+                _namedPipesService!.UpdateRuntimeState(_serviceName, state);
             }
             catch (Exception ex)
             {
@@ -2288,7 +2187,7 @@ namespace Servy.Service
                     if (_maxRestartAttempts > 0)
                     {
                         var ct = _cancellationSource?.Token ?? CancellationToken.None;
-                        var ca = await EnsureRestartAttemptsFileAsync(ct);
+                        var ca = await GetRestartAttemptsAsync(ct);
 
                         if (ca == null)
                         {
@@ -2581,7 +2480,7 @@ namespace Servy.Service
                         try { _cancellationSource?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _cancellationSource failed: {ex.Message}"); }
                         _cancellationSource = null;
 
-                        try { _fileSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _fileSemaphore failed: {ex.Message}"); }
+                        try { _restartAttemptsSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _restartAttemptsSemaphore failed: {ex.Message}"); }
                         try { _healthCheckSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _healthCheckSemaphore failed: {ex.Message}"); }
                     }
                 }

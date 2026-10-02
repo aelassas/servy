@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -15,7 +16,7 @@ namespace Servy.Host.Bootstrap
     /// </summary>
     /// <remarks>
     /// Every member is a forward to the call it replaced in the production constructor of
-    /// <see cref="Servy.Service.Service"/>: same target, same arguments, same order, same thread and the
+    /// <see cref="Service"/>: same target, same arguments, same order, same thread and the
     /// same exception behaviour. The type holds no state, so an instance can be shared.
     /// </remarks>
     [ExcludeFromCodeCoverage]
@@ -48,7 +49,7 @@ namespace Servy.Host.Bootstrap
         {
             return new ConfigurationBuilder()
                 .SetBasePath(AppFoldersHelper.GetAppDirectory())
-                .AddJsonFile("appsettings.host.json", optional: true, reloadOnChange: false)
+                .AddJsonFile(AppConfig.ServyHostSettingsFileName, optional: true, reloadOnChange: false)
                 .Build();
         }
 
@@ -121,6 +122,32 @@ namespace Servy.Host.Bootstrap
             var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
             return new ServiceDataStack(dbContext, protectedKeyProvider, secureData, serviceRepository);
+        }
+
+        /// <summary>
+        /// Calls <see cref="ServiceLogMigrator.Migrate()"/>.
+        /// </summary>
+        public void MigrateLegacyServiceLog()
+        {
+            ServiceLogMigrator.Migrate();
+        }
+
+        /// <summary>
+        /// Creates a <see cref="WindowsServiceApi"/>.
+        /// </summary>
+        /// <returns>The API.</returns>
+        public IWindowsServiceApi CreateWindowsServiceApi()
+        {
+            return new WindowsServiceApi();
+        }
+
+        /// <summary>
+        /// Creates a <see cref="PipeCallerIdentifier"/>.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        public IPipeCallerIdentifier CreateCallerIdentifier()
+        {
+            return new PipeCallerIdentifier();
         }
 
         /// <summary>

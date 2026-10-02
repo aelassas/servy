@@ -215,8 +215,11 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.True(Directory.Exists(dbFolder));
             Assert.True(Directory.Exists(keyFolder));
             Assert.True(Directory.Exists(ivFolder));
-            Assert.True(Directory.Exists(Path.Combine(TempDirectory, "recovery")));
             Assert.True(Directory.Exists(Path.Combine(TempDirectory, "logs")));
+            Assert.True(Directory.Exists(Path.Combine(TempDirectory, "logs", "service")));
+
+            // Assert: The legacy recovery folder is no longer created; its counters live in Servy.db
+            Assert.False(Directory.Exists(Path.Combine(TempDirectory, "recovery")));
 
             // Assert: Folders nested inside the root vault maintain inheritance
             var dbSecurity = new DirectoryInfo(dbFolder).GetAccessControl();
@@ -305,8 +308,8 @@ namespace Servy.Core.UnitTests.Helpers
             // one entry would leave all four of these uncreated.
             Assert.True(Directory.Exists(keyFolder));
             Assert.True(Directory.Exists(ivFolder));
-            Assert.True(Directory.Exists(Path.Combine(TempDirectory, "recovery")));
             Assert.True(Directory.Exists(Path.Combine(TempDirectory, "logs")));
+            Assert.True(Directory.Exists(Path.Combine(TempDirectory, "logs", "service")));
 
             // Assert: The loop leaves the protection the root was given before it in place. This is a
             // regression guard, not evidence that the self-skip fired: with the skip removed, canonicalRoot

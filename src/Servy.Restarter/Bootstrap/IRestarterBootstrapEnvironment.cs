@@ -5,7 +5,7 @@ namespace Servy.Restarter.Bootstrap
     /// <summary>
     /// Seam over the machine-touching start-up calls that <see cref="Program.Run"/> would otherwise make
     /// inline: the Windows event source, the creation of the event-log logger that wraps it, and the
-    /// SQLite version check of the CVE-2025-6965 mitigation.
+    /// Service Control Manager lookup of the executable a service runs.
     /// </summary>
     /// <remarks>
     /// The production implementation is <see cref="RestarterBootstrapEnvironment"/>. Every member forwards
@@ -15,7 +15,7 @@ namespace Servy.Restarter.Bootstrap
     /// were inline.
     /// <para>
     /// The pure logic deliberately stays in <see cref="Program"/>: the argument guards, the best-effort
-    /// fallback to file-only logging, the fatal exit on a vulnerable SQLite version and the
+    /// fallback to file-only logging, the refusal of a service that does not run a Servy wrapper and the
     /// scoped-then-root-then-static logger rules of the surrounding <c>catch</c>. Those are what a test
     /// asserts once this seam lets it drive the start-up sequence at all.
     /// </para>
@@ -47,16 +47,14 @@ namespace Servy.Restarter.Bootstrap
         IServyLogger CreateEventLogLogger(bool isEventLogEnabled);
 
         /// <summary>
-        /// Determines whether the SQLite version the process would open its database with is at or above
-        /// the minimum required by the CVE-2025-6965 mitigation.
+        /// Reads the command line the Service Control Manager runs for a service (its <c>ImagePath</c>).
         /// </summary>
-        /// <param name="detectedVersion">
-        /// When this method returns, the version string that was detected, or <see langword="null"/> when
-        /// it could not be determined.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> when the detected version is safe to use; otherwise <see langword="false"/>.
-        /// </returns>
-        bool IsSqliteVersionSafe(out string? detectedVersion);
+        /// <param name="serviceName">The service name.</param>
+        /// <returns>The command line, or <see langword="null"/> when the service is not installed or it cannot be read.</returns>
+        /// <remarks>
+        /// The restarter runs under the service account, which has no access to <c>Servy.db</c>; the service's
+        /// executable is what tells it the service is managed by Servy.
+        /// </remarks>
+        string? GetServiceImagePath(string serviceName);
     }
 }

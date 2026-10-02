@@ -18,6 +18,12 @@ namespace Servy.Core.UnitTests.Services
 {
     public class ServiceManagerTests : IDisposable
     {
+        /// <summary>
+        /// The SCM dependency list of a service configured with no dependencies: every Servy service depends on the
+        /// Servy host service.
+        /// </summary>
+        private static readonly string HostOnlyDependencies = ServiceDependenciesParser.ParseWithRequired(null, AppConfig.ServyHostServiceName);
+
         private readonly Mock<IServiceControllerWrapper> _mockController;
         private readonly Mock<IServiceControllerProvider> _mockServiceControllerProvider;
         private readonly Mock<IWindowsServiceApi> _mockWindowsServiceApi;
@@ -109,7 +115,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(serviceHandle);
@@ -608,7 +614,7 @@ namespace Servy.Core.UnitTests.Services
                     It.IsAny<string>(),
                     null,
                     IntPtr.Zero,
-                    ServiceDependenciesParser.NoDependencies,
+                    HostOnlyDependencies,
                     ServiceAccounts.LocalSystem,
                     null))
                 .Returns(() => serviceHandle);
@@ -667,7 +673,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result.IsSuccess);
 
             _mockWindowsServiceApi.Verify(x => x.OpenSCManager(null, null, It.IsAny<uint>()), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.CreateService(It.IsAny<SafeScmHandle>(), serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(It.IsAny<SafeScmHandle>(), serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Once);
 
             // Verify cleanup via SafeHandle state rather than the API mock
@@ -699,7 +705,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(_handles.Service(0));
@@ -718,7 +724,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null,
                 It.IsAny<string>()))
@@ -760,8 +766,8 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
 
             // BUNDLED SCENARIO: ChangeServiceConfig2 is invoked exactly Times.Once in both scenarios
             // because the existing update configuration loop explicitly sets fDelayedAutostart to false
@@ -840,7 +846,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(_handles.Service(0));
@@ -859,7 +865,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null,
                 It.IsAny<string>()))
@@ -901,8 +907,8 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.False(result.IsSuccess);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()), Times.Once);
         }
 
@@ -928,7 +934,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(_handles.Service(0));
@@ -949,7 +955,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null,
                 It.IsAny<string>()))
@@ -1013,7 +1019,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(_handles.Service(0));
@@ -1034,7 +1040,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null,
                 It.IsAny<string>()))
@@ -1159,7 +1165,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(_handles.Service(0));
@@ -1179,7 +1185,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null,
                 It.IsAny<string>()))
@@ -1247,7 +1253,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 gMSA,
                 null))
                 .Returns(serviceHandle);
@@ -1302,7 +1308,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, gMSA, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, gMSA, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_PRESHUTDOWN_INFO, It.IsAny<IntPtr>()), Times.Once);
 
             // The deadline the SCM is given must include the pre-stop hook, since PreStopExePath is set
@@ -1338,7 +1344,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(serviceHandle);
@@ -1386,7 +1392,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.False(result.IsSuccess);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()), Times.Once);
 
             // The created service must not be left behind as an SCM orphan
@@ -1417,7 +1423,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 gMSA,
                 null))
                 .Returns(serviceHandle);
@@ -1461,7 +1467,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, gMSA, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, HostOnlyDependencies, gMSA, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
         }
 
@@ -1488,7 +1494,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null))
                 .Returns(serviceHandle);
@@ -1557,7 +1563,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
+                HostOnlyDependencies,
                 ServiceAccounts.LocalSystem,
                 null), Times.Once);
 

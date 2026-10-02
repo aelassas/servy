@@ -2,9 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Security;
-using Servy.Core.Services;
-using Servy.Infrastructure.Data;
 using Servy.Restarter.Bootstrap;
 
 namespace Servy.Restarter
@@ -36,20 +33,18 @@ namespace Servy.Restarter
         /// <param name="restarter">Optional restarter instance for dependency injection testing.</param>
         /// <param name="environment">
         /// Optional seam over the machine-touching start-up calls (the Windows event source, the event-log
-        /// logger and the SQLite version check), used for testing. When <see langword="null"/> the
+        /// logger and the Service Control Manager lookup of the service's executable), used for testing. When <see langword="null"/> the
         /// production <see cref="RestarterBootstrapEnvironment"/> is created, and it forwards every call
         /// unchanged to what this method ran inline before the seam existed.
         /// </param>
         internal static void Run(string[] args, IServiceRestarter? restarter, IRestarterBootstrapEnvironment? environment = null)
         {
             string? customLogDir = args.Length > 1 ? args[1] : null;
-            Logger.Initialize("Servy.Restarter.log", logDirectory: customLogDir);
+            // The wrapper passes logs\service\, the only log folder its service account can write
+            Logger.Initialize(AppConfig.ServyRestarterLogFileName, logDirectory: customLogDir);
 
             IServyLogger? rootLogger = null; // Declare as nullable for safe finally disposal
             IServyLogger? scopedLogger = null;
-            AppDbContext? dbContext = null;
-            SecureData? secureData = null;
-            ProtectedKeyProvider? protectedKeyProvider = null;
 
             try
             {
@@ -90,11 +85,6 @@ namespace Servy.Restarter
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: false)
                     .Build();
 
-                var coreSettings = CoreSettingsLoader.Load();
-                var connectionString = coreSettings.ConnectionString;
-                var aesKeyFilePath = coreSettings.AESKeyFilePath;
-                var aesIVFilePath = coreSettings.AESIVFilePath;
-
                 // 3. Parse the restart timeout
                 var restartTimeout = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds",
                                                                  AppConfig.DefaultRestarterTimeoutSeconds,
@@ -119,35 +109,16 @@ namespace Servy.Restarter
                                       $"If this restart is driven by the Servy host service recovery path, it will be force-killed after {maxHostWaitSeconds} seconds.");
                 }
 
-                // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
-                if (!environment.IsSqliteVersionSafe(out var detectedVersion))
-                {
-                    scopedLogger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
-                                          $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-
-                    Environment.ExitCode = 1;
-                    return;
-                }
-
-                // 7. Initialize database and helpers
-                dbContext = new AppDbContext(connectionString);
-                var dapperExecutor = new DapperExecutor(dbContext);
-                protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                secureData = new SecureData(protectedKeyProvider);
-                var xmlSerializer = new XmlServiceSerializer();
-                var jsonSerializer = new JsonServiceSerializer();
-
-                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
-
-                // 8. Validation
-                if (serviceRepository.GetByName(serviceName, decrypt: false) == null)
+                // 7. Validation. The restarter runs under the service account, which has no access to Servy.db, so the
+                // Service Control Manager decides: the service must run one of Servy's wrappers.
+                if (!IsServyWrapperImagePath(environment.GetServiceImagePath(serviceName)))
                 {
                     scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
                     Environment.ExitCode = 1;
                     return;
                 }
 
-                // 9. Execution
+                // 8. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
@@ -178,13 +149,49 @@ namespace Servy.Restarter
             }
             finally
             {
-                try { secureData?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose SecureData.", ex); }
-                try { protectedKeyProvider?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose ProtectedKeyProvider.", ex); }
-                try { dbContext?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose AppDbContext.", ex); }
                 try { scopedLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose scoped logger.", ex); }
                 try { rootLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose root EventLogLogger.", ex); }
                 try { Logger.Shutdown(); } catch { /* nothing left to log with */ }
             }
+        }
+        /// <summary>
+        /// Determines whether a service's executable command line runs one of Servy's wrappers,
+        /// <c>Servy.Service.exe</c> or <c>Servy.Service.CLI.exe</c>.
+        /// </summary>
+        /// <param name="imagePath">The service's <c>ImagePath</c>, as the Service Control Manager stores it; <see langword="null"/> when the service is not installed.</param>
+        /// <returns><see langword="true"/> when the executable's file name is one of the wrappers.</returns>
+        internal static bool IsServyWrapperImagePath(string? imagePath)
+        {
+            if (string.IsNullOrWhiteSpace(imagePath))
+                return false;
+
+            var commandLine = imagePath!.Trim();
+            string executable;
+            if (commandLine.StartsWith("\"", StringComparison.Ordinal))
+            {
+                var closing = commandLine.IndexOf('"', 1);
+                if (closing < 0)
+                    return false;
+                executable = commandLine.Substring(1, closing - 1);
+            }
+            else
+            {
+                var space = commandLine.IndexOf(' ');
+                executable = space < 0 ? commandLine : commandLine.Substring(0, space);
+            }
+
+            string fileName;
+            try
+            {
+                fileName = Path.GetFileName(executable);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+
+            return string.Equals(fileName, AppConfig.ServyServiceUIExe, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(fileName, AppConfig.ServyServiceCLIExe, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

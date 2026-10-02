@@ -99,7 +99,9 @@ namespace Servy.Infrastructure.Data
             // System / Active State
             "Pid",
             "ActiveStdoutPath",
-            "ActiveStderrPath"
+            "ActiveStderrPath",
+            "RestartAttempts",
+            "RestartAttemptsUpdatedAtTicks"
         };
 
         /// <summary>

@@ -4,7 +4,7 @@ using Servy.Core.Security;
 namespace Servy.Host.Bootstrap
 {
     /// <summary>
-    /// The data-layer objects the production constructor of <see cref="Servy.Service.Service"/> creates
+    /// The data-layer objects the production constructor of <see cref="Service"/> creates
     /// once, in one step, and then keeps for the lifetime of the service: the database context, the
     /// protected key provider, the secure-data helper built on it and the service repository built on
     /// both.

@@ -45,4 +45,8 @@
   <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
     <value>Resource Extraction Warning</value>
   </data>
+  <data name="Msg_ServyHostUnavailable" xml:space="preserve">
+    <value>The Servy host service could not be installed or started: {0}
+Servy services cannot start until it runs. See the file log for details.</value>
+  </data>
 </root>
