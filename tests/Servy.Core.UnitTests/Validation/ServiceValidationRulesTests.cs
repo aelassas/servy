@@ -88,6 +88,41 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(expectedErrorMsg, result.Errors);
         }
 
+        [Theory]
+        [InlineData("Servy")]
+        [InlineData("servy")]
+        [InlineData("SERVY")]
+        public void Validate_NameReservedForTheServyHost_ReturnsOnlyTheReservedNameError(string name)
+        {
+            // Arrange: install and import both run these rules; the Servy host service (Servy.Host.exe) owns the name
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.Name = name;
+            dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
+
+            // Act
+            var result = _sut.Validate(dto, importMode: true);
+
+            // Assert: the guard returns immediately
+            Assert.Equal(new[] { string.Format(Strings.Msg_ServiceNameReservedForServyHost, name) }, result.Errors);
+        }
+
+        [Theory]
+        [InlineData("ServyApp")]
+        [InlineData("My Servy")]
+        [InlineData("Servy.Host")]
+        public void Validate_NameThatOnlyContainsServy_IsNotReserved(string name)
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.Name = name;
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.DoesNotContain(result.Errors, e => e.Contains("reserved for the Servy host service"));
+        }
+
         [Fact]
         public void Validate_InvalidCpuAffinity_ReturnsError()
         {

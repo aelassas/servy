@@ -666,6 +666,152 @@ begin
   end;
 end;
 
+// -----------------------------------------------------
+// The Servy host service ("Servy", Servy.Host.exe / Servy.Host.Net48.exe) is installed at run time by the
+// Desktop App, Servy Manager and servy-cli, and every Servy service depends on it. It, and the binaries the
+// apps extracted into the data folder, are removed only when no Servy-managed service remains: the services
+// the user did not uninstall keep running after Servy is uninstalled, as before (#7293).
+// -----------------------------------------------------
+
+// Lower-case file name of the executable a service command line runs: the quoted part, or the first token
+function CommandLineExeName(const CommandLine: String): String;
+var
+  S: String;
+  P: Integer;
+begin
+  Result := '';
+  S := Trim(CommandLine);
+  if (Length(S) > 0) and (S[1] = '"') then
+  begin
+    Delete(S, 1, 1);
+    P := Pos('"', S);
+    if P = 0 then
+      Exit;
+    S := Copy(S, 1, P - 1);
+  end
+  else
+  begin
+    P := Pos(' ', S);
+    if P > 0 then
+      S := Copy(S, 1, P - 1);
+  end;
+  Result := Lowercase(ExtractFileName(S));
+end;
+
+// The service wrappers of the .NET 10 and the .NET Framework 4.8 build
+function IsServyWrapperExe(const ExeName: String): Boolean;
+begin
+  Result := (ExeName = 'servy.service.exe') or (ExeName = 'servy.service.cli.exe')
+    or (ExeName = 'servy.service.net48.exe') or (ExeName = 'servy.service.cli.net48.exe');
+end;
+
+function IsServyHostExe(const ExeName: String): Boolean;
+begin
+  Result := (ExeName = 'servy.host.exe') or (ExeName = 'servy.host.net48.exe');
+end;
+
+function DependsOnServyHost(const ServiceKey: String): Boolean;
+var
+  Dependencies: String;
+begin
+  Result := False;
+  if RegQueryMultiStringValue(HKLM64, ServiceKey, 'DependOnService', Dependencies) then
+    Result := Pos(#0 + 'servy' + #0, #0 + Lowercase(Dependencies) + #0) > 0;
+end;
+
+// True when a service runs a Servy wrapper or depends on the Servy host service. When the services
+// cannot be listed, it answers True, so nothing is removed.
+function ServyManagedServiceRemains(): Boolean;
+var
+  Names: TArrayOfString;
+  I: Integer;
+  ServiceKey, ImagePath: String;
+begin
+  Result := True;
+  if not RegGetSubkeyNames(HKLM64, 'SYSTEM\CurrentControlSet\Services', Names) then
+  begin
+    Log('Could not list the installed services; the Servy service and the extracted binaries are kept.');
+    Exit;
+  end;
+
+  for I := 0 to GetArrayLength(Names) - 1 do
+  begin
+    if CompareText(Names[I], 'Servy') <> 0 then
+    begin
+      ServiceKey := 'SYSTEM\CurrentControlSet\Services\' + Names[I];
+      if RegQueryStringValue(HKLM64, ServiceKey, 'ImagePath', ImagePath) and IsServyWrapperExe(CommandLineExeName(ImagePath)) then
+      begin
+        Log('Servy-managed service remains: ' + Names[I]);
+        Exit;
+      end;
+
+      if DependsOnServyHost(ServiceKey) then
+      begin
+        Log('Service depending on the Servy service remains: ' + Names[I]);
+        Exit;
+      end;
+    end;
+  end;
+
+  Result := False;
+end;
+
+// Deletes the files of one pattern directly in Folder (not in its subfolders)
+procedure DeleteFilesMatching(const Folder, Pattern: String);
+var
+  FindRec: TFindRec;
+begin
+  if FindFirst(Folder + '\' + Pattern, FindRec) then
+  begin
+    try
+      repeat
+        if FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY = 0 then
+        begin
+          if DeleteFile(Folder + '\' + FindRec.Name) then
+            Log('Deleted ' + Folder + '\' + FindRec.Name)
+          else
+            Log('Could not delete ' + Folder + '\' + FindRec.Name);
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
+procedure RemoveServyHostWhenUnused();
+var
+  ImagePath, DataDir: String;
+  ResultCode: Integer;
+begin
+  if ServyManagedServiceRemains() then
+  begin
+    Log('Servy-managed services remain; the Servy service and the binaries in the data folder are kept.');
+    Exit;
+  end;
+
+  if RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Services\Servy', 'ImagePath', ImagePath) then
+  begin
+    // Never remove a service that only borrows the name (#7294)
+    if IsServyHostExe(CommandLineExeName(ImagePath)) then
+    begin
+      // net stop waits for the service to stop, so its executable can be deleted afterwards
+      Exec(ExpandConstant('{sys}\net.exe'), 'stop Servy', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      if Exec(ExpandConstant('{sys}\sc.exe'), 'delete Servy', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
+        Log('Removed the Servy service.')
+      else
+        Log('Could not remove the Servy service. sc.exe exit code: ' + IntToStr(ResultCode));
+    end
+    else
+      Log('The service named Servy runs ' + ImagePath + ', not the Servy host; it is left untouched.');
+  end;
+
+  // Executables and DLLs only: db\, security\, logs\ and the .json / .config files are kept
+  DataDir := ExpandConstant('{commonappdata}\Servy');
+  DeleteFilesMatching(DataDir, '*.exe');
+  DeleteFilesMatching(DataDir, '*.dll');
+end;
+
 // PATH removal and registry cleanup on uninstall
 procedure CurUninstallStepChanged(Step: TUninstallStep);
 var
@@ -685,6 +831,8 @@ begin
 
   if Step = usPostUninstall then
   begin
+    // After [UninstallRun] closed the apps
+    RemoveServyHostWhenUnused();
     RegDeleteKeyIncludingSubkeys(HKLM64, 'Software\Servy');
   end;
 end;

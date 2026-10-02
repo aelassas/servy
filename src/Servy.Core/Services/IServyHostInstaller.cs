@@ -10,10 +10,20 @@ namespace Servy.Core.Services
     public interface IServyHostInstaller
     {
         /// <summary>
-        /// Determines whether the Servy host service is installed and running (or starting).
+        /// Reads what is registered under the Servy host service name. Only a <see cref="ServyHostServiceState.ServyHost"/>
+        /// service is ever stopped, started or reconfigured; a service of the same name that runs another program is
+        /// left untouched.
         /// </summary>
-        /// <returns><see langword="true"/> when it is running or start-pending.</returns>
-        bool IsRunning();
+        /// <returns>The state of the name.</returns>
+        ServyHostServiceState GetState();
+
+        /// <summary>
+        /// Lists the running Servy services: the ones the wrappers of this build run, and every running service that
+        /// depends on the Servy host service, which includes the services the other build (net10 or net48) installed.
+        /// </summary>
+        /// <param name="serviceHelper">Lists the services this build's wrappers run.</param>
+        /// <returns>The service names, without duplicates.</returns>
+        List<string> GetRunningServyServices(IServiceHelper serviceHelper);
 
         /// <summary>
         /// Stops the Servy host service when it is running and waits for it to stop. The Servy services depend on it,
@@ -45,7 +55,10 @@ namespace Servy.Core.Services
         /// <param name="hostExePath">The full path of the host executable this build extracted.</param>
         /// <param name="serviceHelper">Lists, stops and starts the Servy services when the host has to be moved.</param>
         /// <param name="cancellationToken">A token that stops the operation.</param>
-        /// <returns>The outcome; never throws except on cancellation.</returns>
+        /// <returns>
+        /// The outcome; never throws except on cancellation. It is a failure, with nothing changed, when the name is taken
+        /// by a service that does not run the Servy host or whose executable cannot be read.
+        /// </returns>
         Task<OperationResult> EnsureInstalledAndRunningAsync(string hostExePath, IServiceHelper serviceHelper, CancellationToken cancellationToken = default);
 
         /// <summary>

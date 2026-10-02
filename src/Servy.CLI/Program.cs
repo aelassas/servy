@@ -199,74 +199,90 @@ namespace Servy.CLI
                         var sh = new ServiceHelper(serviceRepository);
                         var resourceHelper = new ResourceHelper(sh, processKiller);
 
-                        // Copy service executable from embedded resources
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true, cancellationToken: cts.Token))
-                        {
-                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyServiceCLIExe}'. " +
-                                "CLI cannot start safely - see file log for details.");
-                        }
-
-                        // Copy the restarter next to the service wrapper, which launches it from its own folder.
-                        // No running service holds it open, so there is nothing to stop before overwriting it.
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "exe", false, cancellationToken: cts.Token))
-                        {
-                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyRestarterExe}'. " +
-                                "CLI cannot start safely - see file log for details.");
-                        }
-
-                        // Copy the Servy host service. Replacing it stops every running Servy service and the host
-                        // first, and starts them again afterwards.
                         var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
-                        if (!await resourceHelper.CopyServyHostAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, hostInstaller, cts.Token))
-                        {
-                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
-                                "CLI cannot start safely - see file log for details.");
-                        }
 
-                        // Copy Sysinternals from embedded resources
-                        var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
-                            ? AppConfig.HandleExeARM64FileName
-                            : AppConfig.HandleExeX64FileName;
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, handleExeFileName, "exe", false, cancellationToken: cts.Token))
+                        // Replacing the service wrapper or the host needs every running Servy service and the host stopped.
+                        // They are stopped once for all the files and the host reinstall, and started once at the end.
+                        var pause = new ServyServicesPause(sh, hostInstaller);
+                        try
                         {
-                            Logger.Warn($"Failed copying embedded resource: {handleExeFileName}; process-tree handle features may be degraded.");
-                        }
+                            if (resourceHelper.IsExtractionNeeded(ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe")
+                                || resourceHelper.IsExtractionNeeded(ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
+                            {
+                                await pause.PauseAsync(cts.Token);
+                            }
 
-#if DEBUG
-                        // Copy debug symbols from embedded resources (only in debug builds)
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
-                        {
-                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
-                        }
+                            // Copy service executable from embedded resources
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", false, cancellationToken: cts.Token))
+                            {
+                                throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyServiceCLIExe}'. " +
+                                    "CLI cannot start safely - see file log for details.");
+                            }
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: cts.Token))
-                        {
-                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
-                        }
+                            // Copy the restarter next to the service wrapper, which launches it from its own folder.
+                            // No running service holds it open, so there is nothing to stop before overwriting it.
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "exe", false, cancellationToken: cts.Token))
+                            {
+                                throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyRestarterExe}'. " +
+                                    "CLI cannot start safely - see file log for details.");
+                            }
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: cts.Token))
-                        {
-                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
+                            // Copy the Servy host service
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe", false, cancellationToken: cts.Token))
+                            {
+                                throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
+                                    "CLI cannot start safely - see file log for details.");
+                            }
+
+                            // Copy Sysinternals from embedded resources
+                            var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
+                                ? AppConfig.HandleExeARM64FileName
+                                : AppConfig.HandleExeX64FileName;
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, handleExeFileName, "exe", false, cancellationToken: cts.Token))
+                            {
+                                Logger.Warn($"Failed copying embedded resource: {handleExeFileName}; process-tree handle features may be degraded.");
+                            }
+
+    #if DEBUG
+                            // Copy debug symbols from embedded resources (only in debug builds)
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
+                            {
+                                Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                            }
+
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: cts.Token))
+                            {
+                                Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
+                            }
+
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: cts.Token))
+                            {
+                                Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
+                            }
+    #else
+                            // A file newly extracted into the vault carries no grant for the service accounts, so grant them
+                            // their access to it again. Debug builds extract next to the executable instead.
+                            if (resourceHelper.HasCopiedResources)
+                            {
+                                await new ServyExePermissionsHardener().HardenServiceAccountsAsync(serviceRepository, cts.Token);
+                            }
+    #endif
+                            // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
+                            var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), sh, cts.Token);
+                            if (hostResult.IsSuccess)
+                            {
+                                // Services installed by an earlier version do not depend on the host yet
+                                var installed = await serviceRepository.GetAllAsync(decrypt: false, cts.Token);
+                                await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), cts.Token);
+                            }
+                            else
+                            {
+                                Logger.Warn($"{hostResult.ErrorMessage} Servy services cannot start until the '{AppConfig.ServyHostServiceName}' service runs.");
+                            }
                         }
-#else
-                        // A file newly extracted into the vault carries no grant for the service accounts, so grant them
-                        // their access to it again. Debug builds extract next to the executable instead.
-                        if (resourceHelper.HasCopiedResources)
+                        finally
                         {
-                            await new ServyExePermissionsHardener().HardenServiceAccountsAsync(serviceRepository, cts.Token);
-                        }
-#endif
-                        // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
-                        var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), sh, cts.Token);
-                        if (hostResult.IsSuccess)
-                        {
-                            // Services installed by an earlier version do not depend on the host yet
-                            var installed = await serviceRepository.GetAllAsync(decrypt: false, cts.Token);
-                            await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), cts.Token);
-                        }
-                        else
-                        {
-                            Logger.Warn($"{hostResult.ErrorMessage} Servy services cannot start until the '{AppConfig.ServyHostServiceName}' service runs.");
+                            await pause.ResumeAsync();
                         }
                     }
 

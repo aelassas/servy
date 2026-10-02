@@ -370,6 +370,19 @@ namespace Servy.Core.UnitTests.Helpers
         /// Covers Branch 1: string.IsNullOrWhiteSpace(serviceName)
         /// </summary>
         [Theory]
+        [InlineData("Servy", true)]
+        [InlineData("servy", true)]
+        [InlineData(" SERVY ", true)]
+        [InlineData("ServyApp", false)]
+        [InlineData("Servy.Host", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void IsReservedForServyHost_MatchesOnlyTheHostServiceName(string? name, bool expected)
+        {
+            Assert.Equal(expected, Helper.IsReservedForServyHost(name));
+        }
+
+        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("    ")]

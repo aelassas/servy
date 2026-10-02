@@ -52,6 +52,9 @@
   <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
     <value>'{0}' is a name reserved by Windows and cannot be used in a service name.</value>
   </data>
+  <data name="Msg_ServiceNameReservedForServyHost" xml:space="preserve">
+    <value>The service name '{0}' is reserved for the Servy host service (Servy.Host.exe). Choose another name.</value>
+  </data>
 
   <data name="Msg_ValidationPassed" xml:space="preserve">
     <value>Validation passed for service '{0}'.</value>

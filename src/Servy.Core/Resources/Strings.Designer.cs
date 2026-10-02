@@ -1024,6 +1024,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The service name &apos;{0}&apos; is reserved for the Servy host service (Servy.Host.exe). Choose another name..
+        /// </summary>
+        public static string Msg_ServiceNameReservedForServyHost {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameReservedForServyHost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The specified service was not found..
         /// </summary>
         public static string Msg_ServiceNotFound {

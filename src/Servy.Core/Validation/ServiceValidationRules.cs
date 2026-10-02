@@ -58,6 +58,13 @@ namespace Servy.Core.Validation
                 return result;
             }
 
+            // The Servy host service (Servy.Host.exe) owns this name, and every Servy service depends on it
+            if (Helper.IsReservedForServyHost(dto.Name))
+            {
+                result.Errors.Add(string.Format(Strings.Msg_ServiceNameReservedForServyHost, dto.Name));
+                return result;
+            }
+
             // Length Bounds
             if (dto.DisplayName?.Length > AppConfig.MaxDisplayNameLength)
                 result.Errors.Add(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));

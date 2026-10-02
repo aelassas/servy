@@ -766,6 +766,15 @@ namespace Servy.Core.Helpers
             name.IndexOfAny(InvalidServiceChars) < 0 && !name.Any(IsDisallowedNameChar);
 
         /// <summary>
+        /// Determines whether a service name is the one Servy reserves for its host service
+        /// (<see cref="AppConfig.ServyHostServiceName"/>), compared case-insensitively as the Service Control Manager does.
+        /// </summary>
+        /// <param name="serviceName">The proposed service name.</param>
+        /// <returns><see langword="true"/> when no new service may be installed or imported under this name.</returns>
+        public static bool IsReservedForServyHost(string? serviceName)
+            => serviceName != null && string.Equals(serviceName.Trim(), AppConfig.ServyHostServiceName, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Validates whether a proposed string can be safely used as a Windows Service name.
         /// </summary>
         /// <param name="serviceName">The unique identifier proposed for the service.</param>
