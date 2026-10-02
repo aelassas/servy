@@ -1,11 +1,14 @@
 using Moq;
 using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Native;
 using Servy.Core.Services;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +31,11 @@ namespace Servy.Core.UnitTests.Services
         private readonly Mock<IWin32ErrorProvider> _errors = new Mock<IWin32ErrorProvider>();
         private readonly Mock<IServiceControllerProvider> _controllers = new Mock<IServiceControllerProvider>();
         private readonly Mock<IServiceControllerWrapper> _host = new Mock<IServiceControllerWrapper>();
+        private readonly Mock<IServiceHelper> _serviceHelper = new Mock<IServiceHelper>();
+        private readonly List<IntPtr> _strings = new List<IntPtr>();
         private readonly string _hostExe;
+
+        private delegate void QueryConfigCallback(SafeServiceHandle handle, IntPtr buffer, int size, out int required);
 
         public ServyHostInstallerTests()
         {
@@ -41,6 +48,8 @@ namespace Servy.Core.UnitTests.Services
 
         public override void Dispose()
         {
+            foreach (var ptr in _strings)
+                Marshal.FreeHGlobal(ptr);
             _handles.Dispose();
             base.Dispose();
         }
@@ -84,7 +93,7 @@ namespace Servy.Core.UnitTests.Services
             HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
 
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.True(result.IsSuccess, result.ErrorMessage);
@@ -107,7 +116,7 @@ namespace Servy.Core.UnitTests.Services
             HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.StartPending, ServiceControllerStatus.Running);
 
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.True(result.IsSuccess, result.ErrorMessage);
@@ -133,7 +142,7 @@ namespace Servy.Core.UnitTests.Services
             HostStatuses(ServiceControllerStatus.Running);
 
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -144,7 +153,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task EnsureInstalledAndRunningAsync_ExecutableMissing_FailsWithoutTouchingTheScm()
         {
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(Path.Combine(TempDirectory, "absent.exe"), CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(Path.Combine(TempDirectory, "absent.exe"), _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.False(result.IsSuccess);
@@ -162,7 +171,7 @@ namespace Servy.Core.UnitTests.Services
             _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
 
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.False(result.IsSuccess);
@@ -178,7 +187,7 @@ namespace Servy.Core.UnitTests.Services
             _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
 
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.False(result.IsSuccess);
@@ -198,7 +207,7 @@ namespace Servy.Core.UnitTests.Services
             HostStatuses(ServiceControllerStatus.Stopped);
 
             // Act
-            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, CancellationToken.None);
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
 
             // Assert
             Assert.False(result.IsSuccess);
@@ -208,7 +217,192 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task EnsureInstalledAndRunningAsync_BlankPath_Throws()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => Create().EnsureInstalledAndRunningAsync("  ", CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentException>(() => Create().EnsureInstalledAndRunningAsync("  ", _serviceHelper.Object, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_NullServiceHelper_Throws()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => Create().EnsureInstalledAndRunningAsync(_hostExe, null, CancellationToken.None));
+        }
+
+        #endregion
+
+        #region Registered path
+
+        /// <summary>
+        /// Makes the Service Control Manager report the host service as registered with <paramref name="binaryPath"/>,
+        /// through the two-pass QueryServiceConfig the installer uses, and accept any reconfiguration.
+        /// </summary>
+        private SafeServiceHandle RegisteredAs(string binaryPath)
+        {
+            var queryHandle = _handles.Service(7);
+            var existing = _handles.Service(3);
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(() => _handles.Scm(1));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", SERVICE_QUERY_CONFIG)).Returns(queryHandle);
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", HostAccess)).Returns(existing);
+            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
+            int size = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            var path = Marshal.StringToHGlobalUni(binaryPath);
+            _strings.Add(path);
+            _api.Setup(a => a.QueryServiceConfig(queryHandle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = size))
+                .Returns(false);
+            _api.Setup(a => a.QueryServiceConfig(queryHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) =>
+                {
+                    required = size;
+                    Marshal.StructureToPtr(new QUERY_SERVICE_CONFIG { lpBinaryPathName = path }, p, false);
+                }))
+                .Returns(true);
+            return existing;
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_RegisteredWithTheExpectedPath_TouchesNoService()
+        {
+            // Arrange
+            var existing = RegisteredAs($"\"{_hostExe}\"");
+            HostStatuses(ServiceControllerStatus.Running);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _host.Verify(h => h.Stop(), Times.Never);
+            _host.Verify(h => h.Start(), Times.Never);
+            _serviceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceHelper.Verify(s => s.StartServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            _api.Verify(a => a.ChangeServiceConfig(existing, SERVICE_NO_CHANGE, (uint)SERVICE_AUTO_START, SERVICE_NO_CHANGE, $"\"{_hostExe}\"",
+                null, IntPtr.Zero, null, ServiceAccounts.LocalSystem, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_RegisteredWithAnotherPath_StopsTheServicesAndTheHostRepointsItAndStartsThemAgain()
+        {
+            // Arrange: the other build (net48) registered its own host; one of its services is not run by this build's
+            // wrappers but depends on the host, so it is found through its dependency
+            var calls = new List<string>();
+            var existing = RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"");
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            var net48Service = new Mock<IServiceControllerWrapper>();
+            net48Service.SetupGet(s => s.ServiceName).Returns("Net48Service");
+            net48Service.SetupGet(s => s.Status).Returns(ServiceControllerStatus.Running);
+            net48Service.Setup(s => s.GetDependencyNames()).Returns(new[] { "Servy" });
+            var unrelated = new Mock<IServiceControllerWrapper>();
+            unrelated.SetupGet(s => s.ServiceName).Returns("Spooler");
+            unrelated.SetupGet(s => s.Status).Returns(ServiceControllerStatus.Running);
+            unrelated.Setup(s => s.GetDependencyNames()).Returns(new[] { "RPCSS" });
+            var uiServiceAgain = new Mock<IServiceControllerWrapper>();
+            uiServiceAgain.SetupGet(s => s.ServiceName).Returns("UiService");
+            uiServiceAgain.SetupGet(s => s.Status).Returns(ServiceControllerStatus.Running);
+            uiServiceAgain.Setup(s => s.GetDependencyNames()).Returns(new[] { "Servy" });
+            _controllers.Setup(c => c.GetServices()).Returns(new[] { net48Service.Object, unrelated.Object, uiServiceAgain.Object });
+
+            IEnumerable<string> stopped = null;
+            IEnumerable<string> started = null;
+            _serviceHelper.Setup(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Callback<IEnumerable<string>, CancellationToken>((names, ct) => { stopped = names.ToList(); calls.Add("stop services"); })
+                .Returns(Task.CompletedTask);
+            _serviceHelper.Setup(s => s.StartServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Callback<IEnumerable<string>, CancellationToken>((names, ct) => { started = names.ToList(); calls.Add("start services"); })
+                .Returns(Task.CompletedTask);
+            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Callback(() => calls.Add("repoint"))
+                .Returns(true);
+            _host.Setup(h => h.Stop()).Callback(() => calls.Add("stop host"));
+            _host.Setup(h => h.Start()).Callback(() => calls.Add("start host"));
+            HostStatuses(ServiceControllerStatus.Running, ServiceControllerStatus.StopPending, ServiceControllerStatus.Stopped,
+                ServiceControllerStatus.Stopped, ServiceControllerStatus.StartPending, ServiceControllerStatus.Running);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Equal(new[] { "stop services", "stop host", "repoint", "start host", "start services" }, calls);
+            Assert.Equal(new[] { "UiService", "Net48Service" }, stopped);
+            Assert.Equal(stopped, started);
+            _api.Verify(a => a.ChangeServiceConfig(existing, SERVICE_NO_CHANGE, (uint)SERVICE_AUTO_START, SERVICE_NO_CHANGE, $"\"{_hostExe}\"",
+                null, IntPtr.Zero, null, ServiceAccounts.LocalSystem, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_HostFailsToStartFromTheNewPath_StillStartsTheStoppedServices()
+        {
+            // Arrange
+            RegisteredAs("\"C:\\Dev\\Servy\\bin\\Debug\\Servy.Host.exe\"");
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            _controllers.Setup(c => c.GetServices()).Returns(Array.Empty<IServiceControllerWrapper>());
+            HostStatuses(ServiceControllerStatus.Stopped);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert: the failure is reported, and the services are not left stopped
+            Assert.False(result.IsSuccess);
+            Assert.Contains("did not reach the Running state", result.ErrorMessage);
+            _serviceHelper.Verify(s => s.StopServicesAsync(It.Is<IEnumerable<string>>(n => n.Single() == "UiService"), It.IsAny<CancellationToken>()), Times.Once);
+            _serviceHelper.Verify(s => s.StartServicesAsync(It.Is<IEnumerable<string>>(n => n.Single() == "UiService"), CancellationToken.None), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_RegisteredPathUnreadable_KeepsTheServicesRunning()
+        {
+            // Arrange: the configuration cannot be read, which must not stop every service on each start of the app
+            var scm = _handles.Scm(1);
+            var existing = _handles.Service(3);
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scm);
+            _api.Setup(a => a.OpenService(scm, "Servy", SERVICE_QUERY_CONFIG)).Returns(_handles.Service(8));
+            _api.Setup(a => a.OpenService(scm, "Servy", HostAccess)).Returns(existing);
+            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            HostStatuses(ServiceControllerStatus.Running);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _serviceHelper.Verify(s => s.GetRunningServyServices(), Times.Never);
+            _host.Verify(h => h.Stop(), Times.Never);
+        }
+
+        [Fact]
+        public void GetRegisteredExecutablePath_NotInstalled_ReturnsNull()
+        {
+            // Arrange
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(_handles.Scm(1));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", SERVICE_QUERY_CONFIG)).Returns(_handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            // Act & Assert
+            Assert.Null(Create().GetRegisteredExecutablePath());
+        }
+
+        [Fact]
+        public void GetRegisteredExecutablePath_Installed_ReturnsTheCommandLine()
+        {
+            RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"");
+
+            Assert.Equal("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"", Create().GetRegisteredExecutablePath());
+        }
+
+        [Theory]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
+        [InlineData("C:\\ProgramData\\Servy\\Servy.Host.exe", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
+        [InlineData("  \"c:\\programdata\\SERVY\\servy.host.EXE\" ", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\" --flag", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
+        [InlineData("\"C:\\Dev\\bin\\Debug\\Servy.Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
+        [InlineData("\"C:\\Pro|gram\\Servy.Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
+        public void IsSameExecutable_ComparesTheCommandLinesExecutable(string commandLine, string exePath, bool expected)
+        {
+            Assert.Equal(expected, ServyHostInstaller.IsSameExecutable(commandLine, exePath));
         }
 
         #endregion

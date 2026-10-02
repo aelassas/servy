@@ -122,17 +122,36 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> EnsureInstalledAndRunningAsync(string hostExePath, CancellationToken cancellationToken = default)
+        public async Task<OperationResult> EnsureInstalledAndRunningAsync(string hostExePath, IServiceHelper serviceHelper, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(hostExePath))
                 throw new ArgumentException("The path of the host executable is required.", nameof(hostExePath));
+            if (serviceHelper == null) throw new ArgumentNullException(nameof(serviceHelper));
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            var stoppedServices = new List<string>();
             try
             {
                 if (!File.Exists(hostExePath))
                     return Fail($"'{hostExePath}' does not exist, so the '{AppConfig.ServyHostServiceName}' service cannot be installed.");
+
+                // Installed with another executable (a switch between the net10 and the net48 build, or between Debug and
+                // Release): stop every Servy service and the host before the service is pointed at this build's executable
+                var registeredPath = GetRegisteredExecutablePath();
+                if (registeredPath != null && !IsSameExecutable(registeredPath, hostExePath))
+                {
+                    Logger.Info($"The '{AppConfig.ServyHostServiceName}' service runs '{registeredPath}' instead of '{hostExePath}'; restarting it from the expected path.");
+
+                    stoppedServices = GetRunningServyServices(serviceHelper);
+                    if (stoppedServices.Count > 0)
+                    {
+                        Logger.Info($"Stopping services before moving the '{AppConfig.ServyHostServiceName}' service: {string.Join(", ", stoppedServices)}");
+                        await serviceHelper.StopServicesAsync(stoppedServices, cancellationToken);
+                    }
+
+                    await StopAsync(cancellationToken);
+                }
 
                 EnsureInstalledAndAutomatic(hostExePath);
                 await StartAsync(cancellationToken);
@@ -146,6 +165,21 @@ namespace Servy.Core.Services
             {
                 Logger.Error($"Failed to install or start the '{AppConfig.ServyHostServiceName}' service.", ex);
                 return OperationResult.Failure($"Failed to install or start the '{AppConfig.ServyHostServiceName}' service: {ex.Message}");
+            }
+            finally
+            {
+                if (stoppedServices.Count > 0)
+                {
+                    try
+                    {
+                        Logger.Info($"Starting the services stopped to move the '{AppConfig.ServyHostServiceName}' service: {string.Join(", ", stoppedServices)}");
+                        await serviceHelper.StartServicesAsync(stoppedServices, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Some services failed to restart after moving the '{AppConfig.ServyHostServiceName}' service.", ex);
+                    }
+                }
             }
         }
 
@@ -214,6 +248,130 @@ namespace Servy.Core.Services
             }
 
             return Task.FromResult(updated);
+        }
+
+        /// <summary>
+        /// Reads the executable the Servy host service is registered with.
+        /// </summary>
+        /// <returns>The command line the Service Control Manager runs, or <see langword="null"/> when the service is not
+        /// installed or its configuration cannot be read (a failure is logged).</returns>
+        internal string GetRegisteredExecutablePath()
+        {
+            try
+            {
+                using (var scm = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT))
+                {
+                    if (scm == null || scm.IsInvalid)
+                    {
+                        Logger.Warn($"Could not open the Service Control Manager to read the '{AppConfig.ServyHostServiceName}' service's executable. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                        return null;
+                    }
+
+                    using (var service = _windowsServiceApi.OpenService(scm, AppConfig.ServyHostServiceName, SERVICE_QUERY_CONFIG))
+                    {
+                        if (service == null || service.IsInvalid)
+                        {
+                            var err = _win32ErrorProvider.GetLastWin32Error();
+                            if (err != ERROR_SERVICE_DOES_NOT_EXIST)
+                                Logger.Warn($"Could not open the '{AppConfig.ServyHostServiceName}' service to read its executable. Win32 error: {err}");
+                            return null;
+                        }
+
+                        // Pass 1 reports the size; pass 2 fills the buffer
+                        _windowsServiceApi.QueryServiceConfig(service, IntPtr.Zero, 0, out int bytesNeeded);
+                        if (bytesNeeded <= 0)
+                        {
+                            Logger.Warn($"Could not read the '{AppConfig.ServyHostServiceName}' service's configuration. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                            return null;
+                        }
+
+                        IntPtr buffer = Marshal.AllocHGlobal(bytesNeeded);
+                        try
+                        {
+                            if (!_windowsServiceApi.QueryServiceConfig(service, buffer, bytesNeeded, out _))
+                            {
+                                Logger.Warn($"Could not read the '{AppConfig.ServyHostServiceName}' service's configuration. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                                return null;
+                            }
+
+                            var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(buffer);
+                            return Marshal.PtrToStringUni(config.lpBinaryPathName);
+                        }
+                        finally
+                        {
+                            Marshal.FreeHGlobal(buffer);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Could not read the '{AppConfig.ServyHostServiceName}' service's executable: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a service command line runs the given executable.
+        /// </summary>
+        /// <param name="commandLine">The command line the Service Control Manager runs, quoted or not.</param>
+        /// <param name="exePath">The expected executable.</param>
+        /// <returns><see langword="true"/> when the command line's executable is <paramref name="exePath"/>.</returns>
+        internal static bool IsSameExecutable(string commandLine, string exePath)
+        {
+            var registered = commandLine.Trim();
+            if (registered.StartsWith("\"", StringComparison.Ordinal))
+            {
+                int end = registered.IndexOf('"', 1);
+                registered = end > 0 ? registered.Substring(1, end - 1) : registered.Substring(1);
+            }
+
+            try
+            {
+                return string.Equals(Path.GetFullPath(registered), Path.GetFullPath(exePath), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is PathTooLongException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lists the running Servy services: the ones this build's wrappers run, and every running service that depends on
+        /// the Servy host service, which includes the services the other build (net10 or net48) installed.
+        /// </summary>
+        /// <param name="serviceHelper">Lists the services this build's wrappers run.</param>
+        /// <returns>The service names, without duplicates.</returns>
+        private List<string> GetRunningServyServices(IServiceHelper serviceHelper)
+        {
+            var names = new List<string>(serviceHelper.GetRunningServyServices() ?? new List<string>());
+            try
+            {
+                foreach (var sc in _serviceControllerProvider.GetServices())
+                {
+                    using (sc)
+                    {
+                        try
+                        {
+                            if (sc.Status != ServiceControllerStatus.Running && sc.Status != ServiceControllerStatus.StartPending)
+                                continue;
+
+                            if (sc.GetDependencyNames().Contains(AppConfig.ServyHostServiceName, StringComparer.OrdinalIgnoreCase))
+                                names.Add(sc.ServiceName);
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Removed while enumerating
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Could not list the services that depend on the '{AppConfig.ServyHostServiceName}' service: {ex.Message}");
+            }
+
+            return names.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         /// <summary>
