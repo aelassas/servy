@@ -347,6 +347,12 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Just loads the history and returns the state without starting the tailing loop.
         /// </summary>
+        /// <param name="path">The full filesystem path to the log file. A null, empty or missing path yields an empty history.</param>
+        /// <param name="type">The stream type (StdOut/StdErr) assigned to the returned <see cref="LogLine"/> objects.</param>
+        /// <param name="maxLines">Maximum number of historical lines to retrieve; clamped to the range 0 to <see cref="AppConfig.LogTailerMaxSafeLines"/>.</param>
+        /// <param name="cancellationToken">A token used to cancel the history load operation.</param>
+        /// <returns>A <see cref="HistoryResult"/> holding the lines read, the byte position to start tailing from (see <see cref="RunFromPositionAsync"/>), and the file's UTC creation time.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
         public async Task<HistoryResult> GetHistoryAsync(string? path, LogType type, int maxLines, CancellationToken cancellationToken = default)
         {
             if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
