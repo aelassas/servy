@@ -81,6 +81,9 @@ namespace Servy.Service.UnitTests.Native
             // Arrange
             var service = BuildService();
             TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+            // A pre-shutdown teardown leaves the pulse counter non-zero before it reports STOPPED (#6050),
+            // so the checkpoint assertion below only pins the zeroing when _checkPoint is not already 0.
+            TestReflection.SetField(service, "_checkPoint", 7u);
             service.ExitCode = 42;
 
             // Act
@@ -88,6 +91,7 @@ namespace Servy.Service.UnitTests.Native
 
             // Assert
             var status = Assert.Single(_scm.StatusCalls);
+            Assert.Equal(NativeMethods.SERVICE_STOPPED, status.dwCurrentState);
             Assert.Equal(AppConfig.ServiceSpecificErrorCode, status.dwWin32ExitCode);
             Assert.Equal(42, status.dwServiceSpecificExitCode);
             Assert.Equal(0, status.dwControlsAccepted);
@@ -106,6 +110,7 @@ namespace Servy.Service.UnitTests.Native
 
             // Assert
             var status = Assert.Single(_scm.StatusCalls);
+            Assert.Equal(NativeMethods.SERVICE_STOPPED, status.dwCurrentState);
             Assert.Equal(0, status.dwWin32ExitCode);
             Assert.Equal(0, status.dwServiceSpecificExitCode);
             Assert.Equal(0, status.dwControlsAccepted);
@@ -124,6 +129,7 @@ namespace Servy.Service.UnitTests.Native
 
             // Assert
             var status = Assert.Single(_scm.StatusCalls);
+            Assert.Equal(NativeMethods.SERVICE_RUNNING, status.dwCurrentState);
             Assert.Equal(NativeMethods.SERVICE_WIN32_OWN_PROCESS, status.dwServiceType);
             Assert.Equal(NativeMethods.SERVICE_ACCEPT_STOP | NativeMethods.SERVICE_ACCEPT_PRESHUTDOWN, status.dwControlsAccepted);
             Assert.Equal(0, status.dwCheckPoint);
@@ -142,6 +148,7 @@ namespace Servy.Service.UnitTests.Native
 
             // Assert
             var status = Assert.Single(_scm.StatusCalls);
+            Assert.Equal(NativeMethods.SERVICE_STOP_PENDING, status.dwCurrentState);
             Assert.Equal(NativeMethods.SERVICE_ACCEPT_STOP | NativeMethods.SERVICE_ACCEPT_PRESHUTDOWN, status.dwControlsAccepted);
             Assert.Equal(7, status.dwCheckPoint);
             Assert.Equal(12345, status.dwWaitHint);
