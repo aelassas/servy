@@ -110,11 +110,11 @@ namespace Servy.Core.IntegrationTests.Helpers
             try
             {
                 // Act
-                _processKiller.KillChildren(parent!.Id);
+                _processKiller.KillChildren(parent.Id);
 
                 // Polling loop with refreshes to handle OS termination latency and eliminate CI flake
                 bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
-                parent!.Refresh();
+                parent.Refresh();
 
                 // Assert
                 Assert.True(childExited, "The child process should have been terminated.");
@@ -137,13 +137,13 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             // Arrange
             var (parent, child) = SpawnProcessTree();
-            int parentId = parent!.Id;
-            int childId = child!.Id;
+            int parentId = parent.Id;
+            int childId = child.Id;
 
             try
             {
                 // Kill the child first so it is already exited when WalkAndKillChildren evaluates it
-                child!.Kill();
+                child.Kill();
                 child.WaitForExit(1000);
 
                 // Act & Assert
@@ -167,8 +167,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             // Arrange
             var (parent, child) = SpawnProcessTree();
-            int parentId = parent!.Id;
-            int childId = child!.Id;
+            int parentId = parent.Id;
+            int childId = child.Id;
 
             try
             {
@@ -203,7 +203,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             // Arrange
             var (parent, child) = SpawnProcessTree();
-            int childId = child!.Id;
+            int childId = child.Id;
 
             try
             {
@@ -211,7 +211,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 bool result = _processKiller.KillProcessTreeAndParents(childId, killParents: false);
 
                 bool childExited = WaitForProcessExit(child, TestTimeouts.CiGenerousMs);
-                parent!.Refresh();
+                parent.Refresh();
 
                 // Assert
                 Assert.True(childExited, "The target child process should have been terminated.");
@@ -259,10 +259,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             // 1. Spawn the process
             var lockingProcess = SpawnFileLockingProcess(testFile);
 
-            // 2. Ensure the process has not crashed before we proceed
-            if (lockingProcess == null || lockingProcess.HasExited)
+            // 2. The handshake succeeded; make sure the locker did not exit right after printing LOCKED
+            if (lockingProcess.HasExited)
             {
-                throw new InvalidOperationException("Failed to spawn a stable file-locking process.");
+                throw new InvalidOperationException("The file-locking process exited right after its LOCKED handshake.");
             }
 
             // 3. Wait for the child process to acquire the file lock.
@@ -366,7 +366,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <summary>
         /// Spawns a PowerShell instance that subsequently launches a nested PowerShell task.
         /// </summary>
-        private (Process? Parent, Process? Child) SpawnProcessTree()
+        private (Process Parent, Process Child) SpawnProcessTree()
         {
             string psPath = PowerShellPath;
 
@@ -424,7 +424,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <summary>
         /// Spawns a PowerShell instance that opens an exclusive read lock on the specified file path.
         /// </summary>
-        private Process? SpawnFileLockingProcess(string filePath)
+        private Process SpawnFileLockingProcess(string filePath)
         {
             string psScript = $@"
                 $fs = [System.IO.File]::Open('{filePath}', 'Open', 'Read', 'None')
