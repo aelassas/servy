@@ -528,17 +528,47 @@ namespace Servy.Core.UnitTests.Services
 
         #region EnsureServicesDependOnHostAsync
 
+        /// <summary>
+        /// Makes the Service Control Manager report <paramref name="dependencies"/> as the raw
+        /// <c>lpDependencies</c> of <paramref name="name"/>, through the two-pass <c>QueryServiceConfig</c> the
+        /// installer reads them with, and hand out a handle opened for query and reconfiguration.
+        /// </summary>
+        /// <returns>The handle the installer reconfigures the service through.</returns>
+        private SafeServiceHandle DependsOn(SafeScmHandle scm, string name, int handleId, params string[] dependencies)
+        {
+            var handle = _handles.Service(handleId);
+            _api.Setup(a => a.OpenService(scm, name, SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(handle);
+
+            // A MULTI_SZ: each entry null-terminated, the list closed by an empty one. No dependencies at all is a
+            // null pointer, which is what the SCM reports for a service that has none.
+            var multiSz = IntPtr.Zero;
+            if (dependencies.Length > 0)
+            {
+                multiSz = Marshal.StringToHGlobalUni(string.Join("\0", dependencies) + "\0");
+                _strings.Add(multiSz);
+            }
+
+            int size = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            _api.Setup(a => a.QueryServiceConfig(handle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = size))
+                .Returns(false);
+            _api.Setup(a => a.QueryServiceConfig(handle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) =>
+                {
+                    required = size;
+                    Marshal.StructureToPtr(new QUERY_SERVICE_CONFIG { lpDependencies = multiSz }, p, false);
+                }))
+                .Returns(true);
+            return handle;
+        }
+
         [Fact]
         public async Task EnsureServicesDependOnHostAsync_ServiceWithoutTheDependency_KeepsItsDependenciesAndAddsTheHost()
         {
             // Arrange
             var scm = _handles.Scm(1);
-            var handle = _handles.Service(5);
-            var legacy = new Mock<IServiceControllerWrapper>();
-            legacy.Setup(s => s.GetDependencyNames()).Returns(new[] { "Tcpip" });
-            _controllers.Setup(c => c.GetService("Legacy")).Returns(legacy.Object);
             _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Legacy", SERVICE_CHANGE_CONFIG)).Returns(handle);
+            var handle = DependsOn(scm, "Legacy", 5, "Tcpip");
             _api.Setup(a => a.ChangeServiceConfig(handle, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, null, null, IntPtr.Zero,
                 "Tcpip\0Servy\0\0", null, null, null)).Returns(true);
 
@@ -552,17 +582,39 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureServicesDependOnHostAsync_LoadOrderGroupDependency_KeepsTheGroupInsteadOfItsMembers()
+        {
+            // Arrange: the SCM holds '+TDI;Tcpip', while ServiceController.ServicesDependedOn would report the
+            // services currently in the TDI group instead of the group itself
+            var scm = _handles.Scm(1);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            var handle = DependsOn(scm, "Legacy", 5, "+TDI", "Tcpip");
+            var expanded = new Mock<IServiceControllerWrapper>();
+            expanded.Setup(s => s.GetDependencyNames()).Returns(new[] { "Nsi", "Tdx", "Tcpip" });
+            _controllers.Setup(c => c.GetService("Legacy")).Returns(expanded.Object);
+            _api.Setup(a => a.ChangeServiceConfig(handle, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, null, null, IntPtr.Zero,
+                "+TDI\0Tcpip\0Servy\0\0", null, null, null)).Returns(true);
+
+            // Act
+            var updated = await Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, CancellationToken.None);
+
+            // Assert: the group reference survives, so "after any member of TDI" does not become "after all of them"
+            Assert.Equal(1, updated);
+            _api.Verify(a => a.ChangeServiceConfig(handle, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, null, null, IntPtr.Zero,
+                "+TDI\0Tcpip\0Servy\0\0", null, null, null), Times.Once);
+            _controllers.Verify(c => c.GetService("Legacy"), Times.Never);
+        }
+
+        [Fact]
         public async Task EnsureServicesDependOnHostAsync_DependencyPresentOrNotInstalled_ChangesNothing()
         {
             // Arrange
             var scm = _handles.Scm(1);
             _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
-            var current = new Mock<IServiceControllerWrapper>();
-            current.Setup(s => s.GetDependencyNames()).Returns(new[] { "servy" });
-            _controllers.Setup(c => c.GetService("Current")).Returns(current.Object);
-            var orphan = new Mock<IServiceControllerWrapper>();
-            orphan.Setup(s => s.GetDependencyNames()).Throws(new InvalidOperationException("not installed"));
-            _controllers.Setup(c => c.GetService("DbOnly")).Returns(orphan.Object);
+            DependsOn(scm, "Current", 5, "servy");
+            // A database-only record: the SCM does not know the service
+            _api.Setup(a => a.OpenService(scm, "DbOnly", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(() => _handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
             // Act: the host itself and blank names are ignored as well
             var updated = await Create().EnsureServicesDependOnHostAsync(new[] { "Current", "DbOnly", "Servy", " ", "current" }, CancellationToken.None);
@@ -571,7 +623,30 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(0, updated);
             _api.Verify(a => a.ChangeServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _controllers.Verify(c => c.GetService("Servy"), Times.Never);
+            _api.Verify(a => a.OpenService(scm, "Servy", It.IsAny<uint>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task EnsureServicesDependOnHostAsync_ConfigurationUnreadable_IsLoggedAndChangesNothing()
+        {
+            // Arrange: the first pass reports no size, so the current dependency list cannot be read
+            var scm = _handles.Scm(1);
+            var handle = _handles.Service(5);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            _api.Setup(a => a.OpenService(scm, "Legacy", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(handle);
+            _api.Setup(a => a.QueryServiceConfig(handle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = 0))
+                .Returns(false);
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, CancellationToken.None));
+
+            // Assert: nothing is written back, because writing it would clear the dependencies that could not be read
+            Assert.Equal(0, updated);
+            Assert.Contains("Could not read the configuration of service 'Legacy'", log);
+            _api.Verify(a => a.ChangeServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -579,12 +654,8 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var scm = _handles.Scm(1);
-            var handle = _handles.Service(5);
-            var legacy = new Mock<IServiceControllerWrapper>();
-            legacy.Setup(s => s.GetDependencyNames()).Returns(Array.Empty<string>());
-            _controllers.Setup(c => c.GetService("Legacy")).Returns(legacy.Object);
             _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
-            _api.Setup(a => a.OpenService(scm, "Legacy", SERVICE_CHANGE_CONFIG)).Returns(handle);
+            var handle = DependsOn(scm, "Legacy", 5);
             _api.Setup(a => a.ChangeServiceConfig(handle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(false);
             _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
