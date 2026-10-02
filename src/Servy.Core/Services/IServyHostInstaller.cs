@@ -36,6 +36,7 @@ namespace Servy.Core.Services
         /// <param name="cancellationToken">A token that stops the wait.</param>
         /// <returns>A task that completes when the service is stopped, or was not running.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the service did not stop in time.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
         Task StopAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -43,7 +44,8 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="cancellationToken">A token that stops the wait.</param>
         /// <returns>A task that completes when the service runs.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the service did not start in time.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the service did not start in time, or is not installed.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
         Task StartAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
