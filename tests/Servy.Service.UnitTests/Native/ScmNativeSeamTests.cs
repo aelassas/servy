@@ -230,10 +230,30 @@ namespace Servy.Service.UnitTests.Native
             // Assert
             Assert.True(WaitForStatusCall(), "The PRESHUTDOWN registration never reached the native seam.");
             var status = Assert.Single(_scm.StatusCalls);
+            Assert.Equal(NativeMethods.SERVICE_WIN32_OWN_PROCESS, status.dwServiceType);
             Assert.Equal(NativeMethods.SERVICE_RUNNING, status.dwCurrentState);
             Assert.Equal(NativeMethods.SERVICE_ACCEPT_STOP | NativeMethods.SERVICE_ACCEPT_PRESHUTDOWN, status.dwControlsAccepted);
+            Assert.Equal(0, status.dwWin32ExitCode);
+            Assert.Equal(0, status.dwServiceSpecificExitCode);
+            Assert.Equal(0, status.dwCheckPoint);
+            Assert.Equal(0, status.dwWaitHint);
             Assert.Equal(new IntPtr(1234), _scm.LastHandle);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service handle obtained natively")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void OnStart_NotInTestMode_PreShutdownRegistrationSucceeds_LogsTheNativeConfirmation()
+        {
+            // Arrange
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var successLogged = ArrangeLogSignal(scopedLogger, l => l.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support natively enabled.", It.IsAny<Exception>()));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "OnStart", new object?[] { Array.Empty<string>() });
+
+            // Assert
+            Assert.True(WaitForStatusCall(), "The PRESHUTDOWN registration never reached the native seam.");
+            Assert.True(SpinWait.SpinUntil(successLogged, SetServiceStatusPollTimeoutMs), "The successful registration was never logged.");
         }
 
         [Fact]
