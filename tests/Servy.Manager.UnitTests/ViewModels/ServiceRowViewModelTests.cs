@@ -623,6 +623,45 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public void Name_WhenTheModelHasNoName_IsTheEmptyString()
+        {
+            // Arrange
+            var service = new Service { Name = null };
+
+            // Act
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Assert
+            Assert.Equal(string.Empty, vm.Name);
+        }
+
+        [Fact]
+        public void Description_WhenTheModelHasNoDescription_IsTheEmptyString()
+        {
+            // Arrange
+            var service = new Service { Name = "RowSvc", Description = null };
+
+            // Act
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Assert
+            Assert.Equal(string.Empty, vm.Description);
+        }
+
+        [Fact]
+        public void LogOnAs_WhenTheModelHasNoAccount_IsTheEmptyString()
+        {
+            // Arrange
+            var service = new Service { Name = "RowSvc", LogOnAs = null };
+
+            // Act
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Assert
+            Assert.Equal(string.Empty, vm.LogOnAs);
+        }
+
         #endregion
 
         #region Execution Safety & Disposal Tests
