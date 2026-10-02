@@ -415,6 +415,16 @@ namespace Servy.UI.Bootstrapping
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning));
                     }
+
+                    if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: ct))
+                    {
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyHostFileName}.pdb"),
+                            _options.ResourceExtractionWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
+                    }
 #else
                     // Runtime DLL requirements
                     resourceItems.AddRange(new List<ResourceItem>
@@ -442,6 +452,16 @@ namespace Servy.UI.Bootstrapping
                         throw new InvalidOperationException($"Failed to extract embedded resources. The application cannot start safely - see file log for details.");
                     }
 
+                    // The Servy host service serves every Servy service its configuration. Replacing it stops every
+                    // running Servy service and the host first, and starts them again afterwards.
+                    Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
+                    var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
+                    if (!await resourceHelper.CopyServyHostAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, hostInstaller, ct))
+                    {
+                        throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
+                            "The application cannot start safely - see file log for details.");
+                    }
+
 #if !DEBUG
                     // A file newly extracted into the vault carries no grant for the service accounts, so grant them
                     // their access to it again. Debug builds extract next to the executable instead.
@@ -450,7 +470,24 @@ namespace Servy.UI.Bootstrapping
                         await new ServyExePermissionsHardener().HardenServiceAccountsAsync(ServiceRepository, ct);
                     }
 #endif
-
+                    // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
+                    var hostExePath = Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe);
+                    var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(hostExePath, ct);
+                    if (hostResult.IsSuccess)
+                    {
+                        // Services installed by an earlier version do not depend on the host yet
+                        var installed = await ServiceRepository.GetAllAsync(decrypt: false, ct);
+                        await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), ct);
+                    }
+                    else
+                    {
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window)app.MainWindow,
+                            string.Format(Resources.Strings.Msg_ServyHostUnavailable, hostResult.ErrorMessage),
+                            _options.ResourceExtractionWarningTitle,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
+                    }
                     stopwatch.Stop();
 
                     // Prevent "splash screen flicker" by ensuring it stays visible for a minimum duration

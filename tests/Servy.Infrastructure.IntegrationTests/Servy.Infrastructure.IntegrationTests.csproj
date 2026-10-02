@@ -129,11 +129,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\RestartAttemptsMigrationIntegrationTests.cs" />
     <Compile Include="DatabaseTestCollection.cs" />
     <Compile Include="Data\DapperExecutorIntegrationTests.cs" />
     <Compile Include="Data\ServiceRepositoryIntegrationTests.cs" />
     <Compile Include="Data\SQLiteDbInitializerIntegrationTests.cs" />
-    <Compile Include="Data\SQLiteStateDbInitializerIntegrationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

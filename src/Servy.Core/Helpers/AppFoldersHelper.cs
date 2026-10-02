@@ -67,7 +67,7 @@ namespace Servy.Core.Helpers
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Operational Folders:</b> Subfolders (db, security, recovery, logs) are processed. If they reside within the Root Vault,
+        /// <b>Operational Folders:</b> Subfolders (db, security, logs, logs\service) are processed. If they reside within the Root Vault,
         /// inheritance is preserved to allow manually granted service account permissions to cascade down.
         /// </description>
         /// </item>
@@ -139,14 +139,14 @@ namespace Servy.Core.Helpers
                 throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
             var root = rootVaultPath ?? AppConfig.ProgramDataPath;
-            var recoveryFolder = Path.Combine(root, AppConfig.RecoveryFolderName);
             var logsFolder = Path.Combine(root, AppConfig.LogsFolderName);
+            var serviceLogsFolder = Path.Combine(logsFolder, AppConfig.ServiceLogsFolderName);
 
             // 4. Secure the Root Vault so its ACLs exist for children to inherit
             SecurityHelper.CreateSecureDirectory(root, breakInheritance: true);
 
             // 5. Secure operational folders while respecting inheritance
-            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, recoveryFolder, logsFolder }
+            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, logsFolder, serviceLogsFolder }
                 .Select(Path.GetFullPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();

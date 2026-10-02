@@ -106,7 +106,9 @@
     <Compile Include="Common\OperationResult.cs" />
     <Compile Include="Config\LoggerConfigurator.cs" />
     <Compile Include="Config\ServiceAccounts.cs" />
+    <Compile Include="DTOs\RestartAttemptsDto.cs" />
     <Compile Include="DTOs\ServicePathAttribute.cs" />
+    <Compile Include="DTOs\ServiceRuntimeStateDto.cs" />
     <Compile Include="DTOs\SqlColumnAttribute.cs" />
     <Compile Include="EnvironmentVariables\EnvVarValidationResultKind.cs" />
     <Compile Include="EnvironmentVariables\EscapedTokenizer.cs" />
@@ -119,11 +121,9 @@
     <Compile Include="Data\IAppDbContext.cs" />
     <Compile Include="Data\IDapperExecutor.cs" />
     <Compile Include="Data\IServiceRepository.cs" />
-    <Compile Include="Data\IServiceStateRepository.cs" />
     <Compile Include="DTOs\ServyEventLogEntry.cs" />
     <Compile Include="DTOs\ServiceConsoleStateDto.cs" />
     <Compile Include="DTOs\ServiceDto.cs" />
-    <Compile Include="DTOs\ServiceStateDto.cs" />
     <Compile Include="DTOs\ServiceInfo.cs" />
     <Compile Include="Enums\DateRotationType.cs" />
     <Compile Include="Enums\EventLogLevel.cs" />
@@ -144,10 +144,17 @@
     <Compile Include="Logging\EventIds.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Logging\ServiceLogMigrator.cs" />
+    <Compile Include="NamedPipes\INamedPipeServerVerifier.cs" />
     <Compile Include="NamedPipes\INamedPipesService.cs" />
     <Compile Include="NamedPipes\IpcRequestDto.cs" />
     <Compile Include="NamedPipes\IpcResponseDto.cs" />
+    <Compile Include="NamedPipes\IPipeCallerIdentifier.cs" />
     <Compile Include="NamedPipes\NamedPipesService.cs" />
+    <Compile Include="NamedPipes\PipeCaller.cs" />
+    <Compile Include="NamedPipes\PipeCallerIdentifier.cs" />
+    <Compile Include="NamedPipes\PipePeer.cs" />
+    <Compile Include="NamedPipes\ServyHostServerVerifier.cs" />
     <Compile Include="Native\Errors.cs" />
     <Compile Include="Native\FileIdentity.cs" />
     <Compile Include="Native\NativeMethodsHelpers.cs" />
@@ -167,13 +174,16 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="Security\AccountSidResolver.cs" />
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Security\SecureDataIntegrityException.cs" />
     <Compile Include="Security\SecureDataLegacyBlockedException.cs" />
     <Compile Include="Security\SecureDisposable.cs" />
     <Compile Include="Security\SecureXml.cs" />
+    <Compile Include="Security\ServyHostPipeSecurity.cs" />
     <Compile Include="Services\IJsonServiceSerializer.cs" />
     <Compile Include="Services\IJsonServiceValidator.cs" />
+    <Compile Include="Services\IServyHostInstaller.cs" />
     <Compile Include="Services\IXmlServiceSerializer.cs" />
     <Compile Include="Services\IXmlServiceValidator.cs" />
     <Compile Include="Services\JsonServiceSerializer.cs" />
@@ -186,6 +196,7 @@
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Services\ServiceDtoSerializer.cs" />
+    <Compile Include="Services\ServyHostInstaller.cs" />
     <Compile Include="Validation\PathSecurityGuard.cs" />
     <Compile Include="Validation\PathSecurityResult.cs" />
     <Compile Include="Validation\ServiceDtoImportValidator.cs" />

@@ -184,17 +184,6 @@ namespace Servy.Core.Config
         /// <summary>
         /// The name of the security folder under <see cref="ProgramDataPath"/>.
         /// </summary>
-        /// <summary>
-        /// The file name of the SQLite runtime-state database in <see cref="DbFolderPath"/>.
-        /// </summary>
-        /// <remarks>
-        /// This database holds only the state a running wrapper writes back about its own service
-        /// (<c>Pid</c>, <c>ActiveStdoutPath</c>, <c>ActiveStderrPath</c>). It is a separate file from
-        /// <see cref="DatabaseFileName"/> so a service log-on account can be allowed to write its own
-        /// runtime state without being allowed to write any service's configuration.
-        /// </remarks>
-        public const string StateDatabaseFileName = "Servy.state.db";
-
         public const string SecurityFolderName = "security";
 
         /// <summary>
@@ -218,8 +207,14 @@ namespace Servy.Core.Config
         public static readonly string SecurityFolderPath = Path.Combine(ProgramDataPath, SecurityFolderName);
 
         /// <summary>
-        /// The folder name for storing service recovery and restart attempt files.
+        /// The name of the legacy folder in which earlier versions of the wrapper kept one restart-attempts counter file
+        /// per service.
         /// </summary>
+        /// <remarks>
+        /// The counters now live in <c>Servy.db</c> and are read and written by the Servy host service on the wrapper's
+        /// behalf. The folder is only read once, by the database migration that imports its counters, and is deleted once
+        /// that migration has succeeded.
+        /// </remarks>
         public const string RecoveryFolderName = "recovery";
 
         /// <summary>
@@ -228,14 +223,44 @@ namespace Servy.Core.Config
         public const string LogsFolderName = "logs";
 
         /// <summary>
-        /// Path to the recovery folder containing service restart attempts files.
+        /// Path to the legacy recovery folder; see <see cref="RecoveryFolderName"/>.
         /// </summary>
         public static readonly string RecoveryFolderPath = Path.Combine(ProgramDataPath, RecoveryFolderName);
 
         /// <summary>
         /// Path to the logs folder containing log files.
         /// </summary>
+        /// <remarks>
+        /// Only administrators and Local System can read or write this folder. The logs the wrappers write under their
+        /// service accounts live in <see cref="ServiceLogsFolderPath"/>.
+        /// </remarks>
         public static readonly string LogsFolderPath = Path.Combine(ProgramDataPath, LogsFolderName);
+
+        /// <summary>
+        /// The name of the folder, under <see cref="LogsFolderPath"/>, that holds the logs written by the service wrappers
+        /// and the restarter under their service accounts.
+        /// </summary>
+        public const string ServiceLogsFolderName = "service";
+
+        /// <summary>
+        /// The path of the folder that holds the logs written under the service accounts; see <see cref="ServiceLogsFolderName"/>.
+        /// </summary>
+        public static readonly string ServiceLogsFolderPath = Path.Combine(LogsFolderPath, ServiceLogsFolderName);
+
+        /// <summary>
+        /// The file name of the log the service wrappers write in <see cref="ServiceLogsFolderPath"/>.
+        /// </summary>
+        public const string ServyServiceLogFileName = "Servy.Service.log";
+
+        /// <summary>
+        /// The file name of the log the restarter writes in <see cref="ServiceLogsFolderPath"/>.
+        /// </summary>
+        public const string ServyRestarterLogFileName = "Servy.Restarter.log";
+
+        /// <summary>
+        /// The file name of the log the Servy host service writes in <see cref="LogsFolderPath"/>.
+        /// </summary>
+        public const string ServyHostLogFileName = "Servy.Host.log";
 
         /// <summary>
         /// The default SQLite connection string for the Servy application.
@@ -246,16 +271,6 @@ namespace Servy.Core.Config
         /// It is not configurable: <see cref="CoreSettingsLoader.Load"/> always returns it and ignores a <c>DefaultConnection</c> key in the application settings.
         /// </remarks>
         public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, DatabaseFileName)};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
-
-        /// <summary>
-        /// The default SQLite connection string for the runtime-state database.
-        /// </summary>
-        /// <remarks>
-        /// This string configures the connection to <c>Servy.state.db</c> within the
-        /// <see cref="DbFolderPath"/>, with the same resilience settings as
-        /// <see cref="DefaultConnectionString"/>. Like that one it is not configurable.
-        /// </remarks>
-        public static readonly string DefaultStateConnectionString = $"Data Source={Path.Combine(DbFolderPath, StateDatabaseFileName)};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
 
         /// <summary>
         /// The default file path for the AES encryption key.
@@ -1677,6 +1692,26 @@ namespace Servy.Core.Config
         public const string ServyHostServiceName = "Servy";
 
         /// <summary>
+        /// The display name of the Servy host service in the Services console.
+        /// </summary>
+        public const string ServyHostDisplayName = "Servy";
+
+        /// <summary>
+        /// The description of the Servy host service in the Services console.
+        /// </summary>
+        public const string ServyHostDescription = "Serves each Servy service its own configuration and runtime state over a local named pipe, so service accounts never access the Servy database.";
+
+        /// <summary>
+        /// The file name, without extension, of the Servy host service executable.
+        /// </summary>
+        public const string ServyHostFileName = "Servy.Host.Net48";
+
+        /// <summary>
+        /// The file name of the Servy host service executable.
+        /// </summary>
+        public static readonly string ServyHostExe = $"{ServyHostFileName}.exe";
+
+        /// <summary>
         /// The name of the local Named Pipe used for inter-process communication between wrapped services and the Servy host.
         /// </summary>
         public const string ServyHostNamedPipeName = "SERVY_HOST_IPC_PIPE";
@@ -1687,14 +1722,54 @@ namespace Servy.Core.Config
         public const string ServyHostGetByNameAction = "GetByName";
 
         /// <summary>
-        /// The IPC action identifier for updating service configuration and runtime state.
+        /// The IPC action identifier for updating a service's runtime state (PID, previous stop timeout and active
+        /// stdout/stderr paths). The configuration of the service cannot be changed over the pipe.
         /// </summary>
-        public const string ServyHostUpdateAction = "Update";
+        public const string ServyHostUpdateRuntimeStateAction = "UpdateRuntimeState";
+
+        /// <summary>
+        /// The IPC action identifier for reading a service's persisted restart attempts counter.
+        /// </summary>
+        public const string ServyHostGetRestartAttemptsAction = "GetRestartAttempts";
+
+        /// <summary>
+        /// The IPC action identifier for updating a service's persisted restart attempts counter.
+        /// </summary>
+        public const string ServyHostUpdateRestartAttemptsAction = "UpdateRestartAttempts";
+
+        /// <summary>
+        /// The IPC action identifier with which an administrator asks the host to rebuild the named pipe's DACL from the
+        /// accounts of the installed services.
+        /// </summary>
+        public const string ServyHostRefreshPipeAccessAction = "RefreshPipeAccess";
 
         /// <summary>
         /// The default connection timeout in milliseconds when connecting to the Servy host Named Pipe server.
         /// </summary>
         public const int ServyHostDefaultConnectTimeoutMs = 5000;
+
+        /// <summary>
+        /// The time in milliseconds a client waits for the Servy host to answer a request once it is connected.
+        /// </summary>
+        public const int ServyHostDefaultRequestTimeoutMs = 30000;
+
+        /// <summary>
+        /// The time in seconds the desktop app, the Manager and the CLI wait for the Servy host service to reach the
+        /// state they asked for when they install, stop or start it.
+        /// </summary>
+        public const int ServyHostServiceTimeoutSeconds = 30;
+
+        /// <summary>
+        /// The time in milliseconds the Servy host service waits, when it stops, for its listener and for each of the
+        /// requests it is handling to finish.
+        /// </summary>
+        public const int ServyHostStopWaitMs = 2000;
+
+        /// <summary>
+        /// The number of pipe instances the Servy host keeps waiting for a client at once, so a burst of services
+        /// starting together (at boot) is accepted in parallel rather than one connection at a time.
+        /// </summary>
+        public const int ServyHostListenerCount = 4;
 
         /// <summary>
         /// The maximum permitted IPC message payload size in bytes (10 MB) to prevent heap overflow exploits or excessive memory allocation.

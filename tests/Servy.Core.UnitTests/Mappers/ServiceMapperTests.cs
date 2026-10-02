@@ -40,8 +40,13 @@ namespace Servy.Core.UnitTests.Mappers
         public void ToDomain_CoversEveryMappedProperty()
         {
             // Arrange
-            // DTO-only persistence fields with no domain counterpart.
-            var excluded = new[] { nameof(ServiceDto.Id), nameof(ServiceDto.PreviousStopTimeout) };
+            // DTO-only persistence fields with no domain counterpart. The restart attempts counter is runtime state
+            // only the wrapper reads and writes, through the Servy host.
+            var excluded = new[]
+            {
+                nameof(ServiceDto.Id), nameof(ServiceDto.PreviousStopTimeout),
+                nameof(ServiceDto.RestartAttempts), nameof(ServiceDto.RestartAttemptsUpdatedAtTicks),
+            };
 
             var domainProperties = typeof(Core.Domain.Service)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)

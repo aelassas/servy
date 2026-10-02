@@ -125,6 +125,92 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task UpdateRuntimeStateAsync_WritesTheRuntimeColumnsAndLeavesTheConfigurationAlone()
+        {
+            // Arrange
+            var service = new ServiceDto { Name = "RuntimeOnly", ExecutablePath = "C:\\app.exe", Parameters = "--secret", PreviousStopTimeout = 15 };
+            int id = await _repository.AddAsync(service, CancellationToken.None);
+
+            // Act
+            var updated = await _repository.UpdateRuntimeStateAsync("RuntimeOnly", new ServiceRuntimeStateDto
+            {
+                Pid = 4321,
+                ActiveStdoutPath = "C:\\out.log",
+                ActiveStderrPath = "C:\\err.log",
+                UpdatePreviousStopTimeout = false,
+                PreviousStopTimeout = 99,
+            }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, updated);
+            var row = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
+            Assert.NotNull(row);
+            Assert.Equal(4321, row.Pid);
+            Assert.Equal("C:\\out.log", row.ActiveStdoutPath);
+            Assert.Equal("C:\\err.log", row.ActiveStderrPath);
+            Assert.Equal(15, row.PreviousStopTimeout); // not asked to change
+            Assert.Equal("C:\\app.exe", row.ExecutablePath);
+            Assert.Equal("--secret", row.Parameters);
+
+            // Act: clear the state and set the previous stop timeout
+            await _repository.UpdateRuntimeStateAsync("runtimeonly", new ServiceRuntimeStateDto { UpdatePreviousStopTimeout = true, PreviousStopTimeout = 30 }, CancellationToken.None);
+
+            // Assert: the name is matched case-insensitively, like every other lookup
+            row = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
+            Assert.Null(row.Pid);
+            Assert.Null(row.ActiveStdoutPath);
+            Assert.Null(row.ActiveStderrPath);
+            Assert.Equal(30, row.PreviousStopTimeout);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeStateAsync_UnknownService_UpdatesNothing()
+        {
+            // Act
+            var updated = await _repository.UpdateRuntimeStateAsync("NoSuchService", new ServiceRuntimeStateDto { Pid = 1 }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(0, updated);
+        }
+
+        [Fact]
+        public async Task RestartAttempts_RoundTrip_AndSurviveAConfigurationUpdate()
+        {
+            // Arrange
+            var service = new ServiceDto { Name = "Counted", ExecutablePath = "C:\\app.exe" };
+            await _repository.AddAsync(service, CancellationToken.None);
+            var when = new DateTime(2026, 10, 2, 10, 0, 0, DateTimeKind.Utc);
+
+            // Act
+            var before = await _repository.GetRestartAttemptsAsync("Counted", CancellationToken.None);
+            var written = await _repository.UpdateRestartAttemptsAsync("Counted", 2, when, CancellationToken.None);
+            var after = await _repository.GetRestartAttemptsAsync("COUNTED", CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(before);
+            Assert.Equal(0, before.Attempts);
+            Assert.Null(before.UpdatedAtUtc);
+            Assert.Equal(1, written);
+            Assert.Equal(2, after.Attempts);
+            Assert.Equal(when, after.UpdatedAtUtc);
+
+            // Act: an edit in the desktop app or the Manager upserts the configuration and preserves runtime state
+            await _repository.UpsertAsync(new ServiceDto { Name = "Counted", ExecutablePath = "C:\\new.exe" },
+                preserveExistingRuntimeState: true, preserveExistingCredentials: false, CancellationToken.None);
+
+            // Assert: the quota is not reset by a configuration change
+            var kept = await _repository.GetRestartAttemptsAsync("Counted", CancellationToken.None);
+            Assert.Equal(2, kept.Attempts);
+            Assert.Equal(when, kept.UpdatedAtUtc);
+        }
+
+        [Fact]
+        public async Task GetRestartAttemptsAsync_UnknownService_ReturnsNull()
+        {
+            Assert.Null(await _repository.GetRestartAttemptsAsync("NoSuchService", CancellationToken.None));
+        }
+
+        [Fact]
         public async Task UpdateAsync_ModifiesRecord_HonoringRuntimeBypassStates()
         {
             // Arrange

@@ -28,6 +28,12 @@ namespace Servy.Core.UnitTests.Services
     [Collection(LoggerCollection.Name)]
     public class ServiceManagerDiagnosticsTests : IDisposable
     {
+        /// <summary>
+        /// The SCM dependency list of a service configured with no dependencies: every Servy service depends on the
+        /// Servy host service.
+        /// </summary>
+        private static readonly string HostOnlyDependencies = ServiceDependenciesParser.ParseWithRequired(null, AppConfig.ServyHostServiceName);
+
         private readonly FakeServiceHandles _handles = new FakeServiceHandles();
 
         #region Install rollback logging
@@ -247,7 +253,7 @@ namespace Servy.Core.UnitTests.Services
                         It.IsAny<string>(),
                         null,
                         IntPtr.Zero,
-                        ServiceDependenciesParser.NoDependencies,
+                        HostOnlyDependencies,
                         ServiceAccounts.LocalSystem,
                         null))
                     .Returns(ServiceHandle);

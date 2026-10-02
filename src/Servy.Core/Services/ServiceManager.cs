@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Native;
 using Servy.Core.Resources;
 using Servy.Core.Security;
@@ -65,6 +66,7 @@ namespace Servy.Core.Services
         private readonly IWin32ErrorProvider _win32ErrorProvider;
         private readonly IServiceRepository _serviceRepository;
         private readonly IServyExePermissionsHardener _exePermissionsHardener;
+        private readonly INamedPipesService _namedPipesService;
 
         #endregion
 
@@ -98,13 +100,19 @@ namespace Servy.Core.Services
         /// Hardens Servy's file permissions for the account of a service installed under an account other than
         /// Local System. <see langword="null"/> skips the hardening, which only tests should do.
         /// </param>
+        /// <param name="namedPipesService">
+        /// Asks the Servy host to rebuild its named pipe's DACL after a service account was added or removed, so the
+        /// account of a newly installed service can connect and the account of a removed one no longer can.
+        /// <see langword="null"/> skips it, which only tests should do; the host also rebuilds the DACL when it starts.
+        /// </param>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
             IServiceControllerProvider serviceControllerProvider,
             IWindowsServiceApi windowsServiceApi,
             IWin32ErrorProvider win32ErrorProvider,
             IServiceRepository serviceRepository,
-            IServyExePermissionsHardener exePermissionsHardener = null
+            IServyExePermissionsHardener exePermissionsHardener = null,
+            INamedPipesService namedPipesService = null
             )
         {
             _controllerFactory = controllerFactory ?? throw new ArgumentNullException(nameof(controllerFactory));
@@ -113,6 +121,7 @@ namespace Servy.Core.Services
             _win32ErrorProvider = win32ErrorProvider ?? throw new ArgumentNullException(nameof(win32ErrorProvider));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _exePermissionsHardener = exePermissionsHardener;
+            _namedPipesService = namedPipesService;
         }
 
         #endregion
@@ -313,6 +322,14 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
 
+            // The Servy host service owns this name, and every Servy service depends on it
+            if (string.Equals(options.ServiceName.Trim(), AppConfig.ServyHostServiceName, StringComparison.OrdinalIgnoreCase))
+            {
+                string reservedError = $"The service name '{options.ServiceName}' is reserved for the Servy host service.";
+                Logger.Error(reservedError);
+                return OperationResult.Failure(reservedError);
+            }
+
             // HARDENING: Check database via UNICODE_NOCASE to intercept if this service or a linguistic
             // variation of it already exists before running native SCM queries.
             var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
@@ -406,7 +423,9 @@ namespace Servy.Core.Services
                 SafeServiceHandle serviceHandle = null;
                 try
                 {
-                    string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
+                    // Every Servy service depends on the Servy host service: the wrapper reads its configuration from it,
+                    // so the SCM must start the host first and cannot stop it while a wrapper still runs.
+                    string lpDependencies = ServiceDependenciesParser.ParseWithRequired(options.ServiceDependencies, AppConfig.ServyHostServiceName);
                     string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? ServiceAccounts.LocalSystem : options.Username.Trim();
 
                     // Use IsNullOrEmpty (not IsNullOrWhiteSpace) to preserve non-null
@@ -655,6 +674,7 @@ namespace Servy.Core.Services
                                 Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                                 await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                                 await RevokeExePermissionsIfUnusedAsync(options.ServiceName, formerService, lpServiceStartName, cancellationToken);
+                                await GrantPipeAccessAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                                 return OperationResult.Success();
                             }
 
@@ -674,6 +694,7 @@ namespace Servy.Core.Services
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                         await RevokeExePermissionsIfUnusedAsync(options.ServiceName, formerService, lpServiceStartName, cancellationToken);
+                        await GrantPipeAccessAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                         return OperationResult.Success();
                     }
                     catch
@@ -762,8 +783,8 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Revokes the vault access of the account a service ran under before it was uninstalled or moved to another
-        /// account, unless a remaining service still runs under it (#7161).
+        /// Revokes the vault access and the Servy host named pipe access of the account a service ran under before it was
+        /// uninstalled or moved to another account, unless a remaining service still runs under it (#7161).
         /// </summary>
         /// <param name="serviceName">The service that was uninstalled or reconfigured, for the log.</param>
         /// <param name="formerService">The service's record as it was before the change; <see langword="null"/> when
@@ -778,24 +799,89 @@ namespace Servy.Core.Services
         /// </remarks>
         private async Task RevokeExePermissionsIfUnusedAsync(string serviceName, ServiceDto formerService, string currentAccount, CancellationToken cancellationToken)
         {
-            if (_exePermissionsHardener == null || formerService == null)
+            if (formerService == null)
                 return;
 
             var formerAccount = ServyExePermissionsHardener.GetServiceAccounts(new[] { formerService }).FirstOrDefault();
             if (formerAccount == null || string.Equals(formerAccount, currentAccount?.Trim(), StringComparison.OrdinalIgnoreCase))
                 return;
 
+            if (_exePermissionsHardener != null)
+            {
+                try
+                {
+                    if (!await _exePermissionsHardener.RevokeIfUnusedAsync(formerAccount, _serviceRepository, cancellationToken))
+                    {
+                        Logger.Warn($"The vault access of '{formerAccount}' was not fully revoked after service '{serviceName}' stopped using it. " +
+                            "See the log above.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Revoking the vault access of '{formerAccount}' (service '{serviceName}') failed.", ex);
+                }
+            }
+
+            await RefreshPipeAccessAsync(serviceName, formerAccount, granted: false, cancellationToken);
+        }
+
+        /// <summary>
+        /// Grants the account a service was just installed under access to the Servy host named pipe, unless it is Local
+        /// System, which always has it.
+        /// </summary>
+        /// <param name="serviceName">The service that was installed, for the log.</param>
+        /// <param name="account">The account the service runs under, as passed to the Service Control Manager.</param>
+        /// <param name="cancellationToken">A token that stops the request.</param>
+        /// <returns>A task that completes when the host has rebuilt the DACL, or could not be asked to.</returns>
+        /// <remarks>
+        /// The pipe's DACL is derived from the accounts of the services in <c>Servy.db</c>, so the account is granted
+        /// once its service's row exists; this asks the running host to rebuild the DACL now rather than at its next
+        /// start. The service is already installed when this runs, so a failure is logged and never turned into a failed
+        /// installation.
+        /// </remarks>
+        private Task GrantPipeAccessAsync(string serviceName, string account, CancellationToken cancellationToken)
+        {
+            if (!ServyExePermissionsHardener.IsHardeningCandidate(account))
+                return Task.CompletedTask;
+
+            return RefreshPipeAccessAsync(serviceName, account.Trim(), granted: true, cancellationToken);
+        }
+
+        /// <summary>
+        /// Asks the Servy host to rebuild its named pipe's DACL from the accounts of the services in <c>Servy.db</c>:
+        /// an account is granted while at least one service runs under it, and revoked once none does.
+        /// </summary>
+        /// <param name="serviceName">The service that was installed, reconfigured, uninstalled or removed, for the log.</param>
+        /// <param name="account">The account whose access changed, for the log.</param>
+        /// <param name="granted">Whether the account was added (<see langword="true"/>) or may have lost its last service.</param>
+        /// <param name="cancellationToken">A token that stops the request.</param>
+        /// <returns>A task that completes when the host has answered, or could not be reached.</returns>
+        private async Task RefreshPipeAccessAsync(string serviceName, string account, bool granted, CancellationToken cancellationToken)
+        {
+            if (_namedPipesService == null)
+                return;
+
             try
             {
-                if (!await _exePermissionsHardener.RevokeIfUnusedAsync(formerAccount, _serviceRepository, cancellationToken))
+                if (await _namedPipesService.RefreshPipeAccessAsync(cancellationToken))
                 {
-                    Logger.Warn($"The vault access of '{formerAccount}' was not fully revoked after service '{serviceName}' stopped using it. " +
-                        "See the log above.");
+                    Logger.Info(granted
+                        ? $"Granted '{account}' access to the Servy host named pipe (service '{serviceName}')."
+                        : $"Refreshed the Servy host named pipe access after service '{serviceName}' stopped using '{account}'; the account keeps it only while another service runs under it.");
                 }
+                else
+                {
+                    Logger.Warn($"The Servy host did not refresh its named pipe access after a change to service '{serviceName}' ('{account}'). " +
+                        $"It applies the change the next time the '{AppConfig.ServyHostServiceName}' service starts.");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Warn($"Refreshing the Servy host named pipe access for '{account}' (service '{serviceName}') was cancelled.");
             }
             catch (Exception ex)
             {
-                Logger.Error($"Revoking the vault access of '{formerAccount}' (service '{serviceName}') failed.", ex);
+                Logger.Error($"Refreshing the Servy host named pipe access for '{account}' (service '{serviceName}') failed.", ex);
             }
         }
 

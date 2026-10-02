@@ -143,7 +143,9 @@
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Helpers\ReservedNamesTests.cs" />
+    <Compile Include="Logging\ServiceLogMigratorTests.cs" />
     <Compile Include="NamedPipes\NamedPipesServiceTests.cs" />
+    <Compile Include="NamedPipes\ServyHostServerVerifierTests.cs" />
     <Compile Include="Security\SecureDataHelper.cs" />
     <Compile Include="Security\SecureDataLegacyBlockedExceptionTests.cs" />
     <Compile Include="Helpers\ServiceDtoFactory.cs" />
@@ -159,6 +161,7 @@
     <Compile Include="Security\SecureDataStressTests.cs" />
     <Compile Include="Security\SecurityHelperTests.cs" />
     <Compile Include="Security\ServyExePermissionsHardenerTests.cs" />
+    <Compile Include="Security\ServyHostPipeSecurityTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Services\JsonServiceSerializerTests.cs" />
@@ -173,10 +176,12 @@
     <Compile Include="Services\ServiceDependencyNodeTests.cs" />
     <Compile Include="Services\ServiceExporterTests.cs" />
     <Compile Include="Services\FakeServiceHandles.cs" />
+    <Compile Include="Services\ServiceManagerHostTests.cs" />
     <Compile Include="Services\ServiceManagerTests.cs" />
     <Compile Include="Services\ServiceManagerDiagnosticsTests.cs" />
     <Compile Include="Services\ServiceManagerHardeningTests.cs" />
     <Compile Include="Services\ServiceManagerStartTimeoutTests.cs" />
+    <Compile Include="Services\ServyHostInstallerTests.cs" />
     <Compile Include="Services\WindowsServiceApiTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />

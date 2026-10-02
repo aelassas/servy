@@ -14,6 +14,7 @@ using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using Xunit;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
@@ -145,10 +146,11 @@ namespace Servy.Service.UnitTests.Bootstrap
 
         /// <summary>
         /// The service log file is initialized before the <c>try</c>, which is what lets the catch-all log
-        /// a construction failure at all.
+        /// a construction failure at all, and in <c>logs\service\</c>, the only log folder the service account
+        /// can write.
         /// </summary>
         [Fact]
-        public void Constructor_InitializesTheServiceLogFile()
+        public void Constructor_InitializesTheServiceLogFileInTheServiceLogsFolder()
         {
             // Arrange
             var env = new FakeBootstrapEnvironment();
@@ -157,7 +159,8 @@ namespace Servy.Service.UnitTests.Bootstrap
             Build(env);
 
             // Assert
-            Assert.Equal(new[] { "Servy.Service.log" }, env.InitializedLoggers);
+            Assert.Equal(new[] { ("Servy.Service.log", AppConfig.ServiceLogsFolderPath) }, env.InitializedLoggers);
+            Assert.Equal(Path.Combine(AppConfig.LogsFolderPath, "service"), AppConfig.ServiceLogsFolderPath);
         }
 
         /// <summary>
@@ -406,8 +409,8 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <summary>Gets or sets the exception <see cref="EnsureEventSourceExists"/> raises, if any.</summary>
             public Exception EventSourceFailure { get; set; }
 
-            /// <summary>Gets the log file names <see cref="InitializeLogger"/> was called with.</summary>
-            public List<string> InitializedLoggers { get; } = new List<string>();
+            /// <summary>Gets the log file names and folders <see cref="InitializeLogger"/> was called with.</summary>
+            public List<(string FileName, string Directory)> InitializedLoggers { get; } = new List<(string FileName, string Directory)>();
 
             /// <summary>Gets the debug reports <see cref="ReportDebug"/> was called with, in call order.</summary>
             public List<(string Title, string Body)> DebugReports { get; } = new List<(string Title, string Body)>();
@@ -420,7 +423,8 @@ namespace Servy.Service.UnitTests.Bootstrap
 
             /// <summary>Records the call and does nothing else.</summary>
             /// <param name="logFileName">The log file name the constructor asked for.</param>
-            public void InitializeLogger(string logFileName) => InitializedLoggers.Add(logFileName);
+            /// <param name="logDirectory">The folder the constructor asked for.</param>
+            public void InitializeLogger(string logFileName, string logDirectory) => InitializedLoggers.Add((logFileName, logDirectory));
 
             /// <summary>Raises <see cref="EventSourceFailure"/> when one is configured.</summary>
             /// <exception cref="Exception">The configured <see cref="EventSourceFailure"/>.</exception>

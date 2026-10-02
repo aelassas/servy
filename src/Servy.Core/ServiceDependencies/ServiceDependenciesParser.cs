@@ -74,5 +74,27 @@ namespace Servy.Core.ServiceDependencies
             // "no dependencies" vs "list terminator" are the same SCM construct.
             return string.Join("\0", parts) + NoDependencies;
         }
+
+        /// <summary>
+        /// Parses a textual dependency list into the MULTI_SZ format, like <see cref="Parse(string?)"/>, and makes sure
+        /// <paramref name="requiredDependency"/> is part of it.
+        /// </summary>
+        /// <param name="input">The configured dependencies, separated by semicolons or newlines.</param>
+        /// <param name="requiredDependency">A dependency every service must have, appended when the list does not
+        /// already name it (compared case-insensitively).</param>
+        /// <returns>A MULTI_SZ string that always names <paramref name="requiredDependency"/>.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="requiredDependency"/> is null or blank.</exception>
+        public static string ParseWithRequired(string input, string requiredDependency)
+        {
+            if (string.IsNullOrWhiteSpace(requiredDependency))
+                throw new ArgumentException("The required dependency cannot be null or blank.", nameof(requiredDependency));
+
+            var parts = Tokenize(input).ToList();
+            var required = requiredDependency.Trim();
+            if (!parts.Contains(required, StringComparer.OrdinalIgnoreCase))
+                parts.Add(required);
+
+            return string.Join("\0", parts) + NoDependencies;
+        }
     }
 }

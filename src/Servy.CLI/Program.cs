@@ -8,6 +8,7 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
@@ -17,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -147,7 +149,8 @@ namespace Servy.CLI
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
                         serviceRepository,
-                        new ServyExePermissionsHardener()
+                        new ServyExePermissionsHardener(),
+                        new NamedPipesService()
                         );
 
                     var processHelper = new ProcessHelper();
@@ -199,6 +202,15 @@ namespace Servy.CLI
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.HandleExeFileName}; process-tree handle features may be degraded.");
                         }
 
+                        // Copy the Servy host service. Replacing it stops every running Servy service and the host
+                        // first, and starts them again afterwards.
+                        var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
+                        if (!await resourceHelper.CopyServyHostAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, hostInstaller, cts.Token))
+                        {
+                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
+                                "CLI cannot start safely - see file log for details.");
+                        }
+
                         // Copy service executable from embedded resources
                         var resourceItems = new List<ResourceItem>
                         {
@@ -217,6 +229,11 @@ namespace Servy.CLI
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
+                        }
+
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: cts.Token))
+                        {
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
                         }
 #else
                         // Copy *.dll from embedded resources
@@ -256,6 +273,18 @@ namespace Servy.CLI
                             await new ServyExePermissionsHardener().HardenServiceAccountsAsync(serviceRepository, cts.Token);
                         }
 #endif
+                        // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
+                        var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), cts.Token);
+                        if (hostResult.IsSuccess)
+                        {
+                            // Services installed by an earlier version do not depend on the host yet
+                            var installed = await serviceRepository.GetAllAsync(decrypt: false, cts.Token);
+                            await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), cts.Token);
+                        }
+                        else
+                        {
+                            Logger.Warn($"{hostResult.ErrorMessage} Servy services cannot start until the '{AppConfig.ServyHostServiceName}' service runs.");
+                        }
                     }
 
                     // Helper to defer targeted runtime initialization until AFTER successful argument parsing

@@ -63,6 +63,15 @@ namespace Servy.UI.Design
         public Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string name, CancellationToken cancellationToken = default)
             => Task.FromResult<ServiceConsoleStateDto>(null);
 
+        public Task<int> UpdateRuntimeStateAsync(string name, ServiceRuntimeStateDto state, CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
+        public Task<RestartAttemptsDto> GetRestartAttemptsAsync(string name, CancellationToken cancellationToken = default)
+            => Task.FromResult<RestartAttemptsDto>(null);
+
+        public Task<int> UpdateRestartAttemptsAsync(string name, int attempts, DateTime updatedAtUtc, CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
         public Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
             => Task.FromResult(Enumerable.Empty<ServiceDto>());
 

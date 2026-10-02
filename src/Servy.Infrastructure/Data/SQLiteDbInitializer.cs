@@ -1,4 +1,5 @@
 using Dapper;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using System;
@@ -19,7 +20,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Single Source of Truth for the absolute latest schema migration version sequence.
         /// </summary>
-        public const int LatestSchemaVersion = 9;
+        public const int LatestSchemaVersion = 10;
 
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
@@ -53,7 +54,23 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         /// <param name="connection">An open database connection to execute commands on.</param>
         public static void Initialize(DbConnection connection)
+            => Initialize(connection, AppConfig.RecoveryFolderPath);
+
+        /// <summary>
+        /// Analyzes the current database state, applies necessary migrations, imports the restart attempts counters of the
+        /// legacy recovery folder, and ensures all schema requirements match the current application version.
+        /// </summary>
+        /// <param name="connection">An open database connection to execute commands on.</param>
+        /// <param name="legacyRecoveryFolderPath">
+        /// The legacy folder whose per-service counter files are imported into <c>RestartAttempts</c>, and which is
+        /// deleted once every file in it was imported; <see langword="null"/> imports nothing.
+        /// </param>
+        internal static void Initialize(DbConnection connection, string legacyRecoveryFolderPath)
         {
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
+
+            bool deleteLegacyRecoveryFolder = false;
+
             // Register the collation sequence BEFORE any DDL or PRAGMA is sent to the SQLite engine.
             // This prevents immediate engine parsing errors if the index already exists on disk from a prior application run.
             SQLiteFunction.RegisterFunction(typeof(UnicodeNoCaseCollation));
@@ -200,8 +217,17 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 9;
                         }
 
+                        // Version 10 Migration to add RestartAttempts and RestartAttemptsUpdatedAtTicks, which replace the
+                        // per-service counter files of the recovery folder
+                        if (currentVersion < 10)
+                        {
+                            ApplyVersion10(connection, transaction);
+                            UpdateSchemaVersion(connection, 10, transaction);
+                            currentVersion = 10;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 10) { ... }
+                        // if (currentVersion < 11) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion > LatestSchemaVersion)
@@ -222,6 +248,11 @@ namespace Servy.Infrastructure.Data
                         // Ensures that any columns added to SqlConstants but missed in migrations are applied.
                         ReconcileSchema(connection, currentVersion, transaction);
 
+                        // 7. Import the legacy recovery folder. Not version-gated: it runs on every start while the
+                        // folder exists, and only fills rows whose counter was never written, so a folder that could
+                        // not be deleted is never imported over newer counters.
+                        deleteLegacyRecoveryFolder = LegacyRecoveryImporter.Import(connection, transaction, legacyRecoveryFolderPath);
+
                         transaction.Commit();
                     }
                     catch (Exception ex)
@@ -239,6 +270,10 @@ namespace Servy.Infrastructure.Data
                 try { connection.Execute("PRAGMA foreign_keys=ON;"); }
                 catch (Exception ex) { Logger.Error("Failed to restore foreign_keys=ON after migration.", ex); }
             }
+
+            // Only once the counters are committed: a failed migration keeps the folder for the next start.
+            if (deleteLegacyRecoveryFolder)
+                LegacyRecoveryImporter.DeleteFolder(legacyRecoveryFolderPath);
         }
 
         /// <summary>
@@ -709,6 +744,17 @@ namespace Servy.Infrastructure.Data
             }
 
             Logger.Info("Database successfully migrated to Version 9.");
+        }
+
+        /// <summary>
+        /// Applies the Version 10 schema migration: adds the <c>RestartAttempts</c> and <c>RestartAttemptsUpdatedAtTicks</c>
+        /// columns, which hold the restart attempts counter the wrapper kept in a file of the recovery folder before.
+        /// </summary>
+        private static void ApplyVersion10(DbConnection connection, DbTransaction transaction)
+        {
+            const int version = 10;
+            AddColumnIfMissing(connection, transaction, version, "RestartAttempts");
+            AddColumnIfMissing(connection, transaction, version, "RestartAttemptsUpdatedAtTicks");
         }
 
         #endregion

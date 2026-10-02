@@ -125,6 +125,7 @@
     <Compile Include="CommandLine\StartOptionsTests.cs" />
     <Compile Include="Documentation\ProtectedVariablesDocumentationTests.cs" />
     <Compile Include="EventHandlerTests.cs" />
+    <Compile Include="FakeRestartAttemptsStore.cs" />
     <Compile Include="HealthCheckTests.cs" />
     <Compile Include="Helpers\DataReceivedEventArgsFactory.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelperTests.cs" />

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\packages\xunit.runner.visualstudio.4.0.0\build\net472\xunit.runner.visualstudio.props" Condition="Exists('..\..\packages\xunit.runner.visualstudio.4.0.0\build\net472\xunit.runner.visualstudio.props')" />
+  <Import Project="..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.props" Condition="Exists('..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.props')" />
   <Import Project="..\..\packages\xunit.core.2.9.3\build\xunit.core.props" Condition="Exists('..\..\packages\xunit.core.2.9.3\build\xunit.core.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -66,6 +67,9 @@
     <Reference Include="Microsoft.VisualStudio.TestPlatform.ObjectModel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.10.1\lib\net462\Microsoft.VisualStudio.TestPlatform.ObjectModel.dll</HintPath>
     </Reference>
+    <Reference Include="Dapper, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Dapper.2.1.89\lib\net461\Dapper.dll</HintPath>
+    </Reference>
     <Reference Include="Moq, Version=4.21.0.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Moq.4.21.0\lib\net462\Moq.dll</HintPath>
     </Reference>
@@ -78,6 +82,10 @@
     </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Data.SQLite, Version=2.0.4.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Data.SQLite.2.0.4\lib\net471\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.IO" />
     <Reference Include="System.Management" />
     <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -131,6 +139,10 @@
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\Servy.Infrastructure\Servy.Infrastructure.csproj">
+      <Project>{2ed3b3e9-1132-4aa4-a487-85848abccc1a}</Project>
+      <Name>Servy.Infrastructure</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\Servy.Host\Servy.Host.csproj">
       <Project>{c41e0e90-cff6-4dfa-a042-59e4b31198a2}</Project>
       <Name>Servy.Host</Name>
@@ -152,8 +164,11 @@
     <Error Condition="!Exists('..\..\packages\xunit.core.2.9.3\build\xunit.core.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.9.3\build\xunit.core.props'))" />
     <Error Condition="!Exists('..\..\packages\xunit.core.2.9.3\build\xunit.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.9.3\build\xunit.core.targets'))" />
     <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.4.0.0\build\net472\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.4.0.0\build\net472\xunit.runner.visualstudio.props'))" />
+    <Error Condition="!Exists('..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.props'))" />
+    <Error Condition="!Exists('..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.targets'))" />
     <Error Condition="!Exists('..\..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets'))" />
   </Target>
   <Import Project="..\..\packages\xunit.core.2.9.3\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.9.3\build\xunit.core.targets')" />
   <Import Project="..\..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets" Condition="Exists('..\..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" />
+  <Import Project="..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.targets" Condition="Exists('..\..\packages\SourceGear.sqlite3.3.53.4\build\net471\SourceGear.sqlite3.targets')" />
 </Project>

@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Services;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,9 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
+        /// <summary>A stop or start that never completes must fail the test, not hang the run.</summary>
+        private const int IntegrationTestTimeoutMs = 60000;
+
         private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly FakeAssembly _fakeAssembly;
@@ -578,6 +582,118 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Clean up
             if (File.Exists(items[1].TargetPath)) File.Delete(items[1].TargetPath);
         }
+
+        #region CopyServyHostAsync
+
+        /// <summary>Lets the extraction proceed: no process holds the host executable.</summary>
+        private void NoHostProcessBlocks()
+            => _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(AppConfig.ServyHostExe, It.IsAny<bool>())).Returns(true);
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task CopyServyHostAsync_NullInstaller_Throws()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _resourceHelper.CopyServyHostAsync(_fakeAssembly, "Servy.Resources", AppConfig.ServyHostFileName, null, CancellationToken.None));
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task CopyServyHostAsync_HostRunning_StopsEveryServiceThenTheHostAndStartsTheHostThenTheServices()
+        {
+            // Arrange
+            var calls = new List<string>();
+            var services = new List<string> { "Servy_UI_Service", "Servy_CLI_Service" };
+            var dummyBytes = new byte[] { 0x4D, 0x5A };
+            _fakeAssembly.OnGetManifestResourceStream = name => name == "Servy.Resources.Servy.Host.Net48.exe" ? new MemoryStream(dummyBytes) : null;
+            _mockServiceHelper.Setup(s => s.GetRunningServyServices()).Returns(services);
+            _mockServiceHelper.Setup(s => s.StopServicesAsync(services, It.IsAny<CancellationToken>()))
+                .Callback(() => calls.Add("stop services")).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StartServicesAsync(services, It.IsAny<CancellationToken>()))
+                .Callback(() => calls.Add("start services")).Returns(Task.CompletedTask);
+            var host = new Mock<IServyHostInstaller>();
+            host.Setup(h => h.IsRunning()).Returns(true);
+            host.Setup(h => h.StopAsync(It.IsAny<CancellationToken>())).Callback(() => calls.Add("stop host")).Returns(Task.CompletedTask);
+            host.Setup(h => h.StartAsync(It.IsAny<CancellationToken>())).Callback(() => calls.Add("start host")).Returns(Task.CompletedTask);
+
+            NoHostProcessBlocks();
+
+            // Act
+            bool result = await _resourceHelper.CopyServyHostAsync(_fakeAssembly, "Servy.Resources", AppConfig.ServyHostFileName, host.Object, CancellationToken.None);
+
+            // Assert: every Servy service, UI and CLI alike, depends on the host, so they stop first and start last
+            Assert.True(result);
+            Assert.Equal(dummyBytes, File.ReadAllBytes(Path.Combine(TempDirectory, "Servy.Host.Net48.exe")));
+            Assert.Equal(new[] { "stop services", "stop host", "start host", "start services" }, calls);
+            _mockServiceHelper.Verify(s => s.GetRunningServyUIServices(), Times.Never);
+            _mockServiceHelper.Verify(s => s.GetRunningServyCLIServices(), Times.Never);
+            host.Verify(h => h.StartAsync(CancellationToken.None), Times.Once);
+            Assert.True(_resourceHelper.HasCopiedResources);
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task CopyServyHostAsync_HostNotRunning_NeitherStopsNorStartsIt()
+        {
+            // Arrange
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(new byte[] { 1 });
+            _mockServiceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string>());
+            var host = new Mock<IServyHostInstaller>();
+            host.Setup(h => h.IsRunning()).Returns(false);
+
+            NoHostProcessBlocks();
+
+            // Act
+            bool result = await _resourceHelper.CopyServyHostAsync(_fakeAssembly, "Servy.Resources", AppConfig.ServyHostFileName, host.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            host.Verify(h => h.StopAsync(It.IsAny<CancellationToken>()), Times.Never);
+            host.Verify(h => h.StartAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _mockServiceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task CopyServyHostAsync_UpToDate_TouchesNothing()
+        {
+            // Arrange: an extracted host newer than this process's executable is kept as is
+            var target = Path.Combine(TempDirectory, "Servy.Host.Net48.exe");
+            File.WriteAllText(target, "existing");
+            File.SetLastWriteTimeUtc(target, DateTime.UtcNow.AddDays(1));
+            var host = new Mock<IServyHostInstaller>(MockBehavior.Strict);
+
+            NoHostProcessBlocks();
+
+            // Act
+            bool result = await _resourceHelper.CopyServyHostAsync(_fakeAssembly, "Servy.Resources", AppConfig.ServyHostFileName, host.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal("existing", File.ReadAllText(target));
+            _mockServiceHelper.Verify(s => s.GetRunningServyServices(), Times.Never);
+            Assert.False(_resourceHelper.HasCopiedResources);
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task CopyServyHostAsync_HostFailsToRestart_IsLoggedAndTheServicesAreStillStarted()
+        {
+            // Arrange
+            var services = new List<string> { "svc" };
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(new byte[] { 1 });
+            _mockServiceHelper.Setup(s => s.GetRunningServyServices()).Returns(services);
+            var host = new Mock<IServyHostInstaller>();
+            host.Setup(h => h.IsRunning()).Returns(true);
+            host.Setup(h => h.StartAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("did not start"));
+
+            NoHostProcessBlocks();
+
+            // Act
+            var (result, log) = await LogCapture.RunAsync<bool>(() => _resourceHelper.CopyServyHostAsync(_fakeAssembly, "Servy.Resources", AppConfig.ServyHostFileName, host.Object, CancellationToken.None));
+
+            // Assert
+            Assert.True(result);
+            Assert.Contains("The 'Servy' service failed to restart after copying resource", log);
+            _mockServiceHelper.Verify(s => s.StartServicesAsync(services, CancellationToken.None), Times.Once);
+        }
+
+        #endregion
 
         [Fact]
         public async Task CopyResources_CaughtOuterException_ReturnsFalse()

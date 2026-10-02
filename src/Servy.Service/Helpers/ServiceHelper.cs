@@ -418,10 +418,11 @@ namespace Servy.Service.Helpers
                     return;
                 }
 
+                // The restarter runs under this service account, so it logs where the account can write
                 var psi = new ProcessStartInfo
                 {
                     FileName = restarter,
-                    Arguments = Helper.Quote(serviceName),
+                    Arguments = Helper.Quote(serviceName) + " " + Helper.Quote(AppConfig.ServiceLogsFolderPath),
                     CreateNoWindow = true,
                     UseShellExecute = false
                 };

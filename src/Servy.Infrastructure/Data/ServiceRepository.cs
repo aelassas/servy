@@ -339,6 +339,72 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
+        public virtual async Task<int> UpdateRuntimeStateAsync(string name, ServiceRuntimeStateDto state, CancellationToken cancellationToken = default)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (string.IsNullOrWhiteSpace(name)) return 0;
+
+            string previousStopTimeout = state.UpdatePreviousStopTimeout ? ", PreviousStopTimeout = @PreviousStopTimeout" : string.Empty;
+            string sql = $@"
+                UPDATE {SqlConstants.ServicesTableName}
+                SET Pid = @Pid, ActiveStdoutPath = @ActiveStdoutPath, ActiveStderrPath = @ActiveStderrPath{previousStopTimeout}
+                WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+
+            return await ExecuteByNameAsync(sql, name, n => new
+            {
+                Name = n,
+                state.Pid,
+                state.ActiveStdoutPath,
+                state.ActiveStderrPath,
+                state.PreviousStopTimeout,
+            }, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<RestartAttemptsDto> GetRestartAttemptsAsync(string name, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            string sql = $@"
+                SELECT Name, RestartAttempts, RestartAttemptsUpdatedAtTicks
+                FROM {SqlConstants.ServicesTableName}
+                WHERE Name = @Name COLLATE UNICODE_NOCASE
+                LIMIT 1;";
+
+            var row = await ResolveByNameAsync<ServiceDto>(sql, name, cancellationToken);
+            if (row == null) return null;
+
+            return new RestartAttemptsDto
+            {
+                Attempts = row.RestartAttempts.GetValueOrDefault() < 0 ? 0 : row.RestartAttempts.GetValueOrDefault(),
+                UpdatedAtUtc = row.RestartAttemptsUpdatedAtTicks.HasValue
+                    && row.RestartAttemptsUpdatedAtTicks.Value >= DateTime.MinValue.Ticks
+                    && row.RestartAttemptsUpdatedAtTicks.Value <= DateTime.MaxValue.Ticks
+                    ? new DateTime(row.RestartAttemptsUpdatedAtTicks.Value, DateTimeKind.Utc)
+                    : (DateTime?)null,
+            };
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<int> UpdateRestartAttemptsAsync(string name, int attempts, DateTime updatedAtUtc, CancellationToken cancellationToken = default)
+        {
+            if (attempts < 0) throw new ArgumentOutOfRangeException(nameof(attempts), "The restart attempts counter cannot be negative.");
+            if (string.IsNullOrWhiteSpace(name)) return 0;
+
+            string sql = $@"
+                UPDATE {SqlConstants.ServicesTableName}
+                SET RestartAttempts = @RestartAttempts, RestartAttemptsUpdatedAtTicks = @RestartAttemptsUpdatedAtTicks
+                WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+
+            long ticks = updatedAtUtc.Kind == DateTimeKind.Local ? updatedAtUtc.ToUniversalTime().Ticks : updatedAtUtc.Ticks;
+            return await ExecuteByNameAsync(sql, name, n => new
+            {
+                Name = n,
+                RestartAttempts = attempts,
+                RestartAttemptsUpdatedAtTicks = ticks,
+            }, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
             string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
@@ -484,6 +550,31 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
+        /// Executes a write keyed by service name with the same legacy whitespace fallback as the reads: the trimmed name
+        /// first, then the verbatim name when nothing was written and the two differ (Servy &lt;= 8.3 rows).
+        /// </summary>
+        /// <param name="sql">The parameterized SQL statement to execute (must use a @Name parameter).</param>
+        /// <param name="name">The service name as given.</param>
+        /// <param name="parametersFor">Builds the statement's parameters for one variant of the name.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The number of rows written.</returns>
+        private async Task<int> ExecuteByNameAsync(string sql, string name, Func<string, object> parametersFor, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var trimmed = name.Trim();
+            var rows = await _dapper.ExecuteAsync(sql, parametersFor(trimmed), cancellationToken: cancellationToken);
+
+            if (rows == 0 && name != trimmed)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                rows = await _dapper.ExecuteAsync(sql, parametersFor(name), cancellationToken: cancellationToken);
+            }
+
+            return rows;
+        }
+
+        /// <summary>
         /// Orchestrates an asynchronous data store command using a unified legacy whitespace fallback execution pattern.
         /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical
         /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
@@ -593,7 +684,7 @@ namespace Servy.Infrastructure.Data
         /// its PID or active log paths, which would break Manager tracking.
         /// </summary>
         /// <param name="incoming">The DTO deserialized from an import file.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         private async Task PatchRuntimeStateAsync(ServiceDto incoming, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken)
@@ -620,7 +711,7 @@ namespace Servy.Infrastructure.Data
         /// its PID or active log paths, which would break Manager tracking.
         /// </summary>
         /// <param name="incoming">The DTO deserialized from an import file.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         private void PatchRuntimeState(ServiceDto incoming, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
@@ -656,7 +747,7 @@ namespace Servy.Infrastructure.Data
         /// </remarks>
         /// <param name="incoming">The fresh configuration DTO targeted for database persistence.</param>
         /// <param name="existing">The row currently stored in the database for the same service name.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
@@ -667,6 +758,8 @@ namespace Servy.Infrastructure.Data
                 incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
                 incoming.ActiveStderrPath = existing.ActiveStderrPath;
                 incoming.PreviousStopTimeout = existing.PreviousStopTimeout;
+                incoming.RestartAttempts = existing.RestartAttempts;
+                incoming.RestartAttemptsUpdatedAtTicks = existing.RestartAttemptsUpdatedAtTicks;
             }
 
             if (preserveExistingCredentials)

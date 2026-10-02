@@ -2,14 +2,17 @@ using Servy.Core.Config;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Specialized;
+using Servy.Core.NamedPipes;
+using Servy.Core.Services;
 
 namespace Servy.Host.Bootstrap
 {
     /// <summary>
     /// Seam over the machine-touching and process-global calls that the production constructor of
-    /// <see cref="Servy.Host.Service"/> would otherwise make inline: the global logger, the Windows
-    /// event source, the application settings, the core data-layer settings,
-    /// the SQLite version check and the creation of the database and repository stack.
+    /// <see cref="Service"/> would otherwise make inline: the global logger, the Windows event source, the
+    /// application settings, the core data-layer settings, the SQLite version check, the
+    /// creation of the database and repository stack, the migration of the former service log, and the
+    /// Service Control Manager and pipe-client identification used to authorize callers.
     /// </summary>
     /// <remarks>
     /// The production implementation is <see cref="ServiceBootstrapEnvironment"/>. Every member forwards
@@ -17,10 +20,9 @@ namespace Servy.Host.Bootstrap
     /// thread, and the public constructors wire that implementation, so a service constructed the way
     /// the Service Control Manager constructs it behaves exactly as it did when the calls were inline.
     /// <para>
-    /// The pure logic of the constructor deliberately stays in <see cref="Servy.Host.Service"/>: the
-    /// <c>Timing:*</c> parsing, the <c>EnableEventLog</c> to <c>AutoLog</c> mapping, <c>CanShutdown</c>
-    /// and the exit-code rules of the surrounding <c>catch</c>. Those are what a test asserts once this
-    /// seam lets it construct the service at all.
+    /// The pure logic of the constructor deliberately stays in <see cref="Service"/>: the
+    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, <c>CanShutdown</c> and the exit-code rules of the
+    /// surrounding <c>catch</c>. Those are what a test asserts once this seam lets it construct the service at all.
     /// </para>
     /// </remarks>
     internal interface IServiceBootstrapEnvironment
@@ -93,6 +95,24 @@ namespace Servy.Host.Bootstrap
         /// as the inline block did, so the constructor's <c>catch</c> handles it.
         /// </exception>
         ServiceDataStack CreateDataStack(string connectionString, string aesKeyFilePath, string aesIVFilePath);
+
+        /// <summary>
+        /// Moves the content of the wrappers' former log, <c>logs\Servy.Service.log</c>, to
+        /// <c>logs\service\Servy.Service.log</c>.
+        /// </summary>
+        void MigrateLegacyServiceLog();
+
+        /// <summary>
+        /// Creates the Service Control Manager API the service uses to tell which process a service runs in.
+        /// </summary>
+        /// <returns>The API.</returns>
+        IWindowsServiceApi CreateWindowsServiceApi();
+
+        /// <summary>
+        /// Creates the identifier of the process at the client end of a connection.
+        /// </summary>
+        /// <returns>The identifier.</returns>
+        IPipeCallerIdentifier CreateCallerIdentifier();
 
         /// <summary>
         /// Writes an error to the global logger, optionally with the exception that caused it.

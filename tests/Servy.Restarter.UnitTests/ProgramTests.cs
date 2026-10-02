@@ -1,20 +1,12 @@
 using Moq;
 using Servy.Core.Config;
-using Servy.Core.DTOs;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Security;
-using Servy.Core.Services;
-using Servy.Infrastructure.Data;
 using Servy.Restarter.Bootstrap;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data.SQLite;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Restarter.UnitTests
@@ -25,39 +17,38 @@ namespace Servy.Restarter.UnitTests
         // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
         private const string LogFileName = "Servy.Restarter.log";
 
+        /// <summary>The command line the Service Control Manager stores for a service installed by Servy's desktop app.</summary>
+        private const string UiWrapperImagePath = "\"C:\\ProgramData\\Servy\\Servy.Service.Net48.exe\" \"{0}\"";
+
         private readonly string _expectedLogFilePath;
-        private readonly SQLiteConnection _dbKeepAliveConnection;
         private readonly string _restartTimeoutSeconds;
 
         public ProgramTests()
         {
-            // Reset global exit code before each test execution block
+            // Reset exit code before each execution run
             Environment.ExitCode = 0;
 
-            // Isolate logging writes directly into a dynamic, unique temporary folder per test run
+            // Generate an isolated test-run directory for log storage
             _expectedLogFilePath = Path.Combine(TempDirectory, LogFileName);
 
             // Pre-seed the static logger so empty/missing argument calls route to the isolated temp directory
             Logger.Initialize(LogFileName, logDirectory: TempDirectory);
 
-            // Capture the baseline restart timeout to allow perfect recovery state rollback during Dispose
+            // Program.Main reads ConfigurationManager.AppSettings; capture the baseline restart timeout so Dispose can
+            // put it back, then run every test with a short one.
             _restartTimeoutSeconds = ConfigurationManager.AppSettings["RestartTimeoutSeconds"];
+            ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "30";
+        }
 
-            // Supply an absolute file-backed SQLite database path and key paths in TempDirectory to satisfy AppFoldersHelper
-            string fileDbPath = Path.Combine(TempDirectory, "RestarterTestDbNet48.db");
-            string fileConnString = $"Data Source={fileDbPath};Version=3;";
-
-            // The core settings are read-only in production (always the vault under ProgramData), so
-            // the database and key are injected through the test-only override instead of AppSettings.
-            CoreSettingsLoader.TestOverride = new CoreSettings(
-                fileConnString,
-                Path.Combine(TempDirectory, "test_restarter.key"),
-                Path.Combine(TempDirectory, "test_restarter.iv"));
-
-            // Open the persistent handle and initialize database schema
-            _dbKeepAliveConnection = new SQLiteConnection(fileConnString);
-            _dbKeepAliveConnection.Open();
-            SQLiteDbInitializer.Initialize(_dbKeepAliveConnection);
+        /// <summary>
+        /// Builds a fake environment whose Service Control Manager reports <paramref name="serviceName"/> as running
+        /// Servy's desktop-app wrapper, which is what makes the restarter treat it as managed by Servy.
+        /// </summary>
+        private static FakeRestarterBootstrapEnvironment ManagedService(string serviceName)
+        {
+            var environment = new FakeRestarterBootstrapEnvironment();
+            environment.ImagePaths[serviceName] = string.Format(UiWrapperImagePath, serviceName);
+            return environment;
         }
 
         #region Guard Conditions Branch Coverage
@@ -66,7 +57,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_MissingArguments_SetsExitCodeTo1AndExitsEarly()
         {
             // Arrange
-            string[] args = new string[0]; // Triggers: if (args.Length == 0)
+            string[] args = new string[0]; // Triggers if (args.Length == 0)
 
             // Act
             Program.Main(args);
@@ -87,7 +78,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
-            string[] args = new string[] { invalidName, TempDirectory }; // Triggers: if (string.IsNullOrWhiteSpace(serviceName))
+            string[] args = new string[] { invalidName, TempDirectory }; // Triggers if (string.IsNullOrWhiteSpace(serviceName))
 
             // Act
             Program.Main(args);
@@ -97,7 +88,7 @@ namespace Servy.Restarter.UnitTests
             AssertLogContainsMessage("Service name cannot be empty.");
 
             // The ExitsEarly half: without the guard's return, the blank name flows on to the
-            // repository lookup and the not-managed branch logs and sets ExitCode = 1 as well.
+            // Service Control Manager lookup and the not-managed branch logs and sets ExitCode = 1 as well.
             AssertLogDoesNotContainMessage("is not managed by Servy.");
             AssertLogDoesNotContainMessage("Attempting to restart service");
         }
@@ -107,11 +98,11 @@ namespace Servy.Restarter.UnitTests
         #region Event Log Fallback & Security Guard Coverage
 
         /*
-         * The event source, the event-log logger and the SQLite version check are reached through
-         * IRestarterBootstrapEnvironment, so the three branches below no longer need a host without
-         * Windows Event Log registry access or a substituted SQLite provider assembly. The rules the
-         * version check itself applies stay covered by DatabaseValidatorTests.cs; what these tests pin
-         * is what Program.Run does with its answer.
+         * The event source, the event-log logger and the Service Control Manager lookup of the service's
+         * executable are reached through IRestarterBootstrapEnvironment, so the branches below need neither
+         * a host without Windows Event Log registry access nor a real service. The restarter runs under the
+         * service account and has no access to Servy.db: whether a service is managed by Servy is decided by
+         * the executable the SCM runs for it (IsServyWrapperImagePath, pinned below).
          */
 
         [Fact]
@@ -196,30 +187,24 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
-        public void Run_VulnerableSqliteVersion_LogsFatalAndExitsBeforeTouchingTheDatabase()
+        public void Run_ServiceRunsAnotherExecutable_RefusesAsNotManagedAndNeverRestarts()
         {
             // Arrange
-            // A detected version below AppConfig.MinRequiredSqliteVersion is the CVE-2025-6965 refusal.
-            const string VulnerableVersion = "3.49.0";
-            string serviceName = "ManagedServiceNeverReachedOnVulnerableSqlite";
-            var environment = new FakeRestarterBootstrapEnvironment
-            {
-                SqliteVersionIsSafe = false,
-                DetectedSqliteVersion = VulnerableVersion
-            };
+            // A service that exists but does not run one of Servy's wrappers: the restarter must not restart
+            // an arbitrary service just because a service account asked it to.
+            string serviceName = "ForeignServiceNotRunningAServyWrapper";
+            var environment = new FakeRestarterBootstrapEnvironment();
+            environment.ImagePaths[serviceName] = "C:\\Windows\\System32\\svchost.exe -k netsvcs";
+            var mockRestarter = new Mock<IServiceRestarter>(MockBehavior.Strict);
 
             // Act
-            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+            Program.Run(new string[] { serviceName, TempDirectory }, mockRestarter.Object, environment);
 
             // Assert
             Assert.Equal(1, Environment.ExitCode);
-            AssertLogContainsMessage($"[FATAL] Vulnerable SQLite version detected: {VulnerableVersion}. " +
-                                     $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-
-            // The refusal returns: neither the repository validation nor the restart attempt may run, so a
-            // vulnerable engine is never asked to open the database.
-            AssertLogDoesNotContainMessage($"Service '{serviceName}' is not managed by Servy.");
+            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
             AssertLogDoesNotContainMessage("Attempting to restart service");
+            Assert.Equal(new[] { serviceName }, environment.ImagePathRequests);
         }
 
         [Fact]
@@ -248,20 +233,20 @@ namespace Servy.Restarter.UnitTests
 
         #endregion
 
-        #region Operational Pipeline & Validation Branches
+        #region Operational Pipeline & Validation Exceptions
 
         [Fact]
         public void Main_SettingsFileStillRelocatesTheDatabase_WarnsThatTheSettingIsIgnored()
         {
             // Arrange
             // A pre-10.2 .exe.config that still points the database elsewhere. The setting has no
-            // effect (the test-only override supplies the database), and the restarter must say so
+            // effect (the restarter does not open the database at all), and the restarter must say so
             // once the scoped logger exists.
             ConfigurationManager.AppSettings["DefaultConnection"] = "Data Source=D:\\old\\Servy.db";
             try
             {
                 // Act
-                Program.Main(new string[] { "UnmanagedNet48ServiceWithOldSettings", TempDirectory });
+                Program.Main(new string[] { "GhostUnmanagedServiceWithOldSettings", TempDirectory });
 
                 // Assert
                 AssertLogContainsMessage("Servy.Restarter.Net48.exe.config sets DefaultConnection, which Servy ignores since v10.2");
@@ -278,9 +263,9 @@ namespace Servy.Restarter.UnitTests
         public void Main_ValidNameButServiceNotManaged_TriggersValidationFailureBranch()
         {
             // Arrange
-            // We pass an unmanaged service identifier string. Since the database is fresh and empty,
-            // serviceRepository.GetByName(...) will return null, exercising the managed validation check.
-            string serviceName = "UnmanagedNet48Service";
+            // We provide a dummy service name that is not installed: the Service Control Manager has no
+            // executable for it, which triggers the not-managed failure branch cleanly.
+            string serviceName = "GhostUnmanagedService";
             string[] args = new string[] { serviceName, TempDirectory };
 
             // Act
@@ -292,206 +277,136 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
-        public async Task Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
+        public void Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
         {
             // Arrange
-            // Inject an unparseable non-integer token directly into the runtime configuration matrix
+            string serviceName = "ManagedTestServiceForTimeoutValidation";
+            var environment = ManagedService(serviceName);
+
+            // Only the timeout option is corrupted.
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "NotAnInteger";
 
-            string connString = CoreSettingsLoader.TestOverride.ConnectionString;
-            string keyPath = CoreSettingsLoader.TestOverride.AESKeyFilePath;
-            string ivPath = CoreSettingsLoader.TestOverride.AESIVFilePath;
-
-            string serviceName = "UnmanagedNet48Service";
             string[] args = new string[] { serviceName, TempDirectory };
 
-            // Ensure application key files and folder environment exist for Program.Main
-            AppFoldersHelper.EnsureFolders(connString, keyPath, ivPath);
+            // Act
+            Program.Run(args, restarter: null, environment: environment);
 
-            // Seed a valid managed service via ServiceRepository so GetByName() can deserialize it properly
-            using (var dbContext = new AppDbContext(connString))
-            using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
-            using (var secureData = new SecureData(protectedKeyProvider))
-            {
-                var dapperExecutor = new DapperExecutor(dbContext);
-                var xmlSerializer = new XmlServiceSerializer();
-                var jsonSerializer = new JsonServiceSerializer();
-                var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
-
-                var service = new ServiceDto
-                {
-                    Name = serviceName,
-                    ExecutablePath = @"C:\MockPath\Service.exe"
-                };
-                await repository.AddAsync(service, CancellationToken.None);
-            }
-
-            try
-            {
-                // Act
-                Program.Main(args);
-
-                // Assert
-                // The application successfully bypassed the corrupted token string and fell back
-                // to standard timeout bounds. Because the service does not actually exist in the SCM,
-                // it detects ServiceNotFound, logs a warning, and sets ExitCode = 1.
-                Assert.Equal(1, Environment.ExitCode);
-                AssertLogContainsMessage($"Service '{serviceName}' no longer exists in the SCM; nothing to restart.");
-            }
-            finally
-            {
-                // Clean up the seeded service entry from the shared database context to prevent
-                // side-effects or collision state leaks on subsequent unit test runs.
-                using (var dbContext = new AppDbContext(connString))
-                using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
-                using (var secureData = new SecureData(protectedKeyProvider))
-                {
-                    var dapperExecutor = new DapperExecutor(dbContext);
-                    var xmlSerializer = new XmlServiceSerializer();
-                    var jsonSerializer = new JsonServiceSerializer();
-                    var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
-
-                    var existing = repository.GetByName(serviceName, decrypt: false);
-                    if (existing != null && existing.Id.HasValue)
-                    {
-                        await repository.DeleteAsync(existing.Id.Value, CancellationToken.None);
-                    }
-                }
-            }
+            // Assert
+            // The application successfully bypassed the corrupted token string and fell back
+            // to standard timeout bounds. Because the service does not actually exist in the SCM,
+            // it detects ServiceNotFound, logs a warning, and sets ExitCode = 1.
+            Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage($"Service '{serviceName}' no longer exists in the SCM; nothing to restart.");
         }
 
         [Fact]
-        public async Task Main_ServiceRestarted_SetsExitCodeTo0AndLogsSuccess()
+        public void Main_ServiceRestarted_SetsExitCodeTo0AndLogsSuccess()
         {
             // Arrange
-            string connString = CoreSettingsLoader.TestOverride.ConnectionString;
-            string keyPath = CoreSettingsLoader.TestOverride.AESKeyFilePath;
-            string ivPath = CoreSettingsLoader.TestOverride.AESIVFilePath;
-
-            string serviceName = "ManagedNet48ServiceForSuccessfulRestart";
-            string[] args = new string[] { serviceName, TempDirectory };
-
-            AppFoldersHelper.EnsureFolders(connString, keyPath, ivPath);
-
-            using (var dbContext = new AppDbContext(connString))
-            using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
-            using (var secureData = new SecureData(protectedKeyProvider))
-            {
-                var dapperExecutor = new DapperExecutor(dbContext);
-                var xmlSerializer = new XmlServiceSerializer();
-                var jsonSerializer = new JsonServiceSerializer();
-                var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
-
-                var service = new ServiceDto
-                {
-                    Name = serviceName,
-                    ExecutablePath = @"C:\MockPath\Service.exe"
-                };
-                await repository.AddAsync(service, CancellationToken.None);
-            }
+            string serviceName = "ManagedServiceForSuccessfulRestart";
+            var environment = ManagedService(serviceName);
 
             var mockRestarter = new Mock<IServiceRestarter>();
             mockRestarter
                 .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
                 .Returns(RestartResult.Restarted);
 
-            try
-            {
-                // Act
-                Program.Run(args, mockRestarter.Object);
+            string[] args = new string[] { serviceName, TempDirectory };
 
-                // Assert
-                Assert.Equal(0, Environment.ExitCode);
-                AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
-            }
-            finally
-            {
-                using (var dbContext = new AppDbContext(connString))
-                using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
-                using (var secureData = new SecureData(protectedKeyProvider))
-                {
-                    var dapperExecutor = new DapperExecutor(dbContext);
-                    var xmlSerializer = new XmlServiceSerializer();
-                    var jsonSerializer = new JsonServiceSerializer();
-                    var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+            // Act
+            Program.Run(args, mockRestarter.Object, environment);
 
-                    var existing = repository.GetByName(serviceName, decrypt: false);
-                    if (existing != null && existing.Id.HasValue)
-                    {
-                        await repository.DeleteAsync(existing.Id.Value, CancellationToken.None);
-                    }
-                }
-            }
+            // Assert
+            Assert.Equal(0, Environment.ExitCode);
+            AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
+            mockRestarter.Verify(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()), Times.Once);
         }
 
         [Fact]
-        public async Task Main_RestartTimeoutExceedsHostWaitLimit_LogsWarning()
+        public void Main_RestartTimeoutExceedsHostWaitLimit_LogsWarning()
         {
             // Arrange
             // 300s is above the 240s host service execution wait limit
             // (AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond) and well inside
             // AppConfig.MaxRestarterTimeoutSeconds, so ConfigParser.GetConfigInt passes it through
             // unclamped and the over-budget warning branch is taken.
-            ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "300";
-
-            string connString = CoreSettingsLoader.TestOverride.ConnectionString;
-            string keyPath = CoreSettingsLoader.TestOverride.AESKeyFilePath;
-            string ivPath = CoreSettingsLoader.TestOverride.AESIVFilePath;
-
-            string serviceName = "ManagedNet48ServiceForTimeoutWarning";
-            string[] args = new string[] { serviceName, TempDirectory };
-
-            AppFoldersHelper.EnsureFolders(connString, keyPath, ivPath);
-
-            using (var dbContext = new AppDbContext(connString))
-            using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
-            using (var secureData = new SecureData(protectedKeyProvider))
-            {
-                var dapperExecutor = new DapperExecutor(dbContext);
-                var xmlSerializer = new XmlServiceSerializer();
-                var jsonSerializer = new JsonServiceSerializer();
-                var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
-
-                var service = new ServiceDto
-                {
-                    Name = serviceName,
-                    ExecutablePath = @"C:\MockPath\Service.exe"
-                };
-                await repository.AddAsync(service, CancellationToken.None);
-            }
+            string serviceName = "ManagedServiceForTimeoutWarning";
+            var environment = ManagedService(serviceName);
 
             var mockRestarter = new Mock<IServiceRestarter>();
             mockRestarter
                 .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
                 .Returns(RestartResult.Restarted);
 
-            try
-            {
-                // Act
-                Program.Run(args, mockRestarter.Object);
+            ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "300";
+            string[] args = new string[] { serviceName, TempDirectory };
 
-                // Assert
-                Assert.Equal(0, Environment.ExitCode);
-                AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the host service execution wait limit (240s).");
-            }
-            finally
-            {
-                using (var dbContext = new AppDbContext(connString))
-                using (var protectedKeyProvider = new ProtectedKeyProvider(keyPath, ivPath))
-                using (var secureData = new SecureData(protectedKeyProvider))
-                {
-                    var dapperExecutor = new DapperExecutor(dbContext);
-                    var xmlSerializer = new XmlServiceSerializer();
-                    var jsonSerializer = new JsonServiceSerializer();
-                    var repository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
+            // Act
+            Program.Run(args, mockRestarter.Object, environment);
 
-                    var existing = repository.GetByName(serviceName, decrypt: false);
-                    if (existing != null && existing.Id.HasValue)
-                    {
-                        await repository.DeleteAsync(existing.Id.Value, CancellationToken.None);
-                    }
-                }
-            }
+            // Assert
+            Assert.Equal(0, Environment.ExitCode);
+            AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the host service execution wait limit (240s).");
+        }
+
+        #endregion
+
+        #region Fatal Exception Resilience Blocks
+
+        [Fact]
+        public void Run_ServiceLookupThrows_HitsCatchAllViaScopedLogger()
+        {
+            // Arrange
+            // The Service Control Manager lookup fails after the scoped logger exists, exercising the
+            // scoped-logger arm of the catch-all block.
+            var environment = new FakeRestarterBootstrapEnvironment
+            {
+                ImagePathFailure = new InvalidOperationException("the service key cannot be read")
+            };
+            string[] args = new string[] { "Invalid\\Service/Path:Characters", TempDirectory };
+
+            // Act
+            Program.Run(args, restarter: null, environment: environment);
+
+            // Assert
+            Assert.Equal(1, Environment.ExitCode);
+            // Confirms that the catch-all execution path was hit using the initialized scoped logger.
+            // The service-name prefix is what only the scoped logger can add, so asserting it pins
+            // the "scoped first" half of the scoped > root > static order rather than merely that
+            // some logger reported the failure.
+            AssertLogContainsMessage("[Invalid\\Service/Path:Characters] Servy.Restarter.exe failed to restart the service.");
+        }
+
+        #endregion
+
+        #region Servy Wrapper Detection
+
+        [Theory]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.Net48.exe\" \"svc\"")]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.CLI.Net48.exe\" \"svc\"")]
+        [InlineData("\"D:\\Dev\\Servy\\bin\\SERVY.SERVICE.NET48.EXE\" svc")]
+        [InlineData("C:\\Servy\\Servy.Service.Net48.exe svc")]
+        [InlineData("C:\\Servy\\Servy.Service.Net48.exe")]
+        public void IsServyWrapperImagePath_ServyWrapper_ReturnsTrue(string imagePath)
+        {
+            Assert.True(Program.IsServyWrapperImagePath(imagePath));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("C:\\Windows\\System32\\svchost.exe -k netsvcs")]
+        [InlineData("\"C:\\Servy\\Servy.Host.Net48.exe\"")]
+        [InlineData("\"C:\\Servy\\Servy.Restarter.Net48.exe\" svc")]
+        [InlineData("\"C:\\Evil\\NotServy.Service.Net48.exe\" svc")]
+        [InlineData("\"C:\\Evil\\Servy.Service.Net48.exe.bat\" svc")]
+        [InlineData("\"C:\\Unterminated\\Servy.Service.Net48.exe svc")]
+        [InlineData("C:\\Program Files\\Servy\\Servy.Service.Net48.exe svc")]
+        [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.exe\" \"svc\"")]
+        public void IsServyWrapperImagePath_OtherExecutable_ReturnsFalse(string imagePath)
+        {
+            Assert.False(Program.IsServyWrapperImagePath(imagePath));
         }
 
         #endregion
@@ -533,7 +448,7 @@ namespace Servy.Restarter.UnitTests
 
         /// <summary>
         /// An <see cref="IRestarterBootstrapEnvironment"/> that records what the start-up sequence asked of
-        /// it and answers from memory, so no step touches the Windows event log or the loaded SQLite engine.
+        /// it and answers from memory, so no step touches the Windows event log or the service registry.
         /// </summary>
         private sealed class FakeRestarterBootstrapEnvironment : IRestarterBootstrapEnvironment
         {
@@ -550,11 +465,14 @@ namespace Servy.Restarter.UnitTests
             /// </summary>
             public bool FailOnlyEventLogEnabledLogger { get; set; }
 
-            /// <summary>Gets or sets the answer <see cref="IsSqliteVersionSafe"/> gives.</summary>
-            public bool SqliteVersionIsSafe { get; set; } = true;
+            /// <summary>Gets the command lines <see cref="GetServiceImagePath"/> answers, by service name.</summary>
+            public Dictionary<string, string> ImagePaths { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            /// <summary>Gets or sets the version <see cref="IsSqliteVersionSafe"/> reports.</summary>
-            public string DetectedSqliteVersion { get; set; } = AppConfig.MinRequiredSqliteVersion.ToString();
+            /// <summary>Gets or sets the exception <see cref="GetServiceImagePath"/> raises, if any.</summary>
+            public Exception ImagePathFailure { get; set; }
+
+            /// <summary>Gets the service names <see cref="GetServiceImagePath"/> was asked about, in call order.</summary>
+            public List<string> ImagePathRequests { get; } = new List<string>();
 
             /// <summary>
             /// Gets the <c>isEventLogEnabled</c> arguments <see cref="CreateEventLogLogger"/> was called
@@ -594,13 +512,20 @@ namespace Servy.Restarter.UnitTests
                 return new EventLogLogger(AppConfig.EventSource, isEventLogEnabled: false);
             }
 
-            /// <summary>Answers from <see cref="SqliteVersionIsSafe"/>.</summary>
-            /// <param name="detectedVersion">Receives <see cref="DetectedSqliteVersion"/>.</param>
-            /// <returns><see cref="SqliteVersionIsSafe"/>.</returns>
-            public bool IsSqliteVersionSafe(out string detectedVersion)
+            /// <summary>Records the request and answers from <see cref="ImagePaths"/>.</summary>
+            /// <param name="serviceName">The service the restarter asked about.</param>
+            /// <returns>The configured command line, or <see langword="null"/> for an unknown service.</returns>
+            /// <exception cref="Exception">The configured <see cref="ImagePathFailure"/>.</exception>
+            public string GetServiceImagePath(string serviceName)
             {
-                detectedVersion = DetectedSqliteVersion;
-                return SqliteVersionIsSafe;
+                ImagePathRequests.Add(serviceName);
+
+                if (ImagePathFailure != null)
+                {
+                    throw ImagePathFailure;
+                }
+
+                return ImagePaths.TryGetValue(serviceName, out var imagePath) ? imagePath : null;
             }
         }
 
@@ -611,24 +536,14 @@ namespace Servy.Restarter.UnitTests
             // Force logger teardown first to unlock active files
             Logger.Shutdown();
 
-            // Explicitly unlock and drop the keep-alive memory connection reference
-            _dbKeepAliveConnection?.Dispose();
-
-            // Rollback AppSettings matrix states to maintain complete isolation integrity across sibling execution tracks
-            ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = _restartTimeoutSeconds;
-            CoreSettingsLoader.TestOverride = null;
-
-            // Clean up temporary local workspace state file markers if generated
+            // Clean dynamic runtime artifacts cleanly
             try
             {
-                string keyPath = Path.Combine(TempDirectory, "test_restarter.key");
-                string ivPath = Path.Combine(TempDirectory, "test_restarter.iv");
-                if (File.Exists(keyPath)) File.Delete(keyPath);
-                if (File.Exists(ivPath)) File.Delete(ivPath);
+                ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = _restartTimeoutSeconds;
             }
             catch
             {
-                // Suppress lock warnings on ephemeral files cleanup
+                // Suppress disposal file-locks
             }
 
             base.Dispose();

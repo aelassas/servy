@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -21,7 +22,6 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
@@ -108,12 +108,12 @@ namespace Servy.Service
         private RecoveryAction _recoveryAction;
         private readonly object _healthCheckLock = new object();
         private readonly object _teardownLock = new object();
-        private readonly object _fileLock = new object();
+        private readonly object _restartAttemptsLock = new object();
         private volatile bool _isRecovering = false;
         private int _maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _recoveryActionEnabled = false;
-        private string _restartAttemptsFile;
+        private string _restartAttemptsServiceName;
         private bool _preLaunchEnabled;
         private StartOptions _options;
         private CancellationTokenSource _cancellationSource;
@@ -279,7 +279,7 @@ namespace Servy.Service
             _scmNative = new ScmNative();
             _options = null;
 
-            _bootstrapEnvironment.InitializeLogger("Servy.Service.log");
+            _bootstrapEnvironment.InitializeLogger(AppConfig.ServyServiceLogFileName, AppConfig.ServiceLogsFolderPath);
 
             try
             {
@@ -429,8 +429,8 @@ namespace Servy.Service
                     _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeoutInSeconds + AppConfig.ScmStartupRequestBufferSeconds), _logger);
                 }
 
-                // Set up attempts file
-                SetupAttemptsFile(options);
+                // Set up the restart attempts counter
+                SetupRestartAttempts(options);
 
                 // Set up service logging
                 HandleLogWriters(options);
@@ -596,7 +596,7 @@ namespace Servy.Service
 
                 if (_serviceHandle == IntPtr.Zero)
                 {
-                    _logger?.Error("Service handle is null! SCM notification impossible. Falling back to synchronous teardown.");
+                    _logger?.Error("Service handle is null SCM notification impossible. Falling back to synchronous teardown.");
 
                     // Log the completion intention right before the logger is destroyed
                     _logger?.Info("Pre-Shutdown fallback path entered. Initiating synchronous teardown before Environment.Exit.");
@@ -955,147 +955,78 @@ namespace Servy.Service
         #region Restart Attempts Persistence
 
         /// <summary>
-        /// Initializes the path to the restart attempts file for the current service,
-        /// located under the %ProgramData%\Servy\recovery directory.
-        /// The filename is unique per service based on its name to prevent conflicts
-        /// when multiple services are managed by Servy on the same machine.
+        /// Records the name of the service whose restart attempts counter this wrapper reads and writes. The counter is
+        /// kept in <c>Servy.db</c> and reached through the Servy host, so the service account needs no file for it.
         /// </summary>
         /// <param name="options">The service startup options containing the service name.</param>
-        private void SetupAttemptsFile(StartOptions options)
+        private void SetupRestartAttempts(StartOptions options)
         {
-            SecurityHelper.CreateSecureDirectory(AppConfig.RecoveryFolderPath, breakInheritance: false); // ensures folder exists
-
-            string safeServiceName = MakeFilenameSafe(options.ServiceName);
-            _restartAttemptsFile = Path.Combine(AppConfig.RecoveryFolderPath, $"{safeServiceName}_restartAttempts.dat");
+            _restartAttemptsServiceName = options.ServiceName;
         }
 
         /// <summary>
-        /// Sanitizes a string to be safe for use as a filename by replacing
-        /// all invalid filename characters with underscores ('_'). Handles DOS reserved device names
-        /// and prevents filename namespace collisions.
+        /// Internal unprotected read logic. Assumes <see cref="_restartAttemptsLock"/> is held by the caller.
         /// </summary>
-        /// <param name="name">The original string to sanitize.</param>
-        /// <returns>A sanitized string safe for use as a filename.</returns>
-        public static string MakeFilenameSafe(string name)
+        /// <returns>The counter and the time it was last written; 0 attempts and no time when it was never written.</returns>
+        private RestartAttemptsDto ReadAttemptsInternal()
         {
-            // If null or empty, treat the base name as an underscore but still
-            // append the short hash to satisfy the unique signature layout requirement
-            if (string.IsNullOrEmpty(name))
+            var state = _namedPipesService.GetRestartAttemptsAsync(_restartAttemptsServiceName, CancellationToken.None).GetAwaiter().GetResult()
+                ?? new RestartAttemptsDto();
+            if (state.Attempts < 0)
             {
-                return $"_{ComputeShortHash(string.Empty)}";
+                _logger?.Warn("Invalid restart attempts counter received. Resetting counter to 0.");
+                WriteAttemptsInternal(0);
+                return new RestartAttemptsDto();
             }
 
-            // 1. Strip trailing spaces, tabs, and periods as Windows ignores these on disk handles (Issue #2069 mitigation)
-            string sanitized = name.TrimEnd(' ', '.', '\t');
-
-            if (string.IsNullOrEmpty(sanitized))
-            {
-                sanitized = "_";
-            }
-
-            // 2. Replace invalid character markers
-            var invalidChars = Path.GetInvalidFileNameChars();
-            foreach (var c in invalidChars)
-            {
-                sanitized = sanitized.Replace(c, '_');
-            }
-
-            // 3. Prevent Reserved DOS Name collisions and User-supplied namespace overlaps (Issue #2118 & #2080)
-            int firstDotIndex = sanitized.IndexOf('.');
-            string leadingSegment = firstDotIndex >= 0 ? sanitized.Substring(0, firstDotIndex) : sanitized;
-
-            // Isolate the base word by stripping all leading underscores
-            string baseSegment = leadingSegment.TrimStart('_');
-
-            // Only escape if the underlying base keyword is an actual hardware reserved name
-            if (ReservedNames.IsReservedDeviceName(baseSegment))
-            {
-                // Count how many leading underscores the user already had in their input segment
-                int existingUnderscores = leadingSegment.Length - baseSegment.Length;
-
-                // Prepend exactly one more underscore than what currently exists to break the collision chain
-                string protectionPrefix = new string('_', existingUnderscores + 1);
-
-                sanitized = protectionPrefix + baseSegment + (firstDotIndex >= 0 ? sanitized.Substring(firstDotIndex) : string.Empty);
-            }
-
-            // 4. Collision Insurance: Append a deterministic short hash of the ORIGINAL raw name input string.
-            // This guarantees unique on-disk allocations for variations such as "MyService", "MyService ", and "MyService."
-            string shortHash = ComputeShortHash(name);
-
-            return $"{sanitized}_{shortHash}";
+            return state;
         }
 
         /// <summary>
-        /// Computes a deterministic 6-character hex string hash from an input value.
+        /// Internal unprotected write logic. Assumes <see cref="_restartAttemptsLock"/> is held by the caller.
         /// </summary>
-        private static string ComputeShortHash(string input)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-                // 3 bytes maps cleanly to a highly unique 6-character hex identifier
-                return BitConverter.ToString(bytes, 0, 3).Replace("-", "").ToLowerInvariant();
-            }
-        }
-
-        /// <summary>
-        /// Ensures the restart attempts tracking file exists and retrieves the current counter value.
-        /// </summary>
-        /// <param name="ct">A cancellation token to observe while waiting for the semaphore or performing I/O.</param>
-        /// <returns>
-        /// The number of restart attempts recorded in the file.
-        /// Returns 0 if the file is missing, corrupt, or if an error occurs during retrieval.
-        /// </returns>
+        /// <param name="attempts">The number of restart attempts to persist.</param>
         /// <remarks>
-        /// This method uses an asynchronous semaphore to prevent race conditions during file access.
-        /// If the file content is invalid or unreadable, it automatically resets the file to "0"
-        /// to maintain a clean recovery state for the managed process.
+        /// The Servy host stamps the write with the current UTC time; writing the unchanged count therefore anchors the
+        /// counter to the current OS session.
         /// </remarks>
-        private int? EnsureRestartAttemptsFile()
+        private void WriteAttemptsInternal(int attempts)
         {
-            if (string.IsNullOrEmpty(_restartAttemptsFile)) return 0;
+            _namedPipesService.UpdateRestartAttemptsAsync(_restartAttemptsServiceName, attempts, CancellationToken.None).GetAwaiter().GetResult();
+        }
 
-            lock (_fileLock)
+        /// <summary>
+        /// Retrieves the current restart attempts counter safely.
+        /// </summary>
+        /// <returns>The counter; <see langword="null"/> when it cannot be read.</returns>
+        private int? GetRestartAttempts()
+        {
+            if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return 0;
+
+            lock (_restartAttemptsLock)
             {
                 try
                 {
-                    if (File.Exists(_restartAttemptsFile))
-                    {
-                        var content = File.ReadAllText(_restartAttemptsFile).Trim();
-                        if (int.TryParse(content, NumberStyles.Integer, CultureInfo.InvariantCulture, out var attempts) && attempts >= 0)
-                            return attempts;
-
-                        WriteAttemptsInternal(0);
-                        _logger?.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
-                        return 0;
-                    }
-                    else
-                    {
-                        WriteAttemptsInternal(0);
-                        _logger?.Warn("Restart attempts file not found. Initializing counter to 0.");
-                        return 0;
-                    }
+                    return ReadAttemptsInternal().Attempts;
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Restart attempts file '{_restartAttemptsFile}' is unreadable ({ex.Message}); the MaxRestartAttempts cap cannot be enforced.");
+                    _logger?.Error($"The restart attempts counter of '{_restartAttemptsServiceName}' is unreadable ({ex.Message}); the MaxRestartAttempts cap cannot be enforced.");
                     return null;
                 }
             }
         }
 
         /// <summary>
-        /// Saves the current number of restart attempts to the persistent attempts file.
-        /// Updates the Last Write Time, which is critical for session persistence checks.
-        /// Does nothing if the attempts file path is null or empty.
+        /// Saves the current number of restart attempts through the Servy host.
+        /// Does nothing if no service name has been set up.
         /// </summary>
         /// <param name="attempts">The restart attempts count to save.</param>
         private void SaveRestartAttempts(int attempts)
         {
-            if (string.IsNullOrEmpty(_restartAttemptsFile)) return;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return;
 
-            lock (_fileLock)
+            lock (_restartAttemptsLock)
             {
                 try
                 {
@@ -1103,33 +1034,8 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Failed to save restart attempts to file: {ex.Message}");
+                    _logger?.Error($"Failed to save the restart attempts counter of '{_restartAttemptsServiceName}': {ex.Message}");
                 }
-            }
-        }
-
-        /// <summary>
-        /// Internal unprotected write logic.
-        /// </summary>
-        /// <param name="attempts">The number of restart attempts to persist.</param>
-        /// <remarks>
-        /// The file is rewritten in place (<see cref="FileMode.Create"/> truncates an existing file) rather than through
-        /// a temporary file and a rename: a rename needs Delete on both files, and the service account only has Read and
-        /// Write on the files in <c>recovery\</c> (#7241). A crash in the middle of the write can leave the file empty or
-        /// truncated; the read path treats that as corrupt content and resets the counter to 0.
-        /// </remarks>
-        private void WriteAttemptsInternal(int attempts)
-        {
-            using (var fs = new FileStream(_restartAttemptsFile, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                // BOM-less UTF8, the same encoding the counter has always been written in
-                using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
-                {
-                    sw.Write(attempts.ToString(CultureInfo.InvariantCulture));
-                }
-
-                // Force the counter to disk, as the atomic helper did before the rename
-                fs.Flush(flushToDisk: true);
             }
         }
 
@@ -1142,9 +1048,10 @@ namespace Servy.Service
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Reboot Detection:</b> Compares the last write time of the restart file against the system boot time
-        /// (calculated via <see cref="GetTickCount64"/>). If the file was modified before the current OS session,
-        /// the count is maintained because the service is likely starting due to a "Restart Computer" recovery action.
+        /// <b>Reboot Detection:</b> Compares the time the counter was last written (kept with it in <c>Servy.db</c>)
+        /// against the system boot time (calculated via <see cref="GetTickCount64"/>). If it was written before the
+        /// current OS session, the count is maintained because the service is likely starting due to a "Restart Computer"
+        /// recovery action.
         /// </description>
         /// </item>
         /// <item>
@@ -1158,67 +1065,82 @@ namespace Servy.Service
         /// </remarks>
         private void ConditionalResetRestartAttempts(StartOptions options)
         {
-            // If the counter is already 0, there is no need to check timestamps or files.
-            // This keeps the health check efficient.
-            if (EnsureRestartAttemptsFile() == 0) return;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return;
 
-            DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
-
-            // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
-            // is mathematically protected against runtime overflow exceptions for ~292 million years.
-            ulong uptimeMilliseconds = GetTickCount64();
-            DateTime systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
-
-            // 1. Session Persistence Check
-            // If the file's last modification occurred before the current system boot,
-            // the service is starting in a new OS session. We maintain the existing counter
-            // to ensure recovery quotas (like RestartComputer) are respected across reboots.
-            if (lastWriteUtc < systemBootTimeUtc)
+            // The entire read-evaluate-write sequence is guarded to prevent TOCTOU race conditions
+            // between startup and health checks.
+            lock (_restartAttemptsLock)
             {
-                // We are running in a new OS session for the first time.
-                // Touch the file to anchor it to the current session so future
-                // stability checks can decide based on in-session uptime.
-                File.SetLastWriteTimeUtc(_restartAttemptsFile, DateTime.UtcNow);
-                return;
-            }
+                try
+                {
+                    // 1. Protected Read (Exit early if already 0)
+                    var state = ReadAttemptsInternal();
+                    if (state.Attempts == 0) return;
 
-            // 2. Standard same-session reset logic
-            long product = (long)options.HeartbeatIntervalInSeconds * options.MaxFailedChecks;
-            int detectionWindowSeconds = product > int.MaxValue ? int.MaxValue : (int)product;
+                    // A counter that was never stamped is treated as written before this boot
+                    DateTime lastWriteUtc = state.UpdatedAtUtc ?? DateTime.MinValue;
 
-            // Base threshold: detection window + buffer (min 30s or the detection window itself)
-            int bufferSeconds = Math.Max(detectionWindowSeconds, AppConfig.ConditionalResetStabilityBufferSeconds);
-            int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
+                    // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
+                    // is mathematically protected against runtime overflow exceptions for ~292 million years.
+                    ulong uptimeMilliseconds = GetTickCount64();
+                    DateTime systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
 
-            // Cap at 1 hour (the cap excludes the pre-launch budget), but ensure we always wait at least one full detection cycle
-            int cap = AppConfig.ConditionalResetMaxThresholdSeconds;
+                    // 2. Session Persistence Check
+                    // If the counter was last written before the current system boot,
+                    // the service is starting in a new OS session. We maintain the existing counter
+                    // to ensure recovery quotas (like RestartComputer) are respected across reboots.
+                    if (lastWriteUtc < systemBootTimeUtc)
+                    {
+                        // We are running in a new OS session for the first time.
+                        // Rewrite the unchanged counter to anchor it to the current session so future
+                        // stability checks can decide based on in-session uptime.
+                        WriteAttemptsInternal(state.Attempts);
+                        return;
+                    }
 
-            // If the detection window itself already exceeds the cap, the cap is meaningless -
-            // the contract is broken at configuration time. The warning repeats on every evaluation that
-            // gets this far (a non-zero counter, still inside the current session), not once per service.
-            if (detectionWindowSeconds > cap)
-            {
-                _logger?.Warn(
-                    $"Detection window ({detectionWindowSeconds}s) exceeds the reset cap ({cap}s); " +
-                    $"the configured ConditionalResetMaxThresholdSeconds will be ignored for this service.");
+                    // 3. Standard same-session reset logic
+                    long product = (long)options.HeartbeatIntervalInSeconds * options.MaxFailedChecks;
+                    int detectionWindowSeconds = product > int.MaxValue ? int.MaxValue : (int)product;
 
-                resetThresholdSeconds = detectionWindowSeconds;
-            }
-            else
-            {
-                resetThresholdSeconds = Math.Min(resetThresholdSeconds, cap);
-            }
+                    // Base threshold: detection window + buffer (min 30s or the detection window itself)
+                    int bufferSeconds = Math.Max(detectionWindowSeconds, AppConfig.ConditionalResetStabilityBufferSeconds);
+                    int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
 
-            if (_preLaunchEnabled)
-            {
-                resetThresholdSeconds += options.PreLaunchTimeoutInSeconds;
-            }
+                    // Cap at 1 hour (the cap excludes the pre-launch budget), but ensure we always wait at least one full detection cycle
+                    int cap = AppConfig.ConditionalResetMaxThresholdSeconds;
 
-            double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
-            if (secondsSinceLastAttempt > resetThresholdSeconds)
-            {
-                _logger?.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
-                SaveRestartAttempts(0);
+                    // If the detection window itself already exceeds the cap, the cap is meaningless -
+                    // the contract is broken at configuration time. The warning repeats on every evaluation that
+                    // gets this far (a non-zero counter, still inside the current session), not once per service.
+                    if (detectionWindowSeconds > cap)
+                    {
+                        _logger?.Warn(
+                            $"Detection window ({detectionWindowSeconds}s) exceeds the reset cap ({cap}s); " +
+                            $"the configured ConditionalResetMaxThresholdSeconds will be ignored for this service.");
+
+                        resetThresholdSeconds = detectionWindowSeconds;
+                    }
+                    else
+                    {
+                        resetThresholdSeconds = Math.Min(resetThresholdSeconds, cap);
+                    }
+
+                    if (_preLaunchEnabled)
+                    {
+                        resetThresholdSeconds += options.PreLaunchTimeoutInSeconds;
+                    }
+
+                    double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
+                    if (secondsSinceLastAttempt > resetThresholdSeconds)
+                    {
+                        _logger?.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
+                        WriteAttemptsInternal(0);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Warn($"Error during conditional reset evaluation: {ex.Message}");
+                }
             }
         }
 
@@ -2003,32 +1925,18 @@ namespace Servy.Service
 
             try
             {
-                // We need to fetch the full unencrypted service DTO in order to update the runtime state fields.
-                // We cannot use decrypt:false here because encrypted fields (like Parameters and EnvironmentVariables)
-                // are not marked to be ignored during update, and the update operation requires the full DTO to avoid overwriting existing values with wrong values.
-                // This is a bit inefficient, but PersistProcessState only runs on service start/stop and process exit,
-                // so the performance impact should be minimal in the grand scheme of things.
-                var serviceDto = _namedPipesService.GetByName(_serviceName);
-
-                if (serviceDto != null)
+                // Only the runtime state crosses the pipe: the host writes these columns and nothing else, so the
+                // service account can never change its own (or any other) service's configuration.
+                var state = new ServiceRuntimeStateDto
                 {
-                    serviceDto.Pid = pid;
-                    if (setPreviousStopTimeout)
-                        serviceDto.PreviousStopTimeout = _options?.StopTimeoutInSeconds;
+                    Pid = pid,
+                    ActiveStdoutPath = pid == null ? null : _options?.StdoutPath,
+                    ActiveStderrPath = pid == null ? null : _options?.StderrPath,
+                    UpdatePreviousStopTimeout = setPreviousStopTimeout,
+                    PreviousStopTimeout = setPreviousStopTimeout ? _options?.StopTimeoutInSeconds : null,
+                };
 
-                    if (pid == null)
-                    {
-                        serviceDto.ActiveStdoutPath = null;
-                        serviceDto.ActiveStderrPath = null;
-                    }
-                    else
-                    {
-                        serviceDto.ActiveStdoutPath = _options?.StdoutPath;
-                        serviceDto.ActiveStderrPath = _options?.StderrPath;
-                    }
-
-                    _namedPipesService.Update(serviceDto);
-                }
+                _namedPipesService.UpdateRuntimeState(_serviceName, state);
             }
             catch (Exception ex)
             {
@@ -2349,7 +2257,7 @@ namespace Servy.Service
                 // _maxRestartAttempts == 0 means unlimited restart attempts
                 if (_maxRestartAttempts > 0)
                 {
-                    var ca = EnsureRestartAttemptsFile();
+                    var ca = GetRestartAttempts();
 
                     if (ca == null)
                     {

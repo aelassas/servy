@@ -727,5 +727,53 @@ namespace Servy.Core.Native
             byte[] lpSecurityDescriptor);
 
         #endregion
+
+        #region Service Status and Named Pipe Peer Functions
+
+        /// <summary>The <c>InfoLevel</c> of <see cref="QueryServiceStatusEx"/> that returns a <see cref="SERVICE_STATUS_PROCESS"/>.</summary>
+        public const int SC_STATUS_PROCESS_INFO = 0;
+
+        /// <summary>Process status information for a service, as returned by <see cref="QueryServiceStatusEx"/>.</summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SERVICE_STATUS_PROCESS
+        {
+            /// <summary>The type of service.</summary>
+            public int dwServiceType;
+            /// <summary>The current state of the service.</summary>
+            public int dwCurrentState;
+            /// <summary>Bit mask of the control codes the service accepts.</summary>
+            public int dwControlsAccepted;
+            /// <summary>Win32 error code the service reports on start or stop.</summary>
+            public int dwWin32ExitCode;
+            /// <summary>Service-specific exit code.</summary>
+            public int dwServiceSpecificExitCode;
+            /// <summary>Check-point value of a pending operation.</summary>
+            public int dwCheckPoint;
+            /// <summary>Estimated time, in milliseconds, of a pending operation.</summary>
+            public int dwWaitHint;
+            /// <summary>The process identifier of the service, or 0 when the service is not running.</summary>
+            public int dwProcessId;
+            /// <summary>Flags; SERVICE_RUNS_IN_SYSTEM_PROCESS for a service in a system process.</summary>
+            public int dwServiceFlags;
+        }
+
+        /// <summary>Retrieves the current status of the specified service, including its process identifier.</summary>
+        [DllImport("advapi32.dll", SetLastError = true)]
+        public static extern bool QueryServiceStatusEx(
+            SafeServiceHandle hService,
+            int infoLevel,
+            out SERVICE_STATUS_PROCESS lpBuffer,
+            int cbBufSize,
+            out int pcbBytesNeeded);
+
+        /// <summary>Retrieves the process identifier of the client connected to the server end of a named pipe.</summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetNamedPipeClientProcessId(SafeHandle pipe, out uint clientProcessId);
+
+        /// <summary>Retrieves the process identifier of the server that owns the server end of a named pipe.</summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetNamedPipeServerProcessId(SafeHandle pipe, out uint serverProcessId);
+
+        #endregion
     }
 }

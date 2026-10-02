@@ -892,6 +892,207 @@ namespace Servy.Infrastructure.UnitTests.Data
             AssertDecryptedDtoProperties(result);
         }
 
+        #region Runtime State and Restart Attempts
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UpdateRuntimeStateAsync_BlankName_ReturnsZeroWithoutWriting(string name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateRuntimeStateAsync(name, new ServiceRuntimeStateDto { Pid = 1 }, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(0, result);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeStateAsync_NullState_Throws()
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => repo.UpdateRuntimeStateAsync("svc", null, CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task UpdateRuntimeStateAsync_WritesOnlyTheRuntimeColumns(bool updatePreviousStopTimeout)
+        {
+            // Arrange
+            string sql = null;
+            object parameters = null;
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((s, p, d1, d2) => { sql = s; parameters = p; })
+                .ReturnsAsync(1);
+            var repo = CreateRepository();
+            var state = new ServiceRuntimeStateDto
+            {
+                Pid = 42,
+                ActiveStdoutPath = "out.log",
+                ActiveStderrPath = "err.log",
+                UpdatePreviousStopTimeout = updatePreviousStopTimeout,
+                PreviousStopTimeout = 60,
+            };
+
+            // Act
+            var result = await repo.UpdateRuntimeStateAsync(" svc ", state, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, result);
+            Assert.NotNull(sql);
+            Assert.Contains("SET Pid = @Pid, ActiveStdoutPath = @ActiveStdoutPath, ActiveStderrPath = @ActiveStderrPath", sql);
+            Assert.Equal(updatePreviousStopTimeout, sql.Contains("PreviousStopTimeout = @PreviousStopTimeout"));
+
+            // No configuration column is ever part of the statement
+            foreach (var column in new[] { "ExecutablePath", "Parameters", "Password", "UserAccount", "RestartAttempts" })
+                Assert.DoesNotContain(column + " =", sql);
+
+            Assert.Equal("svc", parameters.GetType().GetProperty("Name").GetValue(parameters));
+            Assert.Equal(42, parameters.GetType().GetProperty("Pid").GetValue(parameters));
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeStateAsync_LegacyPaddedName_RetriesWithTheVerbatimName()
+        {
+            // Arrange: no row under the trimmed name, one under the verbatim (Servy <= 8.3) name
+            var names = new List<string>();
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((d1, p, d2, d3) => names.Add((string)p.GetType().GetProperty("Name").GetValue(p)))
+                .ReturnsAsync(() => names.Count == 1 ? 0 : 1);
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateRuntimeStateAsync(" padded ", new ServiceRuntimeStateDto(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, result);
+            Assert.Equal(new[] { "padded", " padded " }, names);
+        }
+
+        [Fact]
+        public async Task UpdateRestartAttemptsAsync_NegativeAttempts_Throws()
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => repo.UpdateRestartAttemptsAsync("svc", -1, DateTime.UtcNow, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task UpdateRestartAttemptsAsync_WritesTheCounterAndItsUtcTicks()
+        {
+            // Arrange
+            object parameters = null;
+            string sql = null;
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((s, p, d1, d2) => { sql = s; parameters = p; })
+                .ReturnsAsync(1);
+            var repo = CreateRepository();
+            var when = new DateTime(2026, 10, 2, 12, 0, 0, DateTimeKind.Utc);
+
+            // Act
+            var result = await repo.UpdateRestartAttemptsAsync("svc", 3, when, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, result);
+            Assert.Contains("SET RestartAttempts = @RestartAttempts, RestartAttemptsUpdatedAtTicks = @RestartAttemptsUpdatedAtTicks", sql);
+            Assert.Equal(3, parameters.GetType().GetProperty("RestartAttempts").GetValue(parameters));
+            Assert.Equal(when.Ticks, parameters.GetType().GetProperty("RestartAttemptsUpdatedAtTicks").GetValue(parameters));
+        }
+
+        [Fact]
+        public async Task UpdateRestartAttemptsAsync_LocalTime_IsStoredAsUtc()
+        {
+            // Arrange
+            object parameters = null;
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((d1, p, d2, d3) => parameters = p)
+                .ReturnsAsync(1);
+            var repo = CreateRepository();
+            var local = new DateTime(2026, 10, 2, 12, 0, 0, DateTimeKind.Local);
+
+            // Act
+            await repo.UpdateRestartAttemptsAsync("svc", 1, local, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(local.ToUniversalTime().Ticks, parameters.GetType().GetProperty("RestartAttemptsUpdatedAtTicks").GetValue(parameters));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("   ")]
+        public async Task GetRestartAttemptsAsync_BlankName_ReturnsNull(string name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.GetRestartAttemptsAsync(name, CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetRestartAttemptsAsync_NoRow_ReturnsNull()
+        {
+            // Arrange
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.GetRestartAttemptsAsync("ghost", CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Theory]
+        [InlineData(null, null, 0, false)]          // never written
+        [InlineData(5, 638_000_000_000_000_000L, 5, true)]
+        [InlineData(-3, 638_000_000_000_000_000L, 0, true)]  // a negative stored value reads back as 0
+        [InlineData(2, -1L, 2, false)]              // ticks out of DateTime's range read back as no time
+        public async Task GetRestartAttemptsAsync_Row_MapsCounterAndTimestamp(int? stored, long? ticks, int expectedAttempts, bool expectTime)
+        {
+            // Arrange
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                    It.Is<string>(s => s.Contains("SELECT Name, RestartAttempts, RestartAttemptsUpdatedAtTicks")),
+                    It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "svc", RestartAttempts = stored, RestartAttemptsUpdatedAtTicks = ticks });
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.GetRestartAttemptsAsync("svc", CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedAttempts, result.Attempts);
+            Assert.Equal(expectTime, result.UpdatedAtUtc.HasValue);
+            if (expectTime)
+            {
+                Assert.Equal(ticks.Value, result.UpdatedAtUtc.Value.Ticks);
+                Assert.Equal(DateTimeKind.Utc, result.UpdatedAtUtc.Value.Kind);
+            }
+        }
+
+        #endregion
+
         [Fact]
         public async Task GetServicePidAsync_ServiceIsRunning_ReturnsPid()
         {
@@ -1735,6 +1936,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                 ActiveStdoutPath = "inc_out.log",
                 ActiveStderrPath = "inc_err.log",
                 PreviousStopTimeout = 10,
+                RestartAttempts = 1,
+                RestartAttemptsUpdatedAtTicks = 100,
                 RunAsLocalSystem = true,
                 UserAccount = "inc_user",
                 Password = "new_password"
@@ -1747,6 +1950,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                 ActiveStdoutPath = "active_stdout.log",
                 ActiveStderrPath = "active_stderr.log",
                 PreviousStopTimeout = 30,
+                RestartAttempts = 4,
+                RestartAttemptsUpdatedAtTicks = 400,
                 RunAsLocalSystem = false,
                 UserAccount = "old_user",
                 Password = "old_password"
@@ -1768,6 +1973,10 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Assert.Equal("active_stdout.log", incoming.ActiveStdoutPath);
                 Assert.Equal("active_stderr.log", incoming.ActiveStderrPath);
                 Assert.Equal(30, incoming.PreviousStopTimeout);
+
+                // The restart attempts counter is runtime state too: editing a service never resets its quota
+                Assert.Equal(4, incoming.RestartAttempts);
+                Assert.Equal(400, incoming.RestartAttemptsUpdatedAtTicks);
             }
             else
             {
@@ -1775,6 +1984,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Assert.Equal("inc_out.log", incoming.ActiveStdoutPath);
                 Assert.Equal("inc_err.log", incoming.ActiveStderrPath);
                 Assert.Equal(10, incoming.PreviousStopTimeout);
+                Assert.Equal(1, incoming.RestartAttempts);
+                Assert.Equal(100, incoming.RestartAttemptsUpdatedAtTicks);
             }
 
             if (preserveCredentials)

@@ -17,10 +17,9 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
-    /// Servy's binaries, Read on its configuration files and encryption key, Read, Write on its configuration database,
-    /// Read, Write, Delete on the files it creates in <c>db\</c> and <c>logs\</c>, and Read, Write on the files it
-    /// creates in <c>recovery\</c>. The account
-    /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself.
+    /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in <c>logs\service\</c>, the
+    /// only folder it writes. The account gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and
+    /// nothing at all on <c>db\</c>, <c>security\</c> and <c>logs\</c> or anything in them.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -44,14 +43,21 @@ namespace Servy.Core.Security
     /// writable folders and every hardened file unless a remaining service still runs under it (#7161).
     /// </para>
     /// <para>
-    /// The service writes in three folders only: SQLite creates and deletes the <c>-wal</c>/<c>-shm</c> files next to
-    /// <c>db\Servy.db</c>, the logger writes and rotates <c>logs\</c>, and the restart-attempts counter in
-    /// <c>recovery\</c> is rewritten in place (#7241). Each of those folders gives the account List and Create Files on
-    /// the folder, and the file rights <see cref="GetWritableFolderFileRights"/> names for the files in it: Read, Write
-    /// and Delete in <c>db\</c> (except <c>Servy.db</c>, which is hardened on its own) and <c>logs\</c>, Read and Write
-    /// only in <c>recovery\</c>. It never gets Delete on a folder: it can neither rename nor delete a folder, and outside
-    /// those three folders it can write or delete nothing. An account that a previous version granted Modify on the vault root loses that grant when it is
-    /// hardened again.
+    /// The wrapper never opens <c>Servy.db</c> or the encryption key: it reads its own configuration and writes its own
+    /// runtime state and restart attempts counter through the Servy host service, over a named pipe the host serves
+    /// only to the process of the service a request is about (#7224, #7248). So the account gets no entry on
+    /// <c>db\</c> and <c>security\</c> or on any file in them, and every entry a previous version gave it there (Read and
+    /// Write on <c>Servy.db</c>, the folder grant that covered the <c>-wal</c>/<c>-shm</c> files, Read on the key) is
+    /// removed when it is hardened again. The same goes for <c>logs\</c>, which holds the logs of the administrative
+    /// tools and the host.
+    /// </para>
+    /// <para>
+    /// The service writes in one folder only, <c>logs\service\</c>, where the wrapper and the restarter log and rotate
+    /// their files. The account gets List Folder and Create Files on that folder (creating the log, and the new file of a
+    /// rotation, needs Create Files) and Read, Write and Delete on the files in it (<see cref="GetWritableFolderFileRights"/>).
+    /// It never gets Delete on a folder: it can neither rename nor delete a folder, and outside <c>logs\service\</c> it
+    /// can write or delete nothing. An account that a previous version granted Modify on the vault root loses that grant
+    /// when it is hardened again.
     /// </para>
     /// <para>
     /// The process must be elevated, as every Servy process that installs a service already is.
@@ -256,6 +262,8 @@ namespace Servy.Core.Security
                 RevokeEntries(folder, targetSid, result);
             }
 
+            RevokeClosedFolders(targetSid, result, cancellationToken);
+
             foreach (var target in GetTargetFiles())
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -270,7 +278,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="services">The installed services.</param>
         /// <returns>The trimmed accounts, compared case-insensitively, in first-seen order.</returns>
-        internal static List<string> GetServiceAccounts(IEnumerable<ServiceDto> services)
+        public static List<string> GetServiceAccounts(IEnumerable<ServiceDto> services)
         {
             return (services ?? Enumerable.Empty<ServiceDto>())
                 .Where(s => s != null && s.RunAsLocalSystem != true && IsHardeningCandidate(s.UserAccount))
@@ -325,6 +333,9 @@ namespace Servy.Core.Security
 
             RevokeVaultRootAccess(targetSid, result);
 
+            // Take back everything a previous version granted in db\, security\ and logs\ before granting logs\service\
+            RevokeClosedFolders(targetSid, result, cancellationToken);
+
             foreach (var folder in GetWritableFolders())
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -348,11 +359,11 @@ namespace Servy.Core.Security
         /// Lists the files the hardening locks down, relative to <see cref="VaultDirectory"/>, with the rights the target
         /// account keeps on each.
         /// </summary>
-        /// <returns>The binaries and every DLL in the vault (Read &amp; Execute), the <c>.exe.config</c> files (Read,
-        /// optional), the database (Read, Write) and the encryption key (Read).</returns>
+        /// <returns>The binaries and every DLL in the vault (Read &amp; Execute) and the <c>.exe.config</c> files (Read,
+        /// optional). The database and the encryption key are not listed: the service account has no access to them.</returns>
         internal IReadOnlyList<ExePermissionsTarget> GetTargetFiles()
         {
-            var executables = new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe };
+            var executables = new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe };
 
             var targets = executables
                 .Select(exe => new ExePermissionsTarget(exe, FileSystemRights.ReadAndExecute))
@@ -367,51 +378,77 @@ namespace Servy.Core.Security
             foreach (var exe in executables)
                 targets.Add(new ExePermissionsTarget(exe + ".config", FileSystemRights.Read, optional: true));
 
-            AddDataTargets(targets);
             return targets;
         }
 
         /// <summary>
-        /// Adds the database and the encryption key.
-        /// </summary>
-        /// <param name="targets">The list to add to.</param>
-        private static void AddDataTargets(List<ExePermissionsTarget> targets)
-        {
-            // The shared configuration database: Read, Write without Delete (#7136). Its inherited entries are dropped
-            // like every other hardened file's: they would carry the db\ folder's file grant, which includes Delete.
-            targets.Add(new ExePermissionsTarget(
-                Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName),
-                FileSystemRights.Read | FileSystemRights.Write));
-
-            // The encryption key: read-only, so the service account can decrypt but can neither replace nor delete
-            // the key every Servy process trusts.
-            targets.Add(new ExePermissionsTarget(
-                Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName),
-                FileSystemRights.Read));
-        }
-
-        /// <summary>
-        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the service creates and rewrites files:
-        /// the database folder (SQLite's <c>-wal</c>/<c>-shm</c> files, which it also deletes), the logs (rotated and deleted)
-        /// and the recovery state (rewritten in place, never deleted).
+        /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the service creates, rewrites and deletes
+        /// files: <c>logs\service\</c>, where the wrapper and the restarter write and rotate their logs.
         /// </summary>
         /// <returns>The writable folders.</returns>
         internal static IReadOnlyList<string> GetWritableFolders()
-            => new[] { AppConfig.DbFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName };
+            => new[] { Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName) };
+
+        /// <summary>
+        /// Lists the folders, relative to <see cref="VaultDirectory"/>, on which and in which the service account must
+        /// hold no entry: the database, the encryption keys, and the logs of the administrative tools and the host.
+        /// </summary>
+        /// <returns>The closed folders.</returns>
+        internal static IReadOnlyList<string> GetClosedFolders()
+            => new[] { AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName };
 
         /// <summary>
         /// Returns the rights the target gets on the files inside one of the <see cref="GetWritableFolders"/> folders.
         /// </summary>
         /// <param name="relativePath">The writable folder, relative to <see cref="VaultDirectory"/>.</param>
-        /// <returns>
-        /// Read and Write for <c>recovery\</c>, whose files, one restart-attempts counter per service, are rewritten in
-        /// place and never renamed or deleted (#7241); Read, Write and Delete for every other writable folder, where the
-        /// logger rotates its files and SQLite deletes its <c>-wal</c>/<c>-shm</c> files.
-        /// </returns>
+        /// <returns>Read, Write and Delete: the logger rewrites, rotates and deletes its files.</returns>
         internal static FileSystemRights GetWritableFolderFileRights(string relativePath)
-            => string.Equals(relativePath, AppConfig.RecoveryFolderName, StringComparison.OrdinalIgnoreCase)
-                ? FileSystemRights.Read | FileSystemRights.Write
-                : FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete;
+            => FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete;
+
+        /// <summary>
+        /// Removes the target's explicit entries from each of the <see cref="GetClosedFolders"/> folders and from every file
+        /// directly in them, such as the grants on <c>db\Servy.db</c> and <c>security\aes_key.dat</c> and the folder
+        /// grants of <c>db\</c> and <c>logs\</c> that earlier versions wrote. The entries the files inherited from those
+        /// folder grants go with them.
+        /// </summary>
+        /// <param name="targetSid">The account whose entries are removed.</param>
+        /// <param name="result">Receives each item the entries were removed from, or that failed.</param>
+        /// <param name="cancellationToken">A token checked before each folder.</param>
+        private void RevokeClosedFolders(SecurityIdentifier targetSid, ExePermissionsHardeningResult result, CancellationToken cancellationToken)
+        {
+            foreach (var folder in GetClosedFolders())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var path = Path.Combine(VaultDirectory, folder);
+                if (!Directory.Exists(path))
+                    continue;
+
+                RevokeEntries(folder, targetSid, result);
+
+                // A linked folder was refused above; never enumerate through it
+                if ((new DirectoryInfo(path).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                    continue;
+
+                string[] files;
+                try
+                {
+                    files = Directory.GetFiles(path);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    Logger.Error($"Failed to list '{folder}' to revoke the access of '{result.Account}' to its files.", ex);
+                    result.AddFailed(folder);
+                    continue;
+                }
+
+                foreach (var file in files)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    RevokeEntries(Path.Combine(folder, Path.GetFileName(file)), targetSid, result);
+                }
+            }
+        }
 
         /// <summary>
         /// Removes every explicit entry the target holds on the vault root, such as the Modify grant and the Delete
@@ -556,8 +593,7 @@ namespace Servy.Core.Security
                     PropagationFlags.None,
                     AccessControlType.Allow));
 
-                // The files in it: read and write, plus delete where the service needs it (log rotation, SQLite side
-                // files) - not in recovery\, whose counter files, one per service, are rewritten in place
+                // The files in it: read, write and delete (log rotation)
                 acl.AddAccessRule(new FileSystemAccessRule(
                     targetSid,
                     GetWritableFolderFileRights(relativePath),
@@ -725,14 +761,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="account">The account name.</param>
         /// <returns>The account's SID, or <see langword="null"/> when it cannot be resolved.</returns>
-        protected virtual SecurityIdentifier ResolveAccount(string account)
-        {
-            var sid = TryTranslate(account);
-            if (sid == null && account.StartsWith(@".\", StringComparison.Ordinal))
-                sid = TryTranslate(Environment.MachineName + @"\" + account.Substring(2));
-
-            return sid;
-        }
+        protected virtual SecurityIdentifier ResolveAccount(string account) => AccountSidResolver.Resolve(account);
 
         /// <summary>
         /// Determines whether a SID is a direct member of the local Administrators group.
@@ -823,27 +852,6 @@ namespace Servy.Core.Security
         /// <returns><see langword="true"/> for one of the broad groups.</returns>
         private static bool IsBroadGroup(SecurityIdentifier sid)
             => SecurityHelper.BroadUnprivilegedSids.Any(broad => broad.Equals(sid));
-
-        /// <summary>
-        /// Translates an account name to its SID.
-        /// </summary>
-        /// <param name="name">The account name.</param>
-        /// <returns>The SID, or <see langword="null"/> when the name does not map.</returns>
-        private static SecurityIdentifier TryTranslate(string name)
-        {
-            try
-            {
-                return (SecurityIdentifier)new NTAccount(name).Translate(typeof(SecurityIdentifier));
-            }
-            catch (IdentityNotMappedException)
-            {
-                return null;
-            }
-            catch (SystemException)
-            {
-                return null;
-            }
-        }
     }
 
     /// <summary>

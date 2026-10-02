@@ -21,12 +21,13 @@ namespace Servy.Service.Bootstrap
     {
         /// <summary>
         /// Calls <see cref="Logger.Initialize(string, LogLevel, bool, int, Servy.Core.Enums.DateRotationType, bool, int, string)"/>
-        /// with the given file name and the defaults for every other parameter.
+        /// with the given file name and log directory and the defaults for every other parameter.
         /// </summary>
         /// <param name="logFileName">The name of the log file the service writes its own diagnostics to.</param>
-        public void InitializeLogger(string logFileName)
+        /// <param name="logDirectory">The folder the log file is written in.</param>
+        public void InitializeLogger(string logFileName, string logDirectory)
         {
-            Logger.Initialize(logFileName);
+            Logger.Initialize(logFileName, logDirectory: logDirectory);
         }
 
         /// <summary>

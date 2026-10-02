@@ -25,11 +25,9 @@ namespace Servy.Core.DTOs
         /// Child Process PID.
         /// </summary>
         /// <remarks>
-        /// This is runtime state, not configuration. It still lives on this DTO and in
-        /// <c>Servy.db</c> today; any runtime-state column added in the future belongs in the separate
-        /// runtime-state database (<see cref="Servy.Core.Config.AppConfig.StateDatabaseFileName"/>, see
-        /// <see cref="ServiceStateDto"/>), never here, so a service log-on account never needs write
-        /// access to the configuration database.
+        /// This is runtime state, not configuration. The wrapper reports it through the Servy host service
+        /// (<see cref="NamedPipes.INamedPipesService.UpdateRuntimeState"/>), which writes it to <c>Servy.db</c> on the
+        /// wrapper's behalf, so a service log-on account never needs any access to the database.
         /// </remarks>
         [JsonIgnore]
         [XmlIgnore]
@@ -392,11 +390,9 @@ namespace Servy.Core.DTOs
         /// Absolute file path where standard output is currently being redirected; null if not redirected or not running.
         /// </summary>
         /// <remarks>
-        /// This is runtime state, not configuration. It still lives on this DTO and in
-        /// <c>Servy.db</c> today; any runtime-state column added in the future belongs in the separate
-        /// runtime-state database (<see cref="Servy.Core.Config.AppConfig.StateDatabaseFileName"/>, see
-        /// <see cref="ServiceStateDto"/>), never here, so a service log-on account never needs write
-        /// access to the configuration database.
+        /// This is runtime state, not configuration. The wrapper reports it through the Servy host service
+        /// (<see cref="NamedPipes.INamedPipesService.UpdateRuntimeState"/>), which writes it to <c>Servy.db</c> on the
+        /// wrapper's behalf, so a service log-on account never needs any access to the database.
         /// </remarks>
         [JsonIgnore]
         [XmlIgnore]
@@ -407,16 +403,37 @@ namespace Servy.Core.DTOs
         /// Absolute file path where standard error output is currently being redirected; null if not redirected or not running.
         /// </summary>
         /// <remarks>
-        /// This is runtime state, not configuration. It still lives on this DTO and in
-        /// <c>Servy.db</c> today; any runtime-state column added in the future belongs in the separate
-        /// runtime-state database (<see cref="Servy.Core.Config.AppConfig.StateDatabaseFileName"/>, see
-        /// <see cref="ServiceStateDto"/>), never here, so a service log-on account never needs write
-        /// access to the configuration database.
+        /// This is runtime state, not configuration. The wrapper reports it through the Servy host service
+        /// (<see cref="NamedPipes.INamedPipesService.UpdateRuntimeState"/>), which writes it to <c>Servy.db</c> on the
+        /// wrapper's behalf, so a service log-on account never needs any access to the database.
         /// </remarks>
         [JsonIgnore]
         [XmlIgnore]
         [SqlColumn("TEXT")]
         public string ActiveStderrPath { get; set; }
+
+        /// <summary>
+        /// The number of restart attempts the wrapper has recorded for the service, counted against <see cref="MaxRestartAttempts"/>.
+        /// </summary>
+        /// <remarks>
+        /// Runtime state, read and written only through the Servy host service
+        /// (<see cref="NamedPipes.INamedPipesService.GetRestartAttemptsAsync"/> and
+        /// <see cref="NamedPipes.INamedPipesService.UpdateRestartAttemptsAsync"/>). It replaces the per-service counter
+        /// files earlier versions kept in <c>%ProgramData%\Servy\recovery</c>.
+        /// </remarks>
+        [JsonIgnore]
+        [XmlIgnore]
+        [SqlColumn("INTEGER")]
+        public int? RestartAttempts { get; set; }
+
+        /// <summary>
+        /// The UTC time, in ticks, at which <see cref="RestartAttempts"/> was last written; <see langword="null"/> when it
+        /// never was.
+        /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
+        [SqlColumn("INTEGER")]
+        public long? RestartAttemptsUpdatedAtTicks { get; set; }
 
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
