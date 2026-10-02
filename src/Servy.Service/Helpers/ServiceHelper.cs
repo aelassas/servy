@@ -3,6 +3,7 @@ using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Validation;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
@@ -306,8 +307,8 @@ namespace Servy.Service.Helpers
             => _commandLineProvider.GetArgs();
 
         /// <inheritdoc />
-        public StartOptions? ParseOptions(IServiceRepository serviceRepository, string[] fullArgs)
-            => StartOptionsParser.Parse(serviceRepository, _processHelper, fullArgs);
+        public StartOptions? ParseOptions(INamedPipesService namedPipesService, string[] fullArgs)
+            => StartOptionsParser.Parse(namedPipesService, _processHelper, fullArgs);
 
         /// <inheritdoc />
         public bool ValidateAndLog(StartOptions options, IServyLogger? logger)

@@ -1,9 +1,9 @@
 using Moq;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
@@ -28,14 +28,14 @@ namespace Servy.Service.UnitTests.Helpers
     {
         private readonly Mock<ICommandLineProvider> _mockCommandLineProvider;
         private readonly Mock<IProcessHelper> _mockProcessHelper;
-        private readonly Mock<IServiceRepository> _mockRepo;
+        private readonly Mock<INamedPipesService> _mockNamedPipesService;
         private readonly ServiceHelper _helper;
 
         public ServiceHelperTests()
         {
             _mockCommandLineProvider = new Mock<ICommandLineProvider>();
             _mockProcessHelper = new Mock<IProcessHelper>();
-            _mockRepo = new Mock<IServiceRepository>();
+            _mockNamedPipesService = new Mock<INamedPipesService>();
 
             // Default setup to pass validation so we can isolate specific test cases
             _mockProcessHelper.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
@@ -295,7 +295,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void ParseOptions_EmptyArgs_ThrowsArgumentExceptionFromParser()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _helper.ParseOptions(_mockRepo.Object, new string[0]));
+            Assert.Throws<ArgumentException>(() => _helper.ParseOptions(_mockNamedPipesService.Object, new string[0]));
         }
 
         #endregion

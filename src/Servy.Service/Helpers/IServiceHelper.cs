@@ -1,6 +1,6 @@
-using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.ServiceProcess;
@@ -42,7 +42,7 @@ namespace Servy.Service.Helpers
         /// <summary>
         /// Parses the command-line arguments and loads the service configuration from the repository.
         /// </summary>
-        /// <param name="serviceRepository">The repository used to fetch service-specific configurations.</param>
+        /// <param name="namedPipesService">The named pipes service used to fetch service-specific configurations.</param>
         /// <param name="fullArgs">
         /// The full set of command-line arguments to parse, as returned by <see cref="GetArgs"/>:
         /// index 0 is the executable path and index 1 is the service name.
@@ -56,7 +56,7 @@ namespace Servy.Service.Helpers
         /// <exception cref="InvalidOperationException">
         /// Thrown when the service configuration is missing.
         /// </exception>
-        StartOptions? ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
+        StartOptions? ParseOptions(INamedPipesService namedPipesService, string[] fullArgs);
 
         /// <summary>
         /// Records the full initialization context, including raw command-line arguments and resolved

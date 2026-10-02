@@ -571,7 +571,7 @@ namespace Servy.Service.UnitTests
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
-                _ctx.ServiceRepository.Object);
+                _ctx.NamedPipesService.Object);
 
         /// <summary>
         /// Serves the pre-stop descendant scan from a supplied delegate. The real scan walks the live
@@ -593,7 +593,7 @@ namespace Servy.Service.UnitTests
             /// <param name="timerFactory">The factory for the health-check and rotation timers.</param>
             /// <param name="processFactory">The factory for the child process wrappers.</param>
             /// <param name="pathValidator">The validator the base service checks configured paths with.</param>
-            /// <param name="serviceRepository">The repository the base service reads its configuration from.</param>
+            /// <param name="namedPipesService">The named pipes service the base service uses.</param>
             public ScanningService(
                 Func<int, DateTime, List<Process>> scan,
                 Servy.Service.Helpers.IServiceHelper serviceHelper,
@@ -602,8 +602,8 @@ namespace Servy.Service.UnitTests
                 Servy.Service.Timers.ITimerFactory timerFactory,
                 IProcessFactory processFactory,
                 Servy.Service.Validation.IPathValidator pathValidator,
-                Servy.Core.Data.IServiceRepository serviceRepository)
-                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
+                Servy.Core.NamedPipes.INamedPipesService namedPipesService)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, namedPipesService)
             {
                 _scan = scan;
             }

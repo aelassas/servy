@@ -28,56 +28,15 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <AssemblyTitle>Servy.CLI</AssemblyTitle>
-    <Description>Servy Command Line Interface</Description>
-    <Product>Servy.CLI</Product>
-    <ApplicationIcon>servy.ico</ApplicationIcon>
+    <AssemblyTitle>Servy.Host</AssemblyTitle>
+    <Description>Servy Host Windows Service</Description>
+    <Product>Servy.Host</Product>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\handle64.exe" />
-    <None Remove="Resources\handle64a.exe" />
-    <None Remove="Resources\Servy.Service.CLI.exe" />
-    <None Remove="Resources\Servy.Service.CLI.pdb" />
-    <None Remove="Resources\Servy.Restarter.exe" />
-    <None Remove="Resources\Servy.Restarter.pdb" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\handle64.exe" />
-    <EmbeddedResource Include="Resources\handle64a.exe" />
-    <EmbeddedResource Include="Resources\Servy.Host.exe" />
-    <EmbeddedResource Include="Resources\Servy.Host.pdb" />
-    <EmbeddedResource Include="Resources\Servy.Service.CLI.exe" />
-    <EmbeddedResource Include="Resources\Servy.Service.CLI.pdb" />
-    <EmbeddedResource Include="Resources\Servy.Restarter.exe" />
-    <EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="appsettings.cli.json">
+    <Content Include="appsettings.service.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="servy.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="Servy.CLI.UnitTests" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Resources\Strings.Designer.cs">
-      <DependentUpon>Strings.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\Strings.resx">
-      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
-      <Generator>PublicResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -88,11 +47,14 @@
     <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Servy.Host.UnitTests" />
+    <InternalsVisibleTo Include="Servy.Host.IntegrationTests" />
+  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" />
   </ItemGroup>
 
   <ItemGroup>

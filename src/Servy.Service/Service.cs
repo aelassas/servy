@@ -1,9 +1,9 @@
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Service.Bootstrap;
 using Servy.Service.CommandLine;
@@ -99,7 +99,6 @@ namespace Servy.Service
         /// <summary>Additional time, in milliseconds, used for Service Control Manager (SCM) operations.</summary>
         private readonly int _scmAdditionalTimeMs = AppConfig.DefaultScmAdditionalTimeMs;
 
-        private readonly SecureData? _secureData;
         private readonly Helpers.IServiceHelper _serviceHelper;
         private IServyLogger? _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
@@ -130,15 +129,13 @@ namespace Servy.Service
         private bool _preLaunchEnabled = false;
         private StartOptions? _options;
         private CancellationTokenSource? _cancellationSource;
-        private readonly IServiceRepository? _serviceRepository;
+        private readonly INamedPipesService? _namedPipesService;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
         private uint _checkPoint = 0;
         private volatile bool _disposed = false; // Tracks whether teardown has completed; ExecuteTeardown sets it, so it is true after a plain SCM stop as well as after Dispose
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
-        private readonly IAppDbContext? _dbContext;
-        private readonly ProtectedKeyProvider? _protectedKeyProvider;
 
         #endregion
 
@@ -169,7 +166,9 @@ namespace Servy.Service
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory(),
-            new PathValidator()
+            new PathValidator(),
+            new NamedPipesService(),
+            new ServiceBootstrapEnvironment()
           )
         {
         }
@@ -183,7 +182,7 @@ namespace Servy.Service
         /// <param name="timerFactory">The timer factory.</param>
         /// <param name="processFactory">The process factory.</param>
         /// <param name="pathValidator">The path validator.</param>
-        /// <param name="serviceRepository">The service repository.</param>
+        /// <param name="namedPipesService">The named pipe service instance to use for asynchronous IPC communications.</param>
         /// <remarks>
         /// <b>NOTE:</b> This constructor is primarily intended for <b>Unit Testing</b> and <b>Inversion of Control (IoC)</b> containers.
         /// <para>
@@ -203,9 +202,9 @@ namespace Servy.Service
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IServiceRepository serviceRepository
+            INamedPipesService namedPipesService
             ) // allow injection
-            : this(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, new ScmNative())
+            : this(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, namedPipesService, new ScmNative())
         {
         }
 
@@ -219,7 +218,7 @@ namespace Servy.Service
         /// <param name="timerFactory">The timer factory.</param>
         /// <param name="processFactory">The process factory.</param>
         /// <param name="pathValidator">The path validator.</param>
-        /// <param name="serviceRepository">The service repository.</param>
+        /// <param name="namedPipesService">The named pipe service instance to use for asynchronous IPC communications.</param>
         /// <param name="scmNative">The console and Service Control Manager native seam.</param>
         /// <exception cref="ArgumentNullException">Any argument is <see langword="null"/>.</exception>
         /// <remarks>
@@ -234,7 +233,7 @@ namespace Servy.Service
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IServiceRepository serviceRepository,
+            INamedPipesService namedPipesService,
             IScmNative scmNative
             )
         {
@@ -247,36 +246,9 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
-            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _namedPipesService = namedPipesService ?? throw new ArgumentNullException(nameof(namedPipesService));
             _scmNative = scmNative ?? throw new ArgumentNullException(nameof(scmNative));
             _options = null;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Service"/> class with core dependencies and performs production setup.
-        /// </summary>
-        /// <param name="serviceHelper">The service helper instance to use.</param>
-        /// <param name="logger">The logger instance to use for logging.</param>
-        /// <param name="streamWriterFactory">Factory to create rotating stream writers for stdout and stderr.</param>
-        /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
-        /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
-        /// <param name="pathValidator">Path Validator.</param>
-        /// <remarks>
-        /// This is the primary <b>Production Constructor</b>. It automatically initializes the
-        /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from
-        /// <c>appsettings.service.json</c>, and initializes the <see cref="SecureData"/> and database systems.
-        /// </remarks>
-        [ExcludeFromCodeCoverage]
-        public Service(
-            Helpers.IServiceHelper serviceHelper,
-            IServyLogger logger,
-            IStreamWriterFactory streamWriterFactory,
-            ITimerFactory timerFactory,
-            IProcessFactory processFactory,
-            IPathValidator pathValidator
-            )
-            : this(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, new ServiceBootstrapEnvironment())
-        {
         }
 
         /// <summary>
@@ -289,6 +261,7 @@ namespace Servy.Service
         /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
         /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
         /// <param name="pathValidator">Path Validator.</param>
+        /// <param name="namedPipesService">The named pipe service instance to use for asynchronous IPC communications.</param>
         /// <param name="bootstrapEnvironment">The seam over the machine-touching and process-global start-up calls.</param>
         /// <exception cref="ArgumentNullException">Any argument is <see langword="null"/>.</exception>
         /// <remarks>
@@ -304,6 +277,7 @@ namespace Servy.Service
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
+            INamedPipesService namedPipesService,
             IServiceBootstrapEnvironment bootstrapEnvironment
             )
         {
@@ -313,6 +287,7 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
+            _namedPipesService = namedPipesService ?? throw new ArgumentNullException(nameof(namedPipesService));
             _bootstrapEnvironment = bootstrapEnvironment ?? throw new ArgumentNullException(nameof(bootstrapEnvironment));
             _scmNative = new ScmNative();
             _options = null;
@@ -328,11 +303,6 @@ namespace Servy.Service
 
                 // Load configuration from appsettings.service.json
                 var config = _bootstrapEnvironment.BuildConfiguration();
-
-                var coreSettings = _bootstrapEnvironment.LoadCoreSettings();
-                var connectionString = coreSettings.ConnectionString;
-                var aesKeyFilePath = coreSettings.AESKeyFilePath;
-                var aesIVFilePath = coreSettings.AESIVFilePath;
 
                 if (int.TryParse(config["Timing:WaitChunkMs"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var waitChunkMs) && waitChunkMs > 0)
                 {
@@ -355,24 +325,6 @@ namespace Servy.Service
                 _bootstrapEnvironment.ReportDebug("Servy Service Context Configuration Loaded:",
                     $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
                     $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}");
-
-                // CVE-2025-6965 Mitigation: Validate SQLite version before opening connection
-                if (!_bootstrapEnvironment.IsSqliteVersionSafe(out var detectedVersion))
-                {
-                    _bootstrapEnvironment.LogError($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
-                                 $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-
-                    Environment.ExitCode = AppConfig.ServiceSpecificErrorCode;
-                    TerminateProcess(Environment.ExitCode);
-                }
-
-                // Initialize database and helpers
-                var dataStack = _bootstrapEnvironment.CreateDataStack(connectionString, aesKeyFilePath, aesIVFilePath);
-
-                _dbContext = dataStack.DbContext;
-                _protectedKeyProvider = dataStack.ProtectedKeyProvider;
-                _secureData = dataStack.SecureData;
-                _serviceRepository = dataStack.ServiceRepository;
 
                 // Enable Shutdown Notifications
                 CanShutdown = true;
@@ -426,7 +378,7 @@ namespace Servy.Service
 
                 // Load startup options
                 var fullArgs = _serviceHelper.GetArgs();
-                var options = _serviceHelper.ParseOptions(_serviceRepository!, fullArgs);
+                var options = _serviceHelper.ParseOptions(_namedPipesService!, fullArgs);
 
                 if (options == null)
                 {
@@ -2067,7 +2019,7 @@ namespace Servy.Service
                 // are not marked to be ignored during update, and the update operation requires the full DTO to avoid overwriting existing values with wrong values.
                 // This is a bit inefficient, but PersistProcessState only runs on service start/stop and process exit,
                 // so the performance impact should be minimal in the grand scheme of things.
-                var serviceDto = _serviceRepository!.GetByName(_serviceName, decrypt: true);
+                var serviceDto = _namedPipesService!.GetByName(_serviceName);
 
                 if (serviceDto != null)
                 {
@@ -2086,11 +2038,7 @@ namespace Servy.Service
                         serviceDto.ActiveStderrPath = _options?.StderrPath;
                     }
 
-                    _serviceRepository.Update(
-                        serviceDto,
-                        preserveExistingRuntimeState: false,
-                        preserveExistingCredentials: true
-                        );
+                    _namedPipesService.Update(serviceDto);
                 }
             }
             catch (Exception ex)
@@ -2633,9 +2581,6 @@ namespace Servy.Service
                         try { _cancellationSource?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _cancellationSource failed: {ex.Message}"); }
                         _cancellationSource = null;
 
-                        try { _secureData?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _secureData failed: {ex.Message}"); }
-                        try { _protectedKeyProvider?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _protectedKeyProvider failed: {ex.Message}"); }
-                        try { _dbContext?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _dbContext failed: {ex.Message}"); }
                         try { _fileSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _fileSemaphore failed: {ex.Message}"); }
                         try { _healthCheckSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _healthCheckSemaphore failed: {ex.Message}"); }
                     }

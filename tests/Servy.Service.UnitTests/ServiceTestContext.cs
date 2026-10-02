@@ -1,6 +1,6 @@
 using Moq;
-using Servy.Core.Data;
 using Servy.Core.Logging;
+using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
@@ -27,7 +27,7 @@ namespace Servy.Service.UnitTests
         public Mock<ITimerFactory> TimerFactory { get; } = new Mock<ITimerFactory>();
         public Mock<IProcessFactory> ProcessFactory { get; } = new Mock<IProcessFactory>();
         public Mock<IPathValidator> PathValidator { get; } = new Mock<IPathValidator>();
-        public Mock<IServiceRepository> ServiceRepository { get; } = new Mock<IServiceRepository>();
+        public Mock<INamedPipesService> NamedPipesService { get; } = new Mock<INamedPipesService>();
 
         public ServiceTestContext()
         {
@@ -47,7 +47,7 @@ namespace Servy.Service.UnitTests
                 TimerFactory.Object,
                 ProcessFactory.Object,
                 PathValidator.Object,
-                ServiceRepository.Object
+                NamedPipesService.Object
             );
 
             _builtServices.Add(service);
@@ -57,7 +57,7 @@ namespace Servy.Service.UnitTests
         /// <summary>
         /// Creates a standard <see cref="Service"/> wired to this context's mocks.
         /// </summary>
-        public Service BuildService(IServiceRepository? serviceRepository = null, IServyLogger? logger = null)
+        public Service BuildService(INamedPipesService? namedPipesService = null, IServyLogger? logger = null)
         {
             var service = new Service(
                 Helper.Object,
@@ -66,7 +66,7 @@ namespace Servy.Service.UnitTests
                 TimerFactory.Object,
                 ProcessFactory.Object,
                 PathValidator.Object,
-                serviceRepository ?? ServiceRepository.Object
+                namedPipesService ?? NamedPipesService.Object
             );
 
             _builtServices.Add(service);

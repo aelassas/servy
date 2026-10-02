@@ -1,8 +1,7 @@
 using Servy.Core.Data;
 using Servy.Core.Security;
-using Servy.Core.Services;
 
-namespace Servy.Service.Bootstrap
+namespace Servy.Host.Bootstrap
 {
     /// <summary>
     /// The data-layer objects the production constructor of <see cref="Servy.Service.Service"/> creates

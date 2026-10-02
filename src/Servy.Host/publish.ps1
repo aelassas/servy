@@ -1,0 +1,57 @@
+﻿#Requires -Version 5.0
+
+<#
+.SYNOPSIS
+    Self-contained build and publish script for Servy.Host.
+
+.DESCRIPTION
+    This script builds the Servy.Host project following the standard repository
+    build pattern. It publishes to the default bin directory and optionally
+    signs the published executable with SignPath when -BuildConfiguration is Release
+    and setup/signpath.ps1 is present; otherwise signing is skipped with a warning.
+
+.PARAMETER Tfm
+    Target framework for the build. Defaults to the value in build-config.ps1.
+
+.PARAMETER Runtime
+    Runtime identifier for the build (default: win-x64).
+
+.PARAMETER BuildConfiguration
+    Build configuration: Debug or Release (default: Release).
+
+.PARAMETER Pause
+    Switch to pause execution at the end of the script.
+#>
+[CmdletBinding()]
+param(
+    [string]$Tfm                = "",
+    [ValidateSet('Debug', 'Release')]
+    [string]$BuildConfiguration = "Release",
+    [string]$Runtime            = "win-x64",
+    [switch]$Pause
+)
+
+$P_PublishDir = $PSScriptRoot
+
+# Load central defaults
+$configPath = Join-Path $P_PublishDir "..\..\setup\build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+} else {
+    throw "Central build configuration not found at $configPath"
+}
+
+. (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
+
+Invoke-StandardPublish `
+    -ProjectDir $P_PublishDir `
+    -ProjectName "Servy.Host" `
+    -Tfm $Tfm `
+    -Runtime $Runtime `
+    -BuildConfiguration $BuildConfiguration
+
+if ($Pause) {
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}

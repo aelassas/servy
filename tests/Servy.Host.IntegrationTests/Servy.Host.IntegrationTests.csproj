@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyTitle>Servy.Host.IntegrationTests</AssemblyTitle>
+    <Description>Servy.Host integration tests</Description>
+    <Product>Servy.Host.IntegrationTests</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" />
+    <PackageReference Include="System.Management" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy.Host\Servy.Host.csproj" />
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

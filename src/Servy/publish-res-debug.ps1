@@ -10,6 +10,10 @@ $targetFolder = Join-Path $PSScriptRoot "Resources"
 
 . (Join-Path $PSScriptRoot "..\..\setup\common-helpers.ps1")
 
+# Servy.Host.exe: the Servy service host extracted to %ProgramData%\Servy
+& $setupScript -ProjectName "Servy.Host" -TargetResourcesFolder $targetFolder -Configuration "Debug" -Tfm $Tfm -Runtime $Runtime
+Assert-LastExitCode "publish-res.ps1 failed for Servy.Host"
+
 # Servy.Service.exe: the service wrapper extracted to %ProgramData%\Servy
 & $setupScript -ProjectName "Servy.Service" -TargetResourcesFolder $targetFolder -Configuration "Debug" -Tfm $Tfm -Runtime $Runtime
 Assert-LastExitCode "publish-res.ps1 failed for Servy.Service"

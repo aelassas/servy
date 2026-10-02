@@ -46,6 +46,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\handle64.exe" />
     <EmbeddedResource Include="Resources\handle64a.exe" />
+    <EmbeddedResource Include="Resources\Servy.Host.exe" />
+    <EmbeddedResource Include="Resources\Servy.Host.pdb" />
     <EmbeddedResource Include="Resources\Servy.Service.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.pdb" />
     <EmbeddedResource Include="Resources\Servy.Restarter.exe" />

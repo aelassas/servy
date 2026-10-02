@@ -1,10 +1,7 @@
 using Microsoft.Extensions.Configuration;
-using Moq;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Logging;
-using Servy.Core.Security;
-using Servy.Core.Services;
+using Servy.Core.NamedPipes;
 using Servy.Service.Bootstrap;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
@@ -135,87 +132,8 @@ namespace Servy.Service.UnitTests.Bootstrap
             var service = Build(env);
 
             // Assert
-            Assert.Same(env.Stack!.DbContext, TestReflection.GetField<IAppDbContext>(service, "_dbContext"));
-            Assert.Same(env.Stack.ProtectedKeyProvider, TestReflection.GetField<ProtectedKeyProvider>(service, "_protectedKeyProvider"));
-            Assert.Same(env.Stack.SecureData, TestReflection.GetField<SecureData>(service, "_secureData"));
-            Assert.Same(env.Stack.ServiceRepository, TestReflection.GetField<IServiceRepository>(service, "_serviceRepository"));
             Assert.True(service.CanShutdown);
             Assert.Equal(AppConfig.EventSource, service.ServiceName);
-        }
-
-        /// <summary>
-        /// The data stack is created with the paths the core settings named, and only after the SQLite
-        /// guard has passed.
-        /// </summary>
-        [Fact]
-        public void Constructor_Success_CreatesTheDataStackFromTheCoreSettings()
-        {
-            // Arrange
-            var env = new FakeBootstrapEnvironment();
-
-            // Act
-            Build(env);
-
-            // Assert
-            Assert.Equal(
-                new[] { FakeBootstrapEnvironment.ConnectionString, FakeBootstrapEnvironment.KeyPath, FakeBootstrapEnvironment.IvPath },
-                env.DataStackArguments);
-        }
-
-        /// <summary>
-        /// A vulnerable SQLite version terminates the process with
-        /// <see cref="AppConfig.ServiceSpecificErrorCode"/> and never reaches the data stack.
-        /// </summary>
-        [Fact]
-        public void Constructor_VulnerableSqlite_TerminatesAndNeverCreatesTheDataStack()
-        {
-            // Arrange
-            var env = new FakeBootstrapEnvironment { SqliteVersionIsSafe = false, DetectedSqliteVersion = "3.40.0" };
-            var originalExitCode = Environment.ExitCode;
-
-            try
-            {
-                // Act
-                var termination = Assert.Throws<ProcessTerminatedException>(() => Build(env));
-
-                // Assert
-                Assert.Equal(AppConfig.ServiceSpecificErrorCode, termination.ExitCode);
-                Assert.Empty(env.DataStackArguments);
-                Assert.Contains(env.Errors, e => e.Message!.Contains("3.40.0") && e.Message.Contains("CVE-2025-6965"));
-            }
-            finally
-            {
-                Environment.ExitCode = originalExitCode;
-            }
-        }
-
-        /// <summary>
-        /// The CVE-2025-6965 arm sets the exit code itself, and that first value is the one production
-        /// exits with. The test double's throw is raised inside the constructor's <c>try</c>, so the
-        /// catch-all catches it and terminates a second time; only the first recorded exit code pins the
-        /// assignment in the arm.
-        /// </summary>
-        [Fact]
-        public void Constructor_VulnerableSqlite_FirstTerminationCarriesTheServiceSpecificErrorCode()
-        {
-            // Arrange
-            var env = new FakeBootstrapEnvironment { SqliteVersionIsSafe = false, DetectedSqliteVersion = "3.40.0" };
-            var originalExitCode = Environment.ExitCode;
-            Environment.ExitCode = 0;
-
-            try
-            {
-                // Act
-                var termination = Assert.Throws<ProcessTerminatedException>(() => Build(env));
-
-                // Assert
-                Assert.Equal(2, termination.ExitCodes.Count);
-                Assert.Equal(AppConfig.ServiceSpecificErrorCode, termination.ExitCodes[0]);
-            }
-            finally
-            {
-                Environment.ExitCode = originalExitCode;
-            }
         }
 
         /// <summary>
@@ -320,6 +238,7 @@ namespace Servy.Service.UnitTests.Bootstrap
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
+                _ctx.NamedPipesService.Object,
                 (IServiceBootstrapEnvironment)null!));
         }
 
@@ -338,6 +257,7 @@ namespace Servy.Service.UnitTests.Bootstrap
                 _ctx.TimerFactory.Object,
                 _ctx.ProcessFactory.Object,
                 _ctx.PathValidator.Object,
+                _ctx.NamedPipesService.Object,
                 env);
 
             _built.Add(service);
@@ -374,6 +294,7 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <param name="timerFactory">The timer factory.</param>
             /// <param name="processFactory">The process factory.</param>
             /// <param name="pathValidator">The path validator.</param>
+            /// <param name="namedPipesService">The named pipes service.</param>
             /// <param name="bootstrapEnvironment">The bootstrap environment seam.</param>
             public TerminationRecordingService(
                 IServiceHelper serviceHelper,
@@ -382,8 +303,9 @@ namespace Servy.Service.UnitTests.Bootstrap
                 ITimerFactory timerFactory,
                 IProcessFactory processFactory,
                 IPathValidator pathValidator,
+                INamedPipesService namedPipesService,
                 IServiceBootstrapEnvironment bootstrapEnvironment)
-                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, bootstrapEnvironment)
+                : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, namedPipesService, bootstrapEnvironment)
             {
             }
 
@@ -489,12 +411,6 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <summary>Gets the errors <see cref="LogError"/> was called with, in call order.</summary>
             public List<(string? Message, Exception? Exception)> Errors { get; } = new List<(string? Message, Exception? Exception)>();
 
-            /// <summary>Gets the arguments <see cref="CreateDataStack"/> was called with, in call order.</summary>
-            public List<string> DataStackArguments { get; } = new List<string>();
-
-            /// <summary>Gets the stack <see cref="CreateDataStack"/> handed back, or <see langword="null"/> when it was never called.</summary>
-            public ServiceDataStack? Stack { get; private set; }
-
             /// <summary>Records the call and does nothing else.</summary>
             /// <param name="logFileName">The log file name the constructor asked for.</param>
             public void InitializeLogger(string logFileName) => InitializedLoggers.Add(logFileName);
@@ -529,39 +445,6 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <param name="title">The first line of the report.</param>
             /// <param name="body">The body of the report.</param>
             public void ReportDebug(string title, string body) => DebugReports.Add((title, body));
-
-            /// <summary>Answers from <see cref="SqliteVersionIsSafe"/>.</summary>
-            /// <param name="detectedVersion">Receives <see cref="DetectedSqliteVersion"/>.</param>
-            /// <returns><see cref="SqliteVersionIsSafe"/>.</returns>
-            public bool IsSqliteVersionSafe(out string? detectedVersion)
-            {
-                detectedVersion = DetectedSqliteVersion;
-                return SqliteVersionIsSafe;
-            }
-
-            /// <summary>Records the arguments and returns a stack of in-memory doubles.</summary>
-            /// <param name="connectionString">The connection string the constructor passed.</param>
-            /// <param name="aesKeyFilePath">The AES key path the constructor passed.</param>
-            /// <param name="aesIVFilePath">The AES IV path the constructor passed.</param>
-            /// <returns>The stack the constructor assigns to its fields.</returns>
-            public ServiceDataStack CreateDataStack(string connectionString, string aesKeyFilePath, string aesIVFilePath)
-            {
-                DataStackArguments.Add(connectionString);
-                DataStackArguments.Add(aesKeyFilePath);
-                DataStackArguments.Add(aesIVFilePath);
-
-                var keyProvider = new Mock<IProtectedKeyProvider>();
-                keyProvider.Setup(p => p.GetKey()).Returns(new byte[32]);
-                keyProvider.Setup(p => p.GetIV()).Returns(new byte[16]);
-
-                Stack = new ServiceDataStack(
-                    new Mock<IAppDbContext>().Object,
-                    new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath),
-                    new SecureData(keyProvider.Object),
-                    new Mock<IServiceRepository>().Object);
-
-                return Stack;
-            }
 
             /// <summary>Records the error.</summary>
             /// <param name="message">The error message.</param>
