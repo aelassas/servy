@@ -56,9 +56,13 @@ namespace Servy.Core.Services
         /// <param name="serviceHelper">Lists, stops and starts the Servy services when the host has to be moved.</param>
         /// <param name="cancellationToken">A token that stops the operation.</param>
         /// <returns>
-        /// The outcome; never throws except on cancellation. It is a failure, with nothing changed, when the name is taken
-        /// by a service that does not run the Servy host or whose executable cannot be read.
+        /// The outcome; apart from the exceptions listed below, a failure is returned rather than thrown. It is a failure,
+        /// with nothing changed, when the name is taken by a service that does not run the Servy host or whose executable
+        /// cannot be read.
         /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="hostExePath"/> is <see langword="null"/>, empty or white space.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceHelper"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
         Task<OperationResult> EnsureInstalledAndRunningAsync(string hostExePath, IServiceHelper serviceHelper, CancellationToken cancellationToken = default);
 
         /// <summary>
