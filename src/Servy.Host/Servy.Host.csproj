@@ -34,7 +34,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.service.json">
+    <Content Include="appsettings.host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
