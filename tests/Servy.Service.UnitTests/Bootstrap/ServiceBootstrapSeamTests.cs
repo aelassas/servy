@@ -190,6 +190,69 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
+        /// The CVE-2025-6965 arm sets the exit code itself, and that first value is the one production
+        /// exits with. The test double's throw is raised inside the constructor's <c>try</c>, so the
+        /// catch-all catches it and terminates a second time; only the first recorded exit code pins the
+        /// assignment in the arm.
+        /// </summary>
+        [Fact]
+        public void Constructor_VulnerableSqlite_FirstTerminationCarriesTheServiceSpecificErrorCode()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment { SqliteVersionIsSafe = false, DetectedSqliteVersion = "3.40.0" };
+            var originalExitCode = Environment.ExitCode;
+            Environment.ExitCode = 0;
+
+            try
+            {
+                // Act
+                var termination = Assert.Throws<ProcessTerminatedException>(() => Build(env));
+
+                // Assert
+                Assert.Equal(2, termination.ExitCodes.Count);
+                Assert.Equal(AppConfig.ServiceSpecificErrorCode, termination.ExitCodes[0]);
+            }
+            finally
+            {
+                Environment.ExitCode = originalExitCode;
+            }
+        }
+
+        /// <summary>
+        /// The service log file is initialized before the <c>try</c>, which is what lets the catch-all log
+        /// a construction failure at all.
+        /// </summary>
+        [Fact]
+        public void Constructor_InitializesTheServiceLogFile()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+
+            // Act
+            Build(env);
+
+            // Assert
+            Assert.Equal(new[] { "Servy.Service.log" }, env.InitializedLoggers);
+        }
+
+        /// <summary>
+        /// Logging is configured with the instance logger the constructor was given, not with the
+        /// process-global one.
+        /// </summary>
+        [Fact]
+        public void Constructor_ConfiguresLoggingWithTheInstanceLogger()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+
+            // Act
+            Build(env);
+
+            // Assert
+            Assert.Same(_ctx.Logger.Object, Assert.Single(env.ConfiguredInstanceLoggers));
+        }
+
+        /// <summary>
         /// A failing start-up step with no exit code already set terminates with
         /// <see cref="AppConfig.ServiceSpecificErrorCode"/>, and the exception is logged.
         /// </summary>
@@ -325,18 +388,31 @@ namespace Servy.Service.UnitTests.Bootstrap
             }
 
             /// <summary>
+            /// Gets the exit codes <see cref="TerminateProcess(int)"/> was called with, in call order.
+            /// </summary>
+            /// <remarks>
+            /// An initializer rather than a constructor-body assignment, because the base
+            /// constructor - which is what reaches the termination seam - runs before that body.
+            /// </remarks>
+            private List<int> Terminations { get; } = new List<int>();
+
+            /// <summary>
             /// Throws instead of terminating the host process.
             /// </summary>
             /// <param name="exitCode">The exit code the service asked the host process to terminate with.</param>
             /// <exception cref="ProcessTerminatedException">Always.</exception>
             /// <remarks>
             /// The production seam forwards to <c>Environment.Exit</c>, which does not return. Throwing
-            /// keeps everything after the call unreachable here too, so a test cannot assert on statements
-            /// the real service would never reach.
+            /// keeps everything after the call unreachable here too only where the call sits outside a
+            /// <c>try</c>: a termination raised inside the constructor's <c>try</c> is caught by its
+            /// catch-all, which logs and terminates a second time. Every exit code is therefore recorded
+            /// and handed to <see cref="ProcessTerminatedException.ExitCodes"/> in call order, because the
+            /// first one is what the real service would have exited with.
             /// </remarks>
             protected override void TerminateProcess(int exitCode)
             {
-                throw new ProcessTerminatedException(exitCode);
+                Terminations.Add(exitCode);
+                throw new ProcessTerminatedException(exitCode, Terminations.ToArray());
             }
         }
 
@@ -351,16 +427,26 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// Initializes a new instance of the <see cref="ProcessTerminatedException"/> class.
             /// </summary>
             /// <param name="exitCode">The exit code the service asked the host process to terminate with.</param>
-            public ProcessTerminatedException(int exitCode)
+            /// <param name="exitCodes">Every exit code recorded so far, in call order, ending with <paramref name="exitCode"/>.</param>
+            public ProcessTerminatedException(int exitCode, int[] exitCodes)
                 : base($"Service requested process termination with exit code {exitCode}.")
             {
                 ExitCode = exitCode;
+                ExitCodes = exitCodes;
             }
 
             /// <summary>
             /// Gets the exit code the service asked the host process to terminate with.
             /// </summary>
             public int ExitCode { get; }
+
+            /// <summary>
+            /// Gets every exit code the service asked the host process to terminate with, in call order,
+            /// ending with <see cref="ExitCode"/>. A termination raised inside the constructor's
+            /// <c>try</c> is caught by its catch-all, which terminates again, so this list can hold more
+            /// than one entry where production would have exited on the first.
+            /// </summary>
+            public IReadOnlyList<int> ExitCodes { get; }
         }
 
         /// <summary>
@@ -397,6 +483,9 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <summary>Gets the debug reports <see cref="ReportDebug"/> was called with, in call order.</summary>
             public List<(string Title, string Body)> DebugReports { get; } = new List<(string Title, string Body)>();
 
+            /// <summary>Gets the instance loggers <see cref="ConfigureLogging"/> was called with, in call order.</summary>
+            public List<IServyLogger?> ConfiguredInstanceLoggers { get; } = new List<IServyLogger?>();
+
             /// <summary>Gets the errors <see cref="LogError"/> was called with, in call order.</summary>
             public List<(string? Message, Exception? Exception)> Errors { get; } = new List<(string? Message, Exception? Exception)>();
 
@@ -430,12 +519,11 @@ namespace Servy.Service.UnitTests.Bootstrap
             public CoreSettingsLoader.CoreSettings LoadCoreSettings() =>
                 new CoreSettingsLoader.CoreSettings(ConnectionString, KeyPath, IvPath);
 
-            /// <summary>Does nothing.</summary>
+            /// <summary>Records the instance logger and does nothing else.</summary>
             /// <param name="configuration">Ignored.</param>
-            /// <param name="instanceLogger">Ignored.</param>
-            public void ConfigureLogging(IConfiguration configuration, IServyLogger? instanceLogger)
-            {
-            }
+            /// <param name="instanceLogger">The instance logger the constructor passed.</param>
+            public void ConfigureLogging(IConfiguration configuration, IServyLogger? instanceLogger) =>
+                ConfiguredInstanceLoggers.Add(instanceLogger);
 
             /// <summary>Records the report.</summary>
             /// <param name="title">The first line of the report.</param>
