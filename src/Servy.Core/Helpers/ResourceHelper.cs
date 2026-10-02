@@ -72,25 +72,20 @@ namespace Servy.Core.Helpers
             => TryPrepareExtraction(resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
 
         /// <summary>
-        /// Copies an embedded resource from the assembly to disk, stopping and restarting services if necessary.
+        /// Copies an embedded resource from the assembly to disk.
         /// </summary>
         /// <param name="assembly">The assembly containing the resource.</param>
         /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
         /// <param name="fileName">The filename of the resource without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
-        /// <param name="stopServices">Whether to stop services before copying the resource.</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
-        /// <returns>
-        /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted;
-        /// otherwise, false.
-        /// </returns>
+        /// <returns>True if the copy succeeded (or was not needed); otherwise, false.</returns>
         public async Task<bool> CopyEmbeddedResourceAsync(
             Assembly assembly,
             string resourceNamespace,
             string fileName,
             string extension,
-            bool stopServices = true,
             string subfolder = null,
             CancellationToken cancellationToken = default)
         {
@@ -103,11 +98,11 @@ namespace Servy.Core.Helpers
                 if (!TryPrepareExtraction(resourceNamespace, fileName, extension, subfolder, out targetPath, out var targetFileName, out resourceName))
                     return true;
 
-                // Capture pre-existing explicit ACLs BEFORE stopping services, killing processes, or staging files
+                // Capture pre-existing explicit ACLs BEFORE killing processes or staging files
                 FileSecurity existingAcl = GetExistingFileSecurity(targetPath);
 
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
-                // This prevents stopping services or killing locking processes if the resource is missing.
+                // This prevents killing locking processes if the resource is missing.
                 Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
                 if (resourceStream == null)
                 {
@@ -117,58 +112,20 @@ namespace Servy.Core.Helpers
 
                 using (resourceStream)
                 {
-                    // Get running services
-                    var runningServices = stopServices ? _serviceHelper.GetRunningServyServices() : new List<string>();
+                    // Check cancellation boundary right before process execution checks
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                    try
-                    {
-                        if (stopServices && runningServices.Count > 0)
-                        {
-                            Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                            // Forward the cancellation token to the polling routine
-                            await _serviceHelper.StopServicesAsync(runningServices, cancellationToken);
-                        }
+                    if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
+                        return false;
 
-                        // Check cancellation boundary right before process execution checks
-                        cancellationToken.ThrowIfCancellationRequested();
+                    // Plumb both parameters into the atomic writer loop context cleanly
+                    await Helper.WriteFileAtomicAsync(targetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t), cancellationToken);
 
-                        if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
-                            return false;
+                    // Restore pre-existing ACLs on the newly written file
+                    RestoreFileSecurity(targetPath, existingAcl);
 
-                        // Plumb both parameters into the atomic writer loop context cleanly
-                        await Helper.WriteFileAtomicAsync(targetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t), cancellationToken);
-
-                        // Restore pre-existing ACLs on the newly written file
-                        RestoreFileSecurity(targetPath, existingAcl);
-
-                        copyDone = true; // File write succeeded natively within the execution path
-                        HasCopiedResources = true;
-                    }
-                    finally
-                    {
-                        if (stopServices && runningServices.Count > 0)
-                        {
-                            try
-                            {
-                                Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-
-                                // Force CancellationToken.None to avoid leaving services stopped if extraction was canceled midway
-                                await _serviceHelper.StartServicesAsync(runningServices, CancellationToken.None);
-                            }
-                            catch (Exception startEx)
-                            {
-                                // ROBUSTNESS: Dynamically evaluate the copyDone state inside the finally block.
-                                // This guarantees we don't issue false success metrics to the administrator logs if the copy was aborted earlier.
-                                var copyDescription = copyDone
-                                    ? $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but "
-                                    : $"Embedded resource '{resourceName}' was NOT copied to '{targetPath}'; additionally, ";
-
-                                Logger.Error(
-                                    copyDescription + $"{runningServices.Count} previously-running services failed to restart.",
-                                    startEx);
-                            }
-                        }
-                    }
+                    copyDone = true; // File write succeeded natively within the execution path
+                    HasCopiedResources = true;
                 }
 
                 if (copyDone)
@@ -176,7 +133,6 @@ namespace Servy.Core.Helpers
                     Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
                 }
 
-                // Restart failures are surfaced via Logger.Error already, so the boolean does not need to encode them
                 return copyDone;
             }
             catch (OperationCanceledException)

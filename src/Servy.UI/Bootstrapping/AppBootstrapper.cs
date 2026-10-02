@@ -377,7 +377,7 @@ namespace Servy.UI.Bootstrapping
                     try
                     {
                         // Binary Resource Extraction
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", cancellationToken: ct))
                         {
                             string resourceName = $"{AppConfig.HandleExeFileName}.exe";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -397,7 +397,7 @@ namespace Servy.UI.Bootstrapping
                         };
 
 #if DEBUG
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", cancellationToken: ct))
                         {
                             string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
@@ -409,7 +409,7 @@ namespace Servy.UI.Bootstrapping
                                 MessageBoxImage.Warning));
                         }
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", cancellationToken: ct))
                         {
                             string resourceName = $"{AppConfig.ServyRestarterFileName}.pdb";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'.");
@@ -421,7 +421,7 @@ namespace Servy.UI.Bootstrapping
                                 MessageBoxImage.Warning));
                         }
 
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", cancellationToken: ct))
                         {
                             await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                                 splash ?? (Window)app.MainWindow,
@@ -468,7 +468,7 @@ namespace Servy.UI.Bootstrapping
                         }
 
                         // The Servy host service serves every Servy service its configuration
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "exe", false, cancellationToken: ct))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "exe", cancellationToken: ct))
                         {
                             throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
                                 "The application cannot start safely - see file log for details.");

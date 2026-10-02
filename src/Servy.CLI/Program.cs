@@ -197,7 +197,7 @@ namespace Servy.CLI
                         var resourceHelper = new ResourceHelper(sh, processKiller);
 
                         // Copy Sysinternals from embedded resources
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: cts.Token))
+                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.HandleExeFileName}; process-tree handle features may be degraded.");
                         }
@@ -216,17 +216,17 @@ namespace Servy.CLI
 
 #if DEBUG
                             // Copy debug symbols from embedded resources (only in debug builds)
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", cancellationToken: cts.Token))
                             {
                                 Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                             }
 
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", false, cancellationToken: cts.Token))
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", cancellationToken: cts.Token))
                             {
                                 Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
                             }
 
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", false, cancellationToken: cts.Token))
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", cancellationToken: cts.Token))
                             {
                                 Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
                             }
@@ -270,7 +270,7 @@ namespace Servy.CLI
                             }
 
                             // Copy the Servy host service
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe", false, cancellationToken: cts.Token))
+                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe", cancellationToken: cts.Token))
                             {
                                 throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
                                     "CLI cannot start safely - see file log for details.");
