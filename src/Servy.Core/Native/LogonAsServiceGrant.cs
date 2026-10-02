@@ -214,9 +214,8 @@ namespace Servy.Core.Native
 
             try
             {
-                // Request only the minimal rights required to add account privileges.
-                // POLICY_LOOKUP_NAMES: To resolve SIDs/Names.
-                // POLICY_CREATE_ACCOUNT: To create the account entry in LSA if it doesn't exist.
+                // Request only the rights LsaAddAccountRights documents:
+                // POLICY_LOOKUP_NAMES always, and POLICY_CREATE_ACCOUNT for an account that has no LSA entry yet.
                 uint accessMask = POLICY_ACCESS.POLICY_LOOKUP_NAMES |
                                   POLICY_ACCESS.POLICY_CREATE_ACCOUNT;
 
