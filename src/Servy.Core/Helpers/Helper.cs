@@ -364,7 +364,7 @@ namespace Servy.Core.Helpers
         /// <param name="source">The staging file to move.</param>
         /// <param name="destination">The destination path to replace.</param>
         /// <remarks>
-        /// This is the production move the <c>moveOverwrite</c> seam parameter defaults to; it forwards unchanged to
+        /// This is the production move both public overloads pass as the <c>moveOverwrite</c> seam; it forwards unchanged to
         /// <see cref="File.Move(string, string, bool)"/>.
         /// </remarks>
         private static void AtomicOverwriteMove(string source, string destination) => File.Move(source, destination, overwrite: true);
