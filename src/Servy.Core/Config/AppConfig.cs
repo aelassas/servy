@@ -1752,7 +1752,9 @@ namespace Servy.Core.Config
         public const int ServyHostDefaultConnectTimeoutMs = 5000;
 
         /// <summary>
-        /// The time in milliseconds a client waits for the Servy host to answer a request once it is connected.
+        /// The time in milliseconds a client waits for the Servy host to answer a request once it is connected, and the
+        /// time the Servy host gives a connected client to send its request and read the answer before it closes the
+        /// connection (<c>RequestTimeoutMs</c> in Servy.Host). Changing it changes both sides.
         /// </summary>
         public const int ServyHostDefaultRequestTimeoutMs = 30000;
 
