@@ -743,7 +743,7 @@ namespace Servy.UnitTests.ViewModels
                 Priority = (int)ProcessPriority.BelowNormal
             };
 
-            _serviceRepository.Setup(r => r.GetByNameAsync("PolledService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(sampleDto);
+            _serviceRepository.Setup(r => r.GetByNameAsync("PolledService", true, It.IsAny<CancellationToken>())).ReturnsAsync(sampleDto);
 
             // Act
             await _viewModel.LoadServiceConfigurationAsync("PolledService", TestContext.Current.CancellationToken);
@@ -754,6 +754,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal("C:\\Polled\\Service.exe", _viewModel.ExecutablePath);
             Assert.Equal(ServiceStartType.AutomaticDelayedStart, _viewModel.SelectedStartupType);
             Assert.Equal(ProcessPriority.BelowNormal, _viewModel.SelectedProcessPriority);
+            _serviceRepository.Verify(r => r.GetByNameAsync("PolledService", true, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -761,7 +762,7 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             _viewModel.ServiceName = "KeepThisName";
-            _serviceRepository.Setup(r => r.GetByNameAsync("MissingService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
+            _serviceRepository.Setup(r => r.GetByNameAsync("MissingService", true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
 
             // Act
             await _viewModel.LoadServiceConfigurationAsync("MissingService", TestContext.Current.CancellationToken);
@@ -775,7 +776,7 @@ namespace Servy.UnitTests.ViewModels
         public async Task LoadServiceConfiguration_ExceptionBranch_DisplaysErrorMessageBox()
         {
             // Arrange
-            _serviceRepository.Setup(r => r.GetByNameAsync("ErrorService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("DB Corrupt"));
+            _serviceRepository.Setup(r => r.GetByNameAsync("ErrorService", true, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("DB Corrupt"));
 
             // Act
             await _viewModel.LoadServiceConfigurationAsync("ErrorService", TestContext.Current.CancellationToken);
