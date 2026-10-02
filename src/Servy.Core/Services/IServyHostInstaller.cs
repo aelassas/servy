@@ -26,6 +26,7 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="serviceHelper">Lists the services this build's wrappers run.</param>
         /// <returns>The service names, without duplicates.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceHelper"/> is <see langword="null"/>.</exception>
         List<string> GetRunningServyServices(IServiceHelper serviceHelper);
 
         /// <summary>
@@ -75,6 +76,8 @@ namespace Servy.Core.Services
         /// <param name="serviceNames">The names of the Servy services.</param>
         /// <param name="cancellationToken">A token checked between two services.</param>
         /// <returns>The number of services that were updated. A service that cannot be updated is logged and skipped.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceNames"/> is <see langword="null"/>.</exception>
+        /// <exception cref="System.OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled before a service is checked.</exception>
         Task<int> EnsureServicesDependOnHostAsync(IEnumerable<string> serviceNames, CancellationToken cancellationToken = default);
     }
 }
