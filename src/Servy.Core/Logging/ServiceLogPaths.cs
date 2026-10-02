@@ -1,6 +1,6 @@
 using Servy.Core.Config;
+using Servy.Core.Helpers;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
@@ -44,16 +44,6 @@ namespace Servy.Core.Logging
         private const int HashLength = 16;
 
         /// <summary>
-        /// The device names Windows reserves, which cannot be used as a folder name even with an extension.
-        /// </summary>
-        private static readonly HashSet<string> ReservedDeviceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "CON", "PRN", "AUX", "NUL",
-            "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-            "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
-        };
-
-        /// <summary>
         /// Gets the safe folder name of a service's log folder.
         /// </summary>
         /// <param name="serviceName">The service name, as registered with the Service Control Manager.</param>
@@ -80,8 +70,8 @@ namespace Servy.Core.Logging
             }
 
             // CON, CON.log and "CON .log" all open the console device, so encode the first character of such a name
-            var stem = serviceName.Split('.')[0].TrimEnd(' ');
-            if (ReservedDeviceNames.Contains(stem))
+            var stem = serviceName.Split('.')[0];
+            if (ReservedNames.IsReservedDeviceName(stem))
             {
                 builder.Remove(0, 1);
                 builder.Insert(0, Encode(serviceName[0]));
