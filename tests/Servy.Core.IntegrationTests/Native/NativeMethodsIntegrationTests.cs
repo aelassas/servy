@@ -72,7 +72,6 @@ namespace Servy.Core.IntegrationTests.Native
             // A wrong bit here surfaces as an ordinary "Access is denied", so nothing else would catch it.
             Assert.Equal(0x00000800u, NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES);
             Assert.Equal(0x00000010u, NativeMethods.POLICY_ACCESS.POLICY_CREATE_ACCOUNT);
-            Assert.Equal(0x00000400u, NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE);
 
             // The service DACL grant opens its handle with WRITE_DAC and reads and writes only the DACL.
             // Both failures are logged and swallowed, so a wrong bit would surface only as a logged

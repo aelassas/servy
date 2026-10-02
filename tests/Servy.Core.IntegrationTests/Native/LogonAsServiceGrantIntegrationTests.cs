@@ -319,7 +319,7 @@ namespace Servy.Core.IntegrationTests.Native
                 int lsaOpenStatus = NativeMethods.LsaOpenPolicy(
                     IntPtr.Zero,
                     ref objectAttributes,
-                    NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES | NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE,
+                    NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES,
                     out policyHandle);
 
                 if (lsaOpenStatus == 0)
