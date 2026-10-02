@@ -370,7 +370,7 @@ namespace Servy.Core.Helpers
         /// <returns>
         /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified,
         /// or <see cref="DateTime.MinValue"/> if the file cannot be accessed. The sentinel
-        /// value causes <c>ShouldCopyResource</c> to leave any existing extraction untouched
+        /// value causes <c>TryPrepareExtraction</c> to leave any existing extraction untouched
         /// when the timestamp probe fails.
         /// </returns>
         /// <remarks>
