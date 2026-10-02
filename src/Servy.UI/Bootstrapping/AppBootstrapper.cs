@@ -457,7 +457,7 @@ namespace Servy.UI.Bootstrapping
 #endif
                     // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
                     var hostExePath = Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe);
-                    var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(hostExePath, ct);
+                    var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(hostExePath, sh, ct);
                     if (hostResult.IsSuccess)
                     {
                         // Services installed by an earlier version do not depend on the host yet

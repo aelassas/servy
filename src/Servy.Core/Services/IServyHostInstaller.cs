@@ -1,4 +1,5 @@
 using Servy.Core.Common;
+using Servy.Core.Helpers;
 
 namespace Servy.Core.Services
 {
@@ -35,10 +36,17 @@ namespace Servy.Core.Services
         /// Installs the Servy host service when it is not installed, makes sure its startup type is Automatic and that it
         /// runs <paramref name="hostExePath"/> as Local System, and starts it when it is not running.
         /// </summary>
-        /// <param name="hostExePath">The full path of <c>Servy.Host.exe</c>.</param>
+        /// <remarks>
+        /// When the service is installed with another executable (for example after switching between the .NET 10 and the
+        /// .NET Framework 4.8 build, or between a Debug and a Release build), every running Servy service and the host are
+        /// stopped, the service is pointed at <paramref name="hostExePath"/>, and the host and the stopped services are
+        /// started again.
+        /// </remarks>
+        /// <param name="hostExePath">The full path of the host executable this build extracted.</param>
+        /// <param name="serviceHelper">Lists, stops and starts the Servy services when the host has to be moved.</param>
         /// <param name="cancellationToken">A token that stops the operation.</param>
         /// <returns>The outcome; never throws except on cancellation.</returns>
-        Task<OperationResult> EnsureInstalledAndRunningAsync(string hostExePath, CancellationToken cancellationToken = default);
+        Task<OperationResult> EnsureInstalledAndRunningAsync(string hostExePath, IServiceHelper serviceHelper, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Adds the Servy host service to the dependencies of every given installed service that does not depend on it

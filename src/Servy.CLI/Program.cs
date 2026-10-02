@@ -257,7 +257,7 @@ namespace Servy.CLI
                         }
 #endif
                         // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
-                        var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), cts.Token);
+                        var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), sh, cts.Token);
                         if (hostResult.IsSuccess)
                         {
                             // Services installed by an earlier version do not depend on the host yet
