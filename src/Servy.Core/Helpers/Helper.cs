@@ -359,6 +359,17 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Replaces <paramref name="destination"/> with <paramref name="source"/> in a single atomic metadata operation.
+        /// </summary>
+        /// <param name="source">The staging file to move.</param>
+        /// <param name="destination">The destination path to replace.</param>
+        /// <remarks>
+        /// This is the production move the <c>moveOverwrite</c> seam parameter defaults to; it forwards unchanged to
+        /// <see cref="File.Move(string, string, bool)"/>.
+        /// </remarks>
+        private static void AtomicOverwriteMove(string source, string destination) => File.Move(source, destination, overwrite: true);
+
+        /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
@@ -366,7 +377,7 @@ namespace Servy.Core.Helpers
         /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous write operation.</returns>
         public static Task WriteFileAtomicAsync(string path, Func<Stream, CancellationToken, Task> writeContent, CancellationToken ct = default)
-            => WriteFileAtomicCore(path, async (fs, t) => await writeContent(fs, t), ct).AsTask();
+            => WriteFileAtomicCore(path, async (fs, t) => await writeContent(fs, t), AtomicOverwriteMove, ct).AsTask();
 
         /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
@@ -381,6 +392,28 @@ namespace Servy.Core.Helpers
         /// file is never in a partially written state.
         /// </remarks>
         public static void WriteFileAtomic(string path, Action<Stream> writeContent, CancellationToken cancellationToken = default)
+            => WriteFileAtomic(path, writeContent, AtomicOverwriteMove, cancellationToken);
+
+        /// <summary>
+        /// Seam for unit testing: the synchronous atomic write with an injectable overwrite move.
+        /// </summary>
+        /// <param name="path">The full destination path where the file should be written.</param>
+        /// <param name="writeContent">An action that receives a <see cref="Stream"/> to write the actual file content.</param>
+        /// <param name="moveOverwrite">
+        /// The move that replaces the destination with the staging file. Receives the staging path and the
+        /// destination path.
+        /// </param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <exception cref="PathTooLongException">The calculated staging path exceeds the Windows MAX_PATH limit.</exception>
+        /// <exception cref="AggregateException">The direct move and the hardened-target fallback both failed and no retry is left.</exception>
+        /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was signalled.</exception>
+        /// <remarks>
+        /// <see cref="WriteFileAtomic(string, Action{Stream}, CancellationToken)"/> passes
+        /// <see cref="AtomicOverwriteMove"/>, so a production call behaves exactly as it did before this seam
+        /// existed. The parameter is deliberately not a mutable static: other test classes in the same assembly
+        /// reach this method through <c>ServiceExporter</c> and xUnit runs them in parallel.
+        /// </remarks>
+        internal static void WriteFileAtomic(string path, Action<Stream> writeContent, Action<string, string> moveOverwrite, CancellationToken cancellationToken = default)
         {
             // Ensure the parent directory exists before attempting to create the temp file.
             var dir = Path.GetDirectoryName(path);
@@ -420,7 +453,7 @@ namespace Servy.Core.Helpers
                         clearedReadOnly |= PrepareDestinationForMove(path);
 
                         // On NTFS, moving within the same volume is an atomic metadata operation.
-                        File.Move(tmp, path, overwrite: true);
+                        moveOverwrite(tmp, path);
                         clearedReadOnly = false; // destination replaced; nothing left to restore
                         break;
                     }
@@ -500,9 +533,20 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
         /// <param name="writer">An asynchronous function that receives a <see cref="Stream"/> to write content.</param>
+        /// <param name="moveOverwrite">
+        /// Seam for unit testing: the move that replaces the destination with the staging file. Receives the
+        /// staging path and the destination path.
+        /// </param>
         /// <param name="cancellationToken">An optional cancellation token to abort the operation.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
-        private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, CancellationToken, ValueTask> writer, CancellationToken cancellationToken = default)
+        /// <exception cref="PathTooLongException">The calculated staging path exceeds the Windows MAX_PATH limit.</exception>
+        /// <exception cref="AggregateException">The direct move and the hardened-target fallback both failed and no retry is left.</exception>
+        /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was signalled.</exception>
+        /// <remarks>
+        /// <see cref="WriteFileAtomicAsync(string, Func{Stream, CancellationToken, Task}, CancellationToken)"/> passes
+        /// <see cref="AtomicOverwriteMove"/>, so a production call behaves exactly as it did before this seam existed.
+        /// </remarks>
+        internal static async ValueTask WriteFileAtomicCore(string path, Func<Stream, CancellationToken, ValueTask> writer, Action<string, string> moveOverwrite, CancellationToken cancellationToken = default)
         {
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrWhiteSpace(dir))
@@ -540,7 +584,7 @@ namespace Servy.Core.Helpers
                         clearedReadOnly |= PrepareDestinationForMove(path);
 
                         // On NTFS, moving within the same volume is an atomic metadata operation.
-                        File.Move(tmp, path, overwrite: true);
+                        moveOverwrite(tmp, path);
                         clearedReadOnly = false; // destination replaced; nothing left to restore
                         break;
                     }

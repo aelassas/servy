@@ -942,6 +942,45 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void WriteFileAtomic_TransientIOExceptionOnMove_RetriesAndSucceeds()
+        {
+            // Arrange
+            string targetPath = Path.Combine(_testRoot, "transient-io-sync.txt");
+            File.WriteAllText(targetPath, "initial-content");
+            int moveAttempts = 0;
+
+            // The transient arm needs the overwrite move itself to fail with an IOException, which is a
+            // sharing violation on the STAGING file - a handle no test can hold, because WriteFileAtomic
+            // closes it microseconds before the move. The injected mover raises it deterministically and
+            // then performs the real move, so a later attempt succeeds.
+            void FlakyMove(string source, string destination)
+            {
+                moveAttempts++;
+                if (moveAttempts == 1)
+                {
+                    throw new IOException("The process cannot access the file because it is being used by another process.");
+                }
+
+                File.Move(source, destination, overwrite: true);
+            }
+
+            // Act
+            Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+            {
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                {
+                    writer.Write("new-content");
+                }
+            }, FlakyMove, TestContext.Current.CancellationToken);
+
+            // Assert
+            // Two attempts, not one: the first IOException was swallowed by the transient retry arm rather
+            // than escaping, and the second pass of the loop is what wrote the file.
+            Assert.Equal(2, moveAttempts);
+            Assert.Equal("new-content", File.ReadAllText(targetPath));
+        }
+
+        [Fact]
         public void WriteFileAtomic_TempPathExceedsMaxPathLength_ThrowsPathTooLongException()
         {
             // Arrange: a target path that is itself within MAX_PATH, but whose 21-character
@@ -1223,6 +1262,38 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
             }
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicCore_TransientIOExceptionOnMove_RetriesAndSucceeds()
+        {
+            // Arrange: the asynchronous twin of the synchronous case above. WriteFileAtomicCore carries its
+            // own copy of the retry loop, so its transient arm needs its own witness.
+            string targetPath = Path.Combine(_testRoot, "transient-io-async.txt");
+            File.WriteAllText(targetPath, "initial-content");
+            int moveAttempts = 0;
+
+            void FlakyMove(string source, string destination)
+            {
+                moveAttempts++;
+                if (moveAttempts == 1)
+                {
+                    throw new IOException("The process cannot access the file because it is being used by another process.");
+                }
+
+                File.Move(source, destination, overwrite: true);
+            }
+
+            // Act
+            await Helper.WriteFileAtomicCore(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+            {
+                byte[] payload = Encoding.UTF8.GetBytes("new-content");
+                await stream.WriteAsync(payload, cancellationToken);
+            }, FlakyMove, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(2, moveAttempts);
+            Assert.Equal("new-content", File.ReadAllText(targetPath));
         }
 
         [Fact]
