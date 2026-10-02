@@ -32,6 +32,7 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void Constants_ValueMatching_VerifyCorrectValues()
         {
+            // Arrange, Act & Assert
             Assert.Equal(0x0004, NativeMethods.SERVICE_QUERY_STATUS);
             Assert.Equal(3, NativeMethods.SERVICE_DEMAND_START);
             Assert.Equal(0xFFFFFFFFu, NativeMethods.SERVICE_NO_CHANGE);
@@ -72,6 +73,22 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x00000800u, NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES);
             Assert.Equal(0x00000010u, NativeMethods.POLICY_ACCESS.POLICY_CREATE_ACCOUNT);
             Assert.Equal(0x00000400u, NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE);
+
+            // The service DACL grant opens its handle with WRITE_DAC and reads and writes only the DACL.
+            // Both failures are logged and swallowed, so a wrong bit would surface only as a logged
+            // "Access is denied" and every RestartService grant would stop working unnoticed.
+            Assert.Equal(0x00040000u, NativeMethods.SERVICE_WRITE_DAC);
+            Assert.Equal(0x00000004u, NativeMethods.DACL_SECURITY_INFORMATION);
+
+            // ToScmStartType's start-type anchors.
+            Assert.Equal(0x00000002, NativeMethods.SERVICE_AUTO_START);
+            Assert.Equal(0x00000004, NativeMethods.SERVICE_DISABLED);
+
+            // NetLocalGroupGetMembers and the SID_NAME_USE values the group-member walk keys on.
+            Assert.Equal(-1, NativeMethods.MAX_PREFERRED_LENGTH);
+            Assert.Equal(2, NativeMethods.SidTypeGroup);
+            Assert.Equal(4, NativeMethods.SidTypeAlias);
+            Assert.Equal(5, NativeMethods.SidTypeWellKnownGroup);
         }
 
         [Fact]
