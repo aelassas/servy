@@ -1381,8 +1381,9 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Centralized teardown engine ensuring that both link anchors and real backup items
-        /// are cleared via safe DeleteDirectoryLink calls rather than divergent inline Directory.Delete overrides.
+        /// Centralized teardown: unlinks the directory link through <see cref="DeleteDirectoryLink"/>, which logs
+        /// and swallows its own failures, then deletes the real target directory recursively, retrying that
+        /// delete on I/O and access errors.
         /// </summary>
         private static void TeardownDirectoryLinkWithRetry(string linkPath, string targetPath)
         {
