@@ -77,21 +77,7 @@ namespace Servy.Core.Services
             {
                 var sid = LogonAsServiceGrant.AccountToSidOrThrow(accountName);
 
-                bool updated = EditServiceDacl(serviceHandle, acl =>
-                {
-                    if (acl == null)
-                    {
-                        return null;
-                    }
-
-                    // Remove the account's Allow ACEs only, so an administrator's Deny ACE survives the revocation
-                    if (RemoveAllowAces(acl, sid) == 0)
-                    {
-                        return null;
-                    }
-
-                    return acl;
-                });
+                bool updated = EditServiceDacl(serviceHandle, acl => BuildRevokedDacl(acl, sid));
 
                 if (updated)
                 {
@@ -207,6 +193,38 @@ namespace Servy.Core.Services
                     null));
 
             return acl;
+        }
+
+        /// <summary>
+        /// Computes the discretionary access control list (DACL) that revokes an account's service control and status
+        /// rights, by removing the account's Allow entries and leaving its Deny entries in place.
+        /// </summary>
+        /// <param name="acl">
+        /// The service's current DACL, edited in place, or <see langword="null"/> when the security descriptor has a
+        /// NULL DACL.
+        /// </param>
+        /// <param name="sid">The account whose rights are revoked.</param>
+        /// <returns>
+        /// <paramref name="acl"/> without the account's Allow entries; or <see langword="null"/>, so that nothing is
+        /// written back, when <paramref name="acl"/> is <see langword="null"/> (a NULL DACL grants everyone full access
+        /// and must not be replaced by an empty list, which grants nobody anything) or when the account had no Allow
+        /// entry to remove.
+        /// </returns>
+        /// <remarks>
+        /// This is the body of the edit delegate <see cref="RevokeServiceControlRights"/> passes to
+        /// <see cref="EditServiceDacl"/>, extracted so that it can be exercised without a live service handle. It is
+        /// pure managed code over <see cref="RawAcl"/> and forwards nothing: the revocation path calls it with exactly
+        /// the ACL the Service Control Manager returned and writes back exactly what it returns.
+        /// </remarks>
+        internal static RawAcl BuildRevokedDacl(RawAcl acl, SecurityIdentifier sid)
+        {
+            if (acl == null)
+            {
+                return null;
+            }
+
+            // Remove the account's Allow ACEs only, so an administrator's Deny ACE survives the revocation
+            return RemoveAllowAces(acl, sid) == 0 ? null : acl;
         }
 
         /// <summary>

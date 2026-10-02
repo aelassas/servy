@@ -22,6 +22,12 @@ namespace Servy.Core.UnitTests.Services
     /// return value is what tells <see cref="WindowsServiceApi.RevokeServiceControlRights"/> whether there was
     /// anything to write back.
     /// </para>
+    /// <para>
+    /// And covers <see cref="WindowsServiceApi.BuildRevokedDacl"/>, the revoke-side counterpart of
+    /// <see cref="WindowsServiceApi.BuildGrantedDacl"/>: a NULL DACL is left alone rather than replaced by an
+    /// empty list, which would deny every principal including Administrators and SYSTEM, and an account with
+    /// no Allow entry produces no write-back at all.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// In <see cref="LoggerCollection"/> because the NULL DACL case asserts through
@@ -148,6 +154,48 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(2, acl.Count);
             Assert.Equal(Target, Assert.IsType<CommonAce>(acl[0]).SecurityIdentifier);
             Assert.Equal(Other, Assert.IsType<CommonAce>(acl[1]).SecurityIdentifier);
+        }
+
+        [Fact]
+        public void BuildRevokedDacl_NullDacl_ReturnsNullSoNothingIsWrittenBack()
+        {
+            // Arrange, Act & Assert
+            Assert.Null(WindowsServiceApi.BuildRevokedDacl(null, Target));
+        }
+
+        [Fact]
+        public void BuildRevokedDacl_AccountHasNoAllowEntry_ReturnsNullSoNothingIsWrittenBack()
+        {
+            // Arrange
+            var acl = new RawAcl(GenericAcl.AclRevision, 2);
+            acl.InsertAce(0, Ace(AceQualifier.AccessDenied, 0x20, Target));
+            acl.InsertAce(1, Ace(AceQualifier.AccessAllowed, 0x1F0, Other));
+
+            // Act
+            var result = WindowsServiceApi.BuildRevokedDacl(acl, Target);
+
+            // Assert
+            Assert.Null(result);
+            Assert.Equal(2, acl.Count);
+        }
+
+        [Fact]
+        public void BuildRevokedDacl_AccountHasAllowEntry_ReturnsTheListWithoutIt_KeepsDenyAndOtherAccounts()
+        {
+            // Arrange
+            var acl = new RawAcl(GenericAcl.AclRevision, 3);
+            acl.InsertAce(0, Ace(AceQualifier.AccessDenied, 0x20, Target));
+            acl.InsertAce(1, Ace(AceQualifier.AccessAllowed, 0x14, Target));
+            acl.InsertAce(2, Ace(AceQualifier.AccessAllowed, 0x1F0, Other));
+
+            // Act
+            var result = WindowsServiceApi.BuildRevokedDacl(acl, Target);
+
+            // Assert
+            Assert.Same(acl, result);
+            Assert.Equal(2, result.Count);
+            Assert.Equal(AceQualifier.AccessDenied, Assert.IsType<CommonAce>(result[0]).AceQualifier);
+            Assert.Equal(Other, Assert.IsType<CommonAce>(result[1]).SecurityIdentifier);
         }
 
         /// <summary>
