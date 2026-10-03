@@ -592,7 +592,9 @@ namespace Servy.Infrastructure.Data
         /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
         /// <param name="sql">The parameterized SQL statement to execute (must use a @Name parameter).</param>
         /// <param name="queryExecutor">Delegate that runs <paramref name="sql"/> with the supplied parameters.</param>
+        /// <param name="name">The service name as given; queried trimmed first, then verbatim.</param>
         /// <param name="fallbackEvaluationPredicate">Returns true when the trimmed-name result is "empty" and the verbatim-name fallback should be attempted.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests; checked before each query.</param>
         /// <returns>A task representing the asynchronous orchestration. The task result contains the trimmed-name query, or the verbatim-name fallback result for legacy whitespace rows.</returns>
         private static async Task<T> ResolveWithLegacyFallbackAsync<T>(
             string sql,
@@ -623,6 +625,7 @@ namespace Servy.Infrastructure.Data
         /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
         /// <param name="sql">The parameterized SQL statement to execute (must use a @Name parameter).</param>
         /// <param name="queryExecutor">Delegate that runs <paramref name="sql"/> with the supplied parameters.</param>
+        /// <param name="name">The service name as given; queried trimmed first, then verbatim.</param>
         /// <param name="fallbackEvaluationPredicate">Returns true when the trimmed-name result is "empty" and the verbatim-name fallback should be attempted.</param>
         /// <returns>The result of the trimmed-name query, or the verbatim-name fallback result for legacy whitespace rows.</returns>
         private static T ResolveWithLegacyFallback<T>(
@@ -742,8 +745,8 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Synchronizes transient, runtime-only operational fields from a verified database record
-        /// into an incoming configuration instance before execution mutations.
+        /// Copies the stored row's runtime state and, when asked, its credentials into an incoming configuration
+        /// before it is written, so a write that does not carry them does not erase them.
         /// </summary>
         /// <remarks>
         /// <para>
