@@ -5,9 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
 using Servy.Core.Services;
-using System.IO;
 using System.IO.Pipes;
-using System.Security.AccessControl;
 using System.Security.Principal;
 
 namespace Servy.Host.UnitTests
