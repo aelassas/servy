@@ -382,8 +382,25 @@ namespace Servy.Host
         {
             _cancellationSource?.Cancel();
             if (_listenerTasks != null)
-                Task.WaitAll(_listenerTasks, AppConfig.ServyHostStopWaitMs);
-            Task.WaitAll(_activeHandlers.Keys.ToArray(), AppConfig.ServyHostStopWaitMs);
+                WaitIgnoringCancellation(_listenerTasks);
+            WaitIgnoringCancellation(_activeHandlers.Keys.ToArray());
+        }
+
+        /// <summary>
+        /// Waits briefly for tasks to finish. A listener cancelled before the thread pool started it ends Canceled, which
+        /// is what stopping is for, so cancellations are not errors here; any other failure still propagates.
+        /// </summary>
+        /// <param name="tasks">The tasks to wait for.</param>
+        private static void WaitIgnoringCancellation(Task[] tasks)
+        {
+            try
+            {
+                Task.WaitAll(tasks, AppConfig.ServyHostStopWaitMs);
+            }
+            catch (AggregateException ex) when (ex.Flatten().InnerExceptions.All(e => e is OperationCanceledException))
+            {
+                // Stopped before they ran
+            }
         }
 
         /// <summary>
@@ -429,9 +446,10 @@ namespace Servy.Host
         private async Task RefreshPipeSecurityAsync(bool isRetry, CancellationToken ct)
         {
             IEnumerable<string> accounts;
+            IEnumerable<ServiceDto> services;
             try
             {
-                var services = await _serviceRepository.GetAllAsync(decrypt: false, ct);
+                services = await _serviceRepository.GetAllAsync(decrypt: false, ct);
                 accounts = ServyExePermissionsHardener.GetServiceAccounts(services);
             }
             catch (OperationCanceledException)
@@ -451,12 +469,27 @@ namespace Servy.Host
             }
 
             var unresolved = 0;
-            var security = ServyHostPipeSecurity.Create(accounts, account =>
+            var grantees = ServyHostPipeSecurity.ResolveGrantees(accounts, account =>
             {
                 var sid = ResolveAccount(account);
                 if (sid == null) unresolved++;
                 return sid;
-            });
+            }).ToList();
+
+            // A service reinstalled under another account keeps running under the old one until it restarts, and that
+            // process still has to report its PID and runtime state, at the latest when it stops (#7330). So the account
+            // of every running service process is granted too, for as long as that process runs.
+            var lingering = 0;
+            foreach (var sid in GetRunningServiceAccounts(services))
+            {
+                if (grantees.Contains(sid))
+                    continue;
+
+                grantees.Add(sid);
+                lingering++;
+            }
+
+            var security = ServyHostPipeSecurity.Create(grantees);
             CancellationTokenSource[] waiting;
             lock (_securityLock)
             {
@@ -471,16 +504,57 @@ namespace Servy.Host
                 try { cts.Cancel(); } catch (ObjectDisposedException) { }
             }
 
-            ScheduleUnresolvedAccountRetry(unresolved, isRetry);
+            ScheduleUnresolvedAccountRetry(unresolved, lingering, isRetry);
+        }
+
+        /// <summary>
+        /// Gets the accounts the running processes of the installed services run under, other than Local System.
+        /// </summary>
+        /// <param name="services">The installed services.</param>
+        /// <returns>The distinct SIDs.</returns>
+        private List<System.Security.Principal.SecurityIdentifier> GetRunningServiceAccounts(IEnumerable<ServiceDto> services)
+        {
+            var localSystem = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.LocalSystemSid, null);
+            var result = new List<System.Security.Principal.SecurityIdentifier>();
+            foreach (var service in services ?? Enumerable.Empty<ServiceDto>())
+            {
+                if (service == null || string.IsNullOrWhiteSpace(service.Name))
+                    continue;
+
+                int pid;
+                try
+                {
+                    pid = _windowsServiceApi.GetServiceProcessId(service.Name);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Debug($"Could not read the process of service '{service.Name}' to keep its account on the Servy host named pipe: {ex.Message}");
+                    continue;
+                }
+
+                if (pid <= 0)
+                    continue;
+
+                var sid = ResolveProcessAccount(pid);
+                if (sid == null || sid.Equals(localSystem) || result.Contains(sid))
+                    continue;
+
+                result.Add(sid);
+            }
+
+            return result;
         }
 
         /// <summary>
         /// Rebuilds the DACL again later when an account could not be resolved, for example a domain or gMSA account while
-        /// no domain controller is reachable at boot, so its service is not locked out until the next install or restart.
+        /// no domain controller is reachable at boot, so its service is not locked out until the next install or restart;
+        /// or when a running process still holds an account its service no longer names, so that account is revoked once
+        /// the process has exited.
         /// </summary>
         /// <param name="unresolved">The number of accounts the last rebuild could not resolve.</param>
+        /// <param name="lingering">The number of accounts granted only because a running service process still uses them.</param>
         /// <param name="isRetry">Whether the last rebuild was itself a retry.</param>
-        private void ScheduleUnresolvedAccountRetry(int unresolved, bool isRetry)
+        private void ScheduleUnresolvedAccountRetry(int unresolved, int lingering, bool isRetry)
         {
             int attempt;
             CancellationToken token;
@@ -489,18 +563,24 @@ namespace Servy.Host
                 if (!isRetry || unresolved == 0)
                     _unresolvedRetryAttempts = 0;
 
-                // Only while the listener runs: its token is what stops a waiting retry when the host stops
+                // Only while the listener runs: its token is what stops a waiting retry when the host stops. Unresolved
+                // accounts are retried a bounded number of times; a lingering account is rechecked until its process exits.
                 var listener = _cancellationSource;
-                if (unresolved == 0 || listener == null || _unresolvedRetryPending || _unresolvedRetryAttempts >= AppConfig.ServyHostUnresolvedAccountRetryCount)
+                var retryUnresolved = unresolved > 0 && _unresolvedRetryAttempts < AppConfig.ServyHostUnresolvedAccountRetryCount;
+                if ((!retryUnresolved && lingering == 0) || listener == null || _unresolvedRetryPending)
                     return;
 
                 try { token = listener.Token; } catch (ObjectDisposedException) { return; }
                 _unresolvedRetryPending = true;
-                attempt = ++_unresolvedRetryAttempts;
+                attempt = retryUnresolved ? ++_unresolvedRetryAttempts : _unresolvedRetryAttempts;
             }
 
-            _logger?.Warn($"{unresolved} service account(s) could not be resolved and are not granted access to the Servy host named pipe yet. " +
-                $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
+            if (unresolved > 0)
+                _logger?.Warn($"{unresolved} service account(s) could not be resolved and are not granted access to the Servy host named pipe yet. " +
+                    $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
+            if (lingering > 0)
+                _logger?.Info($"{lingering} account(s) keep access to the Servy host named pipe while a service process still runs under them " +
+                    $"(the service was reinstalled under another account and has not restarted yet). Rechecking in {UnresolvedAccountRetryDelayMs} ms.");
 
             _ = Task.Run(async () =>
             {
@@ -545,6 +625,11 @@ namespace Servy.Host
         /// <param name="account">The account name.</param>
         /// <returns>The SID, or <see langword="null"/> when it cannot be resolved.</returns>
         internal Func<string, System.Security.Principal.SecurityIdentifier> ResolveAccount { get; set; } = AccountSidResolver.Resolve;
+
+        /// <summary>
+        /// Gets or sets the function that reads the account a running process runs under; tests replace it.
+        /// </summary>
+        internal Func<int, System.Security.Principal.SecurityIdentifier> ResolveProcessAccount { get; set; } = ProcessAccount.TryGetUser;
 
         /// <summary>
         /// Creates a server instance of the pipe that only clients on this computer can open (<c>PIPE_REJECT_REMOTE_CLIENTS</c>),

@@ -475,6 +475,10 @@ namespace Servy.Core.Native
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern SafeWinProcessHandle OpenProcess(ProcessAccess desiredAccess, bool inheritHandle, int processId);
 
+        /// <summary>Opens the access token of a process.</summary>
+        [DllImport("advapi32.dll", SetLastError = true)]
+        public static extern bool OpenProcessToken(SafeWinProcessHandle processHandle, uint desiredAccess, out Microsoft.Win32.SafeHandles.SafeAccessTokenHandle tokenHandle);
+
         /// <summary>Low-level NT function to retrieve process information.</summary>
         [DllImport("ntdll.dll")]
         public static extern int NtQueryInformationProcess(

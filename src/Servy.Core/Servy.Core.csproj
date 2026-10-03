@@ -179,6 +179,7 @@
     <Compile Include="Security\AccountSidResolver.cs" />
     <Compile Include="Security\DecryptionFailureMarker.cs" />
     <Compile Include="Security\ISecureData.cs" />
+    <Compile Include="Security\ProcessAccount.cs" />
     <Compile Include="Security\SecureDataIntegrityException.cs" />
     <Compile Include="Security\ServiceDecryptionFailedException.cs" />
     <Compile Include="Security\SecureDataLegacyBlockedException.cs" />
