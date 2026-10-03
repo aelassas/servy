@@ -233,7 +233,7 @@ namespace Servy.Infrastructure.Data
         /// <returns>The calculated delay in milliseconds, representing the capped exponential backoff plus a random jitter component.</returns>
         private static int CalculateBackoff(int attempt, int initialDelayMs, int maxJitterMs, int maxBackoffMs = AppConfig.DbBackoffMaxMs)
         {
-            // Use long math and cap to prevent silent overflow if MaxRetries is ever raised
+            // Use long math and cap to prevent silent overflow if DbSyncMaxAttempts or DbAsyncMaxAttempts is ever raised
             long shifted = (long)initialDelayMs << Math.Min(attempt, 30);
             int backoff = (int)Math.Min(shifted, maxBackoffMs);
             int jitter = _random.Value.Next(0, maxJitterMs + 1);
