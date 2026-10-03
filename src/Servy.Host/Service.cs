@@ -302,7 +302,10 @@ namespace Servy.Host
                     PipeSecurity security;
                     lock (_securityLock)
                     {
-                        security = _pipeSecurity ?? ServyHostPipeSecurity.Create((IEnumerable<System.Security.Principal.SecurityIdentifier>)null);
+                        // A private copy per instance: creating the instance writes the DACL to the pipe through this
+                        // object, from several listener threads at once, and the published _pipeSecurity is never handed
+                        // to that write, so nothing reading it (CurrentPipeSecurity) can see it mid-write (#7355)
+                        security = CopyAccessRules(_pipeSecurity ?? ServyHostPipeSecurity.Create((IEnumerable<System.Security.Principal.SecurityIdentifier>)null));
                         waitCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                         _waitingInstanceCts.Add(waitCts);
                     }
@@ -343,6 +346,18 @@ namespace Servy.Host
                     serverStream?.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Copies the access rules (the DACL and its protection) of a pipe security into a new, independent object.
+        /// </summary>
+        /// <param name="source">The security to copy.</param>
+        /// <returns>The copy, with its access rules marked as changed so that applying it to a pipe writes them.</returns>
+        private static PipeSecurity CopyAccessRules(PipeSecurity source)
+        {
+            var copy = new PipeSecurity();
+            copy.SetSecurityDescriptorBinaryForm(source.GetSecurityDescriptorBinaryForm(), System.Security.AccessControl.AccessControlSections.Access);
+            return copy;
         }
 
         /// <summary>
