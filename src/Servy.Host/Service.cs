@@ -62,7 +62,7 @@ namespace Servy.Host
 
         private readonly object _securityLock = new object();
 
-        /// <summary>Whether a retry for accounts that could not be resolved is waiting; guarded by <see cref="_securityLock"/>.</summary>
+        /// <summary>Whether a retry for accounts that could not be resolved, or a recheck of an account a running service process still uses, is waiting; guarded by <see cref="_securityLock"/>.</summary>
         private bool _unresolvedRetryPending;
 
         /// <summary>The retries spent since the last refresh that was not itself a retry; guarded by <see cref="_securityLock"/>.</summary>
@@ -99,7 +99,8 @@ namespace Servy.Host
         internal Func<string, PipeSecurity, NamedPipeServerStream> ServerStreamFactory { get; set; } = CreateServerStream;
 
         /// <summary>
-        /// Gets or sets the delay before the DACL is rebuilt again when an account could not be resolved.
+        /// Gets or sets the delay before the DACL is rebuilt again when an account could not be resolved, or when a running
+        /// service process still uses an account its service no longer names.
         /// </summary>
         internal int UnresolvedAccountRetryDelayMs { get; set; } = AppConfig.ServyHostUnresolvedAccountRetryDelayMs;
 
