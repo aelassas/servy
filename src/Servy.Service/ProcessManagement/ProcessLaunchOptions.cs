@@ -29,7 +29,7 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Gets or sets the directory in which the process will be started.
-        /// If null, the directory containing the executable is used by default.
+        /// If null, empty or whitespace, the directory containing the executable is used.
         /// </summary>
         public string StartupDirectory { get; set; }
 
