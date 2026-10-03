@@ -103,8 +103,9 @@ namespace Servy.Manager.Views
             {
                 LogList.SelectedItems.Clear();
 
-                // Snap to the bottom of the fresh history loaded by LoadLogsAsync
-                // We use a slight delay to ensure the ListView has rendered the new items
+                // Snap to the bottom. The history SwitchServiceAsync reloads on resume arrives later, and the
+                // view model requests its own scroll to the end once those lines are added.
+                // Queued at Render priority rather than run inline, so the ListBox renders before the scroll.
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     OnRequestScroll(true);
