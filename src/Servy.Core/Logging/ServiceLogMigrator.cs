@@ -114,12 +114,13 @@ namespace Servy.Core.Logging
         /// <param name="fileName">The log's file name.</param>
         /// <exception cref="IOException">
         /// The staged file could not be read, the new log could not be appended to, or the staged file could not be
-        /// deleted. When the content was already copied, the staged file is emptied in place before the throw is
-        /// passed on, so the next start finds nothing left to append.
+        /// deleted. When the delete fails, the staged file is emptied in place before the delete's exception is passed
+        /// on, so the next start finds nothing left to append. When the staged file cannot be opened for writing
+        /// either, nothing is emptied and the exception from that open is thrown instead of the delete's.
         /// </exception>
         /// <exception cref="UnauthorizedAccessException">
-        /// Access to the staged file or to the new log was denied. The staged file is emptied in place first, on the
-        /// same condition and for the same reason as for <see cref="IOException"/>.
+        /// Access to the staged file or to the new log was denied. A delete refused this way is handled as described
+        /// for <see cref="IOException"/>: the staged file is emptied first only when it can be opened for writing.
         /// </exception>
         private static void MoveStagedLog(string stagingPath, string formerPath, string serviceFolder, string fileName)
         {
