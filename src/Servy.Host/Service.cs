@@ -711,7 +711,7 @@ namespace Servy.Host
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error("Exception in HandleClientAsync.", ex);
+                    _logger?.Error("Exception in HandleConnectionAsync.", ex);
                 }
             }
         }
