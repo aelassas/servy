@@ -501,7 +501,8 @@ namespace Servy.Infrastructure.Data
                     return OperationResult.Failure(deserializationFailedMessage);
 
                 // If a row with this name already exists, keep its runtime state (Pid, ActiveStdoutPath, ActiveStderrPath,
-                // PreviousStopTimeout) and its credentials (RunAsLocalSystem, UserAccount, Password), whether or not it is running.
+                // PreviousStopTimeout, RestartAttempts and its timestamp) and its credentials (RunAsLocalSystem, UserAccount,
+                // Password), whether or not it is running.
                 await UpsertAsync(
                     service,
                     preserveExistingRuntimeState: true,
