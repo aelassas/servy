@@ -175,6 +175,25 @@ namespace Servy.Host.UnitTests.Bootstrap
             Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, _pipes.Object, (IServiceBootstrapEnvironment)null));
         }
 
+        [Fact]
+        public void Dispose_DbContextDisposeThrows_LogsTheFailureFlushesTheLoggerAndIgnoresASecondCall()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+            var service = Build(env);
+            var dbContext = Mock.Get(env.Stack.DbContext);
+            dbContext.Setup(d => d.Dispose()).Throws(new System.IO.IOException("database is locked"));
+
+            // Act
+            service.Dispose();
+            service.Dispose();
+
+            // Assert
+            _logger.Verify(l => l.Warn("Disposing _dbContext failed: database is locked", null), Times.Once);
+            dbContext.Verify(d => d.Dispose(), Times.Once);
+            _logger.Verify(l => l.Dispose(), Times.Once);
+        }
+
         private Service Build(IServiceBootstrapEnvironment env)
         {
             var service = new TerminationRecordingService(_logger.Object, _pipes.Object, env);
