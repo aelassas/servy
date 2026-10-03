@@ -495,28 +495,34 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedLines) capturedLines.AddRange(lines);
                 };
 
+                // Act - the writer completes the line between two passes. Appending from the
+                // OnLoopCompleted handler itself is what makes that deterministic: the handler runs to
+                // completion before the loop's poll delay, so the newline is on disk before the next
+                // ReadLineAsync can begin. Observing the boundary by polling and appending afterwards
+                // leaves only the LogTailerEofPollIntervalMs window to land in, which an ARM64 CI runner
+                // loses often enough to fail the suite. Appending while a pass is mid-read lets that pass
+                // return "partial-" at EOF and then read "remainder" as a second line within the same pass,
+                // leaving no terminator information to re-join them by; that residual is tracked separately
+                // and is not the subject here, which is that the history hands the torn tail over whole.
                 var passes = 0;
-                tailer.OnLoopCompleted += () => Interlocked.Increment(ref passes);
+                var publishedAtFirstBoundary = -1;
+                tailer.OnLoopCompleted += () =>
+                {
+                    if (Interlocked.Increment(ref passes) != 1)
+                    {
+                        return;
+                    }
+
+                    lock (capturedLines)
+                    {
+                        publishedAtFirstBoundary = capturedLines.Count;
+                    }
+
+                    File.AppendAllText(_tempFilePath, "remainder\n");
+                };
 
                 var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, history.Position, history.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
-
-                // The remainder may only be appended once a whole pass has read the torn tail and held it
-                // back, which is what OnLoopCompleted reports. Appending while a pass is mid-read lets that
-                // pass return "partial-" at EOF and then read "remainder" as a second line within the same
-                // pass, leaving no terminator information to re-join them by. That is a race in the test,
-                // not the subject here, which is that the history hands the torn tail over whole.
-                await Helper.WaitUntilAsync(() => Volatile.Read(ref passes) >= 1,
-                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
-
-                // Assert - the torn tail is held back rather than published as a line of its own
-                lock (capturedLines)
-                {
-                    Assert.Empty(capturedLines);
-                }
-
-                // Act
-                File.AppendAllText(_tempFilePath, "remainder\n");
 
                 await Helper.WaitUntilAsync(() =>
                 {
@@ -527,6 +533,11 @@ namespace Servy.Manager.UnitTests.Utils
                 try { await tailTask; } catch (OperationCanceledException) { }
 
                 // Assert
+                // The pass that read the torn tail held it back instead of publishing it as a line of its
+                // own, which is what the boundary handler observed before it appended the remainder. A -1
+                // here would mean no pass ever completed and the append never happened.
+                Assert.Equal(0, publishedAtFirstBoundary);
+
                 // The history stops at the last newline, so the torn tail is not in it and Position points
                 // at the tail's first byte rather than at the end of the file.
                 Assert.Equal(new[] { "complete" }, history.Lines.Select(l => l.Text));
