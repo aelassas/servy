@@ -1497,7 +1497,7 @@ namespace Servy.Service
         /// The failure program path, arguments, and working directory are taken from
         /// the service options:
         /// - <c>FailureProgramPath</c>: the full path to the program to run.
-        /// - <c>FailureProgramParameters</c>: the command-line arguments to pass.
+        /// - <c>FailureProgramExecutableArgs</c>: the command-line arguments to pass.
         /// - <c>FailureProgramStartupDirectory</c>: the working directory for the program.
         ///
         /// Exceptions thrown while attempting to start the failure program are caught
