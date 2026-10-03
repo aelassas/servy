@@ -689,6 +689,16 @@ namespace Servy.Core.Config
         public const int LogTailerHistoryScanBufferSize = 4_096;
 
         /// <summary>
+        /// The allocation buffer size in bytes used by the log tailer when reading forward from the
+        /// committed offset during live tailing.
+        /// </summary>
+        /// <remarks>
+        /// The live pass splits raw bytes on the encoded newline sequence, so this is the chunk size of
+        /// its sequential reads. A line longer than this buffer is simply completed by a later chunk.
+        /// </remarks>
+        public const int LogTailerTailReadBufferSize = 4_096;
+
+        /// <summary>
         /// Defines the minimum execution duration threshold (in milliseconds) required to keep the splash screen visible.
         /// </summary>
         /// <remarks>

@@ -87,13 +87,13 @@ namespace Servy.Manager.Utils
         /// Restores the original stream position upon completion.
         /// </summary>
         /// <remarks>
-        /// The tailing loop passes the reader's own consumed boundary rather than the file length, because
-        /// the writer can append between the read that drained the reader and this probe. Measuring the
-        /// live end of the file there would report a torn fragment as terminated and publish the prefix as
-        /// a line of its own, with the remainder following as a second line.
+        /// Used by the history load, which measures a file it is not also tailing. The tailing loop does
+        /// not probe the file at all: <see cref="LogLineSplitter"/> splits only where a terminator
+        /// actually is, so whether a line was terminated is known when the line is produced rather than
+        /// guessed afterwards from a file the writer may already have appended to.
         /// </remarks>
         /// <param name="fs">The open file stream to inspect.</param>
-        /// <param name="offset">The exclusive byte offset to probe behind, usually the reader's position.</param>
+        /// <param name="offset">The exclusive byte offset to probe behind.</param>
         /// <returns><c>true</c> when nothing precedes <paramref name="offset"/> or the preceding byte is <c>\n</c>; otherwise, <c>false</c>.</returns>
         private static bool EndsWithNewlineAt(FileStream fs, long offset)
         {
@@ -159,6 +159,58 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
+        /// Reads the byte order mark at the start of the file and reports the encoding it names.
+        /// </summary>
+        /// <remarks>
+        /// Recognises the same marks a <see cref="StreamReader"/> constructed with
+        /// <c>detectEncodingFromByteOrderMarks: true</c> does, and reports the offset just past the mark
+        /// so the caller never feeds the preamble to the line splitter. The stream position is left
+        /// wherever the probe ended; callers seek before reading again.
+        /// </remarks>
+        /// <param name="fs">The open file stream to inspect, positioned anywhere.</param>
+        /// <param name="firstDataOffset">Outputs the offset of the first byte after the mark, or <c>0</c> when there is none.</param>
+        /// <returns>The encoding the mark names, or <see cref="Encoding.UTF8"/> when the file carries none.</returns>
+        private static Encoding DetectEncoding(FileStream fs, out long firstDataOffset)
+        {
+            byte[] mark = new byte[4];
+            fs.Seek(0, SeekOrigin.Begin);
+            int read = fs.Read(mark, 0, mark.Length);
+
+            if (read >= 3 && mark[0] == 0xEF && mark[1] == 0xBB && mark[2] == 0xBF)
+            {
+                firstDataOffset = 3;
+                return new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+            }
+
+            if (read >= 4 && mark[0] == 0xFF && mark[1] == 0xFE && mark[2] == 0x00 && mark[3] == 0x00)
+            {
+                firstDataOffset = 4;
+                return new UTF32Encoding(bigEndian: false, byteOrderMark: false);
+            }
+
+            if (read >= 4 && mark[0] == 0x00 && mark[1] == 0x00 && mark[2] == 0xFE && mark[3] == 0xFF)
+            {
+                firstDataOffset = 4;
+                return new UTF32Encoding(bigEndian: true, byteOrderMark: false);
+            }
+
+            if (read >= 2 && mark[0] == 0xFF && mark[1] == 0xFE)
+            {
+                firstDataOffset = 2;
+                return new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
+            }
+
+            if (read >= 2 && mark[0] == 0xFE && mark[1] == 0xFF)
+            {
+                firstDataOffset = 2;
+                return new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
+            }
+
+            firstDataOffset = 0;
+            return Encoding.UTF8;
+        }
+
+        /// <summary>
         /// Starts a continuous tailing loop for a specific file, beginning at a designated position.
         /// This method handles file rotation detection and batched UI updates.
         /// </summary>
@@ -182,9 +234,6 @@ namespace Servy.Manager.Utils
                 DateTime lastCreationTime = startCreated;
                 FileIdentity? knownIdentity = null;
                 int consecutiveFailures = 0;
-
-                // Track flush-torn string segments across polling boundaries
-                string carryOverFragment = string.Empty;
 
                 while (!linkedToken.IsCancellationRequested)
                 {
@@ -226,7 +275,6 @@ namespace Servy.Manager.Utils
                                 {
                                     lastPosition = 0;
                                     lastCreationTime = info.CreationTimeUtc;
-                                    carryOverFragment = string.Empty; // Wipe state context on rotation
                                     Logger.Debug("[LogTailer] Rotation detected before first open (Metadata fallback).");
                                 }
                             }
@@ -240,152 +288,136 @@ namespace Servy.Manager.Utils
                                 {
                                     lastPosition = 0;
                                     lastCreationTime = info.CreationTimeUtc;
-                                    carryOverFragment = string.Empty; // Wipe state context on rotation
                                     Logger.Debug("[LogTailer] Rotation or truncation detected on reopen.");
                                 }
                             }
 
                             knownIdentity = currentIdentity;
+
+                            // The byte order mark names the encoding, and only the start of the file carries
+                            // one; a reopen that resumes mid-file falls back to UTF-8, exactly as the
+                            // StreamReader this loop used to construct did.
+                            Encoding encoding = Encoding.UTF8;
+
+                            if (lastPosition == 0)
+                            {
+                                encoding = DetectEncoding(fs, out lastPosition);
+                            }
+
+                            // The splitter owns the unterminated trailing fragment, and lastPosition is
+                            // committed at that fragment's first byte, so a reopen re-reads it from disk
+                            // rather than carrying it across a handle it may no longer belong to.
+                            LogLineSplitter splitter = new LogLineSplitter(encoding);
+                            byte[] readBuffer = new byte[AppConfig.LogTailerTailReadBufferSize];
+
                             fs.Seek(lastPosition, SeekOrigin.Begin);
 
-                            // Construct the reader specifying a fallback default encoding for files lacking BOM headers
-                            using (StreamReader reader = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+                            try
                             {
-                                try
+                                LoopStartedSignal.TrySetResult(true);
+
+                                while (!linkedToken.IsCancellationRequested)
                                 {
-                                    LoopStartedSignal.TrySetResult(true);
+                                    List<LogLine> batch = new List<LogLine>();
+                                    int read;
 
-                                    while (!linkedToken.IsCancellationRequested)
+                                    // Split on the raw bytes rather than through StreamReader.ReadLine, which
+                                    // drops the only fact that matters here - whether the text it returned was
+                                    // followed by a terminator. A reader that hits the end of the file inside a
+                                    // line returned the prefix as a line of its own, and the remainder the writer
+                                    // appended a moment later came back as a second one, within the same pass, so
+                                    // no probe against the file afterwards could re-join them.
+                                    while ((read = await fs.ReadAsync(readBuffer, 0, readBuffer.Length, linkedToken)) > 0)
                                     {
-                                        List<LogLine> batch = new List<LogLine>();
+                                        consecutiveFailures = 0;
+
+                                        long chunkStart = fs.Position - read;
+                                        int index = 0;
                                         string line;
-                                        string lastSuccessfullyReadLine = null;
 
-                                        while ((line = await reader.ReadLineAsync()) != null)
+                                        while (splitter.TryReadLine(readBuffer, read, ref index, out line))
                                         {
-                                            consecutiveFailures = 0;
-
-                                            // If the previous pass held back an unterminated segment, prepend it now
-                                            if (!string.IsNullOrEmpty(carryOverFragment))
-                                            {
-                                                line = carryOverFragment + line;
-                                                carryOverFragment = string.Empty;
-                                            }
-
-                                            lastSuccessfullyReadLine = line;
                                             batch.Add(new LogLine(line, type));
 
                                             // Determine if this batch hit the flush threshold
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
-                                                // If we hit threshold at EOF and the file has an unterminated tail,
-                                                // hold back the torn line in carryOverFragment instead of publishing it.
-                                                if (reader.Peek() == -1 && fs.Length > 0 && !EndsWithNewlineAt(fs, fs.Position))
-                                                {
-                                                    batch.RemoveAt(batch.Count - 1);
-                                                    carryOverFragment = line;
-                                                }
+                                                // index sits just past this line's terminator, so the committed
+                                                // offset covers exactly what has been published and nothing more.
+                                                lastPosition = chunkStart + index;
 
-                                                lastPosition = fs.Position;
-
-                                                if (batch.Count > 0)
-                                                {
-                                                    OnNewLines?.Invoke(batch);
-                                                }
+                                                OnNewLines?.Invoke(batch);
 
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
                                             }
                                         }
-
-                                        // --- EOF reached. Data that does not end in '\n' means the writer was caught
-                                        //     mid-flush; check the byte before the reader's own position rather than the
-                                        //     live end of the file, which the writer may already have moved.
-                                        if (lastSuccessfullyReadLine != null && fs.Length > 0)
-                                        {
-                                            if (!EndsWithNewlineAt(fs, fs.Position))
-                                            {
-                                                // The file does not terminate with a newline. The writer process was caught
-                                                // mid-flush. Pop the untracked line out of the batch to preserve boundary isolation.
-                                                if (batch.Count > 0)
-                                                {
-                                                    batch.RemoveAt(batch.Count - 1);
-                                                }
-
-                                                carryOverFragment = lastSuccessfullyReadLine;
-                                            }
-                                            else
-                                            {
-                                                // Trailing character is a valid newline. Clear tracking fragment strings completely.
-                                                carryOverFragment = string.Empty;
-                                            }
-
-                                            lastPosition = fs.Position;
-                                        }
-                                        else if (string.IsNullOrEmpty(carryOverFragment))
-                                        {
-                                            // Nothing new was read and no fragment is pending; refresh the committed offset.
-                                            lastPosition = fs.Position;
-                                        }
-
-                                        if (batch.Count > 0) OnNewLines?.Invoke(batch);
-
-                                        info.Refresh();
-                                        bool rotated = false;
-
-                                        if (!info.Exists)
-                                        {
-                                            rotated = true;
-                                            Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
-                                        }
-                                        else if (LooksRotated(info, lastCreationTime, lastPosition))
-                                        {
-                                            rotated = true;
-                                            Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
-                                        }
-                                        else
-                                        {
-                                            // We are at EOF, check if the file object on disk swapped identities out from under us
-                                            try
-                                            {
-                                                using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-                                                {
-                                                    var pathIdentity = NativeMethodsHelpers.GetFileIdentity(checkFs);
-                                                    if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
-                                                    {
-                                                        rotated = true;
-                                                        Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
-                                                    }
-                                                }
-                                            }
-                                            catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
-                                            {
-                                                rotated = true;
-                                            }
-                                            catch (IOException)
-                                            {
-                                                // File might be exclusively locked during a rename/rotation event.
-                                                // Ignore here, we will catch the rotation on the next pass.
-                                            }
-                                        }
-
-                                        if (rotated)
-                                        {
-                                            break; // Break the inner loop to drop the stale handle and reopen
-                                        }
-
-                                        // We successfully reached the EOF polling point without crashing.
-                                        consecutiveFailures = 0;
-                                        // Signal to the test framework that the current stream buffer is drained
-                                        // and the loop iteration is completing its pass.
-                                        OnLoopCompleted?.Invoke();
-                                        await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, linkedToken);
                                     }
+
+                                    // --- The readable bytes are exhausted. Anything the splitter still holds is
+                                    //     an unterminated tail, so the writer was caught mid-flush: it stays
+                                    //     pending and is published once, whole, by the pass that reads its
+                                    //     terminator - which may be this same pass, since the bytes are only
+                                    //     split where a terminator actually is.
+                                    lastPosition = fs.Position - splitter.PendingByteCount;
+
+                                    if (batch.Count > 0) OnNewLines?.Invoke(batch);
+
+                                    info.Refresh();
+                                    bool rotated = false;
+
+                                    if (!info.Exists)
+                                    {
+                                        rotated = true;
+                                        Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
+                                    }
+                                    else if (LooksRotated(info, lastCreationTime, lastPosition))
+                                    {
+                                        rotated = true;
+                                        Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
+                                    }
+                                    else
+                                    {
+                                        // We are at EOF, check if the file object on disk swapped identities out from under us
+                                        try
+                                        {
+                                            using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                                            {
+                                                var pathIdentity = NativeMethodsHelpers.GetFileIdentity(checkFs);
+                                                if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
+                                                {
+                                                    rotated = true;
+                                                    Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
+                                                }
+                                            }
+                                        }
+                                        catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                                        {
+                                            rotated = true;
+                                        }
+                                        catch (IOException)
+                                        {
+                                            // File might be exclusively locked during a rename/rotation event.
+                                            // Ignore here, we will catch the rotation on the next pass.
+                                        }
+                                    }
+
+                                    if (rotated)
+                                    {
+                                        break; // Break the inner loop to drop the stale handle and reopen
+                                    }
+
+                                    // We successfully reached the EOF polling point without crashing.
+                                    consecutiveFailures = 0;
+                                    // Signal to the test framework that the current stream buffer is drained
+                                    // and the loop iteration is completing its pass.
+                                    OnLoopCompleted?.Invoke();
+                                    await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, linkedToken);
                                 }
-                                finally
-                                {
-                                    // Reset the signal if the task ends, ensuring subsequent runs (if any) can re-signal
-                                    LoopStartedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                                }
+                            }
+                            finally
+                            {
+                                // Reset the signal if the task ends, ensuring subsequent runs (if any) can re-signal
+                                LoopStartedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                             }
                         }
                     }
@@ -394,9 +426,9 @@ namespace Servy.Manager.Utils
                     {
                         consecutiveFailures++;
 
-                        // carryOverFragment is kept: lastPosition is committed just past it, so the reopen
-                        // resumes at the byte that completes it, and the rotation checks on reopen discard it
-                        // if the file changed.
+                        // The splitter and its held-back fragment go with the handle: lastPosition is
+                        // committed at that fragment's first byte, so the reopen re-reads it from disk and
+                        // the rotation checks there discard it if the file changed.
 
                         // CIRCUIT BREAKER: Suppress continuous log spam for recurring permanent failures.
                         if (consecutiveFailures == 1 || consecutiveFailures % AppConfig.LogTailerErrorLogThrottlingInterval == 0)
@@ -529,8 +561,8 @@ namespace Servy.Manager.Utils
 
                         // The file does not end with a newline, so the writer may still be flushing its
                         // last line. Leave that line out of the history and point the live tailer at its
-                        // first byte instead: RunFromPositionAsync holds an unterminated fragment in
-                        // carryOverFragment and publishes it once, whole, when the newline arrives. Without
+                        // first byte instead: RunFromPositionAsync holds an unterminated fragment in its
+                        // LogLineSplitter and publishes it once, whole, when the newline arrives. Without
                         // this the history published the torn prefix and the tail published the remainder as
                         // a second line. While a line is mid-flush the history therefore holds at most
                         // maxLines - 1 complete lines.
