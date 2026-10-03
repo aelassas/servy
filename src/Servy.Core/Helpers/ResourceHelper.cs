@@ -452,8 +452,11 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required based on timestamps.
+        /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required: based on
+        /// timestamps, and, when <paramref name="assembly"/> is given, never for a file identical to the embedded resource.
         /// </summary>
+        /// <param name="assembly">The assembly that embeds the resource, used to compare the existing file with it; or
+        /// <see langword="null"/> to decide from the timestamps alone.</param>
         /// <param name="resourceNamespace">The namespace where the resource is located within the assembly.</param>
         /// <param name="fileName">The base name of the file to extract (without extension).</param>
         /// <param name="extension">The file extension (e.g., "exe", "dll").</param>
