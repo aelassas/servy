@@ -170,6 +170,26 @@ namespace Servy.Host.UnitTests
             _repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        [Fact]
+        public async Task ProcessRequestAsync_ActionAdmittedByTheGuardWithoutACase_FailsInTheDefaultAndTouchesNothing()
+        {
+            // Arrange: an action the guard admits but the switch has no case for, as when one is added to
+            // IsKnownServiceAction and its case is forgotten
+            _sut.IsKnownServiceActionCheck = _ => true;
+            var request = new IpcRequestDto { Action = "FutureAction", ServiceName = ServiceName, RestartAttempts = 1, RuntimeState = new ServiceRuntimeStateDto() };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, Administrator, CancellationToken.None);
+
+            // Assert: refused as unknown, and no other action's handler ran
+            Assert.False(response.Success);
+            Assert.Equal("Unknown IPC action: FutureAction", response.ErrorMessage);
+            _repository.Verify(r => r.UpdateRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(It.IsAny<string>(), It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repository.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repository.Verify(r => r.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         public static TheoryData<string> EveryServyHostAction()
         {
             var data = new TheoryData<string>();

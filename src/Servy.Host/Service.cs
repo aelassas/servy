@@ -73,6 +73,12 @@ namespace Servy.Host
         #region Test Seams
 
         /// <summary>
+        /// Gets or sets the check that admits a service action into <see cref="ProcessRequestAsync"/>'s switch. Tests replace
+        /// it to admit an action that has no case, which is the only way to reach the switch's default.
+        /// </summary>
+        internal Func<string?, bool> IsKnownServiceActionCheck { get; set; } = IsKnownServiceAction;
+
+        /// <summary>
         /// Gets or sets the name of the pipe the service listens on; tests use a unique name.
         /// </summary>
         internal string PipeName { get; set; } = AppConfig.ServyHostNamedPipeName;
@@ -747,7 +753,7 @@ namespace Servy.Host
                     return new IpcResponseDto { Success = true };
                 }
 
-                if (!IsKnownServiceAction(request.Action))
+                if (!IsKnownServiceActionCheck(request.Action))
                     return Fail($"Unknown IPC action: {request.Action}");
 
                 if (string.IsNullOrWhiteSpace(request.ServiceName))
