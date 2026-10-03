@@ -35,6 +35,7 @@ namespace Servy.Host.UnitTests
         private static readonly PipeCaller TheServiceProcess = new PipeCaller(ServicePid, isAdministrator: false);
         private static readonly PipeCaller AnotherProcess = new PipeCaller(9999, isAdministrator: false);
         private static readonly PipeCaller Administrator = new PipeCaller(1111, isAdministrator: true);
+        private static readonly PipeCaller RemoteAdministratorWithTheServicePid = new PipeCaller(ServicePid, isAdministrator: true, isRemote: true);
 
         public ServiceTests()
         {
@@ -46,6 +47,27 @@ namespace Servy.Host.UnitTests
         public void Dispose() => _sut.Dispose();
 
         private static IpcRequestDto Request(string action, string serviceName = ServiceName) => new IpcRequestDto { Action = action, ServiceName = serviceName };
+
+        #region Remote clients
+
+        [Theory]
+        [InlineData(AppConfig.ServyHostGetByNameAction)]
+        [InlineData(AppConfig.ServyHostGetRestartAttemptsAction)]
+        [InlineData(AppConfig.ServyHostRefreshPipeAccessAction)]
+        public async Task ProcessRequestAsync_ClientOnAnotherComputer_IsRefusedEvenAsAnAdministratorWithTheServicePid(string action)
+        {
+            // Act: a remote PID is a process on another computer, so even a match with the SCM's PID means nothing
+            var response = await _sut.ProcessRequestAsync(Request(action), RemoteAdministratorWithTheServicePid, CancellationToken.None);
+
+            // Assert
+            Assert.False(response.Success);
+            Assert.Null(response.Data);
+            _repository.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repository.Verify(r => r.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        #endregion
 
         #region Constructor
 
@@ -433,9 +455,9 @@ namespace Servy.Host.UnitTests
             // Act
             await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
 
-            // Assert: never wider than the closed DACL
+            // Assert: never wider than the closed DACL (Local System and Administrators only)
             var rules = _sut.CurrentPipeSecurity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
-            Assert.Equal(3, rules.Count);
+            Assert.Equal(2, rules.Count);
             _logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Failed to read the service accounts")), It.IsAny<Exception>()), Times.Once);
         }
 

@@ -38,10 +38,12 @@ namespace Servy.Core.UnitTests.Security
             Assert.True(security.AreAccessRulesProtected);
             Assert.Null(security.GetOwner(typeof(SecurityIdentifier)));
             var rules = Rules(security);
-            Assert.Equal(3, rules.Count);
+            Assert.Equal(2, rules.Count);
             Assert.Contains(rules, r => LocalSystem.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow && r.PipeAccessRights == PipeAccessRights.FullControl);
             Assert.Contains(rules, r => Administrators.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow && r.PipeAccessRights == PipeAccessRights.FullControl);
-            Assert.Contains(rules, r => Network.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Deny && r.PipeAccessRights == PipeAccessRights.FullControl);
+            // Network logons are allowed (#7330): nothing denies NT AUTHORITY\NETWORK, and no rule denies anything
+            Assert.DoesNotContain(rules, r => Network.Equals(r.IdentityReference));
+            Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny);
         }
 
         [Fact]
@@ -68,7 +70,7 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert: only NetworkService gets a client grant
             var rules = Rules(security);
-            Assert.Equal(4, rules.Count);
+            Assert.Equal(3, rules.Count);
             Assert.DoesNotContain(rules, r => Everyone.Equals(r.IdentityReference) || Users.Equals(r.IdentityReference));
             Assert.Single(rules, r => NetworkService.Equals(r.IdentityReference));
         }
@@ -92,7 +94,7 @@ namespace Servy.Core.UnitTests.Security
             var rules = Rules(security);
             Assert.Single(rules, r => LocalService.Equals(r.IdentityReference));
             Assert.Single(rules, r => NetworkService.Equals(r.IdentityReference));
-            Assert.Equal(5, rules.Count);
+            Assert.Equal(4, rules.Count);
         }
 
         [Fact]

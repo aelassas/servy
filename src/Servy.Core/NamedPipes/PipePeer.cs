@@ -35,6 +35,28 @@ namespace Servy.Core.NamedPipes
         /// <param name="clientStream">The connected client end of the pipe.</param>
         /// <param name="processId">The server's process identifier, or 0 when it cannot be read.</param>
         /// <returns><see langword="true"/> when the identifier was read.</returns>
+        /// <summary>
+        /// Determines whether the client of a connected server end runs on another computer, i.e. reached the pipe over
+        /// the network (SMB) rather than locally.
+        /// </summary>
+        /// <param name="serverStream">The connected server end of the pipe.</param>
+        /// <param name="computerName">The client's computer name when it is remote; otherwise empty.</param>
+        /// <returns><see langword="true"/> when the client is remote.</returns>
+        [ExcludeFromCodeCoverage]
+        public static bool IsRemoteClient(PipeStream serverStream, out string computerName)
+        {
+            computerName = string.Empty;
+            if (serverStream == null || !serverStream.IsConnected)
+                return false;
+
+            var buffer = new System.Text.StringBuilder(256);
+            if (!NativeMethods.GetNamedPipeClientComputerName(serverStream.SafePipeHandle, buffer, (uint)buffer.Capacity))
+                return false; // ERROR_PIPE_LOCAL: the client is on this computer
+
+            computerName = buffer.ToString();
+            return true;
+        }
+
         [ExcludeFromCodeCoverage]
         public static bool TryGetServerProcessId(PipeStream clientStream, out int processId)
         {

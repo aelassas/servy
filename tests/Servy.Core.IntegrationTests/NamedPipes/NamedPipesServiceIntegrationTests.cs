@@ -408,7 +408,7 @@ namespace Servy.Core.IntegrationTests.NamedPipes
                 var rules = applied.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
                 var grant = Assert.Single(rules, r => localService.Equals(r.IdentityReference));
                 Assert.Equal(0, (int)(grant.PipeAccessRights & PipeAccessRights.CreateNewInstance));
-                Assert.Contains(rules, r => new SecurityIdentifier(WellKnownSidType.NetworkSid, null).Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Deny);
+                Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.NetworkSid, null).Equals(r.IdentityReference));
                 Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.WorldSid, null).Equals(r.IdentityReference));
             }
         }
