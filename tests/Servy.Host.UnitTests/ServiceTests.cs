@@ -36,6 +36,9 @@ namespace Servy.Host.UnitTests
             _api.Setup(a => a.GetServiceProcessId(ServiceName)).Returns(ServicePid);
             _repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(Enumerable.Empty<ServiceDto>());
             _sut = new Service(_logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object);
+
+            // A fake PID can be a real process on the machine running the tests: never read its token
+            _sut.ResolveProcessAccount = _ => null;
         }
 
         public void Dispose() => _sut.Dispose();
@@ -417,6 +420,61 @@ namespace Servy.Host.UnitTests
 
             // Assert: the first build plus the configured retries, then nothing until the next refresh
             Assert.Equal(1 + AppConfig.ServyHostUnresolvedAccountRetryCount, Volatile.Read(ref lookups));
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_ServiceStillRunningUnderItsFormerAccount_KeepsItUntilThatProcessIsGone()
+        {
+            // Arrange: reinstalled from NetworkService to LocalService while running (#7330); the old process still runs
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var networkService = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            var running = networkService;
+            var gate = new object();
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" } });
+            _sut.ResolveProcessAccount = pid => { lock (gate) return pid == ServicePid ? running : null; };
+            _sut.UnresolvedAccountRetryDelayMs = 10;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            bool Granted(SecurityIdentifier sid) => _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => sid.Equals(r.IdentityReference));
+
+            // Act 1: the old process can still report its PID when it stops
+            _sut.StartListening();
+            var bothWhileOldRuns = Granted(localService) && Granted(networkService);
+
+            // Act 2: the service restarts under LocalService
+            lock (gate) running = localService;
+            var dropped = false;
+            for (var i = 0; i < 500 && !dropped; i++)
+            {
+                dropped = !Granted(networkService);
+                if (!dropped) await Task.Delay(10, CancellationToken.None);
+            }
+            _sut.StopListening();
+
+            // Assert
+            Assert.True(bothWhileOldRuns);
+            Assert.True(dropped);
+            Assert.True(Granted(localService));
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_StoppedService_GrantsNothingBeyondItsConfiguredAccount()
+        {
+            // Arrange: no process (the SCM reports PID 0)
+            var reads = 0;
+            _api.Setup(a => a.GetServiceProcessId(ServiceName)).Returns(0);
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" } });
+            _sut.ResolveProcessAccount = _ => { Interlocked.Increment(ref reads); return new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null); };
+
+            // Act
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+
+            // Assert
+            var rules = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+            Assert.Equal(3, rules.Count);
+            Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null).Equals(r.IdentityReference));
+            Assert.Equal(0, reads);
         }
 
         [Fact]

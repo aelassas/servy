@@ -398,6 +398,26 @@ namespace Servy.Host.IntegrationTests
         }
 
         [Fact]
+        public async Task RunningServiceProcess_ItsRealAccountIsGranted_WhileTheServiceNowNamesAnother()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the SCM reports this test process as the service's process, and the service is configured for
+            // LocalService now, as after a reinstall under another account that has not been followed by a restart
+            var ct = TestContext.Current.CancellationToken;
+            var me = WindowsIdentity.GetCurrent().User!;
+            await _repository.AddAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+
+            // Act: the real token of the running process is read
+            _host.StartListening();
+
+            // Assert
+            var rules = _host.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+            Assert.Contains(rules, r => me.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
+            Assert.Contains(rules, r => new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null).Equals(r.IdentityReference));
+        }
+
+        [Fact]
         public async Task NetworkLogon_OfAGrantedAccount_ConnectsOnceGranted()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
