@@ -104,7 +104,7 @@ namespace Servy.Manager.Views.Controls
 
         /// <summary>
         /// Gets or sets a value indicating whether the control is currently busy.
-        /// Used to disable user interactions while background operations are running.
+        /// Disables the search button while it is <see langword="true"/>; the search box and the services list stay enabled.
         /// </summary>
         public bool IsBusy
         {
