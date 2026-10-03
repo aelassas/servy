@@ -241,10 +241,6 @@ namespace Servy.Core.Services
                         updated++;
                         Logger.Info($"Service '{name}' now depends on the '{AppConfig.ServyHostServiceName}' service.");
                     }
-                    catch (InvalidOperationException)
-                    {
-                        // Not installed in the SCM (a database-only record): nothing to update
-                    }
                     catch (Exception ex)
                     {
                         Logger.Warn($"Could not add the '{AppConfig.ServyHostServiceName}' dependency to service '{name}'.", ex);
