@@ -148,7 +148,8 @@ namespace Servy.Core.Logging
                 // The content is already in the target, so a start that found the staged file again would append it
                 // a second time. Emptying it in place leaves the next start nothing to copy and only the file to
                 // delete. The other handle has to grant write access for that to be possible; when it does not,
-                // nothing is emptied and the rethrow reports the failure exactly as it did before.
+                // nothing is emptied, and the exception from opening the file for the write propagates in place of
+                // the delete's, so the rethrow below is not reached.
                 using (var stream = new FileStream(stagingPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
                 {
                     stream.SetLength(0);
