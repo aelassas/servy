@@ -120,6 +120,32 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal("once", File.ReadAllText(TargetPath));
         }
 
+        [Fact]
+        public void Migrate_DeleteFailsAfterTheContentWasCopied_EmptiesTheFormerLogSoTheNextStartDoesNotAppendItAgain()
+        {
+            // Arrange
+            // The other handle grants readers and writers but not deleters, which is the access File.Delete needs:
+            // the copy succeeds, the delete does not, and the content is in the target with the former log still there.
+            File.WriteAllText(LegacyPath, "once");
+
+            // Act
+            bool first;
+            string log;
+            using (new FileStream(LegacyPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                (first, log) = LogCapture.Run(() => ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName));
+            }
+
+            var second = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+
+            // Assert
+            Assert.False(first);
+            Assert.True(second);
+            Assert.Equal("once", File.ReadAllText(TargetPath));
+            Assert.False(File.Exists(LegacyPath));
+            Assert.Contains("Could not migrate the former service log", log);
+        }
+
         [Theory]
         [InlineData(null, "b", "c")]
         [InlineData("a", " ", "c")]
