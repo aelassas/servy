@@ -77,16 +77,6 @@ namespace Servy.UI.Resources {
                 return ResourceManager.GetString("Msg_FailedCopyingEmbeddedResource", resourceCulture);
             }
         }
-
-        /// <summary>
-        ///   Looks up a localized string similar to The Servy host service could not be installed or started: {0}
-        ///Servy services cannot start until it runs. See the file log for details..
-        /// </summary>
-        public static string Msg_ServyHostUnavailable {
-            get {
-                return ResourceManager.GetString("Msg_ServyHostUnavailable", resourceCulture);
-            }
-        }
         
         /// <summary>
         ///   Looks up a localized string similar to No updates currently available..
@@ -112,6 +102,25 @@ namespace Servy.UI.Resources {
         public static string Msg_ResourceExtractionWarningTitle {
             get {
                 return ResourceManager.GetString("Msg_ResourceExtractionWarningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Servy host service could not be installed or started: {0}
+        ///Servy services cannot start until it runs. See the file log for details..
+        /// </summary>
+        public static string Msg_ServyHostUnavailable {
+            get {
+                return ResourceManager.GetString("Msg_ServyHostUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Servy Host Unavailable.
+        /// </summary>
+        public static string Msg_ServyHostUnavailableTitle {
+            get {
+                return ResourceManager.GetString("Msg_ServyHostUnavailableTitle", resourceCulture);
             }
         }
         
