@@ -708,7 +708,7 @@ namespace Servy.Core.Services
                     }
                     finally
                     {
-                        // Collapsed rollback handler: cleans up upon explicit Failure returns OR unhandled exceptions
+                        // Rollback handler: every failure in the try above throws (its only returns are successes), so this deletes the service created above
                         if (needsRollback && serviceCreated && serviceHandle != null && !serviceHandle.IsInvalid)
                         {
                             try
