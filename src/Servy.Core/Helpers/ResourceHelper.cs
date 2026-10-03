@@ -528,6 +528,10 @@ namespace Servy.Core.Helpers
                 // extraction stops all Servy services. So an identical file is never written again (#7358).
                 if (shouldCopy && assembly != null && IsSameAsEmbeddedResource(assembly, resourceName, targetPath))
                 {
+                    // Identical: record that, so the next start does not compare the whole file again
+                    try { File.SetLastWriteTimeUtc(targetPath, hostExeWriteTime); }
+                    catch (Exception ex) { Logger.Debug($"Could not update the write time of '{targetPath}': {ex.Message}"); }
+
                     Logger.Debug($"Existing file '{targetPath}' is identical to the embedded resource '{resourceName}'. Skipping copy.");
                     return false;
                 }
