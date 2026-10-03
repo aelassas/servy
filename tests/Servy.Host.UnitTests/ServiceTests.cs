@@ -491,5 +491,93 @@ namespace Servy.Host.UnitTests
         }
 
         #endregion
+
+        #region Connection handling
+
+        /// <summary>
+        /// Starts a host on <paramref name="pipeName"/> whose server instances carry the default DACL instead of the
+        /// host's Administrators-and-System one, so a non-elevated test process can connect to it.
+        /// </summary>
+        /// <param name="logger">The logger the host reports to.</param>
+        /// <param name="pipeName">The name of the pipe to listen on.</param>
+        /// <param name="requestTimeoutMs">The per-request timeout, in milliseconds.</param>
+        /// <returns>The listening host. The caller owns it.</returns>
+        private Service ListeningHost(Mock<IServyLogger> logger, string pipeName, int requestTimeoutMs)
+        {
+            var host = new Service(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object)
+            {
+                PipeName = pipeName,
+                RequestTimeoutMs = requestTimeoutMs,
+                ServerStreamFactory = (name, security) => new NamedPipeServerStream(name, PipeDirection.InOut,
+                    NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous),
+            };
+            host.StartListening();
+            return host;
+        }
+
+        [Fact]
+        public void HandleConnectionAsync_ReadThrows_LogsTheError()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidDataException("bad frame"));
+            using (var logged = new ManualResetEventSlim())
+            {
+                logger.Setup(l => l.Error("Exception in HandleClientAsync.", It.IsAny<InvalidDataException>())).Callback(() => logged.Set());
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 5000))
+                {
+                    // Act
+                    bool observed;
+                    using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                    {
+                        client.Connect(3000);
+                        observed = logged.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                    }
+
+                    // Assert
+                    Assert.True(observed);
+                    host.StopListening();
+                }
+            }
+        }
+
+        [Fact]
+        public void HandleConnectionAsync_ClientNeverSendsItsRequest_WarnsAfterTheRequestTimeout()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns<Stream, CancellationToken>(async (stream, token) =>
+                {
+                    await Task.Delay(Timeout.Infinite, token);
+                    return null;
+                });
+            using (var warned = new ManualResetEventSlim())
+            {
+                // Either timeout arm may run - a pending read does not observe its token on every runtime - and both
+                // log this warning, so the test asserts the warning rather than which arm produced it.
+                logger.Setup(l => l.Warn(It.Is<string>(m => m.Contains("did not complete its request in time")), null)).Callback(() => warned.Set());
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 200))
+                {
+                    // Act
+                    bool observed;
+                    using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                    {
+                        client.Connect(3000);
+                        observed = warned.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                    }
+
+                    // Assert
+                    Assert.True(observed);
+                    logger.Verify(l => l.Error("Exception in HandleClientAsync.", It.IsAny<Exception>()), Times.Never);
+                    host.StopListening();
+                }
+            }
+        }
+
+        #endregion
     }
 }
