@@ -474,6 +474,27 @@ namespace Servy.Host.IntegrationTests
             Assert.NotNull(await Task.Run(() => Client().GetByName(ServiceName, ct), ct));
         }
 
+        [Fact]
+        public async Task LocalClient_IsStillIdentifiedAsLocalAndServed_NowThatOnlyErrorPipeLocalMeansLocal()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: an ordinary local client, the one case for which GetNamedPipeClientComputerName fails with
+            // ERROR_PIPE_LOCAL. Every other failure of that call is now read as "not proven local" and denied
+            // (#7350), so this pins that the local path is still served.
+            var ct = TestContext.Current.CancellationToken;
+            await SeedAsync(ServiceName);
+            _host.StartListening();
+
+            // Act
+            var config = await Task.Run(() => Client().GetByName(ServiceName, ct), ct);
+
+            // Assert
+            Assert.False(_identifier.LastWasRemote);
+            Assert.NotNull(config);
+            Assert.Equal("C:\\app.exe", config!.ExecutablePath);
+        }
+
         /// <summary>
         /// Connects to the host's pipe while impersonating a token, and returns <c>CONNECTED</c> or <c>ERROR</c> and the exception.
         /// </summary>
