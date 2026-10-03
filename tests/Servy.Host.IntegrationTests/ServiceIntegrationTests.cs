@@ -420,32 +420,38 @@ namespace Servy.Host.IntegrationTests
         }
 
         [Fact]
-        public async Task ClientOnAnotherComputer_ThroughSmb_IsRefusedEvenAsAnAdministrator()
+        public async Task ClientOnAnotherComputer_ThroughSmb_CannotOpenThePipeEvenWhenGranted()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
 
             // Arrange: the test account is granted, and connects through \\<machine>\pipe\..., i.e. over SMB as a remote
-            // client. The identifier is told to report an administrator, so only the remote check can refuse it.
+            // client. The identifier is told to report an administrator, so nothing but the pipe's own remote-client
+            // rejection can stop it.
             var ct = TestContext.Current.CancellationToken;
             await _repository.AddAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", Parameters = "--secret", RunAsLocalSystem = false, UserAccount = WindowsIdentity.GetCurrent().Name }, ct);
             _host.StartListening();
             _identifier.IsAdministrator = true;
             var frames = new NamedPipesService(_pipeName);
 
-            // Act
-            IpcResponseDto? response;
-            using (var remote = new NamedPipeClientStream(Environment.MachineName, _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification))
+            // Act: the remote open is refused by the pipe itself, before any request can be sent
+            var opened = false;
+            var error = await Record.ExceptionAsync(async () =>
             {
-                await remote.ConnectAsync(10000, ct);
-                await frames.WriteAsync(remote, new IpcRequestDto { Action = AppConfig.ServyHostGetByNameAction, ServiceName = ServiceName }, ct);
-                response = await frames.ReadAsync<IpcResponseDto>(remote, ct);
-            }
+                using (var remote = new NamedPipeClientStream(Environment.MachineName, _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification))
+                {
+                    await remote.ConnectAsync(10000, ct);
+                    opened = true;
+                    await frames.WriteAsync(remote, new IpcRequestDto { Action = AppConfig.ServyHostGetByNameAction, ServiceName = ServiceName }, ct);
+                    await frames.ReadAsync<IpcResponseDto>(remote, ct);
+                }
+            });
 
-            // Assert
-            Assert.True(_identifier.LastWasRemote);
-            Assert.NotNull(response);
-            Assert.False(response!.Success);
-            Assert.Null(response.Data);
+            // Assert: never connected, never identified; the same account still connects locally
+            Assert.NotNull(error);
+            Assert.False(opened, "A client on another computer opened the pipe: " + error);
+            Assert.Null(_identifier.LastWasRemote);
+            _identifier.IsAdministrator = false;
+            Assert.NotNull(await Task.Run(() => Client().GetByName(ServiceName, ct), ct));
         }
 
         /// <summary>

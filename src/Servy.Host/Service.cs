@@ -21,8 +21,9 @@ namespace Servy.Host
     /// <remarks>
     /// <para>
     /// The pipe is created with a protected DACL (<see cref="ServyHostPipeSecurity"/>): Local System and Administrators,
-    /// plus Read and Write for the accounts the installed services run under. Network logons are allowed; a client on
-    /// another computer is refused, so the pipe is local only.
+    /// plus Read and Write for the accounts the installed services run under. Network logons are allowed. The pipe is local
+    /// only: a client on another computer cannot open it (<c>PIPE_REJECT_REMOTE_CLIENTS</c>), and the host also refuses any
+    /// request from one.
     /// </para>
     /// <para>
     /// Being able to connect is not being allowed to read anything. Every request about a service is answered only when
@@ -540,7 +541,8 @@ namespace Servy.Host
         internal Func<string, System.Security.Principal.SecurityIdentifier?> ResolveAccount { get; set; } = AccountSidResolver.Resolve;
 
         /// <summary>
-        /// Creates a server instance of the pipe with the given security, and applies that security to the pipe itself.
+        /// Creates a server instance of the pipe that only clients on this computer can open (<c>PIPE_REJECT_REMOTE_CLIENTS</c>),
+        /// with the given security, and applies that security to the pipe itself.
         /// </summary>
         /// <param name="pipeName">The pipe name.</param>
         /// <param name="security">The DACL of the instance.</param>
@@ -552,34 +554,11 @@ namespace Servy.Host
         /// the host restarted: an account granted after the host started (a service installed or moved to
         /// <c>NT AUTHORITY\NetworkService</c>, a local, domain or gMSA account) was refused with "Access to the path is
         /// denied", and a revoked account kept its access. Writing the DACL through the new instance's handle replaces
-        /// the shared descriptor, which is why the instance is opened with <see cref="PipeAccessRights.ChangePermissions"/>.
+        /// the shared descriptor, which is why the instance is opened with WRITE_DAC (see <see cref="LocalPipeServer.Create"/>).
         /// </remarks>
         [ExcludeFromCodeCoverage]
         private static NamedPipeServerStream CreateServerStream(string pipeName, PipeSecurity security)
-        {
-            var stream = NamedPipeServerStreamAcl.Create(
-                pipeName,
-                PipeDirection.InOut,
-                NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Byte,
-                PipeOptions.Asynchronous,
-                inBufferSize: 0,
-                outBufferSize: 0,
-                pipeSecurity: security,
-                inheritability: HandleInheritability.None,
-                additionalAccessRights: PipeAccessRights.ChangePermissions);
-
-            try
-            {
-                stream.SetAccessControl(security);
-                return stream;
-            }
-            catch
-            {
-                stream.Dispose();
-                throw;
-            }
-        }
+            => LocalPipeServer.Create(pipeName, security);
 
         #endregion
 

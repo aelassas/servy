@@ -15,7 +15,8 @@ namespace Servy.Core.Security
     /// nothing else: in particular not <see cref="PipeAccessRights.CreateNewInstance"/>, so a service account can never
     /// create a server instance of the pipe and answer another service's requests. Network logons are allowed: a local
     /// process whose token carries <c>NT AUTHORITY\NETWORK</c> (for example the CLI in a PowerShell remoting session) is
-    /// checked like any other. Clients on another computer are refused by the host itself, so the pipe stays local only.
+    /// checked like any other. The pipe stays local only: its instances are created with <c>PIPE_REJECT_REMOTE_CLIENTS</c>
+    /// (<see cref="NamedPipes.LocalPipeServer"/>), so a client on another computer cannot open it.
     /// </para>
     /// <para>
     /// Being able to connect is not being allowed to read anything: the host still answers a request about a service only
