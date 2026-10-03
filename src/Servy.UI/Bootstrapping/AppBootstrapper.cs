@@ -456,8 +456,8 @@ namespace Servy.UI.Bootstrapping
                         // host stopped. They are stopped once for all the files and the host reinstall, and started once at
                         // the end, rather than once per file: after an upgrade on a machine with many services that would
                         // delay start-up a lot.
-                        if (resourceItems.Any(item => resourceHelper.IsExtractionNeeded(_options.ResourcesNamespace, item.FileNameWithoutExtension, item.Extension))
-                            || resourceHelper.IsExtractionNeeded(_options.ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
+                        if (resourceItems.Any(item => resourceHelper.IsExtractionNeeded(asm, _options.ResourcesNamespace, item.FileNameWithoutExtension, item.Extension))
+                            || resourceHelper.IsExtractionNeeded(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
                         {
                             await pause.PauseAsync(ct);
                         }

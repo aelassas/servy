@@ -576,6 +576,78 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void IsExtractionNeeded_WithAssembly_StaleTimestampButIdenticalContent_ReturnsFalse()
+        {
+            // Arrange: the timestamps say "older build" (as when the installer stamped the executable in another time
+            // zone), but the file is the same build as the embedded resource (#7358)
+            var content = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03 };
+            var targetPath = Path.Combine(TempDirectory, "same.exe");
+            File.WriteAllBytes(targetPath, content);
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.same.exe" ? new MemoryStream(content) : null;
+
+            // Act & Assert: nothing to update, so the services are not stopped
+            Assert.False(_resourceHelper.IsExtractionNeeded(_fakeAssembly, "Servy.Resources", "same", "exe"));
+            Assert.True(_resourceHelper.IsExtractionNeeded("Servy.Resources", "same", "exe")); // the timestamp-only overload still says stale
+        }
+
+        [Fact]
+        public void IsExtractionNeeded_WithAssembly_StaleTimestampAndDifferentContent_ReturnsTrue()
+        {
+            // Arrange
+            var targetPath = Path.Combine(TempDirectory, "older.exe");
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03 });
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.older.exe" ? new MemoryStream(new byte[] { 0x01, 0x02, 0x04 }) : null;
+
+            // Act & Assert
+            Assert.True(_resourceHelper.IsExtractionNeeded(_fakeAssembly, "Servy.Resources", "older", "exe"));
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_StaleTimestampButIdenticalContent_WritesNothingAndKillsNothing()
+        {
+            // Arrange
+            var content = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x07 };
+            var targetPath = Path.Combine(TempDirectory, "unchanged.exe");
+            File.WriteAllBytes(targetPath, content);
+            var stamp = _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1);
+            File.SetLastWriteTimeUtc(targetPath, stamp);
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(content);
+
+            // Act
+            var result = await _resourceHelper.CopyEmbeddedResourceAsync(_fakeAssembly, "Servy.Resources", "unchanged", "exe", cancellationToken: CancellationToken.None);
+
+            // Assert: reported as done, but the file and whatever holds it open are left alone
+            Assert.True(result);
+            Assert.False(_resourceHelper.HasCopiedResources);
+            Assert.Equal(stamp, File.GetLastWriteTimeUtc(targetPath));
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_DifferentContent_WritesTheWholeResourceAfterTheComparison()
+        {
+            // Arrange: ONE stream instance serves the comparison and the copy, so the comparison has to rewind it
+            var newContent = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60 };
+            var shared = new MemoryStream(newContent);
+            var targetPath = Path.Combine(TempDirectory, "upgrade.exe");
+            File.WriteAllBytes(targetPath, new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x61 });
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            _fakeAssembly.OnGetManifestResourceStream = _ => shared;
+            _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = await _resourceHelper.CopyEmbeddedResourceAsync(_fakeAssembly, "Servy.Resources", "upgrade", "exe", cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(_resourceHelper.HasCopiedResources);
+            Assert.Equal(newContent, File.ReadAllBytes(targetPath));
+        }
+
+        [Fact]
         public void GetHostProcessLastWriteTimeUtc_ExecutesSuccessfullyAndReturnsValidDate()
         {
             // Arrange (Static execution pipeline framework proxy metrics context)

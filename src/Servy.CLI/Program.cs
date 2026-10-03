@@ -256,8 +256,8 @@ namespace Servy.CLI
                             // Replacing the service wrapper, a DLL it loads or the host needs every running Servy service and
                             // the host stopped. They are stopped once for all the files and the host reinstall, and started once
                             // at the end.
-                            if (resourceItems.Any(item => resourceHelper.IsExtractionNeeded(ResourcesNamespace, item.FileNameWithoutExtension, item.Extension))
-                                || resourceHelper.IsExtractionNeeded(ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
+                            if (resourceItems.Any(item => resourceHelper.IsExtractionNeeded(asm, ResourcesNamespace, item.FileNameWithoutExtension, item.Extension))
+                                || resourceHelper.IsExtractionNeeded(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
                             {
                                 await pause.PauseAsync(cts.Token);
                             }

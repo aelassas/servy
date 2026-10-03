@@ -69,7 +69,21 @@ namespace Servy.Core.Helpers
         /// Lets a caller that replaces several files stop the Servy services once for all of them, instead of once per file.
         /// </remarks>
         public bool IsExtractionNeeded(string resourceNamespace, string fileName, string extension, string subfolder = null)
-            => TryPrepareExtraction(resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
+            => TryPrepareExtraction(null, resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
+
+        /// <summary>
+        /// Determines whether an embedded resource has to be (re)extracted: the file is missing, or it is older than the
+        /// running executable by more than <see cref="AppConfig.ResourceStalenessThresholdMinutes"/> AND its content differs
+        /// from the embedded resource. A file identical to the resource is never extracted again, whatever the timestamps say.
+        /// </summary>
+        /// <param name="assembly">The assembly that embeds the resource.</param>
+        /// <param name="resourceNamespace">The resource namespace.</param>
+        /// <param name="fileName">The file name, without extension.</param>
+        /// <param name="extension">The file extension.</param>
+        /// <param name="subfolder">Optional subfolder within the target directory.</param>
+        /// <returns><see langword="true"/> when the file has to be written.</returns>
+        public bool IsExtractionNeeded(Assembly assembly, string resourceNamespace, string fileName, string extension, string subfolder = null)
+            => TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
 
         /// <summary>
         /// Copies an embedded resource from the assembly to disk.
@@ -95,7 +109,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                if (!TryPrepareExtraction(resourceNamespace, fileName, extension, subfolder, out targetPath, out var targetFileName, out resourceName))
+                if (!TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, subfolder, out targetPath, out var targetFileName, out resourceName))
                     return true;
 
                 // Capture pre-existing explicit ACLs BEFORE killing processes or staging files
@@ -199,6 +213,7 @@ namespace Servy.Core.Helpers
                 foreach (var resourceItem in resourceItems)
                 {
                     resourceItem.ShouldCopy = TryPrepareExtraction(
+                        assembly,
                         resourceNamespace,
                         resourceItem.FileNameWithoutExtension,
                         resourceItem.Extension,
@@ -448,6 +463,7 @@ namespace Servy.Core.Helpers
         /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
         /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
         private bool TryPrepareExtraction(
+            Assembly assembly,
             string resourceNamespace,
             string fileName,
             string extension,
@@ -506,10 +522,102 @@ namespace Servy.Core.Helpers
                     }
                 }
 
+                // The timestamps say "copy", but they only stand in for "a different build". Installed and extracted
+                // times can disagree for reasons unrelated to the content (an installer that stamps files in the build
+                // machine's local time puts them hours in the future on a machine in another time zone), and every
+                // extraction stops all Servy services. So an identical file is never written again (#7358).
+                if (shouldCopy && assembly != null && IsSameAsEmbeddedResource(assembly, resourceName, targetPath))
+                {
+                    Logger.Debug($"Existing file '{targetPath}' is identical to the embedded resource '{resourceName}'. Skipping copy.");
+                    return false;
+                }
+
                 return shouldCopy;
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Compares a file with an embedded resource, byte for byte.
+        /// </summary>
+        /// <param name="assembly">The assembly that embeds the resource.</param>
+        /// <param name="resourceName">The full resource name.</param>
+        /// <param name="filePath">The file to compare.</param>
+        /// <returns><see langword="true"/> only when both exist and are identical; any failure counts as different.</returns>
+        private static bool IsSameAsEmbeddedResource(Assembly assembly, string resourceName, string filePath)
+        {
+            Stream resource = null;
+            try
+            {
+                resource = assembly.GetManifestResourceStream(resourceName);
+                if (resource == null)
+                    return false;
+
+                var start = resource.CanSeek ? resource.Position : 0;
+                try
+                {
+                    using (var file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                    {
+                        if (resource.CanSeek && file.Length != resource.Length - start)
+                            return false;
+
+                        var a = new byte[81920];
+                        var b = new byte[81920];
+                        while (true)
+                        {
+                            var read = ReadFull(resource, a);
+                            if (ReadFull(file, b) != read)
+                                return false;
+                            if (read == 0)
+                                return true;
+                            for (var i = 0; i < read; i++)
+                            {
+                                if (a[i] != b[i])
+                                    return false;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    // A seekable resource stream is rewound and left open, so a caller holding the same instance can
+                    // still read it; a forward-only one cannot be reused anyway
+                    if (resource.CanSeek)
+                    {
+                        resource.Position = start;
+                        resource = null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Could not compare '{filePath}' with the embedded resource '{resourceName}': {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                resource?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Reads until the buffer is full or the stream ends.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <param name="buffer">The buffer.</param>
+        /// <returns>The number of bytes read.</returns>
+        private static int ReadFull(Stream stream, byte[] buffer)
+        {
+            var total = 0;
+            while (total < buffer.Length)
+            {
+                var read = stream.Read(buffer, total, buffer.Length - total);
+                if (read == 0)
+                    break;
+                total += read;
+            }
+            return total;
         }
 
         /// <summary>
