@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Security;
 using Servy.Testing;
 using System.IO.Pipes;
@@ -125,6 +126,26 @@ namespace Servy.Core.UnitTests.Security
             Assert.Null(AccountSidResolver.Resolve(null));
             Assert.Null(AccountSidResolver.Resolve("   "));
             Assert.Null(AccountSidResolver.Resolve("definitely-not-an-account-7c1f"));
+        }
+
+        public static TheoryData<string, string> BuiltInServiceAccountSpellings()
+        {
+            var data = new TheoryData<string, string>();
+            foreach (var alias in ServiceAccounts.LocalSystemAliases) data.Add(alias, "S-1-5-18");
+            foreach (var alias in ServiceAccounts.LocalServiceAliases) data.Add(alias, "S-1-5-19");
+            foreach (var alias in ServiceAccounts.NetworkServiceAliases) data.Add(alias, "S-1-5-20");
+            return data;
+        }
+
+        [Theory]
+        [MemberData(nameof(BuiltInServiceAccountSpellings))]
+        public void AccountSidResolver_EveryBuiltInServiceAccountSpelling_ResolvesToItsWellKnownSid(string account, string expectedSid)
+        {
+            // Act
+            var sid = AccountSidResolver.Resolve(account);
+
+            // Assert
+            Assert.Equal(new SecurityIdentifier(expectedSid), sid);
         }
 
         [Fact]

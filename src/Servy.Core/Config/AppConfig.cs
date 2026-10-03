@@ -1805,6 +1805,18 @@ namespace Servy.Core.Config
         public const int ServyHostListenerCount = 4;
 
         /// <summary>
+        /// The time in milliseconds the Servy host waits before rebuilding its named pipe's DACL again when a service account
+        /// could not be resolved, for example a domain or gMSA account while no domain controller is reachable at boot.
+        /// </summary>
+        public const int ServyHostUnresolvedAccountRetryDelayMs = 30000;
+
+        /// <summary>
+        /// The number of times the Servy host retries the accounts it could not resolve before it waits for the next install,
+        /// reconfiguration or restart; with <see cref="ServyHostUnresolvedAccountRetryDelayMs"/>, ten minutes.
+        /// </summary>
+        public const int ServyHostUnresolvedAccountRetryCount = 20;
+
+        /// <summary>
         /// The maximum permitted IPC message payload size in bytes (10 MB) to prevent heap overflow exploits or excessive memory allocation.
         /// </summary>
         public const long ServyHostMaxAllowedMessageSizeBytes = 10 * BytesInMegabyte;

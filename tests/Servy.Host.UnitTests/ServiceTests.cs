@@ -345,6 +345,59 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public async Task RefreshPipeSecurityAsync_AccountNotResolvableYet_IsRetriedUntilItResolves()
+        {
+            // Arrange: a gMSA whose domain controller is not reachable for the first two lookups, as at boot
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var lookups = 0;
+            _sut.ResolveAccount = _ => Interlocked.Increment(ref lookups) < 3 ? null : localService;
+            _sut.UnresolvedAccountRetryDelayMs = 10;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @"CONTOSO\svc-gmsa$" } });
+
+            // Act
+            _sut.StartListening();
+            var granted = false;
+            for (var i = 0; i < 500 && !granted; i++)
+            {
+                granted = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
+                if (!granted) await Task.Delay(10, CancellationToken.None);
+            }
+            await Task.Delay(100, CancellationToken.None);
+            _sut.StopListening();
+
+            // Assert: granted on the third lookup, and no retry once it resolved
+            Assert.True(granted);
+            Assert.Equal(3, Volatile.Read(ref lookups));
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_AccountNeverResolves_StopsRetryingAfterTheConfiguredCount()
+        {
+            // Arrange
+            var lookups = 0;
+            _sut.ResolveAccount = _ => { Interlocked.Increment(ref lookups); return null; };
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @"CONTOSO\deleted-user" } });
+
+            // Act
+            _sut.StartListening();
+            var last = -1;
+            for (var i = 0; i < 100 && last != Volatile.Read(ref lookups); i++)
+            {
+                last = Volatile.Read(ref lookups);
+                await Task.Delay(100, CancellationToken.None);
+            }
+            _sut.StopListening();
+
+            // Assert: the first build plus the configured retries, then nothing until the next refresh
+            Assert.Equal(1 + AppConfig.ServyHostUnresolvedAccountRetryCount, Volatile.Read(ref lookups));
+        }
+
+        [Fact]
         public async Task RefreshPipeSecurityAsync_AccountRemoved_IsNoLongerGranted()
         {
             // Arrange

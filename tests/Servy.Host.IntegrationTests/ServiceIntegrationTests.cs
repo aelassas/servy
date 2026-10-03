@@ -293,7 +293,286 @@ namespace Servy.Host.IntegrationTests
             Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null).Equals(r.IdentityReference));
         }
 
+        [Fact]
+        public async Task Administrator_RefreshesTheDacl_ThePipeItselfCarriesTheNewGrant()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            var ct = TestContext.Current.CancellationToken;
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var created = TrackCreatedInstances();
+            _host.StartListening();
+            await _repository.AddAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+            _identifier.IsAdministrator = true;
+
+            // Act
+            Assert.True(await Client().RefreshPipeAccessAsync(ct));
+            await WaitForInstanceCreatedWithAsync(created, localService, ct);
+
+            // Assert: the security descriptor the kernel checks a client against, not the host's in-memory copy. Every
+            // instance of a pipe name shares the descriptor of the first one, so without writing it through the handle
+            // the grant never reached the pipe until the host restarted (#7330).
+            var kernel = KernelRules(created);
+            var rule = Assert.Single(kernel, r => localService.Equals(r.IdentityReference));
+            Assert.Equal(AccessControlType.Allow, rule.AccessControlType);
+            Assert.Equal(0, (int)(rule.PipeAccessRights & PipeAccessRights.CreateNewInstance));
+        }
+
+        [Fact]
+        public async Task Administrator_RefreshesTheDacl_AfterTheLastServiceOfAnAccountIsRemoved_ThePipeRevokesIt()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange
+            var ct = TestContext.Current.CancellationToken;
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var created = TrackCreatedInstances();
+            await _repository.AddAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+            _host.StartListening();
+            await WaitForInstanceCreatedWithAsync(created, localService, ct);
+            Assert.Contains(KernelRules(created), r => localService.Equals(r.IdentityReference));
+            await _repository.DeleteAsync("LocalServiceApp", ct);
+            _identifier.IsAdministrator = true;
+            int before;
+            lock (created) before = created.Count;
+
+            // Act
+            Assert.True(await Client().RefreshPipeAccessAsync(ct));
+
+            // Assert: once an instance was created after the refresh, the pipe no longer grants Local Service anything
+            var recreated = false;
+            for (var i = 0; i < 200 && !recreated; i++)
+            {
+                lock (created)
+                    recreated = created.Skip(before).Any(c => !c.Requested.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference)));
+                if (!recreated) await Task.Delay(25, ct);
+            }
+            Assert.True(recreated);
+            Assert.DoesNotContain(KernelRules(created), r => localService.Equals(r.IdentityReference));
+        }
+
+        [Fact]
+        public async Task RealAccounts_GrantedAfterTheHostStarted_ConnectWithTheirOwnToken_AndAreRefusedOnceRevoked()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the order of a real installation - the host is already running, then services are installed under
+            // these accounts and the installer asks the host to refresh. Each client runs as a scheduled task under the
+            // account itself, so the access check is made against that account's real token (not an administrator's).
+            var ct = TestContext.Current.CancellationToken;
+            using var sandbox = new AccountSandbox(_pipeName);
+            _host.StartListening();
+
+            var accounts = new[]
+            {
+                (Stored: ServiceAccounts.NetworkService, RunAs: "NT AUTHORITY\\NETWORKSERVICE", Password: (string?)null),
+                (Stored: ServiceAccounts.LocalService, RunAs: "NT AUTHORITY\\LOCALSERVICE", Password: (string?)null),
+                (Stored: ".\\" + sandbox.LocalUser, RunAs: Environment.MachineName + "\\" + sandbox.LocalUser, Password: (string?)sandbox.LocalUserPassword),
+            };
+
+            // Not granted yet: refused by the pipe's DACL
+            foreach (var account in accounts)
+                Assert.StartsWith("ERROR UnauthorizedAccessException", await sandbox.ConnectAsAsync(account.RunAs, account.Password, ct));
+
+            // Act 1: install
+            var index = 0;
+            foreach (var account in accounts)
+                await _repository.AddAsync(new ServiceDto { Name = "Svc" + index++, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = account.Stored }, ct);
+            _identifier.IsAdministrator = true;
+            Assert.True(await Client().RefreshPipeAccessAsync(ct));
+
+            // Assert 1
+            foreach (var account in accounts)
+                Assert.Equal("CONNECTED", await sandbox.ConnectAsAsync(account.RunAs, account.Password, ct));
+            Assert.Equal("CONNECTED", await sandbox.ConnectAsAsync("SYSTEM", null, ct));
+
+            // Act 2: uninstall
+            for (var i = 0; i < accounts.Length; i++)
+                await _repository.DeleteAsync("Svc" + i, ct);
+            Assert.True(await Client().RefreshPipeAccessAsync(ct));
+
+            // Assert 2
+            foreach (var account in accounts)
+                Assert.StartsWith("ERROR UnauthorizedAccessException", await sandbox.ConnectAsAsync(account.RunAs, account.Password, ct));
+        }
+
+        private List<(PipeSecurity Requested, NamedPipeServerStream Stream)> TrackCreatedInstances()
+        {
+            var created = new List<(PipeSecurity Requested, NamedPipeServerStream Stream)>();
+            var inner = _host.ServerStreamFactory;
+            _host.ServerStreamFactory = (name, security) =>
+            {
+                var stream = inner(name, security);
+                lock (created) created.Add((security, stream));
+                return stream;
+            };
+            return created;
+        }
+
+        private static async Task WaitForInstanceCreatedWithAsync(List<(PipeSecurity Requested, NamedPipeServerStream Stream)> created, SecurityIdentifier grantee, CancellationToken ct)
+        {
+            for (var i = 0; i < 200; i++)
+            {
+                lock (created)
+                {
+                    var match = created.Where(c => c.Requested.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => grantee.Equals(r.IdentityReference)))
+                        .Select(c => c.Stream).LastOrDefault();
+                    if (match != null) return;
+                }
+                await Task.Delay(25, ct);
+            }
+            throw new TimeoutException("No pipe instance was created with the expected grant.");
+        }
+
+        /// <summary>
+        /// Reads the pipe's security descriptor through the newest instance that is still open: every instance of a pipe
+        /// name shares one descriptor, and the older ones may have served a client and been closed already.
+        /// </summary>
+        private static List<PipeAccessRule> KernelRules(List<(PipeSecurity Requested, NamedPipeServerStream Stream)> created)
+        {
+            List<NamedPipeServerStream> streams;
+            lock (created) streams = created.Select(c => c.Stream).Reverse().ToList();
+
+            foreach (var stream in streams)
+            {
+                try
+                {
+                    return stream.GetAccessControl().GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Served a client and closed; the next one shares the same descriptor
+                }
+            }
+
+            throw new InvalidOperationException("No pipe instance is open.");
+        }
+
         #region Test doubles
+
+        /// <summary>
+        /// Runs a named pipe client as another account through a scheduled task, and owns the local user, the tasks and
+        /// the folder it needs; everything is removed on dispose.
+        /// </summary>
+        private sealed class AccountSandbox : IDisposable
+        {
+            private readonly string _pipeName;
+            private readonly string _directory;
+            private readonly string _taskPrefix = "ServyPipeTest_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            private readonly List<string> _tasks = new List<string>();
+            private int _run;
+
+            public AccountSandbox(string pipeName)
+            {
+                _pipeName = pipeName;
+                LocalUser = "svypt" + Guid.NewGuid().ToString("N").Substring(0, 10);
+                // net.exe asks for confirmation, and so fails without a console, for a password longer than 14 characters
+                LocalUserPassword = "Aa1!" + Guid.NewGuid().ToString("N").Substring(0, 10);
+
+                _directory = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory)!, "ServyPipeTests", _taskPrefix);
+                Directory.CreateDirectory(_directory);
+                var security = new DirectorySecurity();
+                security.SetAccessRuleProtection(true, false);
+                security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.FullControl,
+                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+                new DirectoryInfo(_directory).SetAccessControl(security);
+
+                // A plain local user. Performance Log Users holds "Log on as a batch job" by default, which a scheduled
+                // task needs, and grants nothing on the pipe.
+                Run("net.exe", $"user {LocalUser} {LocalUserPassword} /add");
+                Run("net.exe", $"localgroup \"Performance Log Users\" {LocalUser} /add");
+            }
+
+            public string LocalUser { get; }
+
+            public string LocalUserPassword { get; }
+
+            /// <summary>
+            /// Connects to the pipe as the account and returns <c>CONNECTED</c>, or <c>ERROR</c> and the exception.
+            /// </summary>
+            public async Task<string> ConnectAsAsync(string runAs, string? password, CancellationToken ct)
+            {
+                var run = ++_run;
+                var output = Path.Combine(_directory, $"out{run}.txt");
+                var script = Path.Combine(_directory, $"c{run}.ps1");
+                File.WriteAllText(script,
+                    "$out = '" + output + "'\r\n" +
+                    "try {\r\n" +
+                    "  $c = New-Object System.IO.Pipes.NamedPipeClientStream('.', '" + _pipeName + "', [System.IO.Pipes.PipeDirection]::InOut)\r\n" +
+                    "  $c.Connect(5000)\r\n" +
+                    "  $c.Dispose()\r\n" +
+                    "  Set-Content -LiteralPath $out -Value 'CONNECTED'\r\n" +
+                    "} catch {\r\n" +
+                    "  $e = $_.Exception; while ($e.InnerException) { $e = $e.InnerException }\r\n" +
+                    "  Set-Content -LiteralPath $out -Value ('ERROR ' + $e.GetType().Name + ': ' + $e.Message + ' as ' + [Security.Principal.WindowsIdentity]::GetCurrent().Name)\r\n" +
+                    "}\r\n");
+
+                var task = $"{_taskPrefix}_{run}";
+                _tasks.Add(task);
+                var command = $"powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File {script}";
+                Run("schtasks.exe", $"/Create /F /TN {task} /SC ONCE /ST 23:59 /RU \"{runAs}\"" + (password == null ? "" : $" /RP \"{password}\"") + $" /TR \"{command}\"");
+                Run("schtasks.exe", $"/Run /TN {task}");
+
+                for (var i = 0; i < 240; i++)
+                {
+                    if (File.Exists(output))
+                    {
+                        try
+                        {
+                            var text = File.ReadAllText(output).Trim();
+                            if (text.Length > 0) return text;
+                        }
+                        catch (IOException)
+                        {
+                            // Still being written
+                        }
+                    }
+                    await Task.Delay(250, ct);
+                }
+
+                return $"TIMEOUT: the scheduled task as '{runAs}' wrote nothing in 60 s";
+            }
+
+            public void Dispose()
+            {
+                foreach (var task in _tasks)
+                    TryRun("schtasks.exe", $"/Delete /F /TN {task}");
+                TryRun("net.exe", $"user {LocalUser} /delete");
+                try { Directory.Delete(_directory, recursive: true); } catch { /* best effort */ }
+            }
+
+            private static void Run(string file, string arguments)
+            {
+                var (exitCode, output) = Execute(file, arguments);
+                Assert.True(exitCode == 0, $"{file} {arguments} failed ({exitCode}): {output}");
+            }
+
+            private static void TryRun(string file, string arguments)
+            {
+                try { Execute(file, arguments); } catch { /* best effort */ }
+            }
+
+            private static (int ExitCode, string Output) Execute(string file, string arguments)
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo(Path.Combine(Environment.SystemDirectory, file), arguments)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                };
+
+                using (var process = System.Diagnostics.Process.Start(psi)!)
+                {
+                    var stdout = process.StandardOutput.ReadToEndAsync();
+                    var stderr = process.StandardError.ReadToEndAsync();
+                    process.WaitForExit();
+                    return (process.ExitCode, stdout.Result + stderr.Result);
+                }
+            }
+        }
+
 
         /// <summary>
         /// Wraps the production <see cref="PipeCallerIdentifier"/> and replaces its administrator answer, so the tests

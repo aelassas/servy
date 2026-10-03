@@ -60,6 +60,12 @@ namespace Servy.Host
 
         private readonly object _securityLock = new object();
 
+        /// <summary>Whether a retry for accounts that could not be resolved is waiting; guarded by <see cref="_securityLock"/>.</summary>
+        private bool _unresolvedRetryPending;
+
+        /// <summary>The retries spent since the last refresh that was not itself a retry; guarded by <see cref="_securityLock"/>.</summary>
+        private int _unresolvedRetryAttempts;
+
         #endregion
 
         #region Test Seams
@@ -83,6 +89,11 @@ namespace Servy.Host
         /// Gets or sets the factory that creates a server instance of the pipe with the given security.
         /// </summary>
         internal Func<string, PipeSecurity, NamedPipeServerStream> ServerStreamFactory { get; set; } = CreateServerStream;
+
+        /// <summary>
+        /// Gets or sets the delay before the DACL is rebuilt again when an account could not be resolved.
+        /// </summary>
+        internal int UnresolvedAccountRetryDelayMs { get; set; } = AppConfig.ServyHostUnresolvedAccountRetryDelayMs;
 
         #endregion
 
@@ -399,7 +410,15 @@ namespace Servy.Host
         /// </summary>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>A task that completes when the DACL has been rebuilt.</returns>
-        internal async Task RefreshPipeSecurityAsync(CancellationToken ct)
+        internal Task RefreshPipeSecurityAsync(CancellationToken ct) => RefreshPipeSecurityAsync(isRetry: false, ct);
+
+        /// <summary>
+        /// Rebuilds the pipe's DACL and, when an account could not be resolved, schedules another attempt.
+        /// </summary>
+        /// <param name="isRetry">Whether this is a scheduled retry; any other refresh starts a new series of retries.</param>
+        /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the DACL has been rebuilt.</returns>
+        private async Task RefreshPipeSecurityAsync(bool isRetry, CancellationToken ct)
         {
             IEnumerable<string> accounts;
             try
@@ -423,7 +442,13 @@ namespace Servy.Host
                 return;
             }
 
-            var security = ServyHostPipeSecurity.Create(accounts, ResolveAccount);
+            var unresolved = 0;
+            var security = ServyHostPipeSecurity.Create(accounts, account =>
+            {
+                var sid = ResolveAccount(account);
+                if (sid == null) unresolved++;
+                return sid;
+            });
             CancellationTokenSource[] waiting;
             lock (_securityLock)
             {
@@ -437,6 +462,65 @@ namespace Servy.Host
             {
                 try { cts.Cancel(); } catch (ObjectDisposedException) { }
             }
+
+            ScheduleUnresolvedAccountRetry(unresolved, isRetry);
+        }
+
+        /// <summary>
+        /// Rebuilds the DACL again later when an account could not be resolved, for example a domain or gMSA account while
+        /// no domain controller is reachable at boot, so its service is not locked out until the next install or restart.
+        /// </summary>
+        /// <param name="unresolved">The number of accounts the last rebuild could not resolve.</param>
+        /// <param name="isRetry">Whether the last rebuild was itself a retry.</param>
+        private void ScheduleUnresolvedAccountRetry(int unresolved, bool isRetry)
+        {
+            int attempt;
+            CancellationToken token;
+            lock (_securityLock)
+            {
+                if (!isRetry || unresolved == 0)
+                    _unresolvedRetryAttempts = 0;
+
+                // Only while the listener runs: its token is what stops a waiting retry when the host stops
+                var listener = _cancellationSource;
+                if (unresolved == 0 || listener == null || _unresolvedRetryPending || _unresolvedRetryAttempts >= AppConfig.ServyHostUnresolvedAccountRetryCount)
+                    return;
+
+                try { token = listener.Token; } catch (ObjectDisposedException) { return; }
+                _unresolvedRetryPending = true;
+                attempt = ++_unresolvedRetryAttempts;
+            }
+
+            _logger?.Warn($"{unresolved} service account(s) could not be resolved and are not granted access to the Servy host named pipe yet. " +
+                $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(UnresolvedAccountRetryDelayMs, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    lock (_securityLock) { _unresolvedRetryPending = false; }
+                    return;
+                }
+
+                lock (_securityLock) { _unresolvedRetryPending = false; }
+
+                try
+                {
+                    await RefreshPipeSecurityAsync(isRetry: true, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // The host is stopping
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error("Failed to rebuild the Servy host named pipe DACL for the accounts that could not be resolved.", ex);
+                }
+            });
         }
 
         /// <summary>
@@ -455,15 +539,24 @@ namespace Servy.Host
         internal Func<string, System.Security.Principal.SecurityIdentifier?> ResolveAccount { get; set; } = AccountSidResolver.Resolve;
 
         /// <summary>
-        /// Creates a server instance of the pipe with the given security.
+        /// Creates a server instance of the pipe with the given security, and applies that security to the pipe itself.
         /// </summary>
         /// <param name="pipeName">The pipe name.</param>
         /// <param name="security">The DACL of the instance.</param>
         /// <returns>The server instance.</returns>
+        /// <remarks>
+        /// Every instance of a pipe name shares ONE security descriptor: the one the first instance was created with.
+        /// The security passed to <c>CreateNamedPipe</c> for any later instance is ignored, and the host always keeps
+        /// instances open, so a DACL rebuilt by <see cref="RefreshPipeSecurityAsync"/> would never reach the pipe until
+        /// the host restarted: an account granted after the host started (a service installed or moved to
+        /// <c>NT AUTHORITY\NetworkService</c>, a local, domain or gMSA account) was refused with "Access to the path is
+        /// denied", and a revoked account kept its access. Writing the DACL through the new instance's handle replaces
+        /// the shared descriptor, which is why the instance is opened with <see cref="PipeAccessRights.ChangePermissions"/>.
+        /// </remarks>
         [ExcludeFromCodeCoverage]
         private static NamedPipeServerStream CreateServerStream(string pipeName, PipeSecurity security)
         {
-            return NamedPipeServerStreamAcl.Create(
+            var stream = NamedPipeServerStreamAcl.Create(
                 pipeName,
                 PipeDirection.InOut,
                 NamedPipeServerStream.MaxAllowedServerInstances,
@@ -471,7 +564,20 @@ namespace Servy.Host
                 PipeOptions.Asynchronous,
                 inBufferSize: 0,
                 outBufferSize: 0,
-                pipeSecurity: security);
+                pipeSecurity: security,
+                inheritability: HandleInheritability.None,
+                additionalAccessRights: PipeAccessRights.ChangePermissions);
+
+            try
+            {
+                stream.SetAccessControl(security);
+                return stream;
+            }
+            catch
+            {
+                stream.Dispose();
+                throw;
+            }
         }
 
         #endregion
