@@ -675,7 +675,7 @@ namespace Servy.Core.UnitTests.Services
                 .Throws(new InvalidOperationException("the service handle is in an unexpected state"));
 
             // Act
-            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, CancellationToken.None));
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, TestContext.Current.CancellationToken));
 
             // Assert
             Assert.Equal(0, updated);
