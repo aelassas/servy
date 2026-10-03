@@ -330,6 +330,15 @@ namespace Servy.Core.Services
             var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
             bool isUpdateMode = existingDbService != null;
 
+            // A row with a sensitive field that no longer decrypts came back with its secrets cleared. Refuse before the SCM
+            // or the database is touched: saving it would replace the stored ciphertext with blanks for good.
+            if (DecryptionFailureMarker.HasDecryptionFailure(existingDbService))
+            {
+                var refused = new ServiceDecryptionFailedException(existingDbService!.Name, null);
+                Logger.Error(refused.Message);
+                return OperationResult.Failure(refused.Message);
+            }
+
             // Track if we successfully executed an aggressive purge of a casing layout duplicate
             bool legacyDroppedFromDb = false;
             ServiceDto? legacyBackupDto = null;

@@ -201,8 +201,17 @@ namespace Servy.CLI.Commands
             if (!pathValidation.IsSuccess)
                 return pathValidation;
 
-            // 3. Repository Import (only after validation passes)
-            var affected = await repoImporter(dto);
+            // 3. Repository Import (only after validation passes). A stored row that no longer decrypts is never
+            // overwritten; say why, with what to do, rather than a generic failure.
+            int affected;
+            try
+            {
+                affected = await repoImporter(dto);
+            }
+            catch (ServiceDecryptionFailedException ex)
+            {
+                return CommandResult.Fail(ex.Message);
+            }
             if (affected <= 0)
             {
                 Logger.Error($"Repository upsert for service '{dto.Name}' reported 0 affected rows.");

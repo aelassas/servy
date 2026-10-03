@@ -939,6 +939,141 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(await _repository.GetByNameAsync(input, decrypt: false, TestContext.Current.CancellationToken));
         }
 
+        #region Undecryptable Row Write Guard Tests (#7334)
+
+        private async Task<int> AddPoisonedAsync(string name)
+        {
+            var id = await _repository.AddAsync(new ServiceDto
+            {
+                Name = name,
+                ExecutablePath = "poison.exe",
+                Description = "Original description",
+                Parameters = "SentinelParameters",
+                Password = "SentinelPassword",
+                EnvironmentVariables = "A=1",
+            }, TestContext.Current.CancellationToken);
+
+            // One sensitive field the current key cannot decrypt, as after aes_key.dat was corrupted or replaced
+            await _executor.ExecuteAsync(
+                $"UPDATE {SqlConstants.ServicesTableName} SET Parameters = 'POISON_PAYLOAD' WHERE Id = @Id",
+                new { Id = id },
+                cancellationToken: TestContext.Current.CancellationToken);
+            return id;
+        }
+
+        private static void AssertRowUntouched(ServiceDto? raw)
+        {
+            Assert.NotNull(raw);
+            Assert.Equal("Original description", raw!.Description);
+            Assert.Equal("POISON_PAYLOAD", raw.Parameters);
+            Assert.Equal("SECRET_HASH:SentinelPassword", raw.Password);
+            Assert.Equal("SECRET_HASH:A=1", raw.EnvironmentVariables);
+            Assert.Equal("poison.exe", raw.ExecutablePath);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ServiceReadFromAnUndecryptableRow_IsRefusedAndTheRowIsLeftAsItIs()
+        {
+            // Arrange: the service as the UI gets it - secrets cleared, description marked
+            var ct = TestContext.Current.CancellationToken;
+            var id = await AddPoisonedAsync("PoisonUpdate");
+            var read = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            Assert.True(DecryptionFailureMarker.HasDecryptionFailure(read));
+            read!.ExecutablePath = "changed.exe";
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.UpdateAsync(read, false, false, ct));
+
+            // Assert
+            Assert.Equal("PoisonUpdate", ex.ServiceName);
+            Assert.Contains("aes_key.dat", ex.Message);
+            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+        }
+
+        [Fact]
+        public async Task Update_Synchronous_ServiceReadFromAnUndecryptableRow_IsRefusedAndTheRowIsLeftAsItIs()
+        {
+            // Arrange
+            var ct = TestContext.Current.CancellationToken;
+            var id = await AddPoisonedAsync("PoisonUpdateSync");
+            var read = await _repository.GetByIdAsync(id, decrypt: true, ct);
+
+            // Act & Assert
+            Assert.Throws<ServiceDecryptionFailedException>(() => _repository.Update(read!, false, false));
+            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+        }
+
+        [Fact]
+        public async Task UpsertAsync_FreshConfigurationOverAnUndecryptableRow_IsRefusedNamingTheFieldAndTheRowIsLeftAsItIs()
+        {
+            // Arrange: an import or an install with a complete, valid configuration for the same service
+            var ct = TestContext.Current.CancellationToken;
+            var id = await AddPoisonedAsync("PoisonImport");
+            var incoming = new ServiceDto { Name = "PoisonImport", ExecutablePath = "new.exe", Description = "New", Parameters = "--new" };
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.UpsertAsync(incoming, true, true, ct));
+
+            // Assert
+            Assert.Equal(nameof(ServiceDto.Parameters), ex.FieldName);
+            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+        }
+
+        [Fact]
+        public async Task ImportJsonAsync_OverAnUndecryptableRow_FailsWithTheReasonAndTheRowIsLeftAsItIs()
+        {
+            // Arrange
+            var ct = TestContext.Current.CancellationToken;
+            var id = await AddPoisonedAsync("PoisonJson");
+            var json = _jsonSerializer.Serialize(new ServiceDto { Name = "PoisonJson", ExecutablePath = "new.exe", Parameters = "--new" });
+
+            // Act
+            var result = await _repository.ImportJsonAsync(json!, ct);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("aes_key.dat", result.ErrorMessage);
+            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+        }
+
+        [Fact]
+        public async Task UpsertBatchAsync_BackgroundRefreshWithAnUndecryptableRow_SkipsItAndStillUpdatesTheOthers()
+        {
+            // Arrange: what the Manager's refresh timer writes back - every service as read, one of them undecryptable
+            var ct = TestContext.Current.CancellationToken;
+            var poisonId = await AddPoisonedAsync("PoisonBatch");
+            var healthyId = await _repository.AddAsync(new ServiceDto { Name = "HealthyBatch", ExecutablePath = "ok.exe", Description = "Old", Parameters = "--keep" }, ct);
+            var poisoned = await _repository.GetByIdAsync(poisonId, decrypt: true, ct);
+            var healthy = await _repository.GetByIdAsync(healthyId, decrypt: true, ct);
+            poisoned!.Description = "Drifted";
+            healthy!.Description = "New";
+
+            // Act
+            await _repository.UpsertBatchAsync(new[] { poisoned, healthy }, ct);
+
+            // Assert
+            AssertRowUntouched(await _repository.GetByIdAsync(poisonId, decrypt: false, ct));
+            var updated = await _repository.GetByIdAsync(healthyId, decrypt: true, ct);
+            Assert.Equal("New", updated!.Description);
+            Assert.Equal("--keep", updated.Parameters);
+        }
+
+        [Fact]
+        public async Task UpsertAsync_HealthyRow_IsStillWritten()
+        {
+            // Arrange
+            var ct = TestContext.Current.CancellationToken;
+            var id = await _repository.AddAsync(new ServiceDto { Name = "HealthyUpsert", ExecutablePath = "ok.exe", Parameters = "--old" }, ct);
+
+            // Act
+            await _repository.UpsertAsync(new ServiceDto { Name = "HealthyUpsert", ExecutablePath = "ok.exe", Parameters = "--new" }, true, true, ct);
+
+            // Assert
+            Assert.Equal("--new", (await _repository.GetByIdAsync(id, decrypt: true, ct))!.Parameters);
+        }
+
+        #endregion
+
         #region Legacy Padded Trim Fallback Tests
 
         [Fact]

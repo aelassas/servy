@@ -374,7 +374,7 @@ namespace Servy.Core.Security
                 try
                 {
                     // 1. Primary Attempt (v7.9+ logic): Use machine-unique entropy
-                    var unprotectResult = ProtectedData.Unprotect(encrypted, dynamicEntropy, ProtectionScope);
+                    var unprotectResult = EnsureLength(ProtectedData.Unprotect(encrypted, dynamicEntropy, ProtectionScope), length, materialName, path);
 
                     // Reset failure counter on successful read with modern entropy
                     MigrationFailureCounts.TryRemove(path, out _);
@@ -389,7 +389,7 @@ namespace Servy.Core.Security
                     TryWriteServyEventLog(fallbackLogMsg, EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
 
                     // 2. Fallback Attempt (v7.8 compatibility): Try with NO entropy (null)
-                    byte[] decryptedData = ProtectedData.Unprotect(encrypted, null, ProtectionScope);
+                    byte[] decryptedData = EnsureLength(ProtectedData.Unprotect(encrypted, null, ProtectionScope), length, materialName, path);
 
                     try
                     {
@@ -433,16 +433,21 @@ namespace Servy.Core.Security
             }
             catch (CryptographicException ex)
             {
-                // DPAPI is machine-specific; moving the file to another server will trigger this exception.
-                string errorMsg = $"Failed to unprotect {materialName} at '{path}'. The file may have been moved from another machine or restored from an image.";
+                // DPAPI is machine-specific; moving the file to another server will trigger this exception. So does a
+                // corrupt or truncated file. Either way the file is left exactly as it is: Servy never replaces an existing
+                // key file, because a new key cannot decrypt anything the database already holds.
+                string errorMsg = $"CRITICAL: Failed to unprotect {materialName} at '{path}'. The file is corrupt, or was moved " +
+                                  "from another machine or restored from an image. It was NOT replaced, and no service configuration " +
+                                  "was changed: Servy refuses to save any service while its secrets cannot be decrypted.";
 
-                string workaround = "Workaround:\n" +
-                                    "1. (If possible) Export service configurations to XML or JSON on the original machine.\n" +
-                                    "2. On the new machine, backup and delete the following folders:\n" +
-                                    "   - %ProgramData%\\Servy\\security\n" +
-                                    "   - %ProgramData%\\Servy\\db\n" +
-                                    "3. Import the services via the CLI, PowerShell, or Manager.\n" +
-                                    "4. You will need to re-enter usernames and passwords if your services run under specific accounts, as those secrets are not exported for security reasons.";
+                string workaround = "What to do:\n" +
+                                    "1. Do NOT delete or replace aes_key.dat or aes_iv.dat: a new key can never decrypt the existing database.\n" +
+                                    "2. Restore %ProgramData%\\Servy\\security\\aes_key.dat and aes_iv.dat from a backup of THIS machine, then restart Servy.\n" +
+                                    "3. Otherwise, copy %ProgramData%\\Servy\\db\\Servy.db back to the original machine (the one whose aes_key.dat " +
+                                    "encrypted it) and export the service configurations to XML or JSON there.\n" +
+                                    "4. Only then, on this machine, back up and delete %ProgramData%\\Servy\\security and %ProgramData%\\Servy\\db, " +
+                                    "and import the exported configurations via the CLI, PowerShell, or Manager. Usernames and passwords of services that " +
+                                    "run under specific accounts are not exported and must be re-entered.";
 
                 // Direct Event Log Surface
                 TryWriteServyEventLog($"{errorMsg}\n\n{workaround}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.KeyUnprotectFailed);
@@ -556,6 +561,26 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="length">The length of the byte array.</param>
         /// <returns>A random byte array.</returns>
+        /// <summary>
+        /// Checks that unprotected key material has the length Servy generates. A blob that DPAPI accepts but that holds
+        /// material of another length is a corrupt or foreign file, never a key to derive from.
+        /// </summary>
+        /// <param name="material">The unprotected material.</param>
+        /// <param name="length">The expected length.</param>
+        /// <param name="materialName">A label for the material.</param>
+        /// <param name="path">The file it was read from.</param>
+        /// <returns><paramref name="material"/>, when its length is right.</returns>
+        /// <exception cref="CryptographicException">Thrown, after the material is zeroed, when the length is wrong.</exception>
+        internal static byte[] EnsureLength(byte[] material, int length, string materialName, string path)
+        {
+            if (material != null && material.Length == length)
+                return material;
+
+            var actual = material?.Length ?? 0;
+            if (material != null) CryptographicOperations.ZeroMemory(material);
+            throw new CryptographicException($"The {materialName} at '{path}' holds {actual} bytes instead of {length}.");
+        }
+
         private static byte[] GenerateRandomBytes(int length)
         {
             return RandomNumberGenerator.GetBytes(length);
