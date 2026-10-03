@@ -206,8 +206,8 @@ namespace Servy.CLI
                         var pause = new ServyServicesPause(sh, hostInstaller);
                         try
                         {
-                            if (resourceHelper.IsExtractionNeeded(ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe")
-                                || resourceHelper.IsExtractionNeeded(ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
+                            if (resourceHelper.IsExtractionNeeded(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe")
+                                || resourceHelper.IsExtractionNeeded(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
                             {
                                 await pause.PauseAsync(cts.Token);
                             }

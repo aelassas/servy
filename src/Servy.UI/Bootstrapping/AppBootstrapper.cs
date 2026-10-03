@@ -384,8 +384,8 @@ namespace Servy.UI.Bootstrapping
                     var pause = new ServyServicesPause(sh, hostInstaller);
                     try
                     {
-                        if (resourceHelper.IsExtractionNeeded(_options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe")
-                            || resourceHelper.IsExtractionNeeded(_options.ResourcesNamespace!, AppConfig.ServyHostFileName, "exe"))
+                        if (resourceHelper.IsExtractionNeeded(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe")
+                            || resourceHelper.IsExtractionNeeded(asm, _options.ResourcesNamespace!, AppConfig.ServyHostFileName, "exe"))
                         {
                             await pause.PauseAsync(ct);
                         }
