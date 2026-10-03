@@ -24,6 +24,7 @@ namespace Servy.Core.Data
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The number of affected records.</returns>
+        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
         Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -33,6 +34,7 @@ namespace Servy.Core.Data
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <returns>The number of affected records.</returns>
+        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
         int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials);
 
         /// <summary>
@@ -43,6 +45,7 @@ namespace Servy.Core.Data
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The ID of the upserted service.</returns>
+        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
         Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -60,8 +63,13 @@ namespace Servy.Core.Data
         /// command per row.
         /// </para>
         /// <para>
-        /// The batch is executed inside an explicit transaction, so it is all-or-nothing: either
-        /// every row in the collection is persisted or none of them is.
+        /// A service whose stored row has a sensitive field that no longer decrypts with the current key, or that was
+        /// itself read from such a row, is skipped and logged rather than written, so its stored ciphertext is never
+        /// replaced with blanks; the other services in the collection are still written.
+        /// </para>
+        /// <para>
+        /// The rows that are written are executed inside an explicit transaction, so that write is all-or-nothing:
+        /// either every one of them is persisted or none of them is.
         /// </para>
         /// <para>
         /// After the database write, the method attempts to synchronize the auto-incremented
