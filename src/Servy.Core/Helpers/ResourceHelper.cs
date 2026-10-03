@@ -57,16 +57,20 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Determines whether <see cref="CopyEmbeddedResourceAsync"/> would write the resource: the file is missing, or the
+        /// Determines from the timestamps alone whether the resource is due for extraction: the file is missing, or the
         /// running executable is newer than it by more than <see cref="AppConfig.ResourceStalenessThresholdMinutes"/>.
+        /// Unlike the overload that takes the assembly, it does not compare the content, so it also returns
+        /// <see langword="true"/> for a file that <see cref="CopyEmbeddedResourceAsync"/> leaves alone because it is identical
+        /// to the embedded resource (#7358).
         /// </summary>
         /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
         /// <param name="fileName">The resource's file name without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
-        /// <returns><see langword="true"/> when the file is going to be replaced.</returns>
+        /// <returns><see langword="true"/> when the timestamps call for a new extraction.</returns>
         /// <remarks>
-        /// Lets a caller that replaces several files stop the Servy services once for all of them, instead of once per file.
+        /// A caller that stops the Servy services once before replacing several files uses the overload that takes the
+        /// assembly, so that an identical file does not stop them.
         /// </remarks>
         public bool IsExtractionNeeded(string resourceNamespace, string fileName, string extension, string subfolder = null)
             => TryPrepareExtraction(null, resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
