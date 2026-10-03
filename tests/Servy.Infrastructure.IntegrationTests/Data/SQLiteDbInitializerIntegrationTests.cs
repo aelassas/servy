@@ -409,6 +409,71 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void ApplyVersion6_CasingDuplicates_LogsEachGroupNamingServiceKeptIdAndRemovedCount()
+        {
+            // Arrange: the deleted rows are whole service configurations and the transaction commits them
+            // away, so the per-group log line is the only record of what was removed. The sibling dedup
+            // tests above assert the surviving row only, so they stay green with that line deleted.
+            // Redirect the process-wide logger to a private directory to read the lines back.
+            var logDirectory = Path.Combine(Path.GetTempPath(), $"servy_v6dedup_log_{Guid.NewGuid():N}");
+            var logFileName = $"V6Dedup_{Guid.NewGuid():N}.log";
+            var logFilePath = Path.Combine(logDirectory, logFileName);
+
+            Directory.CreateDirectory(logDirectory);
+
+            try
+            {
+                using (var conn = CreateConnection())
+                {
+                    SeedSchemaInfo(conn, 5);
+
+                    var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
+                    var seedData = new Dictionary<string, string> { { "Name", "'Beta-Service'" } };
+
+                    var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+
+                    // Non-unique legacy index, so casing variants can be inserted the way a real pre-v6 database holds them
+                    conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
+
+                    // Two variants of the kept row (Ids 2 and 3), so the removed count is 2 rather than 1
+                    // and a line that hardcodes 1, or reports the group count, fails the assertion below.
+                    InsertLegacyRow(conn, context, new Dictionary<string, string>(seedData) { ["Name"] = "'beta-service'" });
+                    InsertLegacyRow(conn, context, new Dictionary<string, string>(seedData) { ["Name"] = "'BETA-SERVICE'" });
+
+                    try
+                    {
+                        Logger.Initialize(logFileName, LogLevel.Warn, logDirectory: logDirectory);
+
+                        // Act: run the version 5 -> 6 transition, which performs the dedup pass
+                        SQLiteDbInitializer.Initialize(conn);
+                    }
+                    finally
+                    {
+                        // Flush and release the handle, then hand the process-wide logger back to its default state
+                        Logger.Shutdown();
+                        Logger.Initialize((string)null, logDirectory: string.Empty);
+                    }
+
+                    // Assert: the dedup really ran and kept the oldest row
+                    var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
+                    Assert.Single(remainingServices);
+                    Assert.Equal(1L, (long)remainingServices[0].Id);
+                }
+
+                // Assert: the log names the service, the kept ID and how many rows that group lost
+                Assert.True(File.Exists(logFilePath), $"Expected the redirected logger to write {logFilePath}.");
+
+                var logContent = File.ReadAllText(logFilePath);
+
+                Assert.Contains("Version 6 Remediation: kept ID 1 for service name 'Beta-Service' and removed 2 case-variant row(s).", logContent);
+            }
+            finally
+            {
+                try { Directory.Delete(logDirectory, recursive: true); } catch { /* best-effort cleanup */ }
+            }
+        }
+
+        [Fact]
         public void ApplyVersion6_UnicodeCasingDuplicates_DeduplicatesAndAppliesUnicodeNoCaseIndex()
         {
             // Arrange: Initialize baseline up to Version 5 state using faithful schema constraints

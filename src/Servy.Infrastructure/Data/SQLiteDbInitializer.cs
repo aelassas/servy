@@ -682,10 +682,15 @@ namespace Servy.Infrastructure.Data
                     string serviceName = dup.Name;
                     long keepId = Convert.ToInt64(dup.KeepId);
 
-                    connection.Execute(
+                    int removed = connection.Execute(
                         $"DELETE FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE AND Id <> @KeepId;",
                         new { Name = serviceName, KeepId = keepId },
                         transaction: transaction);
+
+                    // The deleted rows are whole service configurations and they are gone once the transaction
+                    // commits, so this line is the only record there will ever be of what was removed. Name the
+                    // service and the kept ID, exactly as the V1 legacy dedup above already does.
+                    Logger.Warn($"Version 6 Remediation: kept ID {keepId} for service name '{serviceName}' and removed {removed} case-variant row(s).");
                 }
             }
 
