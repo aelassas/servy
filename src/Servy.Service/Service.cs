@@ -2442,6 +2442,10 @@ namespace Servy.Service
         /// Handles cancellation, event invocation, and resource cleanup.
         /// </summary>
         /// <param name="reason">The context of the teardown (e.g., "Stop" or "Shutdown") used for logging purposes.</param>
+        /// <returns>
+        /// <see langword="true"/> if the teardown completed in this call or had already run (or is running) on another;
+        /// <see langword="false"/> if it threw, in which case the tearing-down flag is cleared so a later stop can retry.
+        /// </returns>
         private bool ExecuteTeardown(TeardownReason reason)
         {
             // Use a local flag to track if we actually performed the work
