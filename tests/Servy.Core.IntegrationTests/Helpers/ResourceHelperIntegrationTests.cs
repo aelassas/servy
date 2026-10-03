@@ -494,14 +494,18 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange: the timestamps say "older build" (as when the installer stamped the executable in another time
             // zone), but the file is the same build as the embedded resource (#7358)
             var content = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03 };
-            var targetPath = Path.Combine(TempDirectory, "same.exe");
-            File.WriteAllBytes(targetPath, content);
-            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            var targetPathSame = Path.Combine(TempDirectory, "same.exe");
+            File.WriteAllBytes(targetPathSame, content);
+            File.SetLastWriteTimeUtc(targetPathSame, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
             _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources.same.exe")).Returns(() => new MemoryStream(content));
+
+            var targetPathStale = Path.Combine(TempDirectory, "stale_timestamp.exe");
+            File.WriteAllBytes(targetPathStale, content);
+            File.SetLastWriteTimeUtc(targetPathStale, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
 
             // Act & Assert: nothing to update, so the services are not stopped
             Assert.False(_resourceHelper.IsExtractionNeeded(_mockAssembly.Object, "Servy.Resources", "same", "exe"));
-            Assert.True(_resourceHelper.IsExtractionNeeded("Servy.Resources", "same", "exe")); // the timestamp-only overload still says stale
+            Assert.True(_resourceHelper.IsExtractionNeeded("Servy.Resources", "stale_timestamp", "exe")); // the timestamp-only overload still says stale
         }
 
         [Fact]
@@ -524,18 +528,41 @@ namespace Servy.Core.IntegrationTests.Helpers
             var content = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x07 };
             var targetPath = Path.Combine(TempDirectory, "unchanged.exe");
             File.WriteAllBytes(targetPath, content);
-            var stamp = _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1);
-            File.SetLastWriteTimeUtc(targetPath, stamp);
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(() => new MemoryStream(content));
+
+            DateTime expectedTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
 
             // Act
             var result = await _resourceHelper.CopyEmbeddedResourceAsync(_mockAssembly.Object, "Servy.Resources", "unchanged", "exe", cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert: reported as done, but the file and whatever holds it open are left alone
+            // Assert: reported as done, but the file and whatever holds it open are left alone and write time is updated to host time
             Assert.True(result);
             Assert.False(_resourceHelper.HasCopiedResources);
-            Assert.Equal(stamp, File.GetLastWriteTimeUtc(targetPath));
+            Assert.Equal(expectedTime, File.GetLastWriteTimeUtc(targetPath));
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_StaleTimestampButIdenticalContent_UpdatesTimestampToAvoidFutureComparisons()
+        {
+            // Arrange
+            var content = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x09 };
+            var targetPath = Path.Combine(TempDirectory, "timestamp_update.exe");
+            File.WriteAllBytes(targetPath, content);
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(() => new MemoryStream(content));
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResourceAsync(_mockAssembly.Object, "Servy.Resources", "timestamp_update", "exe", cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(_resourceHelper.HasCopiedResources);
+            Assert.Equal(_resourceHelper.GetHostProcessLastWriteTimeUtc(), File.GetLastWriteTimeUtc(targetPath));
+
+            // Verify subsequent IsExtractionNeeded queries (even without Assembly) now return false
+            Assert.False(_resourceHelper.IsExtractionNeeded("Servy.Resources", "timestamp_update", "exe"));
         }
 
         [Fact]
