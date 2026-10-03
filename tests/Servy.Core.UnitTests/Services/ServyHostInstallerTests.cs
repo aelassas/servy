@@ -662,6 +662,27 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureServicesDependOnHostAsync_InvalidOperationException_IsLoggedLikeEveryOtherFailure()
+        {
+            // Arrange: a database-only record has been an OpenService failure with ERROR_SERVICE_DOES_NOT_EXIST since
+            // 0da1404, so an InvalidOperationException reaching the per-service block is an unexpected state and the
+            // service it names did not get the host dependency - the one thing that has to be reported
+            var scm = _handles.Scm(1);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            var handle = DependsOn(scm, "Legacy", 5);
+            _api.Setup(a => a.ChangeServiceConfig(handle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Throws(new InvalidOperationException("the service handle is in an unexpected state"));
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, CancellationToken.None));
+
+            // Assert
+            Assert.Equal(0, updated);
+            Assert.Contains("Could not add the 'Servy' dependency to service 'Legacy'", log);
+        }
+
+        [Fact]
         public async Task EnsureServicesDependOnHostAsync_NullNames_Throws()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(() => Create().EnsureServicesDependOnHostAsync(null!, TestContext.Current.CancellationToken));
