@@ -298,7 +298,7 @@
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Column="1"
+          <TextBlock Grid.Column="0"
                      Margin="10,3,0,0"
                      Text="{x:Static resx:Strings.Label_Dependencies_Gear_Info}"
                      Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
@@ -306,7 +306,7 @@
                      AutomationProperties.Name="{x:Static resx:Strings.Automation_DependenciesUsageInfo_Name}"
                      AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DependenciesUsageInfo_HelpText}" />
 
-          <TextBlock Grid.Column="2"
+          <TextBlock Grid.Column="1"
                      Margin="10,3,0,0"
                      Text="{x:Static resx:Strings.Label_F5_Shortcut_Dependencies}"
                      Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
