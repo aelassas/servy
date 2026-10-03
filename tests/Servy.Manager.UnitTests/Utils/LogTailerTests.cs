@@ -738,6 +738,82 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// A pass that holds an unterminated tail back commits the offset just past that fragment before it
+        /// publishes the batch, so the fragment is the only record of the line's start. An exception on the
+        /// generic error path must therefore keep it: dropping it leaves the reopen resuming after those
+        /// bytes, and the console shows only the remainder of the line as a line of its own.
+        /// </summary>
+        [Fact]
+        public async Task RunFromPosition_SubscriberFaultsAfterHoldingBackATornTail_PublishesTheWholeLineAfterRecovery()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                // A threshold batch whose last line is torn: the pass publishes the complete lines, holds
+                // TORN_HEAD back and commits lastPosition past it.
+                int threshold = AppConfig.LogTailerBatchFlushThreshold;
+                var completeLines = Enumerable.Range(1, threshold - 1).Select(i => $"Line_{i}").ToList();
+                File.WriteAllText(_tempFilePath, string.Join("\n", completeLines) + "\nTORN_HEAD");
+                var fileInfo = new FileInfo(_tempFilePath);
+
+                var capturedLines = new List<LogLine>();
+                int throwOnce = 1;
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+
+                    // A subscriber that throws from this handler is the realistic trigger - ConsoleViewModel
+                    // marshals to the UI thread from here - and it faults the pass after the flush, which is
+                    // after the fragment was held back and the offset committed past it.
+                    if (Interlocked.Exchange(ref throwOnce, 0) == 1)
+                    {
+                        throw new InvalidOperationException("Simulated subscriber fault after a threshold flush that held a torn tail back.");
+                    }
+                };
+
+                // Act - the writer finishes the torn line once the loop has recovered. The faulted pass never
+                // reaches OnLoopCompleted, so the first boundary seen here is the first pass after the
+                // recovery back-off; appending from the handler itself keeps that deterministic, because the
+                // handler runs before the loop's poll delay and so the newline is on disk before the next
+                // read begins.
+                int appended = 0;
+                tailer.OnLoopCompleted += () =>
+                {
+                    if (Volatile.Read(ref throwOnce) == 0 && Interlocked.Exchange(ref appended, 1) == 0)
+                    {
+                        File.AppendAllText(_tempFilePath, "_TAIL\n");
+                    }
+                };
+
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
+
+                // The faulted pass costs one linear back-off (LogTailerUnhandledErrorRecoveryDelayMs) before
+                // the reopen, so this wait is longer than its siblings. Matching the suffix rather than the
+                // whole line lets the wait finish on the defective behaviour too, where the remainder arrives
+                // on its own as "_TAIL" and the assertions below are what reports it.
+                await Helper.WaitUntilAsync(() =>
+                {
+                    lock (capturedLines) return capturedLines.Any(l => l.Text.EndsWith("_TAIL"));
+                }, TimeSpan.FromSeconds(TestTimeouts.LogTailerErrorRecoveryWaitSeconds), cancellationToken: TestContext.Current.CancellationToken);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert - the mid-pass fault must actually have fired, or nothing below is meaningful
+                Assert.Equal(0, Volatile.Read(ref throwOnce));
+
+                // Assert - the held-back fragment survived the error path, so the completed line is published
+                // once and whole instead of as its remainder alone
+                lock (capturedLines)
+                {
+                    Assert.Equal(completeLines.Concat(new[] { "TORN_HEAD_TAIL" }), capturedLines.Select(l => l.Text));
+                }
+            }
+        }
+
         [Fact]
         public async Task RunFromPosition_ShouldHandleFileRotation()
         {
