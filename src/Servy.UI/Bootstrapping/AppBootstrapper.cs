@@ -496,7 +496,7 @@ namespace Servy.UI.Bootstrapping
                             await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                                 splash ?? (Window)app.MainWindow,
                                 string.Format(Resources.Strings.Msg_ServyHostUnavailable, hostResult.ErrorMessage),
-                                _options.ResourceExtractionWarningTitle,
+                                Resources.Strings.Msg_ServyHostUnavailableTitle,
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Warning));
                         }
