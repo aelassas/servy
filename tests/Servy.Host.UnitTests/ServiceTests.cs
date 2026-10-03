@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
 using Servy.Core.Services;
+using System.IO;
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -406,6 +407,87 @@ namespace Servy.Host.UnitTests
             _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
 
             await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.RefreshPipeSecurityAsync(CancellationToken.None));
+        }
+
+        #endregion
+
+        #region Service lifecycle
+
+        /// <summary>
+        /// A host <see cref="Service"/> that exposes the Service Control Manager lifecycle callbacks to the test.
+        /// </summary>
+        private sealed class LifecycleProbe : Service
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="LifecycleProbe"/> class.
+            /// </summary>
+            /// <param name="logger">The logger the host reports to.</param>
+            /// <param name="pipes">The named pipe framing service.</param>
+            /// <param name="repository">The repository the pipe DACL is built from.</param>
+            /// <param name="api">The Windows service API.</param>
+            /// <param name="identifier">The pipe caller identifier.</param>
+            public LifecycleProbe(IServyLogger logger, INamedPipesService pipes, IServiceRepository repository, IWindowsServiceApi api, IPipeCallerIdentifier identifier)
+                : base(logger, pipes, repository, api, identifier)
+            {
+            }
+
+            /// <summary>
+            /// Invokes the protected start callback, as the Service Control Manager would.
+            /// </summary>
+            public void RunOnStart() => OnStart(Array.Empty<string>());
+
+            /// <summary>
+            /// Invokes the protected stop callback, as the Service Control Manager would.
+            /// </summary>
+            public void RunOnStop() => OnStop();
+        }
+
+        [Fact]
+        public void OnStart_PipeCannotBeCreated_LogsTheAcceptFailureAndOnStopFlushesTheLogger()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(() => logger.Object);
+            using (var accepted = new ManualResetEventSlim())
+            using (var probe = new LifecycleProbe(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object))
+            {
+                logger.Setup(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<IOException>())).Callback(() => accepted.Set());
+                probe.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+
+                // Act
+                probe.RunOnStart();
+                var logged = accepted.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                probe.RunOnStop();
+
+                // Assert
+                Assert.True(logged);
+                Assert.Equal(0, probe.ExitCode);
+                logger.Verify(l => l.Dispose(), Times.Once);
+                logger.Verify(l => l.Error("Exception in OnStart.", It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void OnStart_PipeDaclCannotBeBuilt_LogsAndSetsTheServiceSpecificExitCode()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(() => logger.Object);
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "svc-a" } });
+            using (var probe = new LifecycleProbe(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object))
+            {
+                probe.ResolveAccount = account => throw new InvalidOperationException("LSA unavailable");
+
+                // Act
+                // The catch ends with ServiceBase.Stop(), which runs outside the Service Control Manager. What it does
+                // there is not this test's subject, so anything it throws is recorded rather than asserted.
+                Record.Exception(() => probe.RunOnStart());
+
+                // Assert
+                logger.Verify(l => l.Error("Exception in OnStart.", It.IsAny<InvalidOperationException>()), Times.Once);
+                Assert.Equal(AppConfig.ServiceSpecificErrorCode, probe.ExitCode);
+            }
         }
 
         #endregion
