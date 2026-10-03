@@ -33,6 +33,11 @@ namespace Servy.Core.Logging
         /// <param name="serviceFolder">The folder the log is written to now; created when it does not exist.</param>
         /// <param name="fileName">The log's file name.</param>
         /// <returns><see langword="true"/> when there is no former log left to migrate.</returns>
+        /// <remarks>
+        /// The content is copied first and the former log deleted afterwards, so the two steps can fail independently.
+        /// When the delete fails once the content is already in the target, the former log is emptied in place instead,
+        /// which is what keeps the retry at the next start from appending the same content a second time.
+        /// </remarks>
         public static bool Migrate(string legacyFolder, string serviceFolder, string fileName)
         {
             if (string.IsNullOrWhiteSpace(legacyFolder)) throw new ArgumentException("The legacy folder is required.", nameof(legacyFolder));
@@ -70,7 +75,24 @@ namespace Servy.Core.Logging
                     Logger.Info($"Moved the content of the former service log '{legacyPath}' to '{targetPath}'.");
                 }
 
-                File.Delete(legacyPath);
+                try
+                {
+                    File.Delete(legacyPath);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    // The content is already in the target, so a start that found the former log again would append it
+                    // a second time. Emptying it in place leaves the next start nothing to copy and only the file to
+                    // delete. The other handle has to grant write access for that to be possible; when it does not,
+                    // nothing is emptied and the rethrow reports the failure exactly as it did before.
+                    using (var stream = new FileStream(legacyPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+                    {
+                        stream.SetLength(0);
+                    }
+
+                    throw;
+                }
+
                 return true;
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
