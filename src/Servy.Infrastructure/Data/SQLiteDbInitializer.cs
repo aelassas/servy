@@ -341,7 +341,7 @@ namespace Servy.Infrastructure.Data
                 // SQLite returns 1 for NOT NULL and 0 for nullable
                 bool dbNotNull = Convert.ToInt64(row.notnull) == 1;
 
-                // Only check types for columns managed by GetSqlType (StandardColumns)
+                // Check types for every InsertColumns-managed column (Id is excluded above)
                 if (expectedColumns.Contains(colName) && !coreKeys.Contains(colName, StringComparer.OrdinalIgnoreCase))
                 {
                     string expectedFullType = GetSqlType(colName); // e.g., "TEXT NOT NULL" or "INTEGER DEFAULT 0"
