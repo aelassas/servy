@@ -21,6 +21,10 @@ namespace Servy.Core.UnitTests.Logging
 
         private string TargetPath => Path.Combine(ServiceFolder, FileName);
 
+        // The suffix the migrator renames the former log with; private there, so the tests that exercise the
+        // resumed-migration path fail loudly if it ever changes.
+        private string StagingPath => LegacyPath + ".migrating";
+
         public ServiceLogMigratorTests()
         {
             Directory.CreateDirectory(LegacyFolder);
@@ -121,11 +125,11 @@ namespace Servy.Core.UnitTests.Logging
         }
 
         [Fact]
-        public void Migrate_DeleteFailsAfterTheContentWasCopied_EmptiesTheFormerLogSoTheNextStartDoesNotAppendItAgain()
+        public void Migrate_FormerLogHeldByAWriterWithoutDeleteSharing_CopiesNothingAndTheNextStartMovesItOnce()
         {
             // Arrange
-            // The other handle grants readers and writers but not deleters, which is the access File.Delete needs:
-            // the copy succeeds, the delete does not, and the content is in the target with the former log still there.
+            // The other handle grants readers and writers but not deleters, which is the access the rename needs:
+            // the rename fails before anything is read, so the content is still only in the former log.
             File.WriteAllText(LegacyPath, "once");
 
             // Act
@@ -136,14 +140,93 @@ namespace Servy.Core.UnitTests.Logging
                 (first, log) = LogCapture.Run(() => ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName));
             }
 
+            var copiedWhileHeld = File.Exists(TargetPath);
             var second = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
 
             // Assert
             Assert.False(first);
+            Assert.False(copiedWhileHeld);
             Assert.True(second);
             Assert.Equal("once", File.ReadAllText(TargetPath));
             Assert.False(File.Exists(LegacyPath));
+            Assert.False(File.Exists(StagingPath));
             Assert.Contains("Could not migrate the former service log", log);
+        }
+
+        [Fact]
+        public void Migrate_FormerLogHeldByAReaderWithoutDeleteSharing_CopiesNothingAndTheNextStartMovesItOnce()
+        {
+            // Arrange
+            // The other handle shares reads only, so it denies the DELETE the rename needs and the write access an
+            // in-place emptying would need. The rename is the first step, so nothing reaches the new log.
+            File.WriteAllText(LegacyPath, "once");
+
+            // Act
+            bool first;
+            string log;
+            using (new FileStream(LegacyPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                (first, log) = LogCapture.Run(() => ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName));
+            }
+
+            var copiedWhileHeld = File.Exists(TargetPath);
+            var second = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+
+            // Assert
+            Assert.False(first);
+            Assert.False(copiedWhileHeld);
+            Assert.True(second);
+            Assert.Equal("once", File.ReadAllText(TargetPath));
+            Assert.False(File.Exists(LegacyPath));
+            Assert.False(File.Exists(StagingPath));
+            Assert.Contains("Could not migrate the former service log", log);
+        }
+
+        [Fact]
+        public void Migrate_StagedLogLeftByAnInterruptedMigration_IsMovedAndDeleted()
+        {
+            // Arrange
+            File.WriteAllText(StagingPath, "interrupted\r\n");
+
+            // Act
+            var done = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+
+            // Assert
+            Assert.True(done);
+            Assert.Equal("interrupted\r\n", File.ReadAllText(TargetPath));
+            Assert.False(File.Exists(StagingPath));
+        }
+
+        [Fact]
+        public void Migrate_StagedLogAndAFormerLogWrittenSince_MovesTheStagedOneFirst()
+        {
+            // Arrange
+            File.WriteAllText(StagingPath, "older\r\n");
+            File.WriteAllText(LegacyPath, "newer\r\n");
+
+            // Act
+            var done = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+
+            // Assert
+            Assert.True(done);
+            Assert.Equal("older\r\nnewer\r\n", File.ReadAllText(TargetPath));
+            Assert.False(File.Exists(LegacyPath));
+            Assert.False(File.Exists(StagingPath));
+        }
+
+        [Fact]
+        public void Migrate_EmptyStagedLog_IsDeletedWithoutCreatingAnything()
+        {
+            // Arrange
+            File.WriteAllText(StagingPath, string.Empty);
+
+            // Act
+            var done = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+
+            // Assert
+            Assert.True(done);
+            Assert.False(File.Exists(StagingPath));
+            Assert.False(File.Exists(TargetPath));
         }
 
         [Theory]
