@@ -784,7 +784,7 @@ namespace Servy.Host
                             var attempts = await _serviceRepository!.GetRestartAttemptsAsync(serviceName, ct);
                             return new IpcResponseDto { Success = true, RestartAttempts = attempts ?? new RestartAttemptsDto() };
                         }
-                    default: // AppConfig.ServyHostUpdateRestartAttemptsAction
+                    case AppConfig.ServyHostUpdateRestartAttemptsAction:
                         {
                             if (!request.RestartAttempts.HasValue || request.RestartAttempts.Value < 0)
                                 return Fail("A non-negative restart attempts counter is required.");
@@ -792,6 +792,10 @@ namespace Servy.Host
                             var updated = await _serviceRepository!.UpdateRestartAttemptsAsync(serviceName, request.RestartAttempts.Value, UtcNow(), ct);
                             return new IpcResponseDto { Success = true, UpdateData = updated };
                         }
+                    default:
+                        // Unreachable while every action IsKnownServiceAction admits has a case above. An action added
+                        // there without one fails here instead of running another action's handler.
+                        return Fail($"Unknown IPC action: {request.Action}");
                 }
             }
             catch (OperationCanceledException)

@@ -170,6 +170,37 @@ namespace Servy.Host.UnitTests
             _repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        public static TheoryData<string> EveryServyHostAction()
+        {
+            var data = new TheoryData<string>();
+            foreach (var field in typeof(AppConfig).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            {
+                if (field.IsLiteral && field.Name.StartsWith("ServyHost", StringComparison.Ordinal) && field.Name.EndsWith("Action", StringComparison.Ordinal))
+                    data.Add((string)field.GetRawConstantValue()!);
+            }
+            return data;
+        }
+
+        [Theory]
+        [MemberData(nameof(EveryServyHostAction))]
+        public async Task ProcessRequestAsync_EveryDeclaredAction_IsHandledByItsOwnCase(string action)
+        {
+            // Arrange: every AppConfig.ServyHost*Action constant, with what any of them needs
+            var request = new IpcRequestDto
+            {
+                Action = action,
+                ServiceName = ServiceName,
+                RuntimeState = new ServiceRuntimeStateDto(),
+                RestartAttempts = 1,
+            };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, Administrator, CancellationToken.None);
+
+            // Assert: an action declared without a guard entry and a case of its own would end in "Unknown IPC action"
+            Assert.True(response.Success, $"'{action}': {response.ErrorMessage}");
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
