@@ -66,6 +66,9 @@ namespace Servy.UI.Design
         public Task<int> UpdateRuntimeStateAsync(string name, ServiceRuntimeStateDto state, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
+        public Task<int> UpdateDescriptionAndStartupTypeAsync(string name, string description, int? startupType, CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
         public Task<RestartAttemptsDto> GetRestartAttemptsAsync(string name, CancellationToken cancellationToken = default)
             => Task.FromResult<RestartAttemptsDto>(null);
 

@@ -162,6 +162,18 @@ namespace Servy.Core.Data
         Task<int> UpdateRuntimeStateAsync(string name, ServiceRuntimeStateDto state, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Writes only the two metadata columns a Manager refresh tick keeps in sync with the service control manager:
+        /// <c>Description</c> and <c>StartupType</c>. The sensitive columns are never touched, so a row read for display
+        /// cannot be written back from a degraded in-memory copy.
+        /// </summary>
+        /// <param name="name">The unique name of the service.</param>
+        /// <param name="description">The description to store; may be <see langword="null"/>.</param>
+        /// <param name="startupType">The startup type to store, or <see langword="null"/> to leave the stored value as it is.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The number of rows updated; 0 when the service has no row.</returns>
+        Task<int> UpdateDescriptionAndStartupTypeAsync(string name, string description, int? startupType, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Reads the restart attempts counter of a service.
         /// </summary>
         /// <param name="name">The unique name of the service.</param>

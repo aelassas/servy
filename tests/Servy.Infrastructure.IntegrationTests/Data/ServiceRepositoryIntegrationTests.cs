@@ -72,6 +72,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
                 }
 
+                if (cipherText == "LEGACY_PAYLOAD")
+                {
+                    // The legacy policy refuses the payload without examining it, which SafeDecrypt routes to
+                    // HandleLegacyBlockedDecryption and which leaves every later sensitive field as ciphertext.
+                    throw new SecureDataLegacyBlockedException("Legacy ciphertext refused by policy.");
+                }
+
                 return cipherText.StartsWith("SECRET_HASH:", StringComparison.Ordinal)
                     ? cipherText.Substring("SECRET_HASH:".Length)
                     : cipherText;
@@ -1075,6 +1082,160 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal("--new", (await _repository.GetByIdAsync(id, decrypt: true, ct)).Parameters);
+        }
+
+        #endregion
+
+        #region Refresh Tick Metadata Write Tests (#7328)
+
+        /// <summary>
+        /// Runs what the Manager's refresh tick does under the two-column write: read every row without
+        /// decrypting, and when the stored description differs from the one the service control manager
+        /// reports, write back only <c>Description</c> and <c>StartupType</c>.
+        /// </summary>
+        /// <param name="name">The service name the tick syncs.</param>
+        /// <param name="scmDescription">The description the service control manager reports.</param>
+        /// <param name="scmStartupType">The startup type the service control manager reports.</param>
+        /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <returns>The number of rows the tick wrote.</returns>
+        private async Task<int> RunRefreshTickAsync(string name, string scmDescription, int scmStartupType, CancellationToken ct)
+        {
+            var all = await _repository.GetAllAsync(decrypt: false, ct);
+            var dto = all.First(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
+
+            bool drifted = !string.Equals(dto.Description ?? string.Empty, scmDescription, StringComparison.Ordinal)
+                || dto.StartupType != scmStartupType;
+
+            return drifted
+                ? await _repository.UpdateDescriptionAndStartupTypeAsync(name, scmDescription, scmStartupType, ct)
+                : 0;
+        }
+
+        [Fact]
+        public async Task RefreshTick_LegacyBlockedRecord_RepeatedTicksLeaveEveryCiphertextByteIdentical()
+        {
+            // Arrange: a record whose Password is legacy ciphertext the policy refuses. Password sits at index 4
+            // of SensitiveFields, so DecryptDto stops there and EnvironmentVariables stays v2 ciphertext - the
+            // field the old whole-row write-back re-encrypted once per tick (#7328).
+            var ct = CancellationToken.None;
+            var id = await _repository.AddAsync(new ServiceDto
+            {
+                Name = "LegacyTick",
+                ExecutablePath = "legacy.exe",
+                Description = "Old description",
+                StartupType = 2,
+                Parameters = "--port 8080",
+                EnvironmentVariables = "A=1",
+            }, ct);
+            await _executor.ExecuteAsync(
+                $"UPDATE {SqlConstants.ServicesTableName} SET Password = 'LEGACY_PAYLOAD' WHERE Id = @Id",
+                new { Id = id },
+                cancellationToken: ct);
+
+            var before = await _repository.GetByIdAsync(id, decrypt: false, ct);
+
+            // Act: six ticks, the number the issue's reproduction used to show the geometric growth
+            var writes = 0;
+            for (var tick = 0; tick < 6; tick++)
+            {
+                writes += await RunRefreshTickAsync("LegacyTick", "From the SCM", 3, ct);
+            }
+
+            // Assert: the first tick syncs the two columns and the five after it find no drift left, and no
+            // ciphertext ever changed, so nothing can grow a second encryption layer
+            Assert.Equal(1, writes);
+            var after = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            Assert.NotNull(after);
+            Assert.Equal("From the SCM", after.Description);
+            Assert.Equal(3, after.StartupType);
+            Assert.Equal(before.Parameters, after.Parameters);
+            Assert.Equal(before.EnvironmentVariables, after.EnvironmentVariables);
+            Assert.Equal("LEGACY_PAYLOAD", after.Password);
+            Assert.Equal(before.ExecutablePath, after.ExecutablePath);
+
+            // And the stored value is still one encryption deep: decrypting it returns the plaintext,
+            // not another ciphertext
+            Assert.Equal("A=1", _secureData.Decrypt(after.EnvironmentVariables));
+        }
+
+        [Fact]
+        public async Task RefreshTick_CorruptRecord_LeavesTheSensitiveColumnsAsStoredInsteadOfNulling()
+        {
+            // Arrange: one field the current key cannot decrypt, as after aes_key.dat was replaced. A read with
+            // decrypt: true scrubs all nine sensitive fields, and the old write-back stored those nulls (#7328).
+            var ct = CancellationToken.None;
+            var id = await AddPoisonedAsync("CorruptTick");
+            var scrubbed = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            Assert.True(DecryptionFailureMarker.HasDecryptionFailure(scrubbed));
+            Assert.Null(scrubbed.EnvironmentVariables);
+
+            // Act
+            var writes = await RunRefreshTickAsync("CorruptTick", "From the SCM", 3, ct);
+
+            // Assert: only the two metadata columns moved; the ciphertexts that a restored key could still
+            // recover are exactly as they were stored
+            Assert.Equal(1, writes);
+            var after = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            Assert.NotNull(after);
+            Assert.Equal("From the SCM", after.Description);
+            Assert.Equal(3, after.StartupType);
+            Assert.Equal("POISON_PAYLOAD", after.Parameters);
+            Assert.Equal("SECRET_HASH:A=1", after.EnvironmentVariables);
+            Assert.Equal("SECRET_HASH:SentinelPassword", after.Password);
+            Assert.Equal("poison.exe", after.ExecutablePath);
+        }
+
+        [Fact]
+        public async Task RefreshTick_HealthyRecord_SyncsTheTwoColumnsAndLeavesTheConfigurationAlone()
+        {
+            // Arrange
+            var ct = CancellationToken.None;
+            var id = await _repository.AddAsync(new ServiceDto
+            {
+                Name = "HealthyTick",
+                ExecutablePath = "ok.exe",
+                Description = "Old description",
+                StartupType = 2,
+                Parameters = "--keep",
+                Password = "SentinelPassword",
+            }, ct);
+
+            // Act
+            var writes = await RunRefreshTickAsync("HealthyTick", "From the SCM", 3, ct);
+
+            // Assert
+            Assert.Equal(1, writes);
+            var after = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            Assert.NotNull(after);
+            Assert.Equal("From the SCM", after.Description);
+            Assert.Equal(3, after.StartupType);
+            Assert.Equal("--keep", after.Parameters);
+            Assert.Equal("SentinelPassword", after.Password);
+            Assert.Equal("ok.exe", after.ExecutablePath);
+        }
+
+        [Fact]
+        public async Task UpdateDescriptionAndStartupTypeAsync_UnknownService_UpdatesNothing()
+        {
+            // Arrange, Act & Assert
+            Assert.Equal(0, await _repository.UpdateDescriptionAndStartupTypeAsync("NoSuchService", "desc", 2, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task UpdateDescriptionAndStartupTypeAsync_NullStartupType_LeavesTheStoredStartupType()
+        {
+            // Arrange
+            var ct = CancellationToken.None;
+            var id = await _repository.AddAsync(new ServiceDto { Name = "NoStartup", ExecutablePath = "ok.exe", Description = "Old", StartupType = 2 }, ct);
+
+            // Act
+            var updated = await _repository.UpdateDescriptionAndStartupTypeAsync("NoStartup", "New", null, ct);
+
+            // Assert
+            Assert.Equal(1, updated);
+            var after = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            Assert.Equal("New", after.Description);
+            Assert.Equal(2, after.StartupType);
         }
 
         #endregion
