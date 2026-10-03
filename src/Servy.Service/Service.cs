@@ -911,7 +911,8 @@ namespace Servy.Service
         /// </para>
         /// <para>
         /// This handler therefore fires only where that registration did not take effect: test mode (the service
-        /// handle stays <see cref="IntPtr.Zero"/>), an early stop that cancels the one-second delay before the
+        /// handle stays <see cref="IntPtr.Zero"/>), an early stop that cancels the
+        /// <see cref="AppConfig.PreShutdownRegistrationDelayMs"/> delay (500 ms) before the
         /// native call, a failing <c>SetServiceStatus</c>, or after <c>ServiceBase</c> re-publishes its own status
         /// in answer to <c>SERVICE_CONTROL_INTERROGATE</c>. Do not remove it, or those paths lose their cleanup.
         /// </para>
