@@ -766,6 +766,35 @@ namespace Servy.Core.Native
             int cbBufSize,
             out int pcbBytesNeeded);
 
+        /// <summary>
+        /// Creates an instance of a named pipe. Used instead of <see cref="System.IO.Pipes.NamedPipeServerStream"/>'s
+        /// constructors because they cannot pass <c>PIPE_REJECT_REMOTE_CLIENTS</c>.
+        /// </summary>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "CreateNamedPipeW")]
+        public static extern Microsoft.Win32.SafeHandles.SafePipeHandle CreateNamedPipe(
+            string name,
+            uint openMode,
+            uint pipeMode,
+            uint maxInstances,
+            uint outBufferSize,
+            uint inBufferSize,
+            uint defaultTimeout,
+            ref PipeSecurityAttributes securityAttributes);
+
+        /// <summary>The <c>SECURITY_ATTRIBUTES</c> structure passed to <see cref="CreateNamedPipe"/>.</summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PipeSecurityAttributes
+        {
+            /// <summary>The size of the structure, in bytes.</summary>
+            public int Length;
+
+            /// <summary>A pointer to a self-relative security descriptor.</summary>
+            public IntPtr SecurityDescriptor;
+
+            /// <summary>Whether the handle is inherited by child processes.</summary>
+            public int InheritHandle;
+        }
+
         /// <summary>Retrieves the process identifier of the client connected to the server end of a named pipe.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetNamedPipeClientProcessId(SafeHandle pipe, out uint clientProcessId);

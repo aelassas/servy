@@ -151,6 +151,7 @@
     <Compile Include="NamedPipes\IpcRequestDto.cs" />
     <Compile Include="NamedPipes\IpcResponseDto.cs" />
     <Compile Include="NamedPipes\IPipeCallerIdentifier.cs" />
+    <Compile Include="NamedPipes\LocalPipeServer.cs" />
     <Compile Include="NamedPipes\NamedPipesService.cs" />
     <Compile Include="NamedPipes\PipeCaller.cs" />
     <Compile Include="NamedPipes\PipeCallerIdentifier.cs" />
