@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
@@ -866,7 +867,9 @@ namespace Servy.Manager.ViewModels
                             if (result.UpdateInfo != null)
                                 uiUpdates.Add(result.UpdateInfo);
 
-                            if (result.UpdatedDto != null)
+                            // Never write back a service read with a field that failed to decrypt: its secrets were
+                            // cleared on read, and saving them would blank the stored ciphertext (#7334)
+                            if (result.UpdatedDto != null && !DecryptionFailureMarker.HasDecryptionFailure(dto))
                                 changedDtos.Add(result.UpdatedDto);
                         });
                 }, token);

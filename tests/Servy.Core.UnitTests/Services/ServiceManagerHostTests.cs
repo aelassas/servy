@@ -127,6 +127,33 @@ namespace Servy.Core.UnitTests.Services
             };
         }
 
+        #region Undecryptable row (#7334)
+
+        [Fact]
+        public async Task InstallService_ExistingRowFailedToDecrypt_IsRefusedBeforeTheScmOrTheDatabaseIsTouched()
+        {
+            // Arrange: the row as the repository returns it when a sensitive field cannot be decrypted
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto
+                {
+                    Name = ServiceName,
+                    Description = string.Format(DecryptionFailureMarker.CorruptFormat, "SecureDataIntegrityException") + DecryptionFailureMarker.OriginalDescriptionSeparator + "desc",
+                });
+
+            // Act
+            var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(null), CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("aes_key.dat", result.ErrorMessage);
+            Assert.Contains(ServiceName, result.ErrorMessage);
+            _windowsServiceApi.Verify(x => x.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
+            _serviceRepository.Verify(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceRepository.Verify(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        #endregion
+
         #region Dependency on the host
 
         [Theory]

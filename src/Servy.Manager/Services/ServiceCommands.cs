@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Manager.Config;
@@ -865,6 +866,11 @@ namespace Servy.Manager.Services
             {
                 Logger.Debug($"{formatName} config import was cancelled.");
                 throw;
+            }
+            catch (ServiceDecryptionFailedException ex)
+            {
+                // Already logged by the repository; the row was left as it is
+                await _messageBoxService.ShowErrorAsync(ex.Message, UiAppConfig.Caption);
             }
             catch (Exception ex)
             {

@@ -176,8 +176,10 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="Security\AccountSidResolver.cs" />
+    <Compile Include="Security\DecryptionFailureMarker.cs" />
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Security\SecureDataIntegrityException.cs" />
+    <Compile Include="Security\ServiceDecryptionFailedException.cs" />
     <Compile Include="Security\SecureDataLegacyBlockedException.cs" />
     <Compile Include="Security\SecureDisposable.cs" />
     <Compile Include="Security\SecureXml.cs" />

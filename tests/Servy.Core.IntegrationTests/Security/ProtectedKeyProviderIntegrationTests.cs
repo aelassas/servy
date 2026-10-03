@@ -324,6 +324,49 @@ namespace Servy.Core.IntegrationTests.Security
             }
         }
 
+        [Fact]
+        public void GetKey_CorruptedFile_LogsACriticalErrorAndNeverReplacesTheFile()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("corrupt_kept.key");
+            var ivPath = GetTempFilePath("corrupt_kept.iv");
+            var corrupt = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
+            File.WriteAllBytes(keyPath, corrupt);
+
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var ex = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
+                var again = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
+
+                // Assert: a corrupt key is reported with what to do, and is never regenerated, on any attempt
+                Assert.StartsWith("CRITICAL:", ex.Message);
+                Assert.Contains("Do NOT delete or replace aes_key.dat", ex.Message);
+                Assert.StartsWith("CRITICAL:", again.Message);
+                Assert.Equal(corrupt, File.ReadAllBytes(keyPath));
+            }
+        }
+
+        [Fact]
+        public void GetKey_ProtectedBlobOfTheWrongLength_IsRejectedAndTheFileIsKept()
+        {
+            // Arrange: a blob DPAPI accepts (legacy, no entropy) that holds 16 bytes instead of the 32-byte key
+            var keyPath = GetTempFilePath("short.key");
+            var ivPath = GetTempFilePath("short.iv");
+            var blob = ProtectedData.Protect(new byte[16], null, DataProtectionScope.LocalMachine);
+            File.WriteAllBytes(keyPath, blob);
+
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var ex = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
+
+                // Assert: never used as a key, never migrated or replaced
+                Assert.StartsWith("CRITICAL:", ex.Message);
+                Assert.Equal(blob, File.ReadAllBytes(keyPath));
+            }
+        }
+
         [Theory]
         [InlineData("key")]
         [InlineData("iv")]

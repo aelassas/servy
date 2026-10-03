@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,20 +21,14 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public class ServiceRepository : IServiceRepository
     {
-        private const string CorruptMarkerFormat = "[DECRYPTION FAILED: {0}] The record's key or payload is corrupt.";
-        private const string LegacyBlockedMarker = "[LEGACY ENCRYPTION BLOCKED] This record uses pre-v2 encryption, which is disabled. Export it with a v1-compatible version of Servy and re-import it here to upgrade.";
-        private const string OriginalDescriptionSeparator = " Original Description: ";
+        private const string CorruptMarkerFormat = DecryptionFailureMarker.CorruptFormat;
+        private const string LegacyBlockedMarker = DecryptionFailureMarker.LegacyBlocked;
+        private const string OriginalDescriptionSeparator = DecryptionFailureMarker.OriginalDescriptionSeparator;
 
         private readonly IDapperExecutor _dapper;
         private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
-
-        private static readonly Regex DecryptionFailureMarkerRegex = new Regex(
-            "^(?:" + Regex.Escape(string.Format(CorruptMarkerFormat, "__MARKER_PLACEHOLDER__")).Replace("__MARKER_PLACEHOLDER__", @"[^\\]+")
-            + "|" + Regex.Escape(LegacyBlockedMarker) + ")"
-            + Regex.Escape(OriginalDescriptionSeparator.TrimEnd()) + @"\s*",
-            RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
         /// A centralized registry of sensitive fields that require encryption at rest.
@@ -96,6 +89,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
+            EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
             var encryptedService = CreateEncryptedClone(service);
 
             await PatchRuntimeStateAsync(
@@ -115,6 +109,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
+            EnsureStoredRowDecryptable(service, GetByName(service?.Name, decrypt: false));
             var encryptedService = CreateEncryptedClone(service);
 
             PatchRuntimeState(
@@ -134,6 +129,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
+            EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
             var encryptedService = CreateEncryptedClone(service);
 
             await PatchRuntimeStateAsync(
@@ -186,10 +182,23 @@ namespace Servy.Infrastructure.Data
                 }
             }
 
-            // 2. Encrypt input DTOs first, then patch runtime state & existing ciphertext credentials
+            // 2. Encrypt input DTOs first, then patch runtime state & existing ciphertext credentials. A service whose stored
+            // row no longer decrypts is left exactly as it is, and so is its DTO: writing either would blank its secrets.
             var encryptedServices = new List<ServiceDto>();
-            foreach (var rawDto in serviceList)
+            foreach (var rawDto in serviceList.ToList())
             {
+                existingMap.TryGetValue(rawDto?.Name ?? string.Empty, out var stored);
+                try
+                {
+                    EnsureStoredRowDecryptable(rawDto, stored);
+                }
+                catch (ServiceDecryptionFailedException ex)
+                {
+                    Logger.Error($"Skipped the update of service '{rawDto?.Name}'. {ex.Message}", ex.InnerException);
+                    serviceList.Remove(rawDto);
+                    continue;
+                }
+
                 var encryptedClone = CreateEncryptedClone(rawDto);
 
                 if (!string.IsNullOrEmpty(encryptedClone.Name) && existingMap.TryGetValue(encryptedClone.Name, out var existing))
@@ -774,6 +783,41 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
+        /// Refuses to write a service whose stored row has a sensitive field that no longer decrypts with the current key,
+        /// or that was itself read from such a row, so the stored ciphertext is never replaced with blanks.
+        /// </summary>
+        /// <param name="incoming">The service about to be written.</param>
+        /// <param name="stored">The service's row as stored, not decrypted, or <see langword="null"/> when it has none.</param>
+        /// <exception cref="ServiceDecryptionFailedException">Thrown when the row cannot be decrypted; nothing is written.</exception>
+        private void EnsureStoredRowDecryptable(ServiceDto incoming, ServiceDto stored)
+        {
+            if (incoming == null) return;
+
+            if (DecryptionFailureMarker.HasDecryptionFailure(incoming) && stored != null)
+            {
+                var refused = new ServiceDecryptionFailedException(incoming.Name, null);
+                Logger.Error(refused.Message);
+                throw refused;
+            }
+
+            if (stored == null) return;
+
+            foreach (var (get, _, name) in SensitiveFields)
+            {
+                try
+                {
+                    DecryptIfPresent(get(stored));
+                }
+                catch (Exception ex)
+                {
+                    var refused = new ServiceDecryptionFailedException(stored.Name ?? incoming.Name, name, ex);
+                    Logger.Error(refused.Message, ex);
+                    throw refused;
+                }
+            }
+        }
+
+        /// <summary>
         /// Creates a shallow clone of the ServiceDto and encrypts sensitive fields.
         /// This prevents double-encryption and unintended mutation of the input object.
         /// </summary>
@@ -794,10 +838,7 @@ namespace Servy.Infrastructure.Data
             // Strip any temporary UI decryption error markers from the description before persisting
             if (!string.IsNullOrEmpty(clone.Description))
             {
-                while (DecryptionFailureMarkerRegex.IsMatch(clone.Description))
-                {
-                    clone.Description = DecryptionFailureMarkerRegex.Replace(clone.Description, string.Empty);
-                }
+                clone.Description = DecryptionFailureMarker.Strip(clone.Description);
             }
 
             // 2. Iterate the SensitiveFields triplets to maintain parity with the decryption path
