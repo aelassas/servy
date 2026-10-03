@@ -35,12 +35,6 @@ namespace Servy.Core.NamedPipes
         }
 
         /// <summary>
-        /// Gets the process identifier of the server that owns the server end of a pipe a client is connected to.
-        /// </summary>
-        /// <param name="clientStream">The connected client end of the pipe.</param>
-        /// <param name="processId">The server's process identifier, or 0 when it cannot be read.</param>
-        /// <returns><see langword="true"/> when the identifier was read.</returns>
-        /// <summary>
         /// Determines whether the client of a connected server end runs on another computer, i.e. reached the pipe over
         /// the network (SMB) rather than locally.
         /// </summary>
@@ -70,6 +64,12 @@ namespace Servy.Core.NamedPipes
             return System.Runtime.InteropServices.Marshal.GetLastWin32Error() != ErrorPipeLocal;
         }
 
+        /// <summary>
+        /// Gets the process identifier of the server that owns the server end of a pipe a client is connected to.
+        /// </summary>
+        /// <param name="clientStream">The connected client end of the pipe.</param>
+        /// <param name="processId">The server's process identifier, or 0 when it cannot be read.</param>
+        /// <returns><see langword="true"/> when the identifier was read.</returns>
         [ExcludeFromCodeCoverage]
         public static bool TryGetServerProcessId(PipeStream clientStream, out int processId)
         {
