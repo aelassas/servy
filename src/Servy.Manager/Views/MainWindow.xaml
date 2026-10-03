@@ -10,7 +10,7 @@
         mc:Ignorable="d"
         Title="Servy Manager"
         Width="1000"
-        MinWidth="940"
+        MinWidth="1000"
         Height="600"
         MinHeight="500"
         UseLayoutRounding="True"
