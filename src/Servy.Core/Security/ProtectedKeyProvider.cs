@@ -561,11 +561,6 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Generates a random byte array of the specified length.
-        /// </summary>
-        /// <param name="length">The length of the byte array.</param>
-        /// <returns>A random byte array.</returns>
-        /// <summary>
         /// Checks that unprotected key material has the length Servy generates. A blob that DPAPI accepts but that holds
         /// material of another length is a corrupt or foreign file, never a key to derive from.
         /// </summary>
@@ -585,6 +580,11 @@ namespace Servy.Core.Security
             throw new CryptographicException($"The {materialName} at '{path}' holds {actual} bytes instead of {length}.");
         }
 
+        /// <summary>
+        /// Generates a random byte array of the specified length.
+        /// </summary>
+        /// <param name="length">The length of the byte array.</param>
+        /// <returns>A random byte array.</returns>
         private static byte[] GenerateRandomBytes(int length)
         {
             var buffer = new byte[length];
