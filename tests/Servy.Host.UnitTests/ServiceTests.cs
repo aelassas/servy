@@ -656,7 +656,7 @@ namespace Servy.Host.UnitTests
                 .ThrowsAsync(new InvalidDataException("bad frame"));
             using (var logged = new ManualResetEventSlim())
             {
-                logger.Setup(l => l.Error("Exception in HandleClientAsync.", It.IsAny<InvalidDataException>())).Callback(() => logged.Set());
+                logger.Setup(l => l.Error("Exception in HandleConnectionAsync.", It.IsAny<InvalidDataException>())).Callback(() => logged.Set());
                 using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 5000))
                 {
                     // Act
@@ -708,7 +708,7 @@ namespace Servy.Host.UnitTests
 
                     // Assert
                     Assert.True(observed);
-                    logger.Verify(l => l.Error("Exception in HandleClientAsync.", It.IsAny<Exception>()), Times.Never);
+                    logger.Verify(l => l.Error("Exception in HandleConnectionAsync.", It.IsAny<Exception>()), Times.Never);
 
                     // Same as above: the drain keeps the pending handler from setting an event this test is about to
                     // dispose, and the cancelled listener instances it reports are not this test's subject.
