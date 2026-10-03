@@ -7,7 +7,7 @@
 
 Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
 
-Starting with v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, machine-bound DPAPI encryption, and automated ACL and DACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning.
+Starting with v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, machine-bound DPAPI and AES-256 authenticated encryption, and automated ACL and DACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning.
 
 Servy is digitally signed with a code-signing certificate provided by the SignPath Foundation. The signature verifies the publisher, enables Windows to detect any modification of the released binaries and installers, and prevents SmartScreen warnings.
 
