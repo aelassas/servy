@@ -719,7 +719,6 @@ namespace Servy.Host.IntegrationTests
             }
         }
 
-
         /// <summary>
         /// Wraps the production <see cref="PipeCallerIdentifier"/> and replaces its administrator answer, so the tests
         /// can play a service account (or an administrator) from an elevated test process.
