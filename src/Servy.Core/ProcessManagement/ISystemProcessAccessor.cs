@@ -12,6 +12,7 @@ namespace Servy.Core.ProcessManagement
         /// </summary>
         /// <param name="pid">The process identifier.</param>
         /// <returns>An <see cref="ISystemProcess"/> wrapper for the target process.</returns>
+        /// <exception cref="ArgumentException">Thrown when no process with the identifier <paramref name="pid"/> is running.</exception>
         ISystemProcess GetProcessById(int pid);
 
         /// <summary>
@@ -24,6 +25,7 @@ namespace Servy.Core.ProcessManagement
         /// Takes a native snapshot of all running processes and maps parent-to-child relationships.
         /// </summary>
         /// <returns>A tuple containing the complete snapshot dictionary and the child PID lookup map.</returns>
+        /// <exception cref="System.ComponentModel.Win32Exception">Thrown when the operating system snapshot cannot be created.</exception>
         (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMap();
     }
 }
