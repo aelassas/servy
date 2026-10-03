@@ -144,8 +144,9 @@ namespace Servy.Service
         /// </summary>
         /// <remarks>
         /// This constructor is intended for the Windows Service Control Manager (SCM).
-        /// It performs full subsystem initialization, including logging, database connectivity,
-        /// and cryptographic setup.
+        /// It performs the production start-up: logger initialization, event source registration and
+        /// loading <c>appsettings.service.json</c>. The wrapper opens no database and sets up no
+        /// cryptography; it reads its configuration through the Servy host named pipe.
         /// </remarks>
         public Service() : this(
             new Helpers.ServiceHelper(new CommandLineProvider(), new ProcessHelper()),
@@ -176,8 +177,8 @@ namespace Servy.Service
         /// Unlike the production constructors, this version <b>DOES NOT</b>:
         /// <list type="bullet">
         /// <item><description>Initialize the global <see cref="Logger"/> utility.</description></item>
-        /// <item><description>Setup the <see cref="SecureData"/> cryptographic subsystem.</description></item>
-        /// <item><description>Initialize the database schema.</description></item>
+        /// <item><description>Ensure the event log source exists.</description></item>
+        /// <item><description>Load <c>appsettings.service.json</c> (the <c>Timing:*</c> settings and the logging configuration).</description></item>
         /// </list>
         /// The caller is responsible for ensuring any required global state is initialized prior to use.
         /// </para>
@@ -253,7 +254,7 @@ namespace Servy.Service
         /// <exception cref="ArgumentNullException">Any argument is <see langword="null"/>.</exception>
         /// <remarks>
         /// This overload exists so a test can construct the production start-up path without touching the
-        /// event log, ProgramData, SQLite or the process-global logger. The public constructor passes
+        /// event log, ProgramData or the process-global logger. The public constructor passes
         /// <see cref="ServiceBootstrapEnvironment"/>, whose members forward unchanged, so production
         /// behaviour is identical either way.
         /// </remarks>
