@@ -172,7 +172,7 @@ namespace Servy.Restarter
                         if (IsGone(ex)) return RestartResult.ServiceNotFound;
                         if (!IsTransitional(ex)) throw;
 
-                        // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
+                        // Fallback: the SCM returned a transitional error code (the service entered or left a pending state between our check and the call)
                         _logger?.Warn($"Direct Stop operation failed for '{serviceName}'; entering transitional error recovery.", ex);
                         var transitionalResult = HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
                         if (transitionalResult.HasValue) return transitionalResult.Value;
@@ -235,7 +235,7 @@ namespace Servy.Restarter
                     if (IsGone(ex)) return RestartResult.ServiceNotFound;
                     if (!IsTransitional(ex)) throw;
 
-                    // Fallback: If it transitioned to Pending or experienced SCM access blocks between our check and the call
+                    // Fallback: the SCM returned a transitional error code (the service entered or left a pending state between our check and the call)
                     _logger?.Warn($"Direct Start operation failed for '{serviceName}'; entering transitional error recovery.", ex);
                     var transitionalResult = HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
                     if (transitionalResult.HasValue) return transitionalResult.Value;
