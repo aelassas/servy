@@ -503,8 +503,25 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedLines) capturedLines.AddRange(lines);
                 };
 
+                var passes = 0;
+                tailer.OnLoopCompleted += () => Interlocked.Increment(ref passes);
+
                 var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, history.Position, history.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
+
+                // The remainder may only be appended once a whole pass has read the torn tail and held it
+                // back, which is what OnLoopCompleted reports. Appending while a pass is mid-read lets that
+                // pass return "partial-" at EOF and then read "remainder" as a second line within the same
+                // pass, leaving no terminator information to re-join them by. That is a race in the test,
+                // not the subject here, which is that the history hands the torn tail over whole.
+                await Helper.WaitUntilAsync(() => Volatile.Read(ref passes) >= 1,
+                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken: CancellationToken.None);
+
+                // Assert - the torn tail is held back rather than published as a line of its own
+                lock (capturedLines)
+                {
+                    Assert.Empty(capturedLines);
+                }
 
                 // Act
                 File.AppendAllText(_tempFilePath, "remainder\n");
@@ -529,6 +546,44 @@ namespace Servy.Manager.UnitTests.Utils
                 {
                     Assert.Equal(new[] { "partial-remainder" }, capturedLines.Select(l => l.Text));
                 }
+            }
+        }
+
+        /// <summary>
+        /// The tailing loop decides whether a trailing line is torn by probing the byte before the reader's
+        /// own consumed boundary, never the live end of the file. A writer that completes the line between
+        /// the read that drained the reader and this probe must not make the consumed fragment look
+        /// terminated, or the prefix is published as a line of its own and the remainder follows as a second.
+        /// </summary>
+        [Fact]
+        public void EndsWithNewlineAt_WriterAppendedAfterTheRead_StillReportsTheConsumedFragmentAsTorn()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "complete\npartial-");
+
+            using (var fs = new FileStream(_tempFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                // The reader drained the file and stopped here, mid-line.
+                long readerPosition = fs.Length;
+
+                // The writer then finished the line, so the file now ends with a newline the reader never saw.
+                File.AppendAllText(_tempFilePath, "remainder\n");
+
+                // Act
+                bool atReaderPosition = (bool)TestReflection.InvokeNonPublicStatic(
+                    typeof(LogTailer), "EndsWithNewlineAt", fs, readerPosition);
+                bool atLiveEndOfFile = (bool)TestReflection.InvokeNonPublicStatic(
+                    typeof(LogTailer), "EndsWithNewlineAt", fs, fs.Length);
+                bool afterFirstNewline = (bool)TestReflection.InvokeNonPublicStatic(
+                    typeof(LogTailer), "EndsWithNewlineAt", fs, (long)"complete\n".Length);
+                bool atStartOfFile = (bool)TestReflection.InvokeNonPublicStatic(
+                    typeof(LogTailer), "EndsWithNewlineAt", fs, 0L);
+
+                // Assert
+                Assert.False(atReaderPosition);
+                Assert.True(atLiveEndOfFile);
+                Assert.True(afterFirstNewline);
+                Assert.True(atStartOfFile);
             }
         }
 

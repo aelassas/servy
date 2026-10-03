@@ -80,13 +80,28 @@ namespace Servy.Manager.Utils
         /// </summary>
         /// <param name="fs">The open file stream to inspect.</param>
         /// <returns><c>true</c> if the file is empty or ends with <c>\n</c>; otherwise, <c>false</c>.</returns>
-        private static bool EndsWithNewline(FileStream fs)
+        private static bool EndsWithNewline(FileStream fs) => EndsWithNewlineAt(fs, fs.Length);
+
+        /// <summary>
+        /// Probes whether the byte immediately before <paramref name="offset"/> is a trailing newline.
+        /// Restores the original stream position upon completion.
+        /// </summary>
+        /// <remarks>
+        /// The tailing loop passes the reader's own consumed boundary rather than the file length, because
+        /// the writer can append between the read that drained the reader and this probe. Measuring the
+        /// live end of the file there would report a torn fragment as terminated and publish the prefix as
+        /// a line of its own, with the remainder following as a second line.
+        /// </remarks>
+        /// <param name="fs">The open file stream to inspect.</param>
+        /// <param name="offset">The exclusive byte offset to probe behind, usually the reader's position.</param>
+        /// <returns><c>true</c> when nothing precedes <paramref name="offset"/> or the preceding byte is <c>\n</c>; otherwise, <c>false</c>.</returns>
+        private static bool EndsWithNewlineAt(FileStream fs, long offset)
         {
-            if (fs.Length == 0) return true;
+            if (offset <= 0) return true;
             long saved = fs.Position;
             try
             {
-                fs.Seek(-1, SeekOrigin.End);
+                fs.Position = offset - 1;
                 return fs.ReadByte() == (byte)'\n';
             }
             finally
@@ -265,7 +280,7 @@ namespace Servy.Manager.Utils
                                             {
                                                 // If we hit threshold at EOF and the file has an unterminated tail,
                                                 // hold back the torn line in carryOverFragment instead of publishing it.
-                                                if (reader.Peek() == -1 && fs.Length > 0 && !EndsWithNewline(fs))
+                                                if (reader.Peek() == -1 && fs.Length > 0 && !EndsWithNewlineAt(fs, fs.Position))
                                                 {
                                                     batch.RemoveAt(batch.Count - 1);
                                                     carryOverFragment = line;
@@ -282,11 +297,12 @@ namespace Servy.Manager.Utils
                                             }
                                         }
 
-                                        // --- EOF reached. A file not ending in '\n' means the writer was caught mid-flush;
-                                        //     check the trailing byte on disk rather than inferring from synchronous reader methods.
+                                        // --- EOF reached. Data that does not end in '\n' means the writer was caught
+                                        //     mid-flush; check the byte before the reader's own position rather than the
+                                        //     live end of the file, which the writer may already have moved.
                                         if (lastSuccessfullyReadLine != null && fs.Length > 0)
                                         {
-                                            if (!EndsWithNewline(fs))
+                                            if (!EndsWithNewlineAt(fs, fs.Position))
                                             {
                                                 // The file does not terminate with a newline. The writer process was caught
                                                 // mid-flush. Pop the untracked line out of the batch to preserve boundary isolation.
