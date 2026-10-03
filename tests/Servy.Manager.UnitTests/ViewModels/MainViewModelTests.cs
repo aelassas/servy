@@ -708,6 +708,126 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_MetadataDrift_WritesOnlyTheTwoColumnsAndReadsWithoutDecrypting()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the stored description has drifted from the one the SCM reports, which is what the
+                // tick syncs. The DTO also carries the stored ciphertext of two sensitive fields, so a write
+                // back of the whole row would be visible (#7328).
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Status = ServiceStatus.Stopped,
+                        Pid = null
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                Status = ServiceStatus.Running,
+                                Description = "from the SCM",
+                                StartupType = ServiceStartType.Manual,
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                Description = "stale",
+                                StartupType = (int)ServiceStartType.Automatic,
+                                Parameters = "SERVY_ENC:v2:stored-parameters",
+                                EnvironmentVariables = "SERVY_ENC:v2:stored-environment",
+                            }
+                        });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
+                    await task;
+
+                    // Assert: the read does not decrypt, the drift is written through the two-column update, and
+                    // the whole-row upsert that re-encrypted and nulled the sensitive columns is never reached
+                    _serviceRepositoryMock.Verify(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once);
+                    _serviceRepositoryMock.Verify(r => r.GetAllAsync(true, It.IsAny<CancellationToken>()), Times.Never);
+                    _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
+                        "TestService", "from the SCM", (int)ServiceStartType.Manual, It.IsAny<CancellationToken>()), Times.Once);
+                    _serviceRepositoryMock.Verify(r => r.UpsertBatchAsync(It.IsAny<IEnumerable<ServiceDto>>(), It.IsAny<CancellationToken>()), Times.Never);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task RefreshAllServicesAsync_NoMetadataDrift_WritesNothing()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the stored description and startup type already match what the SCM reports
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Status = ServiceStatus.Stopped,
+                        Pid = null
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                Status = ServiceStatus.Running,
+                                Description = "in sync",
+                                StartupType = ServiceStartType.Manual,
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                Description = "in sync",
+                                StartupType = (int)ServiceStartType.Manual,
+                            }
+                        });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
+                    await task;
+
+                    // Assert
+                    _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RefreshAllServicesAsync_BlankAndDuplicateNamedOsServices_SkipsThemAndKeepsFirstOccurrence()
         {
             // Arrange, Act & Assert

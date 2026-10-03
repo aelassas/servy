@@ -973,6 +973,76 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(new[] { "padded", " padded " }, names);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UpdateDescriptionAndStartupTypeAsync_BlankName_ReturnsZeroWithoutWriting(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateDescriptionAndStartupTypeAsync(name, "desc", 2, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(0, result);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(2)]
+        [InlineData(null)]
+        public async Task UpdateDescriptionAndStartupTypeAsync_WritesOnlyTheTwoMetadataColumns(int? startupType)
+        {
+            // Arrange
+            string? sql = null;
+            object? parameters = null;
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((s, p, _, _) => { sql = s; parameters = p; })
+                .ReturnsAsync(1);
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateDescriptionAndStartupTypeAsync(" svc ", "from the SCM", startupType, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(1, result);
+            Assert.NotNull(sql);
+            Assert.Contains("SET Description = @Description", sql);
+            Assert.Equal(startupType.HasValue, sql!.Contains("StartupType = @StartupType"));
+            Assert.Contains("WHERE Name = @Name COLLATE UNICODE_NOCASE", sql);
+
+            // No sensitive or runtime column is ever part of the statement: this is the whole point of the
+            // call, because the refresh tick's DTO is a display read and not the stored row (#7328)
+            foreach (var column in new[] { "Parameters", "EnvironmentVariables", "PreLaunchEnvironmentVariables", "PreStopParameters", "PostStopParameters", "Password", "Pid" })
+                Assert.DoesNotContain(column + " =", sql);
+
+            Assert.Equal("svc", parameters!.GetType().GetProperty("Name")!.GetValue(parameters));
+            Assert.Equal("from the SCM", parameters.GetType().GetProperty("Description")!.GetValue(parameters));
+            Assert.Equal(startupType, parameters.GetType().GetProperty("StartupType")!.GetValue(parameters));
+        }
+
+        [Fact]
+        public async Task UpdateDescriptionAndStartupTypeAsync_LegacyPaddedName_RetriesWithTheVerbatimName()
+        {
+            // Arrange: no row under the trimmed name, one under the verbatim (Servy <= 8.3) name
+            var names = new List<string>();
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((_, p, _, _) => names.Add((string)p.GetType().GetProperty("Name")!.GetValue(p)!))
+                .ReturnsAsync(() => names.Count == 1 ? 0 : 1);
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateDescriptionAndStartupTypeAsync(" padded ", "desc", 2, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(1, result);
+            Assert.Equal(new[] { "padded", " padded " }, names);
+        }
+
         [Fact]
         public async Task UpdateRestartAttemptsAsync_NegativeAttempts_Throws()
         {

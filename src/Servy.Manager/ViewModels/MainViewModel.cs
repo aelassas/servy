@@ -832,8 +832,10 @@ namespace Servy.Manager.ViewModels
 #endif
                 var allServicesDict = BuildUniqueNameDictionary(allServicesList, s => s.Name);
 
-                // 3. Fetch all Repository DTOs in bulk
-                var allDtosList = await _serviceRepository.GetAllAsync(decrypt: true, token);
+                // 3. Fetch all Repository DTOs in bulk. The tick reads only Pid, StartupType and Description,
+                // so it does not decrypt: a record whose sensitive fields cannot be decrypted is then returned
+                // as stored rather than degraded, and no password is decrypted for nothing (#7328, #6486).
+                var allDtosList = await _serviceRepository.GetAllAsync(decrypt: false, token);
                 var allDtosDict = BuildUniqueNameDictionary(allDtosList, d => d.Name);
 
                 // 4. Process data collection in parallel
@@ -862,8 +864,9 @@ namespace Servy.Manager.ViewModels
                             if (result.UpdateInfo != null)
                                 uiUpdates.Add(result.UpdateInfo);
 
-                            // Never write back a service read with a field that failed to decrypt: its secrets were
-                            // cleared on read, and saving them would blank the stored ciphertext (#7334)
+                            // Never write back a service whose description carries a decryption failure marker: the
+                            // marker is not the description the service control manager reports, so syncing it would
+                            // store the marker text itself (#7334; the read no longer decrypts, see step 3)
                             if (result.UpdatedDto != null && !DecryptionFailureMarker.HasDecryptionFailure(dto))
                                 changedDtos.Add(result.UpdatedDto);
                         });
@@ -886,10 +889,12 @@ namespace Servy.Manager.ViewModels
                     }, DispatcherPriority.Background, cancellationToken: token);
                 }
 
-                // 6. Execute a single atomic database batch write for all drifted services
-                if (changedDtos.Any())
+                // 6. Write back the drifted metadata. The tick syncs only Description and StartupType, so it
+                // writes only those two columns instead of upserting the whole DTO: a row read for display can
+                // then never overwrite its own stored secrets, whatever state the in-memory copy is in (#7328).
+                foreach (var dto in changedDtos)
                 {
-                    await _serviceRepository.UpsertBatchAsync(changedDtos, token);
+                    await _serviceRepository.UpdateDescriptionAndStartupTypeAsync(dto.Name, dto.Description, dto.StartupType, token);
                 }
             }
             catch (OperationCanceledException)

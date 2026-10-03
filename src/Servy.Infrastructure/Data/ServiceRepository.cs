@@ -365,6 +365,25 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
+        public virtual async Task<int> UpdateDescriptionAndStartupTypeAsync(string? name, string? description, int? startupType, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return 0;
+
+            string startupTypeAssignment = startupType.HasValue ? ", StartupType = @StartupType" : string.Empty;
+            string sql = $@"
+                UPDATE {SqlConstants.ServicesTableName}
+                SET Description = @Description{startupTypeAssignment}
+                WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+
+            return await ExecuteByNameAsync(sql, name!, n => new
+            {
+                Name = n,
+                Description = description,
+                StartupType = startupType,
+            }, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public virtual async Task<RestartAttemptsDto?> GetRestartAttemptsAsync(string? name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
