@@ -394,8 +394,9 @@ namespace Servy.Manager.Utils
                     {
                         consecutiveFailures++;
 
-                        // The carried fragment is tied to a stream position the reopen invalidates; drop it.
-                        carryOverFragment = string.Empty;
+                        // carryOverFragment is kept: lastPosition is committed just past it, so the reopen
+                        // resumes at the byte that completes it, and the rotation checks on reopen discard it
+                        // if the file changed.
 
                         // CIRCUIT BREAKER: Suppress continuous log spam for recurring permanent failures.
                         if (consecutiveFailures == 1 || consecutiveFailures % AppConfig.LogTailerErrorLogThrottlingInterval == 0)
