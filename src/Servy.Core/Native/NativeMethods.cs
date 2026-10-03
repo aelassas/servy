@@ -772,6 +772,13 @@ namespace Servy.Core.Native
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetNamedPipeClientProcessId(SafeHandle pipe, out uint clientProcessId);
 
+        /// <summary>
+        /// Retrieves the computer name of the client connected to the server end of a named pipe. Fails with
+        /// ERROR_PIPE_LOCAL when the client is on this computer.
+        /// </summary>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetNamedPipeClientComputerNameW")]
+        public static extern bool GetNamedPipeClientComputerName(SafeHandle pipe, System.Text.StringBuilder clientComputerName, uint clientComputerNameLength);
+
         /// <summary>Retrieves the process identifier of the server that owns the server end of a named pipe.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetNamedPipeServerProcessId(SafeHandle pipe, out uint serverProcessId);

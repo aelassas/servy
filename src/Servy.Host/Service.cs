@@ -21,7 +21,8 @@ namespace Servy.Host
     /// <remarks>
     /// <para>
     /// The pipe is created with a protected DACL (<see cref="ServyHostPipeSecurity"/>): Local System and Administrators,
-    /// plus Read and Write for the accounts the installed services run under, and nothing for network logons.
+    /// plus Read and Write for the accounts the installed services run under. Network logons are allowed; a client on
+    /// another computer is refused, so the pipe is local only.
     /// </para>
     /// <para>
     /// Being able to connect is not being allowed to read anything. Every request about a service is answered only when
@@ -653,6 +654,11 @@ namespace Servy.Host
 
             try
             {
+                // Local only: a remote client's process ID is a process on another computer, so neither the service
+                // authorization nor anything else here applies to it
+                if (caller.IsRemote)
+                    return Deny(request, caller, "the client is on another computer; the Servy host pipe is local only");
+
                 if (request.Action == AppConfig.ServyHostRefreshPipeAccessAction)
                 {
                     if (!caller.IsAdministrator)

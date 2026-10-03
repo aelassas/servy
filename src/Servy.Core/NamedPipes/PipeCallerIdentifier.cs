@@ -20,7 +20,8 @@ namespace Servy.Core.NamedPipes
             if (connectedServer == null) throw new ArgumentNullException(nameof(connectedServer));
 
             PipePeer.TryGetClientProcessId(connectedServer, out var processId);
-            return new PipeCaller(processId, IsAdministrator(connectedServer));
+            var isRemote = PipePeer.IsRemoteClient(connectedServer, out _);
+            return new PipeCaller(processId, IsAdministrator(connectedServer), isRemote);
         }
 
         /// <summary>

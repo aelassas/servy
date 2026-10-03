@@ -288,7 +288,7 @@ namespace Servy.Host.IntegrationTests
             var security = _host.CurrentPipeSecurity!;
             Assert.True(security.AreAccessRulesProtected);
             var rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
-            Assert.Contains(rules, r => new SecurityIdentifier(WellKnownSidType.NetworkSid, null).Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Deny);
+            Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny);
             Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.WorldSid, null).Equals(r.IdentityReference));
             Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null).Equals(r.IdentityReference));
         }
@@ -397,6 +397,77 @@ namespace Servy.Host.IntegrationTests
                 Assert.StartsWith("ERROR UnauthorizedAccessException", await sandbox.ConnectAsAsync(account.RunAs, account.Password, ct));
         }
 
+        [Fact]
+        public async Task NetworkLogon_OfAGrantedAccount_ConnectsOnceGranted()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: a real network logon (LOGON32_LOGON_NETWORK) of a local user, so the token carries
+            // NT AUTHORITY\NETWORK - what a local process started over WinRM or PowerShell remoting runs with (#7330)
+            var ct = TestContext.Current.CancellationToken;
+            using var sandbox = new AccountSandbox(_pipeName);
+            using var token = sandbox.NetworkLogon();
+            using (var identity = new WindowsIdentity(token.DangerousGetHandle()))
+                Assert.Contains(identity.Groups!, g => new SecurityIdentifier(WellKnownSidType.NetworkSid, null).Equals(g));
+            _host.StartListening();
+
+            // Act & Assert: refused while not granted, connects once its service is installed
+            Assert.StartsWith("ERROR UnauthorizedAccessException", ConnectAs(token));
+            await _repository.AddAsync(new ServiceDto { Name = "NetworkLogonApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = ".\\" + sandbox.LocalUser }, ct);
+            _identifier.IsAdministrator = true;
+            Assert.True(await Client().RefreshPipeAccessAsync(ct));
+            Assert.Equal("CONNECTED", ConnectAs(token));
+        }
+
+        [Fact]
+        public async Task ClientOnAnotherComputer_ThroughSmb_IsRefusedEvenAsAnAdministrator()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the test account is granted, and connects through \\<machine>\pipe\..., i.e. over SMB as a remote
+            // client. The identifier is told to report an administrator, so only the remote check can refuse it.
+            var ct = TestContext.Current.CancellationToken;
+            await _repository.AddAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", Parameters = "--secret", RunAsLocalSystem = false, UserAccount = WindowsIdentity.GetCurrent().Name }, ct);
+            _host.StartListening();
+            _identifier.IsAdministrator = true;
+            var frames = new NamedPipesService(_pipeName);
+
+            // Act
+            IpcResponseDto? response;
+            using (var remote = new NamedPipeClientStream(Environment.MachineName, _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification))
+            {
+                await remote.ConnectAsync(10000, ct);
+                await frames.WriteAsync(remote, new IpcRequestDto { Action = AppConfig.ServyHostGetByNameAction, ServiceName = ServiceName }, ct);
+                response = await frames.ReadAsync<IpcResponseDto>(remote, ct);
+            }
+
+            // Assert
+            Assert.True(_identifier.LastWasRemote);
+            Assert.NotNull(response);
+            Assert.False(response!.Success);
+            Assert.Null(response.Data);
+        }
+
+        /// <summary>
+        /// Connects to the host's pipe while impersonating a token, and returns <c>CONNECTED</c> or <c>ERROR</c> and the exception.
+        /// </summary>
+        private string ConnectAs(Microsoft.Win32.SafeHandles.SafeAccessTokenHandle token)
+        {
+            return WindowsIdentity.RunImpersonated(token, () =>
+            {
+                try
+                {
+                    using (var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut))
+                        client.Connect(5000);
+                    return "CONNECTED";
+                }
+                catch (Exception ex)
+                {
+                    return "ERROR " + ex.GetType().Name + ": " + ex.Message;
+                }
+            });
+        }
+
         private List<(PipeSecurity Requested, NamedPipeServerStream Stream)> TrackCreatedInstances()
         {
             var created = new List<(PipeSecurity Requested, NamedPipeServerStream Stream)>();
@@ -487,6 +558,21 @@ namespace Servy.Host.IntegrationTests
             public string LocalUser { get; }
 
             public string LocalUserPassword { get; }
+
+            /// <summary>
+            /// Logs the local user on with a network logon, whose token carries <c>NT AUTHORITY\NETWORK</c>.
+            /// </summary>
+            public Microsoft.Win32.SafeHandles.SafeAccessTokenHandle NetworkLogon()
+            {
+                const int Logon32LogonNetwork = 3;
+                const int Logon32ProviderDefault = 0;
+                Assert.True(LogonUser(LocalUser, ".", LocalUserPassword, Logon32LogonNetwork, Logon32ProviderDefault, out var token),
+                    $"LogonUser (network) failed: {System.Runtime.InteropServices.Marshal.GetLastWin32Error()}");
+                return token;
+            }
+
+            [System.Runtime.InteropServices.DllImport("advapi32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+            private static extern bool LogonUser(string userName, string domain, string password, int logonType, int logonProvider, out Microsoft.Win32.SafeHandles.SafeAccessTokenHandle token);
 
             /// <summary>
             /// Connects to the pipe as the account and returns <c>CONNECTED</c>, or <c>ERROR</c> and the exception.
@@ -585,7 +671,13 @@ namespace Servy.Host.IntegrationTests
             public bool IsAdministrator { get; set; }
 
             public PipeCaller Identify(NamedPipeServerStream connectedServer)
-                => new PipeCaller(_inner.Identify(connectedServer).ProcessId, IsAdministrator);
+            {
+                var identified = _inner.Identify(connectedServer);
+                LastWasRemote = identified.IsRemote;
+                return new PipeCaller(identified.ProcessId, IsAdministrator, identified.IsRemote);
+            }
+
+            public bool? LastWasRemote { get; private set; }
         }
 
         /// <summary>
