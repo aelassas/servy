@@ -111,7 +111,7 @@
                  BorderThickness="0"
                  SelectionMode="Extended"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  VirtualizingStackPanel.IsVirtualizing="True"
                  VirtualizingStackPanel.VirtualizationMode="Recycling"
                  PreviewKeyDown="LogList_PreviewKeyDown"
