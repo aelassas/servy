@@ -553,10 +553,12 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
-        /// The tailing loop decides whether a trailing line is torn by probing the byte before the reader's
-        /// own consumed boundary, never the live end of the file. A writer that completes the line between
-        /// the read that drained the reader and this probe must not make the consumed fragment look
-        /// terminated, or the prefix is published as a line of its own and the remainder follows as a second.
+        /// The history load decides whether a trailing line is torn by probing the byte before the offset
+        /// it has read up to, never the live end of the file. A writer that completes the line between the
+        /// read and this probe must not make the consumed fragment look terminated, or the history
+        /// publishes the torn prefix and the live tailer publishes the remainder as a second line. The
+        /// tailing loop itself no longer probes the file at all; it splits on terminators instead, so this
+        /// helper now serves the history path only.
         /// </summary>
         [Fact]
         public void EndsWithNewlineAt_WriterAppendedAfterTheRead_StillReportsTheConsumedFragmentAsTorn()
