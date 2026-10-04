@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Security.AccessControl;
@@ -405,6 +406,85 @@ namespace Servy.Core.IntegrationTests.NamedPipes
                 Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.NetworkSid, null).Equals(r.IdentityReference));
                 Assert.DoesNotContain(rules, r => new SecurityIdentifier(WellKnownSidType.WorldSid, null).Equals(r.IdentityReference));
             }
+        }
+
+        /// <summary>A protected DACL that grants Full Control to the given accounts only.</summary>
+        private static PipeSecurity Dacl(params SecurityIdentifier[] sids)
+        {
+            var security = new PipeSecurity();
+            security.SetAccessRuleProtection(true, false);
+            foreach (var sid in sids)
+                security.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.FullControl, AccessControlType.Allow));
+            return security;
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task LocalPipeServer_Create_LocalClientExchangesDataAndTheInstanceCarriesTheGivenDacl()
+        {
+            // Arrange: a protected DACL that grants only the current user, so no elevation is needed
+            var ct = TestContext.Current.CancellationToken;
+            var me = WindowsIdentity.GetCurrent().User!;
+
+            // Act
+            using (var server = LocalPipeServer.Create(_pipeName, Dacl(me)))
+            using (var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+            {
+                var waiting = server.WaitForConnectionAsync(ct);
+                await client.ConnectAsync(2000, ct);
+                await waiting;
+                var received = server.ReadAsync(new byte[1], 0, 1, ct);
+                await client.WriteAsync(new byte[] { 7 }, 0, 1, ct);
+
+                // Assert: the overlapped handle carries traffic, and the kernel's descriptor is the one passed in
+                Assert.Equal(1, await received);
+                var applied = server.GetAccessControl();
+                Assert.True(applied.AreAccessRulesProtected);
+                var rules = applied.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+                Assert.NotEmpty(rules);
+                Assert.All(rules, r => Assert.Equal(me, r.IdentityReference));
+            }
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public void LocalPipeServer_Create_ALaterInstanceReplacesTheSharedDacl()
+        {
+            // Arrange
+            var me = WindowsIdentity.GetCurrent().User!;
+            var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+            using (var first = LocalPipeServer.Create(_pipeName, Dacl(me)))
+            {
+                // Act
+                using (LocalPipeServer.Create(_pipeName, Dacl(me, system)))
+                {
+                    // Assert: the first instance reads back the descriptor written through the second one
+                    var rules = first.GetAccessControl().GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>();
+                    Assert.Contains(rules, r => system.Equals(r.IdentityReference));
+                }
+            }
+        }
+
+        [Fact]
+        public void LocalPipeServer_Create_NameHeldByASingleInstancePipe_ThrowsWin32ExceptionNamingThePipe()
+        {
+            // Arrange: another server holds the name with a limit of one instance
+            var me = WindowsIdentity.GetCurrent().User!;
+            using (new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+            {
+                // Act
+                var ex = Assert.Throws<Win32Exception>(() => LocalPipeServer.Create(_pipeName, Dacl(me)));
+
+                // Assert
+                Assert.Contains(_pipeName, ex.Message);
+            }
+        }
+
+        [Fact]
+        public void LocalPipeServer_Create_NullArguments_Throw()
+        {
+            // Arrange, Act & Assert
+            Assert.Throws<ArgumentNullException>(() => LocalPipeServer.Create(null!, new PipeSecurity()));
+            Assert.Throws<ArgumentNullException>(() => LocalPipeServer.Create(_pipeName, null!));
         }
 
         #endregion
