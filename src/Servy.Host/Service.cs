@@ -69,6 +69,18 @@ namespace Servy.Host
         /// <summary>The retries spent since the last refresh that was not itself a retry; guarded by <see cref="_securityLock"/>.</summary>
         private int _unresolvedRetryAttempts;
 
+        /// <summary>
+        /// Whether the line saying the retries for unresolved accounts are spent was already logged in the current series
+        /// of retries; guarded by <see cref="_securityLock"/>.
+        /// </summary>
+        private bool _unresolvedRetriesSpentLogged;
+
+        /// <summary>
+        /// The accounts granted only because a running service process still uses them, as last logged, so that line is
+        /// logged when this set changes rather than on every recheck; guarded by <see cref="_securityLock"/>.
+        /// </summary>
+        private HashSet<System.Security.Principal.SecurityIdentifier> _loggedLingeringAccounts = new HashSet<System.Security.Principal.SecurityIdentifier>();
+
         /// <summary>The number of the last DACL rebuild that started reading the services; guarded by <see cref="_securityLock"/>.</summary>
         private long _refreshStarted;
 
@@ -523,18 +535,20 @@ namespace Servy.Host
             // A service reinstalled under another account keeps running under the old one until it restarts, and that
             // process still has to report its PID and runtime state, at the latest when it stops (#7330). So the account
             // of every running service process is granted too, for as long as that process runs.
-            var lingering = 0;
+            var lingeringAccounts = new HashSet<System.Security.Principal.SecurityIdentifier>();
             foreach (var sid in GetRunningServiceAccounts(services))
             {
                 if (grantees.Contains(sid))
                     continue;
 
                 grantees.Add(sid);
-                lingering++;
+                lingeringAccounts.Add(sid);
             }
 
+            var lingering = lingeringAccounts.Count;
             var security = ServyHostPipeSecurity.Create(grantees);
             CancellationTokenSource[] waiting;
+            bool lingeringChanged;
             lock (_securityLock)
             {
                 // A rebuild that read the services later has already published, so its DACL is the newer one and this
@@ -546,9 +560,21 @@ namespace Servy.Host
                 _refreshPublished = generation;
                 _pipeSecurity = security;
                 waiting = _waitingInstanceCts.ToArray();
+
+                // A lingering account is rechecked every UnresolvedAccountRetryDelayMs for as long as its process runs,
+                // which can be days: log when the set changes, not on every recheck (#7362)
+                lingeringChanged = !_loggedLingeringAccounts.SetEquals(lingeringAccounts);
+                if (lingeringChanged)
+                    _loggedLingeringAccounts = lingeringAccounts;
             }
 
             _logger?.Debug($"Servy host named pipe DACL rebuilt for {accounts.Count()} service account(s).");
+
+            if (lingeringChanged && lingering > 0)
+                _logger?.Info($"{lingering} account(s) keep access to the Servy host named pipe while a service process still runs under them " +
+                    $"(the service was reinstalled under another account and has not restarted yet). Rechecking in {UnresolvedAccountRetryDelayMs} ms.");
+            else if (lingeringChanged)
+                _logger?.Info("No account keeps access to the Servy host named pipe only because a service process still runs under it any more.");
 
             foreach (var cts in waiting)
             {
@@ -613,36 +639,57 @@ namespace Servy.Host
         /// </param>
         private void ScheduleUnresolvedAccountRetry(int unresolved, int lingering, bool isRetry, bool readFailed = false)
         {
-            int attempt;
-            CancellationToken token;
+            var attempt = 0;
+            var schedule = false;
+            bool retryUnresolved;
+            bool retriesSpent;
+            var token = CancellationToken.None;
             lock (_securityLock)
             {
                 var failed = readFailed || unresolved > 0;
                 if (!isRetry || !failed)
+                {
                     _unresolvedRetryAttempts = 0;
+                    _unresolvedRetriesSpentLogged = false;
+                }
 
                 // Only while the listener runs: its token is what stops a waiting retry when the host stops. Unresolved
                 // accounts and failed reads are retried a bounded number of times; a lingering account is rechecked until
                 // its process exits.
                 var listener = _cancellationSource;
-                var retryUnresolved = failed && _unresolvedRetryAttempts < AppConfig.ServyHostUnresolvedAccountRetryCount;
-                if ((!retryUnresolved && lingering == 0) || listener == null || _unresolvedRetryPending)
-                    return;
+                retryUnresolved = failed && _unresolvedRetryAttempts < AppConfig.ServyHostUnresolvedAccountRetryCount;
 
-                try { token = listener.Token; } catch (ObjectDisposedException) { return; }
-                _unresolvedRetryPending = true;
-                attempt = retryUnresolved ? ++_unresolvedRetryAttempts : _unresolvedRetryAttempts;
+                // Said once when the bound is reached, rather than repeating the last attempt's line with every recheck
+                // of a lingering account (#7362)
+                retriesSpent = unresolved > 0 && !retryUnresolved && !_unresolvedRetriesSpentLogged;
+                if (retriesSpent)
+                    _unresolvedRetriesSpentLogged = true;
+
+                if ((retryUnresolved || lingering > 0) && listener != null && !_unresolvedRetryPending)
+                {
+                    try { token = listener.Token; schedule = true; } catch (ObjectDisposedException) { }
+                }
+
+                if (schedule)
+                {
+                    _unresolvedRetryPending = true;
+                    attempt = retryUnresolved ? ++_unresolvedRetryAttempts : _unresolvedRetryAttempts;
+                }
             }
+
+            if (retriesSpent)
+                _logger?.Warn($"{unresolved} service account(s) still could not be resolved after {AppConfig.ServyHostUnresolvedAccountRetryCount} retries " +
+                    "and are not granted access to the Servy host named pipe. No further retry is scheduled for them until the pipe access is next refreshed.");
+
+            if (!schedule)
+                return;
 
             if (readFailed)
                 _logger?.Warn("The service accounts could not be read, so the Servy host named pipe DACL was not rebuilt. " +
                     $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
-            if (unresolved > 0)
+            if (unresolved > 0 && retryUnresolved)
                 _logger?.Warn($"{unresolved} service account(s) could not be resolved and are not granted access to the Servy host named pipe yet. " +
                     $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
-            if (lingering > 0)
-                _logger?.Info($"{lingering} account(s) keep access to the Servy host named pipe while a service process still runs under them " +
-                    $"(the service was reinstalled under another account and has not restarted yet). Rechecking in {UnresolvedAccountRetryDelayMs} ms.");
 
             _ = Task.Run(async () =>
             {
