@@ -132,11 +132,13 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task InstallService_ExistingRowFailedToDecrypt_IsRefusedBeforeTheScmOrTheDatabaseIsTouched()
         {
-            // Arrange: the row as the repository returns it when a sensitive field cannot be decrypted
+            // Arrange: the row as the repository returns it when a sensitive field cannot be decrypted - the
+            // read path sets DecryptionFailed and prefixes the description, and the flag is what is read (#7348)
             _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto
                 {
                     Name = ServiceName,
+                    DecryptionFailed = true,
                     Description = string.Format(DecryptionFailureMarker.CorruptFormat, "SecureDataIntegrityException") + DecryptionFailureMarker.OriginalDescriptionSeparator + "desc",
                 });
 
@@ -150,6 +152,29 @@ namespace Servy.Core.UnitTests.Services
             _windowsServiceApi.Verify(x => x.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
             _serviceRepository.Verify(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _serviceRepository.Verify(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_ExistingRowCarriesAStoredMarkerButDecrypts_IsNotRefused()
+        {
+            // Arrange: the shape a Servy v9.5 save persisted (#5186) - the marker is in the STORED description and
+            // the sensitive columns are blank, so the read decrypts cleanly and DecryptionFailed stays false.
+            // Reading the text instead of the flag refused every install and update of such a row for good (#7348).
+            ArrangeServiceAlreadyExists();
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto
+                {
+                    Name = ServiceName,
+                    DecryptionFailed = false,
+                    Description = string.Format(DecryptionFailureMarker.CorruptFormat, "CryptographicException") + DecryptionFailureMarker.OriginalDescriptionSeparator + "My app",
+                });
+
+            // Act
+            var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(null), CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _serviceRepository.Verify(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion

@@ -1003,6 +1003,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task UpdateAsync_RowWhoseStoredDescriptionCarriesAMarkerButDecrypts_SucceedsAndStripsTheMarker()
+        {
+            // Arrange: the shape a Servy v9.5 save persisted (#5186) - the marker is in the STORED description and
+            // the sensitive columns are blank, so this row decrypts cleanly today. Deciding from the description
+            // text made every install, update and import of it fail for good with an aes_key.dat error that is
+            // not true, and editing the marker out in the UI did not help because the STORED row was checked (#7348).
+            var ct = CancellationToken.None;
+            var marked = string.Format(DecryptionFailureMarker.CorruptFormat, "CryptographicException")
+                + DecryptionFailureMarker.OriginalDescriptionSeparator + "My app";
+            var id = await _repository.AddAsync(new ServiceDto
+            {
+                Name = "LegacyMarked",
+                ExecutablePath = "legacy.exe",
+                Description = "Original description",
+            }, ct);
+            await _executor.ExecuteAsync(
+                $"UPDATE {SqlConstants.ServicesTableName} SET Description = @Description WHERE Id = @Id",
+                new { Id = id, Description = marked },
+                cancellationToken: ct);
+
+            var read = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            Assert.Equal(marked, read.Description);
+            Assert.False(DecryptionFailureMarker.HasDecryptionFailure(read));
+            read.ExecutablePath = "changed.exe";
+
+            // Act
+            await _repository.UpdateAsync(read, false, false, ct);
+
+            // Assert: the write went through, and the save stripped the stored marker as v9.6 to v10.1 did
+            var after = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            Assert.Equal("changed.exe", after.ExecutablePath);
+            Assert.Equal("My app", after.Description);
+            Assert.False(DecryptionFailureMarker.HasDecryptionFailure(after));
+        }
+
+        [Fact]
         public async Task Update_Synchronous_ServiceReadFromAnUndecryptableRow_IsRefusedAndTheRowIsLeftAsItIs()
         {
             // Arrange

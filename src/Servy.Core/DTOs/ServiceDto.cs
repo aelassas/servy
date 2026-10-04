@@ -57,6 +57,23 @@ namespace Servy.Core.DTOs
         public string Description { get; set; }
 
         /// <summary>
+        /// Whether at least one of this service's sensitive fields failed to decrypt when the row was read.
+        /// </summary>
+        /// <remarks>
+        /// Set by the repository's read path, which also prefixes <see cref="Description"/> with a
+        /// <see cref="Security.DecryptionFailureMarker"/> so the service can still be shown. It carries no
+        /// <see cref="SqlColumnAttribute"/>, so it is never a column and never round-trips through
+        /// <c>Servy.db</c>, an export or an import: it describes one read, not the configuration.
+        /// <see cref="Security.DecryptionFailureMarker.HasDecryptionFailure(ServiceDto)"/> reads this instead
+        /// of the description text, so a row whose stored description already starts with a marker - the shape
+        /// a Servy v9.5 save left behind (#5186) - stays savable when its secrets do decrypt, and so does a
+        /// description a user happens to type in that form.
+        /// </remarks>
+        [JsonIgnore]
+        [XmlIgnore]
+        public bool DecryptionFailed { get; set; }
+
+        /// <summary>
         /// Path to the executable of the service.
         /// </summary>
         [ServicePath("executable path", isFile: true, required: true, errorResourceKey: nameof(Strings.Msg_InvalidPath))]

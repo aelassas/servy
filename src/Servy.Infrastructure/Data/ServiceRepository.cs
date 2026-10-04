@@ -695,6 +695,10 @@ namespace Servy.Infrastructure.Data
 
             Logger.Warn($"Legacy ciphertext refused by policy for service '{dto.Name}'. {ex.Message}");
 
+            // The marker is display text; this flag is what every save-side refusal reads, so a stored
+            // marker left behind by a v9.5 save (#5186) cannot refuse a row whose secrets do decrypt.
+            dto.DecryptionFailed = true;
+
             dto.Description = $"{LegacyBlockedMarker}{OriginalDescriptionSeparator}{dto.Description}";
         }
 
@@ -939,6 +943,10 @@ namespace Servy.Infrastructure.Data
 
             // Capture the original root cause name if available for actionable diagnostic feedback
             string rootCauseName = ex.InnerException?.GetType().Name ?? ex.GetType().Name;
+
+            // The marker is display text; this flag is what every save-side refusal reads, so a stored
+            // marker left behind by a v9.5 save (#5186) cannot refuse a row whose secrets do decrypt.
+            dto.DecryptionFailed = true;
 
             // Explicitly update descriptions to flag the target record in the UI
             dto.Description = $"{string.Format(CorruptMarkerFormat, rootCauseName)}{OriginalDescriptionSeparator}{dto.Description}";
