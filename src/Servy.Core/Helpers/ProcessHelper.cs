@@ -328,8 +328,9 @@ namespace Servy.Core.Helpers
 
             inputPath = inputPath.Trim();
 
-            // 1. Expand variables (Note: only expands variables existing in the calling process's environment)
-            var expandedPath = Environment.ExpandEnvironmentVariables(inputPath);
+            // 1. Expand variables: the process environment first, then the System variables in the registry for
+            //    the placeholders it does not know, so a System variable added after the process started resolves (#7393)
+            var expandedPath = SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(inputPath);
 
             // 2. Ensure the path is absolute before checking the filesystem
             if (!Helper.IsAbsolute(expandedPath))
