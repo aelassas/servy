@@ -325,29 +325,6 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
-        public void GetKey_CorruptedFile_LogsACriticalErrorAndNeverReplacesTheFile()
-        {
-            // Arrange
-            var keyPath = GetTempFilePath("corrupt_kept.key");
-            var ivPath = GetTempFilePath("corrupt_kept.iv");
-            var corrupt = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
-            File.WriteAllBytes(keyPath, corrupt);
-
-            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
-            {
-                // Act
-                var ex = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
-                var again = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
-
-                // Assert: a corrupt key is reported with what to do, and is never regenerated, on any attempt
-                Assert.StartsWith("CRITICAL:", ex.Message);
-                Assert.Contains("Do NOT delete or replace aes_key.dat", ex.Message);
-                Assert.StartsWith("CRITICAL:", again.Message);
-                Assert.Equal(corrupt, File.ReadAllBytes(keyPath));
-            }
-        }
-
-        [Fact]
         public void GetKey_ProtectedBlobOfTheWrongLength_IsRejectedAndTheFileIsKept()
         {
             // Arrange: a blob DPAPI accepts (legacy, no entropy) that holds 16 bytes instead of the 32-byte key
@@ -707,6 +684,32 @@ namespace Servy.Core.IntegrationTests.Security
     public class ProtectedKeyProviderRejectionLogIntegrationTests : TempDirectoryTestBase
     {
         #region Rejection Report Tests
+
+        [Fact]
+        public void GetKey_CorruptedFile_LogsACriticalErrorAndNeverReplacesTheFile()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("corrupt_kept.key");
+            var ivPath = GetTempFilePath("corrupt_kept.iv");
+            var corrupt = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
+            File.WriteAllBytes(keyPath, corrupt);
+
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var captured = LogCapture.Run(() => Record.Exception(() => provider.GetKey()));
+                var again = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
+
+                // Assert: reported with what to do, logged with the same text, and never regenerated, on any attempt
+                var ex = Assert.IsType<InvalidOperationException>(captured.Result);
+                Assert.StartsWith("CRITICAL:", ex.Message);
+                Assert.Contains("Do NOT delete or replace aes_key.dat", ex.Message);
+                Assert.Contains("CRITICAL: Failed to unprotect encryption key", captured.Log);
+                Assert.Contains("Do NOT delete or replace aes_key.dat", captured.Log);
+                Assert.StartsWith("CRITICAL:", again.Message);
+                Assert.Equal(corrupt, File.ReadAllBytes(keyPath));
+            }
+        }
 
         [Fact]
         public void GetKey_EntropyProtectedBlobOfTheWrongLength_ReportsTheLengthWithoutALegacyFallbackWarning()
