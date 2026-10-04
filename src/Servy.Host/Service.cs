@@ -27,9 +27,10 @@ namespace Servy.Host
     /// <remarks>
     /// <para>
     /// The pipe is created with a protected DACL (<see cref="ServyHostPipeSecurity"/>): Local System and Administrators,
-    /// plus Read and Write for the accounts the installed services run under. Network logons are allowed. The pipe is local
-    /// only: a client on another computer cannot open it (<c>PIPE_REJECT_REMOTE_CLIENTS</c>), and the host also refuses any
-    /// request from one.
+    /// plus Read and Write for the accounts the installed services run under, and for the account a running service process
+    /// still uses after its service was reinstalled under another one, until that process exits. Network logons are
+    /// allowed. The pipe is local only: a client on another computer cannot open it (<c>PIPE_REJECT_REMOTE_CLIENTS</c>),
+    /// and the host also refuses any request from one.
     /// </para>
     /// <para>
     /// Being able to connect is not being allowed to read anything. Every request about a service is answered only when
@@ -452,15 +453,16 @@ namespace Servy.Host
         #region Pipe Security
 
         /// <summary>
-        /// Rebuilds the pipe's DACL from the accounts of the installed services and recycles the instance that is
-        /// waiting for a client, so the next connection is checked against the new DACL.
+        /// Rebuilds the pipe's DACL from the accounts of the installed services and of their running processes, and
+        /// recycles the instance that is waiting for a client, so the next connection is checked against the new DACL.
         /// </summary>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>A task that completes when the DACL has been rebuilt.</returns>
         internal Task RefreshPipeSecurityAsync(CancellationToken ct) => RefreshPipeSecurityAsync(isRetry: false, ct);
 
         /// <summary>
-        /// Rebuilds the pipe's DACL and, when an account could not be resolved, schedules another attempt.
+        /// Rebuilds the pipe's DACL and, when an account could not be resolved or a running service process still holds an
+        /// account its service no longer names, schedules another rebuild.
         /// </summary>
         /// <param name="isRetry">Whether this is a scheduled retry; any other refresh starts a new series of retries.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
