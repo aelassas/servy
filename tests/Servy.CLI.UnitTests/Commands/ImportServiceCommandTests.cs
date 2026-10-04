@@ -6,6 +6,7 @@ using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Testing;
 using System;
@@ -312,6 +313,32 @@ namespace Servy.CLI.UnitTests.Commands
                     + Environment.NewLine
                     + string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_ImportServiceSuggestion),
                 result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_StoredRowCannotBeDecrypted_ReturnsTheRefusalMessageAndDoesNotInstall()
+        {
+            // Arrange
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            File.WriteAllText(_legalXmlPath, "<ServiceDto></ServiceDto>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
+
+            var dto = new ServiceDto { Name = "PoisonedService", ExecutablePath = realPath };
+            MockXmlValidator(true, dto: dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            var refusal = new ServiceDecryptionFailedException("PoisonedService", "Password");
+            _serviceRepoMock
+                .Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(refusal);
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            // The refusal's own message, not the generic command-failed template, and no install attempt.
+            Assert.False(result.IsSuccess);
+            Assert.Equal(refusal.Message, result.Message);
+            _serviceRepoMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         #endregion
