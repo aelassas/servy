@@ -119,6 +119,46 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
+        /// The defect of #7379: the terminator was matched at any byte offset, so in a UTF-16 or UTF-32
+        /// log the encoded newline's bytes occurring across two adjacent characters ended a line in the
+        /// middle of a character. The match must end on a code-unit boundary.
+        /// </summary>
+        /// <param name="encodingName">The encoding the row runs under.</param>
+        /// <param name="text">A single line whose bytes carry the terminator's bytes out of phase.</param>
+        [Theory]
+        [InlineData("utf-16LE", "\u0a15\u4e00 ok")]
+        [InlineData("utf-16BE", "\u0100\u0a15 ok")]
+        [InlineData("utf-32LE", "\u0a15\u0100 ok")]
+        public void TryReadLine_NewlineBytesStraddlingTwoCharacters_DoNotEndTheLine(string encodingName, string text)
+        {
+            // Arrange
+            Encoding encoding;
+            switch (encodingName)
+            {
+                case "utf-16LE":
+                    encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
+                    break;
+                case "utf-16BE":
+                    encoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
+                    break;
+                case "utf-32LE":
+                    encoding = new UTF32Encoding(bigEndian: false, byteOrderMark: false);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(encodingName), encodingName, null);
+            }
+
+            var splitter = new LogLineSplitter(encoding);
+
+            // Act
+            var lines = ReadAll(splitter, encoding.GetBytes(text + "\n"));
+
+            // Assert
+            Assert.Equal(new[] { text }, lines);
+            Assert.Equal(0, splitter.PendingByteCount);
+        }
+
+        /// <summary>
         /// The tailing loop resets the splitter when the file rotated or was truncated, because the
         /// bytes read before the swap no longer belong to the line being assembled.
         /// </summary>
