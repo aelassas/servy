@@ -67,7 +67,7 @@ namespace Servy.Host.IntegrationTests
             => new NamedPipesService(_pipeName, new ServyHostServerVerifier(_api.Object), connectTimeoutMs: connectTimeoutMs, requestTimeoutMs: requestTimeoutMs);
 
         private async Task SeedAsync(string name)
-            => await _repository.AddAsync(new ServiceDto { Name = name, ExecutablePath = "C:\\app.exe", Parameters = "--secret", Password = "pwd" }, TestContext.Current.CancellationToken);
+            => await _repository.UpsertAsync(new ServiceDto { Name = name, ExecutablePath = "C:\\app.exe", Parameters = "--secret", Password = "pwd" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: TestContext.Current.CancellationToken);
 
         [Fact]
         public async Task ServiceProcess_ReadsItsConfigurationAndWritesItsRuntimeStateAndCounter()
@@ -162,7 +162,7 @@ namespace Servy.Host.IntegrationTests
             var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
             _host.StartListening();
             var before = _host.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
-            await _repository.AddAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _identifier.IsAdministrator = true;
 
             // Act
@@ -303,7 +303,7 @@ namespace Servy.Host.IntegrationTests
             var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
             var created = TrackCreatedInstances();
             _host.StartListening();
-            await _repository.AddAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _identifier.IsAdministrator = true;
 
             // Act
@@ -328,7 +328,7 @@ namespace Servy.Host.IntegrationTests
             var ct = TestContext.Current.CancellationToken;
             var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
             var created = TrackCreatedInstances();
-            await _repository.AddAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "LocalServiceApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _host.StartListening();
             await WaitForInstanceCreatedWithAsync(created, localService, ct);
             Assert.Contains(KernelRules(created), r => localService.Equals(r.IdentityReference));
@@ -378,7 +378,7 @@ namespace Servy.Host.IntegrationTests
             // Act 1: install
             var index = 0;
             foreach (var account in accounts)
-                await _repository.AddAsync(new ServiceDto { Name = "Svc" + index++, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = account.Stored }, ct);
+                await _repository.UpsertAsync(new ServiceDto { Name = "Svc" + index++, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = account.Stored }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _identifier.IsAdministrator = true;
             Assert.True(await Client().RefreshPipeAccessAsync(ct));
 
@@ -406,7 +406,7 @@ namespace Servy.Host.IntegrationTests
             // LocalService now, as after a reinstall under another account that has not been followed by a restart
             var ct = TestContext.Current.CancellationToken;
             var me = WindowsIdentity.GetCurrent().User!;
-            await _repository.AddAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
 
             // Act: the real token of the running process is read
             _host.StartListening();
@@ -433,7 +433,7 @@ namespace Servy.Host.IntegrationTests
 
             // Act & Assert: refused while not granted, connects once its service is installed
             Assert.StartsWith("ERROR UnauthorizedAccessException", ConnectAs(token));
-            await _repository.AddAsync(new ServiceDto { Name = "NetworkLogonApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = ".\\" + sandbox.LocalUser }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "NetworkLogonApp", ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = ".\\" + sandbox.LocalUser }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _identifier.IsAdministrator = true;
             Assert.True(await Client().RefreshPipeAccessAsync(ct));
             Assert.Equal("CONNECTED", ConnectAs(token));
@@ -448,7 +448,7 @@ namespace Servy.Host.IntegrationTests
             // client. The identifier is told to report an administrator, so nothing but the pipe's own remote-client
             // rejection can stop it.
             var ct = TestContext.Current.CancellationToken;
-            await _repository.AddAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", Parameters = "--secret", RunAsLocalSystem = false, UserAccount = WindowsIdentity.GetCurrent().Name }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", Parameters = "--secret", RunAsLocalSystem = false, UserAccount = WindowsIdentity.GetCurrent().Name }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _host.StartListening();
             _identifier.IsAdministrator = true;
             var frames = new NamedPipesService(_pipeName);

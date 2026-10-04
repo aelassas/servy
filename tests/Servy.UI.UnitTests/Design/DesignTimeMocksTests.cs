@@ -42,12 +42,7 @@ namespace Servy.UI.UnitTests.Design
             var repo = new DesignTimeServiceRepository();
             var ct = TestContext.Current.CancellationToken;
 
-            // Act & Assert - Sync branches
-            Assert.Null(repo.GetByName("test"));
-            Assert.Null(repo.GetByName("test", decrypt: false));
-
             // Act & Assert - Async branches (Task.FromResult coverage)
-            Assert.Null(await repo.GetByIdAsync(1, cancellationToken: ct));
             Assert.Null(await repo.GetByNameAsync("test", cancellationToken: ct));
             Assert.Null(await repo.GetServicePidAsync("test", cancellationToken: ct));
             Assert.Null(await repo.GetServiceConsoleStateAsync("test", cancellationToken: ct));
@@ -57,19 +52,13 @@ namespace Servy.UI.UnitTests.Design
 
             Assert.Equal(string.Empty, await repo.ExportXmlAsync("test", cancellationToken: ct));
             Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: ct));
-            Assert.True((await repo.ImportXmlAsync("<xml/>", cancellationToken: ct)).IsSuccess);
-            Assert.True((await repo.ImportJsonAsync("{}", cancellationToken: ct)).IsSuccess);
 
             // Act & Assert - Void/Int branches
             repo.Upsert(new ServiceDto());
             repo.Delete("test");
-            Assert.Equal(0, repo.Update(new ServiceDto(), true, true));
             Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
             Assert.Equal(0, await repo.DeleteAsync("test", cancellationToken: ct));
-            Assert.Equal(0, await repo.AddAsync(new ServiceDto(), cancellationToken: ct));
-            Assert.Equal(0, await repo.UpdateAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
             Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
-            Assert.Equal(0, await repo.UpsertBatchAsync(new[] { new ServiceDto() }, cancellationToken: ct));
         }
 
         #endregion

@@ -313,7 +313,6 @@ namespace Servy.Host.UnitTests
             Assert.True(response.Success);
             Assert.Equal(1, response.UpdateData);
             _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName, state, It.IsAny<CancellationToken>()), Times.Once);
-            _repository.Verify(r => r.UpdateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _repository.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
