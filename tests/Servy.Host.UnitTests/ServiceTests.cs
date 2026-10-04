@@ -697,6 +697,34 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public void OnStop_LoggerDisposeHangs_ReturnsAfterTheFlushBudget()
+        {
+            // Arrange
+            using (var release = new ManualResetEventSlim(false))
+            {
+                var logger = new Mock<IServyLogger>();
+                logger.Setup(l => l.Dispose()).Callback(() => release.Wait(TimeSpan.FromSeconds(30)));
+                var probe = new LifecycleProbe(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object);
+
+                try
+                {
+                    // Act
+                    var stop = Task.Run(() => probe.RunOnStop());
+                    var returned = stop.Wait(TimeSpan.FromSeconds(10));
+
+                    // Assert: the flush gives up after AppConfig.LoggerFlushTimeoutMs instead of waiting for the hung Dispose
+                    Assert.True(returned);
+                    logger.Verify(l => l.Dispose(), Times.Once);
+                }
+                finally
+                {
+                    release.Set();
+                    probe.Dispose();
+                }
+            }
+        }
+
+        [Fact]
         public void OnStart_PipeDaclCannotBeBuilt_LogsAndSetsTheServiceSpecificExitCode()
         {
             // Arrange
