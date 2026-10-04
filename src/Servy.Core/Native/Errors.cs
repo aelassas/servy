@@ -2,7 +2,7 @@ namespace Servy.Core.Native
 {
     /// <summary>
     /// Defines the Win32 error codes Servy's native interop checks: service control, file moves, process snapshots,
-    /// console pipes and logon validation.
+    /// console pipes, named-pipe client location and logon validation.
     /// </summary>
     public static class Errors
     {
