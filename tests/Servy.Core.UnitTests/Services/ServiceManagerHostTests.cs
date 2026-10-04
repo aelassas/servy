@@ -326,6 +326,22 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_RefreshCancelled_InstallStillSucceedsAndIsNotRolledBack()
+        {
+            // Arrange
+            var serviceHandle = ArrangeServiceCreated();
+            _pipes.Setup(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+
+            // Act
+            var (result, log) = await LogCapture.RunAsync(() => CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(@".\svc-account"), CancellationToken.None));
+
+            // Assert: the refresh runs after the service was created and saved, so cancelling it must not roll that back
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _windowsServiceApi.Verify(x => x.DeleteService(serviceHandle), Times.Never);
+            Assert.Contains(@"Refreshing the Servy host named pipe access for '.\svc-account' (service 'PipedService') was cancelled.", log);
+        }
+
+        [Fact]
         public async Task InstallService_WithoutPipeService_InstallsWithoutAPipeRefreshError()
         {
             // Arrange
@@ -359,6 +375,22 @@ namespace Servy.Core.UnitTests.Services
             // Assert: the row is gone, so the rebuilt DACL keeps the account only if another service still uses it
             Assert.True(result.IsSuccess, result.ErrorMessage);
             Assert.Equal(new[] { "delete", "refresh" }, order);
+        }
+
+        [Fact]
+        public async Task UninstallService_RefreshCancelled_StillReportsTheUninstallAsDone()
+        {
+            // Arrange
+            ArrangeUninstall(@".\svc-account");
+            _serviceRepository.Setup(r => r.DeleteAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            _pipes.Setup(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+
+            // Act
+            var (result, log) = await LogCapture.RunAsync(() => CreateManager(_pipes.Object).UninstallServiceAsync(ServiceName, CancellationToken.None));
+
+            // Assert: the service and its row are already gone when the refresh runs, so the uninstall is not cancelled
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Contains("was cancelled.", log);
         }
 
         [Fact]
