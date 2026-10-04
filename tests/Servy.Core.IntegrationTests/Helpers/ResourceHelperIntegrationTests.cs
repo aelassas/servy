@@ -620,15 +620,21 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             DateTime expectedTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
 
-            // Act
-            var result = await _resourceHelper.CopyEmbeddedResourceAsync(_fakeAssembly, "Servy.Resources", "unchanged", "exe", cancellationToken: CancellationToken.None);
+            // A running service keeps its wrapper open for reading, which the lock probe reports as locked, so the
+            // killer is reachable here unless the identical-content check stops the copy first. Write sharing stays on
+            // because .NET Framework opens the file for writing to update its write time, which FileShare.Read would refuse
+            using (var runningImage = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                // Act
+                var result = await _resourceHelper.CopyEmbeddedResourceAsync(_fakeAssembly, "Servy.Resources", "unchanged", "exe", cancellationToken: CancellationToken.None);
 
-            // Assert: reported as done, but the file and whatever holds it open are left alone and write time is updated to host time
-            Assert.True(result);
-            Assert.False(_resourceHelper.HasCopiedResources);
-            Assert.Equal(expectedTime, File.GetLastWriteTimeUtc(targetPath));
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
-            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+                // Assert: reported as done, but the file and whatever holds it open are left alone and write time is updated to host time
+                Assert.True(result);
+                Assert.False(_resourceHelper.HasCopiedResources);
+                Assert.Equal(expectedTime, File.GetLastWriteTimeUtc(targetPath));
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+                _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+            }
         }
 
         [Fact]
