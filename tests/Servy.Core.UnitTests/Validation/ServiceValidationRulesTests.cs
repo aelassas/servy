@@ -6,6 +6,7 @@ using Servy.Core.Resources;
 using Servy.Core.UnitTests.Helpers;
 using Servy.Core.Validation;
 using Servy.Testing;
+using System;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Validation
@@ -30,6 +31,14 @@ namespace Servy.Core.UnitTests.Validation
                 });
 
             _sut = new ServiceValidationRules(_processHelperMock.Object);
+        }
+
+        [Fact]
+        public void Constructor_NullProcessHelper_ThrowsArgumentNullException()
+        {
+            // Arrange, Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceValidationRules(null));
+            Assert.Equal("processHelper", ex.ParamName);
         }
 
         [Fact]
@@ -121,7 +130,8 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto);
 
             // Assert
-            Assert.DoesNotContain(result.Errors, e => e.Contains("reserved for the Servy host service"));
+            Assert.DoesNotContain(string.Format(Strings.Msg_ServiceNameReservedForServyHost, name), result.Errors);
+            Assert.Empty(result.Errors);
         }
 
         [Fact]
