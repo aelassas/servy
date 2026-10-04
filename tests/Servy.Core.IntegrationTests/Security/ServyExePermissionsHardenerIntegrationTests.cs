@@ -851,6 +851,32 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
+        public void RevokeIfUnused_ClosedFolderIsAJunction_RemovesNothingOnItsTargetAndFails()
+        {
+                        if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: a file outside the vault holds an entry for the target account, and the vault's logs\ is a
+            // junction to its folder. The grant is written before the junction exists, so the arrange step never
+            // goes through the link.
+            CreateVault();
+            var outside = Path.Combine(TempDirectory, "outside-logs");
+            Directory.CreateDirectory(outside);
+            var outsideFile = Path.Combine(outside, "other.log");
+            File.WriteAllText(outsideFile, "test");
+            ProtectWithGrant(outsideFile, FileSystemRights.Read);
+            RunCmd($"mklink /J \"{Path.Combine(_vault, AppConfig.LogsFolderName)}\" \"{outside}\"");
+
+            // Act
+            var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto>(), CancellationToken.None);
+
+            // Assert: the link is refused, and the walk never reached the file behind it
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+            Assert.Contains(AppConfig.LogsFolderName, result.Failed);
+            Assert.DoesNotContain(Path.Combine(AppConfig.LogsFolderName, "other.log"), result.Revoked);
+            Assert.NotEmpty(ExplicitRules(outsideFile, TargetSid, AccessControlType.Allow));
+        }
+
+        [Fact]
         public async Task RevokeIfUnusedAsync_LastServiceOfTheAccountRemoved_RevokesAndReturnsTrue()
         {
             if (!_isElevated) return;
