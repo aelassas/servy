@@ -1122,10 +1122,11 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public async Task ImportConfig_DeserializationReturnsNull_DisplaysLoadErrorMessage()
+        public async Task ImportConfig_ValidatorYieldsNoDto_DisplaysLoadErrorMessageAndStops()
         {
             // Arrange
-            var sut = CreateSut();
+            bool bindCalled = false;
+            var sut = CreateSut(dto => { bindCalled = true; });
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
             File.WriteAllText(path, "<service />");
             _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(path);
@@ -1141,6 +1142,10 @@ namespace Servy.UnitTests.Services
 
                 // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_FailedToLoadXml, UiAppConfig.Caption), Times.Once);
+
+                // The null-DTO arm is terminal: domain validation and binding never run.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.False(bindCalled);
             }
             finally
             {
