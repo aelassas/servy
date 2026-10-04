@@ -72,7 +72,7 @@ namespace Servy.Core.Helpers
         /// A caller that stops the Servy services once before replacing several files uses the overload that takes the
         /// assembly, so that an identical file does not stop them.
         /// </remarks>
-        public bool IsExtractionNeeded(string resourceNamespace, string fileName, string extension, string subfolder = null)
+        internal bool IsExtractionNeeded(string resourceNamespace, string fileName, string extension, string subfolder = null)
             => TryPrepareExtraction(null, resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
 
         /// <summary>
