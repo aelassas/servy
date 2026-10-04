@@ -123,6 +123,15 @@ namespace Servy.UI.Resources {
                 return ResourceManager.GetString("Msg_ServyHostUnavailableTitle", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Servy Startup Warnings.
+        /// </summary>
+        public static string Msg_StartupWarningsTitle {
+            get {
+                return ResourceManager.GetString("Msg_StartupWarningsTitle", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to A new version of Servy is available. Do you want to download it?.
