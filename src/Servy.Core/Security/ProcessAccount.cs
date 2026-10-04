@@ -10,8 +10,6 @@ namespace Servy.Core.Security
     /// </summary>
     public static class ProcessAccount
     {
-        private const uint TokenQuery = 0x0008;
-
         /// <summary>
         /// Gets the SID of the user of a process's token.
         /// </summary>
@@ -30,7 +28,7 @@ namespace Servy.Core.Security
                     if (process == null || process.IsInvalid)
                         return null;
 
-                    if (!NativeMethods.OpenProcessToken(process, TokenQuery, out var token))
+                    if (!NativeMethods.OpenProcessToken(process, NativeMethods.TOKEN_QUERY, out var token))
                         return null;
 
                     using (token)
