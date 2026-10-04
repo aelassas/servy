@@ -507,7 +507,7 @@ namespace Servy.Core.Security
                 }
 
                 // Encrypt data with DPAPI using the machine-specific key and additional entropy.
-                // DataProtectionScope is usually LocalMachine for services
+                // ProtectionScope is always LocalMachine, so every account on this machine shares the same DPAPI key
                 byte[] dynamicEntropy = MachineEntropy.Value;
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, ProtectionScope);
 
