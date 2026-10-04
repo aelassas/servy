@@ -721,11 +721,11 @@ namespace Servy.Host.UnitTests
                     // Assert
                     Assert.True(observed);
 
-                    // Draining the handlers is cleanup, not this test's subject. Cancelling the host drops every
-                    // listener instance the thread pool has not started yet, so Task.WaitAll reports those as
-                    // cancelled; production only reaches StopListening from OnStop, inside a catch-all, so anything it
-                    // throws here is recorded rather than asserted.
-                    Record.Exception(() => host.StopListening());
+                    // Draining the handlers is cleanup, not this test's subject, but it is called plainly: since #7353
+                    // the listener instances are no longer scheduled with the token, so cancelling the host does not
+                    // end the ones the thread pool has not started yet as Canceled, and StopListening tolerates a
+                    // cancellation from either wait. A throw here is a regression and must fail the test.
+                    host.StopListening();
                 }
             }
         }
@@ -762,8 +762,8 @@ namespace Servy.Host.UnitTests
                     logger.Verify(l => l.Error("Exception in HandleConnectionAsync.", It.IsAny<Exception>()), Times.Never);
 
                     // Same as above: the drain keeps the pending handler from setting an event this test is about to
-                    // dispose, and the cancelled listener instances it reports are not this test's subject.
-                    Record.Exception(() => host.StopListening());
+                    // dispose, and since #7353 it is called plainly, so a throw from it fails the test.
+                    host.StopListening();
                 }
             }
         }

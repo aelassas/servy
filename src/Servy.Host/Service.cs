@@ -282,8 +282,11 @@ namespace Servy.Host
 
             // Run the IPC listeners asynchronously in background tasks so OnStart returns promptly to SCM. Several
             // instances wait at once, so a burst of services starting together (at boot) never queues behind one.
+            // The token is deliberately NOT passed to Task.Run: that would only cancel the SCHEDULING, so a stop
+            // arriving while the thread pool is still starting the instances would end them Canceled instead of
+            // completed, for no gain - the loop already returns at once on the same token (#7353)
             _listenerTasks = Enumerable.Range(0, AppConfig.ServyHostListenerCount)
-                .Select(_ => Task.Run(() => ListenForPipeConnectionsAsync(token), token))
+                .Select(_ => Task.Run(() => ListenForPipeConnectionsAsync(token)))
                 .ToArray();
         }
 
@@ -404,8 +407,8 @@ namespace Servy.Host
         }
 
         /// <summary>
-        /// Waits briefly for tasks to finish. A listener cancelled before the thread pool started it ends Canceled, which
-        /// is what stopping is for, so cancellations are not errors here; any other failure still propagates.
+        /// Waits briefly for tasks to finish. A task cancelled by the stop itself ends Canceled, which is what stopping
+        /// is for, so cancellations are not errors here; any other failure still propagates.
         /// </summary>
         /// <param name="tasks">The tasks to wait for.</param>
         private static void WaitIgnoringCancellation(Task[] tasks)
