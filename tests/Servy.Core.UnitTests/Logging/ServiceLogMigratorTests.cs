@@ -186,6 +186,39 @@ namespace Servy.Core.UnitTests.Logging
         }
 
         [Fact]
+        public void Migrate_ReadOnlyFormerLog_IsMovedOnceAndTheStagedFileIsDeleted()
+        {
+            // Arrange
+            // The read-only attribute refuses the delete of the staged file and the in-place emptying in the catch
+            // that follows it, but not the rename that stages it, so the content was appended again at every start.
+            File.WriteAllText(LegacyPath, "once");
+            File.SetAttributes(LegacyPath, FileAttributes.ReadOnly);
+
+            try
+            {
+                // Act
+                var first = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+                var second = ServiceLogMigrator.Migrate(LegacyFolder, ServiceFolder, FileName);
+
+                // Assert
+                Assert.True(first);
+                Assert.True(second);
+                Assert.Equal("once", File.ReadAllText(TargetPath));
+                Assert.False(File.Exists(LegacyPath));
+                Assert.False(File.Exists(StagingPath));
+            }
+            finally
+            {
+                // A failure leaves a read-only file behind, which the base class' recursive delete cannot remove.
+                foreach (var path in new[] { LegacyPath, StagingPath })
+                {
+                    if (File.Exists(path))
+                        File.SetAttributes(path, File.GetAttributes(path) & ~FileAttributes.ReadOnly);
+                }
+            }
+        }
+
+        [Fact]
         public void Migrate_StagedLogLeftByAnInterruptedMigration_IsMovedAndDeleted()
         {
             // Arrange
