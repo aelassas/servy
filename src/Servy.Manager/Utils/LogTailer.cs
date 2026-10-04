@@ -566,9 +566,17 @@ namespace Servy.Manager.Utils
                         // this the history published the torn prefix and the tail published the remainder as
                         // a second line. While a line is mid-flush the history therefore holds at most
                         // maxLines - 1 complete lines.
-                        if (tornTail && tempLines.Count > 0)
+                        // The hand-over depends on the tail being torn and not on a line having been read:
+                        // maxLines can be 0, which the clamp above permits and the contract documents, and
+                        // the read loop then returns nothing. Leaving finalPos at fs.Length there would
+                        // hand the live tailer a position past the fragment's start and lose it.
+                        if (tornTail)
                         {
-                            tempLines.RemoveAt(tempLines.Count - 1);
+                            if (tempLines.Count > 0)
+                            {
+                                tempLines.RemoveAt(tempLines.Count - 1);
+                            }
+
                             finalPos = tornTailStart;
                         }
 
