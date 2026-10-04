@@ -359,8 +359,8 @@ namespace Servy.Core.Services
                 {
                     try
                     {
-                        // To prevent permanent data loss if the subsequent installation steps fail,
-                        // we hold onto a deep copy or reference of the DTO before calling Uninstall.
+                        // To prevent permanent data loss if the subsequent installation steps fail, keep a reference
+                        // (not a copy) to the DTO read above before calling Uninstall.
                         legacyBackupDto = existingDbService;
 
                         var uninstallRes = await UninstallServiceAsync(existingDbService.Name, cancellationToken);
