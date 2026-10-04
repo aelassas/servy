@@ -739,6 +739,35 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureServicesDependOnHostAsync_SecondConfigurationReadRefused_IsLoggedAndChangesNothing()
+        {
+            // Arrange: the first pass reports a size, the second is refused, so the dependency list was never read
+            var scm = _handles.Scm(1);
+            var handle = _handles.Service(5);
+            int size = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            _api.Setup(a => a.OpenService(scm, "Legacy", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(handle);
+            _api.Setup(a => a.QueryServiceConfig(handle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = size))
+                .Returns(false);
+            _api.Setup(a => a.QueryServiceConfig(handle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = size))
+                .Returns(false);
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(122);
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, TestContext.Current.CancellationToken));
+
+            // Assert: nothing is written back, and the refusal is logged with its Win32 error
+            Assert.Equal(0, updated);
+            Assert.Contains("Could not read the configuration of service 'Legacy'", log);
+            Assert.Contains("Win32 error: 122", log);
+            _api.Verify(a => a.QueryServiceConfig(handle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny), Times.Once);
+            _api.Verify(a => a.ChangeServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task EnsureServicesDependOnHostAsync_ChangeRefused_IsLoggedAndCountedAsNotUpdated()
         {
             // Arrange
