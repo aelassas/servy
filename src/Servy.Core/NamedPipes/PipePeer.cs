@@ -41,7 +41,8 @@ namespace Servy.Core.NamedPipes
         /// <param name="serverStream">The connected server end of the pipe.</param>
         /// <param name="computerName">The client's computer name when it was read; otherwise empty.</param>
         /// <returns>
-        /// <see langword="false"/> only when the client is proven to be on this computer; <see langword="true"/> when it
+        /// <see langword="false"/> when the client is proven to be on this computer, and when <paramref name="serverStream"/>
+        /// is <see langword="null"/> or not connected (nothing can be served on it); <see langword="true"/> when the client
         /// is remote and when its location cannot be determined.
         /// </returns>
         [ExcludeFromCodeCoverage]
@@ -51,7 +52,7 @@ namespace Servy.Core.NamedPipes
             if (serverStream == null || !serverStream.IsConnected)
                 return false;
 
-            // The API takes the buffer size in BYTES, so a StringBuilder capacity of 256 characters is 512
+            // The API takes the buffer size in BYTES, so a StringBuilder capacity of 256 characters is passed as 512
             var buffer = new System.Text.StringBuilder(256);
             if (NativeMethods.GetNamedPipeClientComputerName(serverStream.SafePipeHandle, buffer, (uint)(buffer.Capacity * sizeof(char))))
             {
