@@ -583,6 +583,46 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
+        /// <c>OffsetAfterLastNewline</c> is what hands the live tailer the first byte of an unterminated
+        /// trailing line (#7291). The short-file test above keeps the whole file in one buffer read that
+        /// starts at offset 0, which hides three faults: dropping the buffer's own offset from the result,
+        /// scanning only the last buffer, and returning something other than 0 when the file holds no
+        /// newline at all. Each row is sized from the production buffer constant so it follows it.
+        /// </summary>
+        /// <param name="shape">1 = the newline is in a buffer that starts past offset 0, 2 = the torn tail is longer than one buffer, 3 = no newline in the file.</param>
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(3)]
+        public async Task GetHistoryAsync_UnterminatedLastLine_PositionIsTheFirstByteOfTheTornLine(int shape)
+        {
+            // Arrange
+            int buffer = AppConfig.LogTailerHistoryScanBufferSize;
+            string complete;
+            string torn;
+            switch (shape)
+            {
+                case 1: complete = new string('a', buffer + 900) + "\n"; torn = "partial-"; break;
+                case 2: complete = "complete\n"; torn = new string('x', buffer + 900); break;
+                case 3: complete = string.Empty; torn = "partial-only"; break;
+                default: throw new ArgumentOutOfRangeException(nameof(shape));
+            }
+            File.WriteAllText(_tempFilePath, complete + torn);
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var history = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, CancellationToken.None);
+
+                // Assert - the tail resumes at the torn line's first byte, and the history holds only the complete line
+                Assert.Equal((long)Encoding.UTF8.GetByteCount(complete), history.Position);
+                Assert.Equal(
+                    complete.Length == 0 ? Array.Empty<string>() : new[] { complete.TrimEnd('\n') },
+                    history.Lines.Select(l => l.Text));
+            }
+        }
+
+        /// <summary>
         /// The history load decides whether a trailing line is torn by probing the byte before the offset
         /// it has read up to, never the live end of the file. A writer that completes the line between the
         /// read and this probe must not make the consumed fragment look terminated, or the history
