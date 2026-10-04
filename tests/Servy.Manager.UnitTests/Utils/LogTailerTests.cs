@@ -614,6 +614,40 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// The defect of #7384: the history load read the file length once per step, so a writer appending
+        /// between two steps left those steps describing different files, and the position handed to the
+        /// live tailer no longer matched the lines returned. The backward scan for the torn tail's first
+        /// byte now starts at the snapshotted end, so a newline the writer adds afterwards cannot move the
+        /// hand-over point past a line the history is about to drop.
+        /// </summary>
+        [Fact]
+        public void OffsetAfterLastNewline_WriterAppendedAfterTheSnapshot_ScansBackFromTheSnapshottedEnd()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "complete\npartial-");
+
+            using (var fs = new FileStream(_tempFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                // The load snapshotted the length here, with the file ending mid-line.
+                long end = fs.Length;
+
+                // The writer then finished that line and started another one, so the file now carries a
+                // newline past the snapshot that the load must not see.
+                File.AppendAllText(_tempFilePath, "remainder\nmore-");
+
+                // Act
+                long atSnapshottedEnd = (long)TestReflection.InvokeNonPublicStatic(
+                    typeof(LogTailer), "OffsetAfterLastNewline", fs, end)!;
+                long atLiveEndOfFile = (long)TestReflection.InvokeNonPublicStatic(
+                    typeof(LogTailer), "OffsetAfterLastNewline", fs, fs.Length)!;
+
+                // Assert
+                Assert.Equal("complete\n".Length, atSnapshottedEnd);
+                Assert.Equal("complete\npartial-remainder\n".Length, atLiveEndOfFile);
+            }
+        }
+
         [Fact]
         public async Task RunFromPosition_ThresholdBatchWithUnterminatedLine_HoldsBackTornFragmentUntilNewline()
         {
