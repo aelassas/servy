@@ -22,15 +22,12 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Verifies that no unexpected warnings were logged, filtering out host/diagnostic noise.
+        /// Verifies that no warning was logged. ExpandAndAudit audits only the configured variables
+        /// and the arguments (#6506), so inherited host variables cannot produce one.
         /// </summary>
         private void VerifyNoRealWarnings()
         {
-            // Ignore diagnostic/host warnings injected during --blame-crash test runs
-            _mockLogger.Verify(l => l.Warn(
-                It.Is<string>(msg => !msg.Contains("COMPlus_") && !msg.Contains("DOTNET_")),
-                It.IsAny<Exception>()),
-                Times.Never);
+            _mockLogger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         [Theory]
@@ -97,6 +94,33 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("arg1", result.expandedArgs);
 
             VerifyNoRealWarnings();
+        }
+
+        [Fact]
+        public void ExpandAndAudit_InheritedVariableWithPlaceholder_IsNotAudited()
+        {
+            // Arrange
+            // #6506: only configured variables are audited. An inherited machine variable holding a
+            // literal placeholder is not the service's misconfiguration and must not be reported.
+            const string inheritedName = "SERVY_TEST_INHERITED_PLACEHOLDER";
+            string original = Environment.GetEnvironmentVariable(inheritedName);
+            Environment.SetEnvironmentVariable(inheritedName, "%SERVY_TEST_NOT_DEFINED%");
+
+            try
+            {
+                var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "VAR", Value = "Value" } };
+
+                // Act
+                var result = ProcessHelper.ExpandAndAudit(vars, "arg1", _mockLogger.Object, "Test");
+
+                // Assert
+                Assert.Contains("%SERVY_TEST_NOT_DEFINED%", result.env[inheritedName]);
+                _mockLogger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(inheritedName, original);
+            }
         }
 
         [Fact]
