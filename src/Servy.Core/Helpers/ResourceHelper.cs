@@ -86,6 +86,11 @@ namespace Servy.Core.Helpers
         /// <param name="extension">The file extension.</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <returns><see langword="true"/> when the file has to be written.</returns>
+        /// <remarks>
+        /// Not a pure query: when the existing file is found identical to the embedded resource, its last write time is
+        /// set to the host executable's, so that later calls skip the byte comparison (#7367). Like the timestamp-only
+        /// overload, it also creates the extraction directory when it is missing.
+        /// </remarks>
         public bool IsExtractionNeeded(Assembly assembly, string resourceNamespace, string fileName, string extension, string subfolder = null)
             => TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
 
