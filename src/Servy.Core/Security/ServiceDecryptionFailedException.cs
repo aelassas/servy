@@ -2,7 +2,8 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Thrown when a service's configuration would be written although at least one of its sensitive fields cannot be
-    /// decrypted with the current encryption key, so the write would replace the stored ciphertext with blanks.
+    /// decrypted with the current encryption key, so the write would replace the stored ciphertext with blanks. Also thrown
+    /// when such a service is exported, because the file would be written without its parameters and environment variables.
     /// </summary>
     /// <remarks>
     /// A field that cannot be decrypted is usually the sign of a corrupt or replaced <c>aes_key.dat</c>, or of a database

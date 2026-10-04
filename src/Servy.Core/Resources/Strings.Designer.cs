@@ -331,6 +331,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was not exported: at least one sensitive field cannot be decrypted with the current encryption key (aes_key.dat), so the file would be written without its parameters and environment variables. If the key file is corrupt or was replaced, restore the original aes_key.dat, or copy Servy.db back to the machine that has it, and export the configuration from there..
+        /// </summary>
+        public static string Msg_ExportDecryptionFailed {
+            get {
+                return ResourceManager.GetString("Msg_ExportDecryptionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file..
         /// </summary>
         public static string Msg_FatalError_Body {

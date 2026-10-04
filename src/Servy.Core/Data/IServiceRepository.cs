@@ -213,6 +213,7 @@ namespace Servy.Core.Data
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>An XML string representing the service, or <see cref="string.Empty"/> if
         /// <paramref name="name"/> is null/whitespace or no matching service exists.</returns>
+        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key; the export would otherwise be written without its parameters and environment variables.</exception>
         Task<string> ExportXmlAsync(string? name, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -230,6 +231,7 @@ namespace Servy.Core.Data
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A JSON string representing the service, or <see cref="string.Empty"/> if
         /// <paramref name="name"/> is null/whitespace or no matching service exists.</returns>
+        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key; the export would otherwise be written without its parameters and environment variables.</exception>
         Task<string> ExportJsonAsync(string? name, CancellationToken cancellationToken = default);
 
         /// <summary>

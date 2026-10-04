@@ -463,6 +463,11 @@ namespace Servy.Infrastructure.Data
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
+            // A row read with a field that does not decrypt comes back with every sensitive field cleared. Written to a
+            // file it would look complete, and an import would store it over the real values once the key works again.
+            if (DecryptionFailureMarker.HasDecryptionFailure(service))
+                throw new ServiceDecryptionFailedException(service.Name, null);
+
             return _xmlServiceSerializer.Serialize(service) ?? string.Empty;
         }
 
@@ -485,6 +490,11 @@ namespace Servy.Infrastructure.Data
             if (string.IsNullOrWhiteSpace(name)) return string.Empty;
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
+
+            // A row read with a field that does not decrypt comes back with every sensitive field cleared. Written to a
+            // file it would look complete, and an import would store it over the real values once the key works again.
+            if (DecryptionFailureMarker.HasDecryptionFailure(service))
+                throw new ServiceDecryptionFailedException(service.Name, null);
 
             return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
         }
