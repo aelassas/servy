@@ -6,6 +6,7 @@ using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
 using Servy.Core.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -512,6 +513,88 @@ namespace Servy.Host.UnitTests
             Assert.True(bothWhileOldRuns);
             Assert.True(dropped);
             Assert.True(Granted(localService));
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_FormerAccountsLinger_LogsTheLingeringLineOnlyWhenTheirSetChanges()
+        {
+            // Arrange: two services reinstalled under LocalService while their old processes still run under other accounts,
+            // each rechecked every millisecond (#7362)
+            const string OtherService = "OtherApp";
+            const int OtherPid = 4343;
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var networkService = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            var formerUser = new SecurityIdentifier("S-1-5-21-1000-2000-3000-1001");
+            var running = new Dictionary<int, SecurityIdentifier> { [ServicePid] = networkService, [OtherPid] = formerUser };
+            var gate = new object();
+            var refreshes = 0;
+            var ended = 0;
+            _api.Setup(a => a.GetServiceProcessId(OtherService)).Returns(OtherPid);
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .Callback(() => Interlocked.Increment(ref refreshes))
+                .ReturnsAsync(new[]
+                {
+                    new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" },
+                    new ServiceDto { Name = OtherService, RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" },
+                });
+            _logger.Setup(l => l.Info(It.Is<string>(m => m.Contains("No account keeps access")), It.IsAny<Exception>()))
+                .Callback(() => Interlocked.Increment(ref ended));
+            _sut.ResolveAccount = _ => localService;
+            _sut.ResolveProcessAccount = pid => { lock (gate) return running.ContainsKey(pid) ? running[pid] : null; };
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+
+            // Act 1: several rechecks while both old processes run
+            _sut.StartListening();
+            for (var i = 0; i < 500 && Volatile.Read(ref refreshes) < 6; i++)
+                await Task.Delay(10, CancellationToken.None);
+            var whileBothRun = Volatile.Read(ref refreshes);
+
+            // Act 2: the other service restarts under its new account; several more rechecks while this one's old process runs
+            lock (gate) running[OtherPid] = localService;
+            for (var i = 0; i < 500 && Volatile.Read(ref refreshes) < whileBothRun + 6; i++)
+                await Task.Delay(10, CancellationToken.None);
+            var whileOneRuns = Volatile.Read(ref refreshes);
+
+            // Act 3: this service restarts too, so no account lingers any more and the rechecks end
+            lock (gate) running[ServicePid] = localService;
+            for (var i = 0; i < 500 && Volatile.Read(ref ended) == 0; i++)
+                await Task.Delay(10, CancellationToken.None);
+            _sut.StopListening();
+
+            // Assert: one line per set the rechecks saw, not one per recheck
+            Assert.True(whileBothRun >= 6);
+            Assert.True(whileOneRuns >= whileBothRun + 6);
+            _logger.Verify(l => l.Info(It.Is<string>(m => m.Contains("2 account(s) keep access")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Info(It.Is<string>(m => m.Contains("1 account(s) keep access")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Info(It.Is<string>(m => m.Contains("No account keeps access")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_AccountNeverResolvesWhileAFormerAccountLingers_LogsTheRetryWarningOnlyUpToTheBound()
+        {
+            // Arrange: an account that never resolves, and the old process still running under the service's former
+            // account, so the rechecks go on after the bounded retries for the unresolved account are spent (#7362)
+            var lookups = 0;
+            var networkService = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            _sut.ResolveAccount = _ => { Interlocked.Increment(ref lookups); return null; };
+            _sut.ResolveProcessAccount = pid => pid == ServicePid ? networkService : null;
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @"CONTOSO\deleted-user" } });
+            var pastTheBound = 1 + AppConfig.ServyHostUnresolvedAccountRetryCount + 10;
+
+            // Act
+            _sut.StartListening();
+            for (var i = 0; i < 1000 && Volatile.Read(ref lookups) < pastTheBound; i++)
+                await Task.Delay(10, CancellationToken.None);
+            _sut.StopListening();
+
+            // Assert: one warning per retry actually scheduled, then a single line saying no further retry is scheduled
+            Assert.True(Volatile.Read(ref lookups) >= pastTheBound);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("Retrying in")), It.IsAny<Exception>()), Times.Exactly(AppConfig.ServyHostUnresolvedAccountRetryCount));
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("No further retry")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
