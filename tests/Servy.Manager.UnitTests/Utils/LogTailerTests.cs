@@ -553,6 +553,29 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
+        /// A history load that is asked for no lines at all must still hand the live tailer the first byte
+        /// of an unterminated last line. <c>maxLines</c> of 0 is inside the range the contract documents,
+        /// and the read loop returns nothing for it, so a resume position taken from the end of the file
+        /// would lose the start of the line the writer is still flushing.
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryAsync_ZeroMaxLinesWithUnterminatedLastLine_PointsAtTheTornTailsFirstByte()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "Line_1\nTORN_HEAD");
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 0, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Empty(result.Lines);
+                Assert.Equal("Line_1\n".Length, (int)result.Position);
+            }
+        }
+
+        /// <summary>
         /// The history load decides whether a trailing line is torn by probing the byte before the offset
         /// it has read up to, never the live end of the file. A writer that completes the line between the
         /// read and this probe must not make the consumed fragment look terminated, or the history
