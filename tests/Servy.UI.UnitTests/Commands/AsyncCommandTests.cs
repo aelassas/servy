@@ -1,5 +1,4 @@
-using Servy.Core.Config;
-using Servy.Core.Logging;
+using Servy.Testing;
 using Servy.UI.Commands;
 using System;
 using System.Collections.Generic;
@@ -12,12 +11,6 @@ namespace Servy.UI.UnitTests.Commands
 {
     public class AsyncCommandTests
     {
-        /// <summary>
-        /// Upper bound on how long a tracked async void operation may take to complete.
-        /// Generous enough for a loaded CI agent; its purpose is to fail rather than hang.
-        /// </summary>
-        private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(20);
-
         #region Constructor Tests
 
         [Fact]
@@ -137,7 +130,7 @@ namespace Servy.UI.UnitTests.Commands
                 // Bound the wait: a change that leaves an operation pending must fail the run
                 // rather than hang it.
                 var completion = testContext.WaitForCompletionAsync();
-                var finished = await Task.WhenAny(completion, Task.Delay(CompletionTimeout));
+                var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
                 Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
 
                 // Read under the same lock Post writes the list with.
@@ -159,8 +152,6 @@ namespace Servy.UI.UnitTests.Commands
             // file builds the command with one or two arguments, so _name is always null and the
             // name the thirty production call sites pass is never observed.
             const string commandName = "StartSelectedCommand";
-            var logFileName = $"AsyncCommandTests_{Guid.NewGuid():N}.log";
-            var logPath = Path.Combine(AppConfig.LogsFolderPath, logFileName);
 
             var previousContext = SynchronizationContext.Current;
             var testContext = new TestSynchronizationContext();
@@ -168,35 +159,28 @@ namespace Servy.UI.UnitTests.Commands
             {
                 SynchronizationContext.SetSynchronizationContext(testContext);
 
-                // The logger is static, so take it over for this test only and hand it back below.
-                Logger.Shutdown();
-                Logger.Initialize(logFileName);
-
                 var command = new AsyncCommand(
                     _ => throw new InvalidOperationException("Command Failure"),
                     name: commandName);
 
-                command.Execute(null);
+                // LogCapture owns the temporary log directory, the flush before the read and the
+                // restore of the static logger's default folder afterwards.
+                var log = await LogCapture.RunAsync(async () =>
+                {
+                    command.Execute(null);
 
-                // Bound the wait: a change that leaves an operation pending must fail the run
-                // rather than hang it.
-                var completion = testContext.WaitForCompletionAsync();
-                var finished = await Task.WhenAny(completion, Task.Delay(CompletionTimeout));
-                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+                    // Bound the wait: a change that leaves an operation pending must fail the run
+                    // rather than hang it.
+                    var completion = testContext.WaitForCompletionAsync();
+                    var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
+                    Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+                });
 
-                // Flush the writer before reading the file back.
-                Logger.Shutdown();
-
-                Assert.True(File.Exists(logPath), $"The logger wrote no file at '{logPath}'.");
-
-                var content = File.ReadAllText(logPath);
-                Assert.Contains($"AsyncCommand '{commandName}' execution failed.", content);
+                Assert.Contains($"AsyncCommand '{commandName}' execution failed.", log);
             }
             finally
             {
-                Logger.Shutdown();
                 SynchronizationContext.SetSynchronizationContext(previousContext);
-                try { if (File.Exists(logPath)) File.Delete(logPath); } catch { /* teardown must not hide the result */ }
             }
         }
 
@@ -224,7 +208,7 @@ namespace Servy.UI.UnitTests.Commands
                 // Bound the wait: a change that leaves an operation pending must fail the run
                 // rather than hang it.
                 var completion = testContext.WaitForCompletionAsync();
-                var finished = await Task.WhenAny(completion, Task.Delay(CompletionTimeout));
+                var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
                 Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
 
                 Assert.True(wasExecuted);
