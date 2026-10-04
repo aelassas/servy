@@ -656,13 +656,12 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public async Task CopyEmbeddedResource_DifferentContent_WritesTheWholeResourceAfterTheComparison()
         {
-            // Arrange: ONE stream instance serves the comparison and the copy, so the comparison has to rewind it
+            // Arrange: Each call returns a fresh stream instance so stream disposal during comparison does not affect the write phase
             var newContent = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60 };
-            var shared = new MemoryStream(newContent);
             var targetPath = Path.Combine(TempDirectory, "upgrade.exe");
             File.WriteAllBytes(targetPath, new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x61 });
             File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
-            _fakeAssembly.OnGetManifestResourceStream = _ => shared;
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(newContent);
             _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
 
             // Act
