@@ -113,30 +113,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task AddAsync_InsertsRecordAndAssignsGeneratedPrimaryKey()
-        {
-            // Arrange
-            var service = new ServiceDto { Name = "UniqueEngineService", ExecutablePath = "C:\\srv.exe", Password = "MyPassword123" };
-
-            // Act
-            int generatedId = await _repository.AddAsync(service, CancellationToken.None);
-
-            // Assert
-            Assert.True(generatedId > 0);
-            Assert.Equal(generatedId, service.Id);
-
-            // Verify the encryption transform took place before hitting the database
-            var dbRecord = await _repository.GetByIdAsync(generatedId, decrypt: false, CancellationToken.None);
-            Assert.NotNull(dbRecord);
-            Assert.Equal("SECRET_HASH:MyPassword123", dbRecord.Password);
-        }
-
-        [Fact]
         public async Task UpdateRuntimeStateAsync_WritesTheRuntimeColumnsAndLeavesTheConfigurationAlone()
         {
             // Arrange
             var service = new ServiceDto { Name = "RuntimeOnly", ExecutablePath = "C:\\app.exe", Parameters = "--secret", PreviousStopTimeout = 15 };
-            int id = await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act
             var updated = await _repository.UpdateRuntimeStateAsync("RuntimeOnly", new ServiceRuntimeStateDto
@@ -150,7 +131,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal(1, updated);
-            var row = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
+            var row = await _repository.GetByNameAsync("RuntimeOnly", decrypt: true, CancellationToken.None);
             Assert.NotNull(row);
             Assert.Equal(4321, row.Pid);
             Assert.Equal("C:\\out.log", row.ActiveStdoutPath);
@@ -163,7 +144,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             await _repository.UpdateRuntimeStateAsync("runtimeonly", new ServiceRuntimeStateDto { UpdatePreviousStopTimeout = true, PreviousStopTimeout = 30 }, CancellationToken.None);
 
             // Assert: the name is matched case-insensitively, like every other lookup
-            row = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
+            row = await _repository.GetByNameAsync("RuntimeOnly", decrypt: true, CancellationToken.None);
             Assert.Null(row.Pid);
             Assert.Null(row.ActiveStdoutPath);
             Assert.Null(row.ActiveStderrPath);
@@ -185,7 +166,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var service = new ServiceDto { Name = "Counted", ExecutablePath = "C:\\app.exe" };
-            await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
             var when = new DateTime(2026, 10, 2, 10, 0, 0, DateTimeKind.Utc);
 
             // Act
@@ -218,66 +199,21 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task UpdateAsync_ModifiesRecord_HonoringRuntimeBypassStates()
+        public async Task UpsertAsync_ModifiesRecord_HonoringRuntimeBypassStates()
         {
             // Arrange
             var service = new ServiceDto { Name = "MutableService", ExecutablePath = "C:\\exe.exe", Pid = 1234 };
-            int id = await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act - Request updating fields but protecting existing transient state columns
-            var modification = new ServiceDto { Id = id, Name = "MutableService", ExecutablePath = "C:\\updated.exe", Pid = 9999 };
-            await _repository.UpdateAsync(modification, preserveExistingRuntimeState: true, preserveExistingCredentials: false, CancellationToken.None);
+            var modification = new ServiceDto { Name = "MutableService", ExecutablePath = "C:\\updated.exe", Pid = 9999 };
+            await _repository.UpsertAsync(modification, preserveExistingRuntimeState: true, preserveExistingCredentials: false, CancellationToken.None);
 
             // Assert
-            var result = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
+            var result = await _repository.GetByNameAsync("MutableService", decrypt: true, CancellationToken.None);
             Assert.NotNull(result);
             Assert.Equal("C:\\updated.exe", result.ExecutablePath);
             Assert.Equal(1234, result.Pid); // Preserved
-        }
-
-        [Fact]
-        public async Task UpdateAsync_WithPreserveExistingCredentialsTrue_PreservesCredentialFields()
-        {
-            // Arrange
-            var originalService = new ServiceDto
-            {
-                Name = "SingleUpdateCredService",
-                ExecutablePath = "C:\\orig.exe",
-                RunAsLocalSystem = false,
-                UserAccount = "Domain\\OrigUser",
-                Password = "OriginalPassword123"
-            };
-            int id = await _repository.AddAsync(originalService, CancellationToken.None);
-
-            // Act - Submit updated payload with altered/blanked credential details while preserving existing credentials
-            var updatePayload = new ServiceDto
-            {
-                Id = id,
-                Name = "SingleUpdateCredService",
-                ExecutablePath = "C:\\updated.exe",
-                RunAsLocalSystem = true,
-                UserAccount = "Domain\\OverwrittenUser",
-                Password = "OverwrittenPassword"
-            };
-            int affectedRows = await _repository.UpdateAsync(updatePayload, preserveExistingRuntimeState: false, preserveExistingCredentials: true, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(1, affectedRows);
-
-            // Verify encrypted storage level parity
-            var rawRecord = await _repository.GetByIdAsync(id, decrypt: false, CancellationToken.None);
-            Assert.NotNull(rawRecord);
-            Assert.False(rawRecord.RunAsLocalSystem);
-            Assert.Equal("Domain\\OrigUser", rawRecord.UserAccount);
-            Assert.Equal("SECRET_HASH:OriginalPassword123", rawRecord.Password);
-
-            // Verify decrypted entity mapping
-            var decryptedRecord = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
-            Assert.NotNull(decryptedRecord);
-            Assert.Equal("C:\\updated.exe", decryptedRecord.ExecutablePath);
-            Assert.False(decryptedRecord.RunAsLocalSystem);
-            Assert.Equal("Domain\\OrigUser", decryptedRecord.UserAccount);
-            Assert.Equal("OriginalPassword123", decryptedRecord.Password);
         }
 
         [Fact]
@@ -351,7 +287,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task UpdateAsync_OnPooledConnectionAfterInitializer_SuccessfullySavesWithoutCollationError()
+        public async Task UpsertAsync_OnPooledConnectionAfterInitializer_SuccessfullySavesWithoutCollationError()
         {
             // Arrange
             var service = new ServiceDto
@@ -361,23 +297,23 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 RunAsLocalSystem = true
             };
 
-            var id = await _repository.AddAsync(service, cancellationToken: CancellationToken.None);
+            var id = await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: CancellationToken.None);
 
             // Clear connection pools to force next connection request to take a fresh handle from pool
             SQLiteConnection.ClearAllPools();
 
             // Act
             service.Pid = 1234;
-            var rowsAffected = await _repository.UpdateAsync(
+            var upsertedId = await _repository.UpsertAsync(
                 service,
                 preserveExistingRuntimeState: false,
                 preserveExistingCredentials: false,
                 cancellationToken: CancellationToken.None);
 
-            var updated = await _repository.GetByIdAsync(id, cancellationToken: CancellationToken.None);
+            var updated = await _repository.GetByNameAsync(service.Name, cancellationToken: CancellationToken.None);
 
             // Assert
-            Assert.Equal(1, rowsAffected);
+            Assert.Equal(id, upsertedId);
             Assert.NotNull(updated);
             Assert.Equal(1234, updated.Pid);
         }
@@ -389,14 +325,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var service1 = new ServiceDto { Name = "ConflictService", ExecutablePath = "C:\\v1.exe" };
             var service2 = new ServiceDto { Name = "conflictservice", ExecutablePath = "C:\\v2.exe" }; // Trips idx_services_name_unique under COLLATE UNICODE_NOCASE
 
-            int id1 = await _repository.AddAsync(service1, CancellationToken.None);
+            int id1 = await _repository.UpsertAsync(service1, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act
             int id2 = await _repository.UpsertAsync(service2, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Assert
             Assert.Equal(id1, id2); // Same record identity targeted
-            var updatedRecord = await _repository.GetByIdAsync(id1, decrypt: true, CancellationToken.None);
+            var updatedRecord = await _repository.GetByNameAsync("ConflictService", decrypt: true, CancellationToken.None);
             Assert.Equal("C:\\v2.exe", updatedRecord.ExecutablePath);
         }
 
@@ -412,7 +348,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 UserAccount = "Domain\\UpsertUser",
                 Password = "UpsertSecretPass123"
             };
-            int originalId = await _repository.AddAsync(originalService, CancellationToken.None);
+            int originalId = await _repository.UpsertAsync(originalService, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act - Upsert on conflicting name with changed credential properties
             var incomingPayload = new ServiceDto
@@ -429,141 +365,19 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(originalId, upsertedId);
 
             // Verify raw cipher text retention
-            var rawRecord = await _repository.GetByIdAsync(originalId, decrypt: false, CancellationToken.None);
+            var rawRecord = await _repository.GetByNameAsync("SingleUpsertCredService", decrypt: false, CancellationToken.None);
             Assert.NotNull(rawRecord);
             Assert.False(rawRecord.RunAsLocalSystem);
             Assert.Equal("Domain\\UpsertUser", rawRecord.UserAccount);
             Assert.Equal("SECRET_HASH:UpsertSecretPass123", rawRecord.Password);
 
             // Verify decrypted state
-            var decryptedRecord = await _repository.GetByIdAsync(originalId, decrypt: true, CancellationToken.None);
+            var decryptedRecord = await _repository.GetByNameAsync("SingleUpsertCredService", decrypt: true, CancellationToken.None);
             Assert.NotNull(decryptedRecord);
             Assert.Equal("C:\\upsert_v2.exe", decryptedRecord.ExecutablePath);
             Assert.False(decryptedRecord.RunAsLocalSystem);
             Assert.Equal("Domain\\UpsertUser", decryptedRecord.UserAccount);
             Assert.Equal("UpsertSecretPass123", decryptedRecord.Password);
-        }
-
-        [Fact]
-        public async Task UpsertBatchAsync_LargeCollection_ExecutesWithinTransactionBoundaries()
-        {
-            // Arrange - Generate a genuinely large batch that exceeds default SQLite parameter/chunking limits
-            var cancellationToken = CancellationToken.None;
-            const int batchSize = AppConfig.DbBatchIdSyncChunkSize + 150;
-            var batch = new List<ServiceDto>();
-            for (int i = 1; i <= batchSize; i++)
-            {
-                batch.Add(new ServiceDto
-                {
-                    Name = $"BatchItem_{Guid.NewGuid()}_{i}",
-                    ExecutablePath = $"path_{i}.exe"
-                });
-            }
-
-            // Act
-            int affectedRows = await _repository.UpsertBatchAsync(batch, cancellationToken);
-
-            // Assert
-            Assert.Equal(batchSize, affectedRows);
-
-            // Ensure ID synchronization cleanly updated original references across chunk boundaries
-            for (int i = 0; i < batchSize; i++)
-            {
-                Assert.NotNull(batch[i].Id);
-                Assert.True(batch[i].Id > 0, $"Batch item at index {i} failed to sync its generated ID.");
-            }
-
-            // Spot-check first and last items in the database
-            var fetched = await _repository.GetAllAsync(decrypt: true, cancellationToken);
-            Assert.Contains(fetched, s => s.Name == batch[0].Name);
-            Assert.Contains(fetched, s => s.Name == batch[batchSize - 1].Name);
-        }
-
-        [Fact]
-        public async Task UpsertBatchAsync_ExceptionThrownMidBatch_RollsBackEntireTransaction()
-        {
-            // Arrange - Get baseline count
-            var cancellationToken = CancellationToken.None;
-            var initialCount = (await _repository.GetAllAsync(decrypt: true, cancellationToken)).Count();
-
-            // Generate a mix of valid records and a guaranteed fatal record positioned at the end.
-            // Since ServiceDto.Name has a NOT NULL constraint in the SQLite schema, a null Name causes an exception.
-            var batch = new List<ServiceDto>
-            {
-                new ServiceDto { Name = $"ValidBatch_Before_{Guid.NewGuid()}", ExecutablePath = "p1.exe" },
-                new ServiceDto { Name = null, ExecutablePath = "invalid.exe" } // Will throw SQLiteException
-            };
-
-            // Act & Assert
-            // Verify that the operation throws a database constraint exception
-            await Assert.ThrowsAsync<SQLiteException>(async () =>
-            {
-                await _repository.UpsertBatchAsync(batch, cancellationToken);
-            });
-
-            // Verify Transaction Atomicity - The valid first item should have rolled back completely
-            var postFailureCollection = await _repository.GetAllAsync(decrypt: true, cancellationToken);
-            Assert.Equal(initialCount, postFailureCollection.Count());
-            Assert.DoesNotContain(postFailureCollection, s => s.Name == batch[0].Name);
-        }
-
-        [Fact]
-        public async Task UpsertBatchAsync_WithExistingRecords_PreservesRuntimeStateAndCredentialsInBulk()
-        {
-            // Arrange
-            var existingService1 = new ServiceDto
-            {
-                Name = "BatchPreserve1",
-                ExecutablePath = "old1.exe",
-                Pid = 5050,
-                RunAsLocalSystem = true,
-                Password = "KeepMe"
-            };
-            var existingService2 = new ServiceDto
-            {
-                Name = "BatchPreserve2",
-                ExecutablePath = "old2.exe",
-                Pid = 6060,
-                RunAsLocalSystem = false,
-                UserAccount = "SrvUser",
-                Password = "KeepMe2"
-            };
-
-            await _repository.AddAsync(existingService1, CancellationToken.None);
-            await _repository.AddAsync(existingService2, CancellationToken.None);
-
-            // Create an incoming batch with changed paths/credentials that should be protected by the pre-fetch map
-            var incomingBatch = new List<ServiceDto>
-            {
-                new ServiceDto { Name = "BATCHPRESERVE1", ExecutablePath = "new1.exe", Pid = 0, RunAsLocalSystem = false, Password = "Overwritten" }, // Mismatched casing to test collation resilience
-                new ServiceDto { Name = "BatchPreserve2", ExecutablePath = "new2.exe", Pid = 1111, UserAccount = "NewUser", Password = "Changed" },
-                new ServiceDto { Name = "BatchNewItem3", ExecutablePath = "brand_new.exe", Pid = 0 } // Verification for non-existent incoming elements
-            };
-
-            // Act
-            int affectedRows = await _repository.UpsertBatchAsync(incomingBatch, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(3, affectedRows); // 2 updates + 1 insert
-
-            var item1 = await _repository.GetByNameAsync("BatchPreserve1", decrypt: false, CancellationToken.None);
-            Assert.NotNull(item1);
-            Assert.Equal("new1.exe", item1.ExecutablePath);
-            Assert.Equal(5050, item1.Pid); // Preserved
-            Assert.True(item1.RunAsLocalSystem); // Preserved
-            Assert.Equal("SECRET_HASH:KeepMe", item1.Password); // Preserved
-
-            var item2 = await _repository.GetByNameAsync("BatchPreserve2", decrypt: false, CancellationToken.None);
-            Assert.NotNull(item2);
-            Assert.Equal("new2.exe", item2.ExecutablePath);
-            Assert.Equal(6060, item2.Pid); // Preserved
-            Assert.Equal("SrvUser", item2.UserAccount); // Preserved
-            Assert.Equal("SECRET_HASH:KeepMe2", item2.Password); // Preserved
-
-            var item3 = await _repository.GetByNameAsync("BatchNewItem3", decrypt: false, CancellationToken.None);
-            Assert.NotNull(item3);
-            Assert.Equal("brand_new.exe", item3.ExecutablePath);
-            Assert.True(item3.Id > 0); // Assigned correctly
         }
 
         [Fact]
@@ -574,20 +388,20 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // --- 1. Verify "ByName" deletion path ---
             var serviceByName = new ServiceDto { Name = "KillMeByName", ExecutablePath = "kill_name.exe" };
-            int nameId = await _repository.AddAsync(serviceByName, cancellationToken);
+            await _repository.UpsertAsync(serviceByName, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
             // Act
             int deletedByNameCount = await _repository.DeleteAsync("KillMeByName", cancellationToken);
 
             // Assert
             Assert.Equal(1, deletedByNameCount);
-            var searchByName = await _repository.GetByIdAsync(nameId, decrypt: true, cancellationToken);
+            var searchByName = await _repository.GetByNameAsync("KillMeByName", decrypt: true, cancellationToken);
             Assert.Null(searchByName);
 
             // --- 2. Verify "ById" deletion path ---
             // Arrange
             var serviceById = new ServiceDto { Name = "KillMeById", ExecutablePath = "kill_id.exe" };
-            int idToDelete = await _repository.AddAsync(serviceById, cancellationToken);
+            int idToDelete = await _repository.UpsertAsync(serviceById, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
             // Act
             // Act against the ID-based delete API overload to cover the other half of the name's promise
@@ -595,7 +409,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal(1, deletedByIdCount);
-            var searchById = await _repository.GetByIdAsync(idToDelete, decrypt: true, cancellationToken);
+            var searchById = await _repository.GetByNameAsync("KillMeById", decrypt: true, cancellationToken);
             Assert.Null(searchById);
         }
 
@@ -606,13 +420,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var cancellationToken = CancellationToken.None;
 
             // 1. The target record containing literal % and _ characters
-            await _repository.AddAsync(new ServiceDto { Name = "App_Development_%_Test", ExecutablePath = "a.exe" }, cancellationToken);
+            await _repository.UpsertAsync(new ServiceDto { Name = "App_Development_%_Test", ExecutablePath = "a.exe" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
             // 2. Decoy A: Matches if '%' in "development_%" is treated as a wildcard instead of a literal '%'
-            await _repository.AddAsync(new ServiceDto { Name = "App_Development_XYZ_Test", ExecutablePath = "b.exe" }, cancellationToken);
+            await _repository.UpsertAsync(new ServiceDto { Name = "App_Development_XYZ_Test", ExecutablePath = "b.exe" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
             // 3. Decoy B: Matches if '_' in "development" is treated as a wildcard (e.g. matching "developmenX")
-            await _repository.AddAsync(new ServiceDto { Name = "App_DevelopmenX_%_Test", ExecutablePath = "c.exe" }, cancellationToken);
+            await _repository.UpsertAsync(new ServiceDto { Name = "App_DevelopmenX_%_Test", ExecutablePath = "c.exe" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
             // Act - Search targeting literal "_" and "%" characters using ESCAPE configurations
             var results = (await _repository.SearchAsync("development_%", decrypt: true, cancellationToken)).ToList();
@@ -625,7 +439,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task GetByIdAsync_PoisonDataEncountered_QuarantinesRecordAndPadsTelemetry()
+        public async Task GetByNameAsync_PoisonDataEncountered_QuarantinesRecordAndPadsTelemetry()
         {
             // Arrange
             // Every sensitive field carries a distinct value, so the quarantine scrub of each one
@@ -645,7 +459,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 PreStopParameters = "SentinelPreStopParameters",
                 PostStopParameters = "SentinelPostStopParameters",
             };
-            int id = await _repository.AddAsync(service, CancellationToken.None);
+            int id = await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Manually corrupt data payload in database directly via executor bypass
             await _executor.ExecuteAsync(
@@ -654,7 +468,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 cancellationToken: CancellationToken.None);
 
             // Act
-            var result = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
+            var result = await _repository.GetByNameAsync("PoisonRecord", decrypt: true, CancellationToken.None);
 
             // Assert
             Assert.NotNull(result);
@@ -672,11 +486,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task ExportAndImport_XmlRoundTrip_PreservesConfigFidelity()
+        public async Task ExportAndUpsert_XmlRoundTrip_PreservesConfigFidelity()
         {
             // Arrange
             var service = new ServiceDto { Name = "RoundTripXmlService", ExecutablePath = "round_xml.exe", Description = "SerializeXml" };
-            await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act - Export configuration out to XML schema format
             string xmlData = await _repository.ExportXmlAsync("RoundTripXmlService", CancellationToken.None);
@@ -687,11 +501,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(1, deleteResult);
             Assert.Null(await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, CancellationToken.None));
 
-            // Act - Import the serialized XML record back into the repository engine
-            var xmlImportResult = await _repository.ImportXmlAsync(xmlData, CancellationToken.None);
+            // Act - Deserialize the XML record and write it back the way the import paths do, keeping runtime state and credentials
+            var imported = _xmlSerializer.Deserialize(xmlData);
+            Assert.NotNull(imported);
+            await _repository.UpsertAsync(imported, preserveExistingRuntimeState: true, preserveExistingCredentials: true, CancellationToken.None);
 
-            // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
-            Assert.True(xmlImportResult.IsSuccess);
+            // Assert - Verify complete field mapping data fidelity (#3041 Fix)
 
             var recovered = await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, CancellationToken.None);
             Assert.NotNull(recovered);
@@ -700,11 +515,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task ExportAndImport_JsonRoundTrip_PreservesConfigFidelity()
+        public async Task ExportAndUpsert_JsonRoundTrip_PreservesConfigFidelity()
         {
             // Arrange
             var service = new ServiceDto { Name = "RoundTripJsonService", ExecutablePath = "round_json.exe", Description = "SerializeJson" };
-            await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act - Export configuration out to JSON format layout specifications
             string jsonData = await _repository.ExportJsonAsync("RoundTripJsonService", CancellationToken.None);
@@ -715,11 +530,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(1, deleteResult);
             Assert.Null(await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, CancellationToken.None));
 
-            // Act - Import the serialized JSON record back into the repository engine
-            var jsonImportResult = await _repository.ImportJsonAsync(jsonData, CancellationToken.None);
+            // Act - Deserialize the JSON record and write it back the way the import paths do, keeping runtime state and credentials
+            var imported = _jsonSerializer.Deserialize(jsonData);
+            Assert.NotNull(imported);
+            await _repository.UpsertAsync(imported, preserveExistingRuntimeState: true, preserveExistingCredentials: true, CancellationToken.None);
 
-            // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
-            Assert.True(jsonImportResult.IsSuccess);
+            // Assert - Verify complete field mapping data fidelity (#3041 Fix)
 
             var recovered = await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, CancellationToken.None);
             Assert.NotNull(recovered);
@@ -748,7 +564,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange - stored through the repository, i.e. on a connection other than the initializer's.
             var ct = CancellationToken.None;
-            await _repository.AddAsync(new ServiceDto { Name = "ÖffnenService", ExecutablePath = "C:\\o.exe" }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "ÖffnenService", ExecutablePath = "C:\\o.exe" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
 
             // Act
             var found = await _repository.GetByNameAsync("öffnenservice", decrypt: false, ct);
@@ -776,79 +592,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task Update_SynchronousPath_SavesAndPreservesStateSymmetrically()
-        {
-            // Arrange - Seed the initial record through the repository to ensure all schema defaults and primary keys are set
-            var initialService = new ServiceDto
-            {
-                Name = "SyncService",
-                ExecutablePath = "C:\\s.exe",
-                Pid = 444
-            };
-            int id = await _repository.AddAsync(initialService, CancellationToken.None);
-
-            // Act - Update the record with new executable path while requesting runtime state preservation
-            var updatePayload = new ServiceDto { Id = id, Name = "SyncService", ExecutablePath = "C:\\new_sync.exe", Pid = 888 };
-            int affectedRows = _repository.Update(updatePayload, preserveExistingRuntimeState: true, preserveExistingCredentials: false);
-
-            // Assert
-            Assert.Equal(1, affectedRows);
-            var result = _repository.GetByName("SyncService", decrypt: false);
-            Assert.NotNull(result);
-            Assert.Equal("C:\\new_sync.exe", result.ExecutablePath);
-            Assert.Equal(444, result.Pid); // Preserved via synchronous routing pass flags
-        }
-
-        [Fact]
-        public async Task Update_SynchronousPath_WithPreserveExistingCredentialsTrue_PreservesCredentialFields()
-        {
-            // Arrange
-            int id = await _repository.AddAsync(new ServiceDto
-            {
-                Name = "SyncCredService",
-                ExecutablePath = "C:\\sync_orig.exe",
-                RunAsLocalSystem = false,
-                UserAccount = "Domain\\SyncUser",
-                Password = "SyncSecretPassword"
-            }, cancellationToken: CancellationToken.None);
-
-            // Act - Synchronously update service payload with modified credential properties while flag is true
-            var updatePayload = new ServiceDto
-            {
-                Id = id,
-                Name = "SyncCredService",
-                ExecutablePath = "C:\\sync_updated.exe",
-                RunAsLocalSystem = true,
-                UserAccount = "Domain\\OverwrittenSyncUser",
-                Password = "OverwrittenSyncPassword"
-            };
-            int affectedRows = _repository.Update(updatePayload, preserveExistingRuntimeState: false, preserveExistingCredentials: true);
-
-            // Assert
-            Assert.Equal(1, affectedRows);
-
-            // Verify encrypted cipher text retention
-            var rawRecord = _repository.GetByName("SyncCredService", decrypt: false);
-            Assert.NotNull(rawRecord);
-            Assert.False(rawRecord.RunAsLocalSystem);
-            Assert.Equal("Domain\\SyncUser", rawRecord.UserAccount);
-            Assert.Equal("SECRET_HASH:SyncSecretPassword", rawRecord.Password);
-
-            // Verify decrypted values
-            var decryptedRecord = _repository.GetByName("SyncCredService", decrypt: true);
-            Assert.NotNull(decryptedRecord);
-            Assert.Equal("C:\\sync_updated.exe", decryptedRecord.ExecutablePath);
-            Assert.False(decryptedRecord.RunAsLocalSystem);
-            Assert.Equal("Domain\\SyncUser", decryptedRecord.UserAccount);
-            Assert.Equal("SyncSecretPassword", decryptedRecord.Password);
-        }
-
-        [Fact]
         public async Task GetServicePidAsync_ValidService_ReturnsCorrectPid()
         {
             // Arrange
             var service = new ServiceDto { Name = "PidTrackedService", ExecutablePath = "C:\\p.exe", Pid = 5678 };
-            await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act
             int? activePid = await _repository.GetServicePidAsync("PidTrackedService", CancellationToken.None);
@@ -887,7 +635,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 ActiveStdoutPath = "C:\\out.log",
                 ActiveStderrPath = "C:\\err.log"
             };
-            await _repository.AddAsync(service, CancellationToken.None);
+            await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // Act
             var state = await _repository.GetServiceConsoleStateAsync("ConsoleStateService", CancellationToken.None);
@@ -916,31 +664,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(await _repository.GetServiceConsoleStateAsync("MissingConsoleService", CancellationToken.None));
         }
 
-        [Fact]
-        public void GetByName_SynchronousPath_ResolvesEntryCleanly()
-        {
-            // Arrange
-            _executor.Execute(
-                $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');");
-
-            // Act
-            var resolved = _repository.GetByName("SynchronousQueryService", decrypt: false);
-
-            // Assert
-            Assert.NotNull(resolved);
-            Assert.Equal("C:\\sync.exe", resolved.ExecutablePath);
-        }
-
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("    ")]
-        public void GetByName_NullOrEmptyInput_ReturnsNull(string input)
-        {
-            // Arrange & Act & Assert
-            Assert.Null(_repository.GetByName(input, decrypt: false));
-        }
-
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -953,9 +676,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #region Undecryptable Row Write Guard Tests (#7334)
 
-        private async Task<int> AddPoisonedAsync(string name)
+        private async Task AddPoisonedAsync(string name)
         {
-            var id = await _repository.AddAsync(new ServiceDto
+            var id = await _repository.UpsertAsync(new ServiceDto
             {
                 Name = name,
                 ExecutablePath = "poison.exe",
@@ -963,14 +686,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Parameters = "SentinelParameters",
                 Password = "SentinelPassword",
                 EnvironmentVariables = "A=1",
-            }, CancellationToken.None);
+            }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
             // One sensitive field the current key cannot decrypt, as after aes_key.dat was corrupted or replaced
             await _executor.ExecuteAsync(
                 $"UPDATE {SqlConstants.ServicesTableName} SET Parameters = 'POISON_PAYLOAD' WHERE Id = @Id",
                 new { Id = id },
                 cancellationToken: CancellationToken.None);
-            return id;
         }
 
         private static void AssertRowUntouched(ServiceDto raw)
@@ -984,26 +706,26 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task UpdateAsync_ServiceReadFromAnUndecryptableRow_IsRefusedAndTheRowIsLeftAsItIs()
+        public async Task UpsertAsync_ServiceReadFromAnUndecryptableRow_IsRefusedAndTheRowIsLeftAsItIs()
         {
             // Arrange: the service as the UI gets it - secrets cleared, description marked
             var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("PoisonUpdate");
-            var read = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            await AddPoisonedAsync("PoisonUpdate");
+            var read = await _repository.GetByNameAsync("PoisonUpdate", decrypt: true, ct);
             Assert.True(DecryptionFailureMarker.HasDecryptionFailure(read));
             read.ExecutablePath = "changed.exe";
 
             // Act
-            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.UpdateAsync(read, false, false, ct));
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.UpsertAsync(read, false, false, ct));
 
             // Assert
             Assert.Equal("PoisonUpdate", ex.ServiceName);
             Assert.Contains("aes_key.dat", ex.Message);
-            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+            AssertRowUntouched(await _repository.GetByNameAsync("PoisonUpdate", decrypt: false, ct));
         }
 
         [Fact]
-        public async Task UpdateAsync_RowWhoseStoredDescriptionCarriesAMarkerButDecrypts_SucceedsAndStripsTheMarker()
+        public async Task UpsertAsync_RowWhoseStoredDescriptionCarriesAMarkerButDecrypts_SucceedsAndStripsTheMarker()
         {
             // Arrange: the shape a Servy v9.5 save persisted (#5186) - the marker is in the STORED description and
             // the sensitive columns are blank, so this row decrypts cleanly today. Deciding from the description
@@ -1012,43 +734,30 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var ct = CancellationToken.None;
             var marked = string.Format(DecryptionFailureMarker.CorruptFormat, "CryptographicException")
                 + DecryptionFailureMarker.OriginalDescriptionSeparator + "My app";
-            var id = await _repository.AddAsync(new ServiceDto
+            var id = await _repository.UpsertAsync(new ServiceDto
             {
                 Name = "LegacyMarked",
                 ExecutablePath = "legacy.exe",
                 Description = "Original description",
-            }, ct);
+            }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
             await _executor.ExecuteAsync(
                 $"UPDATE {SqlConstants.ServicesTableName} SET Description = @Description WHERE Id = @Id",
                 new { Id = id, Description = marked },
                 cancellationToken: ct);
 
-            var read = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            var read = await _repository.GetByNameAsync("LegacyMarked", decrypt: true, ct);
             Assert.Equal(marked, read.Description);
             Assert.False(DecryptionFailureMarker.HasDecryptionFailure(read));
             read.ExecutablePath = "changed.exe";
 
             // Act
-            await _repository.UpdateAsync(read, false, false, ct);
+            await _repository.UpsertAsync(read, false, false, ct);
 
             // Assert: the write went through, and the save stripped the stored marker as v9.6 to v10.1 did
-            var after = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            var after = await _repository.GetByNameAsync("LegacyMarked", decrypt: true, ct);
             Assert.Equal("changed.exe", after.ExecutablePath);
             Assert.Equal("My app", after.Description);
             Assert.False(DecryptionFailureMarker.HasDecryptionFailure(after));
-        }
-
-        [Fact]
-        public async Task Update_Synchronous_ServiceReadFromAnUndecryptableRow_IsRefusedAndTheRowIsLeftAsItIs()
-        {
-            // Arrange
-            var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("PoisonUpdateSync");
-            var read = await _repository.GetByIdAsync(id, decrypt: true, ct);
-
-            // Act & Assert
-            Assert.Throws<ServiceDecryptionFailedException>(() => _repository.Update(read, false, false));
-            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
         }
 
         [Fact]
@@ -1056,7 +765,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: an import or an install with a complete, valid configuration for the same service
             var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("PoisonImport");
+            await AddPoisonedAsync("PoisonImport");
             var incoming = new ServiceDto { Name = "PoisonImport", ExecutablePath = "new.exe", Description = "New", Parameters = "--new" };
 
             // Act
@@ -1064,24 +773,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal(nameof(ServiceDto.Parameters), ex.FieldName);
-            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
-        }
-
-        [Fact]
-        public async Task ImportJsonAsync_OverAnUndecryptableRow_FailsWithTheReasonAndTheRowIsLeftAsItIs()
-        {
-            // Arrange
-            var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("PoisonJson");
-            var json = _jsonSerializer.Serialize(new ServiceDto { Name = "PoisonJson", ExecutablePath = "new.exe", Parameters = "--new" });
-
-            // Act
-            var result = await _repository.ImportJsonAsync(json, ct);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Contains("aes_key.dat", result.ErrorMessage);
-            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+            AssertRowUntouched(await _repository.GetByNameAsync("PoisonImport", decrypt: false, ct));
         }
 
         [Fact]
@@ -1089,14 +781,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("PoisonExportXml");
+            await AddPoisonedAsync("PoisonExportXml");
 
             // Act
             var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.ExportXmlAsync("PoisonExportXml", ct));
 
             // Assert
             Assert.Equal("PoisonExportXml", ex.ServiceName);
-            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+            AssertRowUntouched(await _repository.GetByNameAsync("PoisonExportXml", decrypt: false, ct));
         }
 
         [Fact]
@@ -1104,36 +796,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("PoisonExportJson");
+            await AddPoisonedAsync("PoisonExportJson");
 
             // Act
             var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.ExportJsonAsync("PoisonExportJson", ct));
 
             // Assert
             Assert.Equal("PoisonExportJson", ex.ServiceName);
-            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
-        }
-
-        [Fact]
-        public async Task UpsertBatchAsync_BackgroundRefreshWithAnUndecryptableRow_SkipsItAndStillUpdatesTheOthers()
-        {
-            // Arrange: what the Manager's refresh timer writes back - every service as read, one of them undecryptable
-            var ct = CancellationToken.None;
-            var poisonId = await AddPoisonedAsync("PoisonBatch");
-            var healthyId = await _repository.AddAsync(new ServiceDto { Name = "HealthyBatch", ExecutablePath = "ok.exe", Description = "Old", Parameters = "--keep" }, ct);
-            var poisoned = await _repository.GetByIdAsync(poisonId, decrypt: true, ct);
-            var healthy = await _repository.GetByIdAsync(healthyId, decrypt: true, ct);
-            poisoned.Description = "Drifted";
-            healthy.Description = "New";
-
-            // Act
-            await _repository.UpsertBatchAsync(new[] { poisoned, healthy }, ct);
-
-            // Assert
-            AssertRowUntouched(await _repository.GetByIdAsync(poisonId, decrypt: false, ct));
-            var updated = await _repository.GetByIdAsync(healthyId, decrypt: true, ct);
-            Assert.Equal("New", updated.Description);
-            Assert.Equal("--keep", updated.Parameters);
+            AssertRowUntouched(await _repository.GetByNameAsync("PoisonExportJson", decrypt: false, ct));
         }
 
         [Fact]
@@ -1141,13 +811,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var ct = CancellationToken.None;
-            var id = await _repository.AddAsync(new ServiceDto { Name = "HealthyUpsert", ExecutablePath = "ok.exe", Parameters = "--old" }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "HealthyUpsert", ExecutablePath = "ok.exe", Parameters = "--old" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
 
             // Act
             await _repository.UpsertAsync(new ServiceDto { Name = "HealthyUpsert", ExecutablePath = "ok.exe", Parameters = "--new" }, true, true, ct);
 
             // Assert
-            Assert.Equal("--new", (await _repository.GetByIdAsync(id, decrypt: true, ct)).Parameters);
+            Assert.Equal("--new", (await _repository.GetByNameAsync("HealthyUpsert", decrypt: true, ct)).Parameters);
         }
 
         #endregion
@@ -1184,7 +854,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // of SensitiveFields, so DecryptDto stops there and EnvironmentVariables stays v2 ciphertext - the
             // field the old whole-row write-back re-encrypted once per tick (#7328).
             var ct = CancellationToken.None;
-            var id = await _repository.AddAsync(new ServiceDto
+            var id = await _repository.UpsertAsync(new ServiceDto
             {
                 Name = "LegacyTick",
                 ExecutablePath = "legacy.exe",
@@ -1192,13 +862,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 StartupType = 2,
                 Parameters = "--port 8080",
                 EnvironmentVariables = "A=1",
-            }, ct);
+            }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
             await _executor.ExecuteAsync(
                 $"UPDATE {SqlConstants.ServicesTableName} SET Password = 'LEGACY_PAYLOAD' WHERE Id = @Id",
                 new { Id = id },
                 cancellationToken: ct);
 
-            var before = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            var before = await _repository.GetByNameAsync("LegacyTick", decrypt: false, ct);
 
             // Act: six ticks, the number the issue's reproduction used to show the geometric growth
             var writes = 0;
@@ -1210,7 +880,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Assert: the first tick syncs the two columns and the five after it find no drift left, and no
             // ciphertext ever changed, so nothing can grow a second encryption layer
             Assert.Equal(1, writes);
-            var after = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            var after = await _repository.GetByNameAsync("LegacyTick", decrypt: false, ct);
             Assert.NotNull(after);
             Assert.Equal("From the SCM", after.Description);
             Assert.Equal(3, after.StartupType);
@@ -1230,8 +900,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange: one field the current key cannot decrypt, as after aes_key.dat was replaced. A read with
             // decrypt: true scrubs all nine sensitive fields, and the old write-back stored those nulls (#7328).
             var ct = CancellationToken.None;
-            var id = await AddPoisonedAsync("CorruptTick");
-            var scrubbed = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            await AddPoisonedAsync("CorruptTick");
+            var scrubbed = await _repository.GetByNameAsync("CorruptTick", decrypt: true, ct);
             Assert.True(DecryptionFailureMarker.HasDecryptionFailure(scrubbed));
             Assert.Null(scrubbed.EnvironmentVariables);
 
@@ -1241,7 +911,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Assert: only the two metadata columns moved; the ciphertexts that a restored key could still
             // recover are exactly as they were stored
             Assert.Equal(1, writes);
-            var after = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            var after = await _repository.GetByNameAsync("CorruptTick", decrypt: false, ct);
             Assert.NotNull(after);
             Assert.Equal("From the SCM", after.Description);
             Assert.Equal(3, after.StartupType);
@@ -1256,7 +926,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var ct = CancellationToken.None;
-            var id = await _repository.AddAsync(new ServiceDto
+            await _repository.UpsertAsync(new ServiceDto
             {
                 Name = "HealthyTick",
                 ExecutablePath = "ok.exe",
@@ -1264,14 +934,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 StartupType = 2,
                 Parameters = "--keep",
                 Password = "SentinelPassword",
-            }, ct);
+            }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
 
             // Act
             var writes = await RunRefreshTickAsync("HealthyTick", "From the SCM", 3, ct);
 
             // Assert
             Assert.Equal(1, writes);
-            var after = await _repository.GetByIdAsync(id, decrypt: true, ct);
+            var after = await _repository.GetByNameAsync("HealthyTick", decrypt: true, ct);
             Assert.NotNull(after);
             Assert.Equal("From the SCM", after.Description);
             Assert.Equal(3, after.StartupType);
@@ -1292,14 +962,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var ct = CancellationToken.None;
-            var id = await _repository.AddAsync(new ServiceDto { Name = "NoStartup", ExecutablePath = "ok.exe", Description = "Old", StartupType = 2 }, ct);
+            await _repository.UpsertAsync(new ServiceDto { Name = "NoStartup", ExecutablePath = "ok.exe", Description = "Old", StartupType = 2 }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
 
             // Act
             var updated = await _repository.UpdateDescriptionAndStartupTypeAsync("NoStartup", "New", null, ct);
 
             // Assert
             Assert.Equal(1, updated);
-            var after = await _repository.GetByIdAsync(id, decrypt: false, ct);
+            var after = await _repository.GetByNameAsync("NoStartup", decrypt: false, ct);
             Assert.Equal("New", after.Description);
             Assert.Equal(2, after.StartupType);
         }
@@ -1307,22 +977,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #endregion
 
         #region Legacy Padded Trim Fallback Tests
-
-        [Fact]
-        public void GetByName_WithPaddedLegacyRow_ResolvesViaSynchronousUntrimmedFallback()
-        {
-            // Arrange: Seed an un-trimmed legacy service directly into the database
-            const string paddedName = "HoopsComm ";
-            var sql = $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\legacy.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
-            _executor.Execute(sql, new { Name = paddedName });
-
-            // Act: Pass the untrimmed name explicitly to satisfy the 'name != name.Trim()' guard clause
-            var resolvedRecord = _repository.GetByName(paddedName, decrypt: false);
-
-            // Assert
-            Assert.NotNull(resolvedRecord);
-            Assert.Equal(paddedName, resolvedRecord.Name);
-        }
 
         [Fact]
         public async Task GetServicePidAsync_WithPaddedLegacyRow_ResolvesViaResolveByNameAsyncFallback()

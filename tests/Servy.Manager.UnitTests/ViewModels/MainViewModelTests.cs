@@ -773,7 +773,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _serviceRepositoryMock.Verify(r => r.GetAllAsync(true, It.IsAny<CancellationToken>()), Times.Never);
                     _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
                         "TestService", "from the SCM", (int)ServiceStartType.Manual, It.IsAny<CancellationToken>()), Times.Once);
-                    _serviceRepositoryMock.Verify(r => r.UpsertBatchAsync(It.IsAny<IEnumerable<ServiceDto>>(), It.IsAny<CancellationToken>()), Times.Never);
+                    _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 }
             }, createApp: true);
         }
@@ -836,7 +836,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // stored startup type both differ from what the SCM reports
                     _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
-                    _serviceRepositoryMock.Verify(r => r.UpsertBatchAsync(It.IsAny<IEnumerable<ServiceDto>>(), It.IsAny<CancellationToken>()), Times.Never);
+                    _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 }
             }, createApp: true);
         }

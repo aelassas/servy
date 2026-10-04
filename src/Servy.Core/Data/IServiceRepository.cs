@@ -1,4 +1,3 @@
-using Servy.Core.Common;
 using Servy.Core.DTOs;
 using System;
 using System.Collections.Generic;
@@ -13,35 +12,6 @@ namespace Servy.Core.Data
     public interface IServiceRepository
     {
         /// <summary>
-        /// Adds a new <see cref="ServiceDto"/> record to the repository.
-        /// </summary>
-        /// <param name="service">The DTO representing the service to add.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The ID of the added service.</returns>
-        Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Updates an existing <see cref="ServiceDto"/> record.
-        /// </summary>
-        /// <param name="service">The DTO containing updated values.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
-        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The number of affected records.</returns>
-        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
-        Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Updates an existing <see cref="ServiceDto"/> record.
-        /// </summary>
-        /// <param name="service">The DTO containing updated values.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
-        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
-        /// <returns>The number of affected records.</returns>
-        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
-        int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials);
-
-        /// <summary>
         /// Adds or updates a <see cref="ServiceDto"/> record depending on whether it exists.
         /// </summary>
         /// <param name="service">The DTO to upsert.</param>
@@ -51,36 +21,6 @@ namespace Servy.Core.Data
         /// <returns>The ID of the upserted service.</returns>
         /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
         Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Asynchronously inserts or updates a collection of services in the database.
-        /// Preserves runtime state and credentials for each incoming DTO.
-        /// </summary>
-        /// <param name="services">The collection of <see cref="ServiceDto"/> objects to be persisted.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>
-        /// A task representing the asynchronous operation, containing the total number of rows affected.
-        /// </returns>
-        /// <remarks>
-        /// <para>
-        /// The whole collection is written with a single batched upsert command rather than one
-        /// command per row.
-        /// </para>
-        /// <para>
-        /// A service whose stored row has a sensitive field that no longer decrypts with the current key, or that was
-        /// itself read from such a row, is skipped and logged rather than written, so its stored ciphertext is never
-        /// replaced with blanks; the other services in the collection are still written.
-        /// </para>
-        /// <para>
-        /// The rows that are written are executed inside an explicit transaction, so that write is all-or-nothing:
-        /// either every one of them is persisted or none of them is.
-        /// </para>
-        /// <para>
-        /// After the database write, the method attempts to synchronize the auto-incremented
-        /// IDs back to the original <see cref="ServiceDto"/> objects in chunks.
-        /// </para>
-        /// </remarks>
-        Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes a <see cref="ServiceDto"/> by its database ID.
@@ -99,15 +39,6 @@ namespace Servy.Core.Data
         Task<int> DeleteAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Retrieves a <see cref="ServiceDto"/> by its database ID.
-        /// </summary>
-        /// <param name="id">The ID of the service.</param>
-        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
-        Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Retrieves a <see cref="ServiceDto"/> by its unique name.
         /// </summary>
         /// <param name="name">The name of the service.</param>
@@ -115,14 +46,6 @@ namespace Servy.Core.Data
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Retrieves a <see cref="ServiceDto"/> by its unique name.
-        /// </summary>
-        /// <param name="name">The name of the service.</param>
-        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
-        /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
-        ServiceDto GetByName(string name, bool decrypt = true);
 
         /// <summary>
         /// Lightweight query to fetch only the Process ID (PID) for a given service.
@@ -221,14 +144,6 @@ namespace Servy.Core.Data
         Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Imports a <see cref="ServiceDto"/> from an XML string.
-        /// </summary>
-        /// <param name="xml">The XML data to import.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>An <see cref="OperationResult"/> indicating success or carrying descriptive error details upon failure.</returns>
-        Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Exports a <see cref="ServiceDto"/> to a JSON string.
         /// </summary>
         /// <param name="name">The name of the service to export.</param>
@@ -238,12 +153,5 @@ namespace Servy.Core.Data
         /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key; the export would otherwise be written without its parameters and environment variables.</exception>
         Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Imports a <see cref="ServiceDto"/> from a JSON string.
-        /// </summary>
-        /// <param name="json">The JSON data to import.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>An <see cref="OperationResult"/> indicating success or carrying descriptive error details upon failure.</returns>
-        Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default);
     }
 }

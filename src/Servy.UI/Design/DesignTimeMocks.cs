@@ -28,21 +28,10 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeServiceRepository : IServiceRepository
     {
-        public ServiceDto GetByName(string name, bool decrypt = true) => null;
         public void Upsert(ServiceDto service) { /* no-op */ }
         public void Delete(string name) { /* no-op */ }
-        public int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials) => 0;
-
-        public Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default)
-            => Task.FromResult(0);
-
-        public Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
-            => Task.FromResult(0);
 
         public Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
-            => Task.FromResult(0);
-
-        public Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
         public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -50,9 +39,6 @@ namespace Servy.UI.Design
 
         public Task<int> DeleteAsync(string name, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
-
-        public Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default)
-            => Task.FromResult<ServiceDto>(null);
 
         public Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default)
             => Task.FromResult<ServiceDto>(null);
@@ -84,14 +70,9 @@ namespace Servy.UI.Design
         public Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default)
             => Task.FromResult(string.Empty);
 
-        public Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
-            => Task.FromResult(OperationResult.Success());
-
         public Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
             => Task.FromResult(string.Empty);
 
-        public Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
-            => Task.FromResult(OperationResult.Success());
     }
 
     /// <summary>

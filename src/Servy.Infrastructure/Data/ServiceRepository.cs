@@ -1,14 +1,10 @@
-using Servy.Core.Common;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
-using Servy.Core.Resources;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,62 +67,6 @@ namespace Servy.Infrastructure.Data
         #region DTO methods
 
         /// <inheritdoc />
-        public virtual async Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default)
-        {
-            var encryptedService = CreateEncryptedClone(service);
-
-            var sql = $@"
-                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns})
-                VALUES ({SqlConstants.InsertValues});
-                SELECT last_insert_rowid();";
-
-            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
-            service.Id = id;
-
-            return id;
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
-        {
-            EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
-            var encryptedService = CreateEncryptedClone(service);
-
-            await PatchRuntimeStateAsync(
-                incoming: encryptedService,
-                preserveExistingRuntimeState: preserveExistingRuntimeState,
-                preserveExistingCredentials: preserveExistingCredentials,
-                cancellationToken: cancellationToken);
-
-            var sql = $@"
-                UPDATE {SqlConstants.ServicesTableName} SET
-                {SqlConstants.UpdateSet}
-                WHERE Id = @Id;";
-
-            return await _dapper.ExecuteAsync(sql, encryptedService, cancellationToken: cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public virtual int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
-        {
-            EnsureStoredRowDecryptable(service, GetByName(service?.Name, decrypt: false));
-            var encryptedService = CreateEncryptedClone(service);
-
-            PatchRuntimeState(
-                incoming: encryptedService,
-                preserveExistingRuntimeState: preserveExistingRuntimeState,
-                preserveExistingCredentials: preserveExistingCredentials
-                );
-
-            var sql = $@"
-                UPDATE {SqlConstants.ServicesTableName} SET
-                {SqlConstants.UpdateSet}
-                WHERE Id = @Id;";
-
-            return _dapper.Execute(sql, encryptedService);
-        }
-
-        /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
             EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
@@ -149,118 +89,6 @@ namespace Servy.Infrastructure.Data
             service.Id = id;
 
             return id;
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default)
-        {
-            var serviceList = services?.ToList();
-            if (serviceList == null || !serviceList.Any()) return 0;
-
-            // 1. Bulk pre-fetching dictionary optimization to bypass N+1 sequential row reads.
-            var existingMap = new Dictionary<string, ServiceDto>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
-            {
-                var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
-                var chunkNames = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
-
-                if (chunkNames.Any())
-                {
-                    var existingRows = (await _dapper.QueryAsync<ServiceDto>(
-                        $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Name COLLATE UNICODE_NOCASE IN @chunkNames",
-                        new { chunkNames },
-                        cancellationToken: cancellationToken)).ToList();
-
-                    foreach (var row in existingRows)
-                    {
-                        if (!string.IsNullOrEmpty(row.Name))
-                        {
-                            // Keep row encrypted: ApplyRuntimeState copies raw ciphertext forward safely
-                            existingMap[row.Name] = row;
-                        }
-                    }
-                }
-            }
-
-            // 2. Encrypt input DTOs first, then patch runtime state & existing ciphertext credentials. A service whose stored
-            // row no longer decrypts is left exactly as it is, and so is its DTO: writing either would blank its secrets.
-            var encryptedServices = new List<ServiceDto>();
-            foreach (var rawDto in serviceList.ToList())
-            {
-                existingMap.TryGetValue(rawDto?.Name ?? string.Empty, out var stored);
-                try
-                {
-                    EnsureStoredRowDecryptable(rawDto, stored);
-                }
-                catch (ServiceDecryptionFailedException ex)
-                {
-                    Logger.Error($"Skipped the update of service '{rawDto?.Name}'. {ex.Message}", ex.InnerException);
-                    serviceList.Remove(rawDto);
-                    continue;
-                }
-
-                var encryptedClone = CreateEncryptedClone(rawDto);
-
-                if (!string.IsNullOrEmpty(encryptedClone.Name) && existingMap.TryGetValue(encryptedClone.Name, out var existing))
-                {
-                    ApplyRuntimeState(
-                        incoming: encryptedClone,
-                        existing: existing,
-                        preserveExistingRuntimeState: true,
-                        preserveExistingCredentials: true);
-                }
-
-                encryptedServices.Add(encryptedClone);
-            }
-
-            var sql = $@"
-                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns})
-                VALUES ({SqlConstants.InsertValues})
-                ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
-                {SqlConstants.UpsertSet};";
-
-            // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
-            using (var tx = _dapper.BeginTransaction())
-            {
-                // 3. Execute the batch upsert within the transaction scope
-                var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
-
-                // 4. Sync IDs back to the original DTOs
-                // SQLite has a default limit of 999 parameters. For larger batches,
-                // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
-                for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
-                {
-                    var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
-
-                    // Pass original names; the UNICODE_NOCASE collation folds case on the SQL side
-                    var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
-
-                    var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
-                        $"SELECT Id, Name FROM {SqlConstants.ServicesTableName} WHERE Name COLLATE UNICODE_NOCASE IN @names",
-                        new { names },
-                        transaction: tx,
-                        cancellationToken: cancellationToken))
-                        .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
-
-                    // Update the original DTO references
-                    foreach (var service in currentChunk)
-                    {
-                        if (string.IsNullOrEmpty(service.Name)) continue;
-
-                        // OrdinalIgnoreCase here handles the mapping between the
-                        // user's input (MyService) and the DB's stored casing (myservice).
-                        if (idMap.TryGetValue(service.Name, out var id))
-                        {
-                            service.Id = id;
-                        }
-                    }
-                }
-
-                // Commit all changes atomically only after the DTO ID fields have been successfully resolved
-                tx.Commit();
-
-                return affectedRows;
-            }
         }
 
         /// <inheritdoc />
@@ -287,39 +115,12 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default)
-        {
-            string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Id = @Id;";
-            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Id = id }, cancellationToken: cancellationToken);
-
-            if (decrypt) SafeDecrypt(dto);
-            return dto;
-        }
-
-        /// <inheritdoc />
         public virtual async Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
 
             string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
             var dto = await ResolveByNameAsync<ServiceDto>(sql, name, cancellationToken: cancellationToken);
-
-            if (decrypt) SafeDecrypt(dto);
-            return dto;
-        }
-
-        /// <inheritdoc />
-        public virtual ServiceDto GetByName(string name, bool decrypt = true)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return null;
-            string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
-
-            var dto = ResolveWithLegacyFallback<ServiceDto>(
-                sql: sql,
-                queryExecutor: (executedSql, parameters) => _dapper.QuerySingleOrDefault<ServiceDto>(executedSql, parameters),
-                name: name,
-                fallbackEvaluationPredicate: result => EqualityComparer<ServiceDto>.Default.Equals(result, default)
-            );
 
             if (decrypt) SafeDecrypt(dto);
             return dto;
@@ -477,19 +278,6 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
-        {
-            return ImportAsync(
-                content: xml,
-                deserialize: _xmlServiceSerializer.Deserialize,
-                emptyMessage: Strings.Msg_ImportXmlNullOrEmpty,
-                deserializationFailedMessage: Strings.Msg_ImportXmlDeserializationFailed,
-                logFormat: "Failed to import service from XML.",
-                failedFormat: Strings.Msg_ImportXmlFailed,
-                cancellationToken: cancellationToken);
-        }
-
-        /// <inheritdoc />
         public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return string.Empty;
@@ -504,66 +292,9 @@ namespace Servy.Infrastructure.Data
             return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
         }
 
-        /// <inheritdoc />
-        public virtual Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
-        {
-            return ImportAsync(
-                content: json,
-                deserialize: _jsonServiceSerializer.Deserialize,
-                emptyMessage: Strings.Msg_ImportJsonNullOrEmpty,
-                deserializationFailedMessage: Strings.Msg_ImportJsonDeserializationFailed,
-                logFormat: "Failed to import service from JSON.",
-                failedFormat: Strings.Msg_ImportJsonFailed,
-                cancellationToken: cancellationToken);
-        }
-
         #endregion
 
         #region Private Helpers
-
-        /// <summary>
-        /// Centralized worker that handles the common import pipeline (content validation,
-        /// deserialization, runtime-state/credential-preserving upsert, cancellation rethrowing, and error logging).
-        /// </summary>
-        private async Task<OperationResult> ImportAsync(
-            string content,
-            Func<string, ServiceDto> deserialize,
-            string emptyMessage,
-            string deserializationFailedMessage,
-            string logFormat,
-            string failedFormat,
-            CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(content))
-                return OperationResult.Failure(emptyMessage);
-
-            try
-            {
-                var service = deserialize(content);
-                if (service == null)
-                    return OperationResult.Failure(deserializationFailedMessage);
-
-                // If a row with this name already exists, keep its runtime state (Pid, ActiveStdoutPath, ActiveStderrPath,
-                // PreviousStopTimeout, RestartAttempts and its timestamp) and its credentials (RunAsLocalSystem, UserAccount,
-                // Password), whether or not it is running.
-                await UpsertAsync(
-                    service,
-                    preserveExistingRuntimeState: true,
-                    preserveExistingCredentials: true,
-                    cancellationToken: cancellationToken
-                    );
-                return OperationResult.Success();
-            }
-            catch (OperationCanceledException)
-            {
-                throw;   // let the caller observe cancellation
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(logFormat, ex);
-                return OperationResult.Failure(string.Format(failedFormat, ex.Message));
-            }
-        }
 
         /// <summary>
         /// Runs an asynchronous single-row lookup by service name, through the legacy
@@ -741,32 +472,6 @@ namespace Servy.Infrastructure.Data
 
             // Fetch current state without decryption (performance optimization)
             var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
-
-            if (existing != null)
-                ApplyRuntimeState(
-                    incoming: incoming,
-                    existing: existing,
-                    preserveExistingRuntimeState: preserveExistingRuntimeState,
-                    preserveExistingCredentials: preserveExistingCredentials
-                    );
-        }
-
-        /// <summary>
-        /// Retrieves the existing runtime state from the database and applies it to the incoming DTO.
-        /// This ensures that importing a configuration over a running service does not clobber
-        /// its PID or active log paths, which would break Manager tracking.
-        /// </summary>
-        /// <param name="incoming">The DTO deserialized from an import file.</param>
-        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
-        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
-        private void PatchRuntimeState(ServiceDto incoming, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
-        {
-            if (!preserveExistingRuntimeState && !preserveExistingCredentials) return;
-
-            if (string.IsNullOrWhiteSpace(incoming.Name)) return;
-
-            // Fetch current state without decryption (performance optimization)
-            var existing = GetByName(incoming.Name, decrypt: false);
 
             if (existing != null)
                 ApplyRuntimeState(
