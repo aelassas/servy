@@ -106,7 +106,11 @@ namespace Servy.Manager.Utils
                 _pending.Add(buffer[index]);
                 index++;
 
-                if (EndsWith(_newline, _pending.Count))
+                // The encoded newline is one code unit long and the fragment always starts on a code-unit
+                // boundary, so a match that does not end on one straddles two characters and is not a
+                // terminator. In UTF-16 LE, for example, the 0A 00 pair also occurs between a character in
+                // U+0A00-U+0AFF and a following U+xx00 one. For UTF-8 the length is 1 and nothing changes.
+                if (_pending.Count % _newline.Length == 0 && EndsWith(_newline, _pending.Count))
                 {
                     line = DecodeCompletedLine();
                     _pending.Clear();
