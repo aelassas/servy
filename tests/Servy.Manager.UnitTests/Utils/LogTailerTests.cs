@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Utils;
 using Servy.Testing;
+using System.Text;
 
 namespace Servy.Manager.UnitTests.Utils
 {
@@ -571,6 +572,69 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert
                 Assert.Empty(result.Lines);
                 Assert.Equal("Line_1\n".Length, (int)result.Position);
+            }
+        }
+
+        /// <summary>
+        /// Maps a row name to the encoding that writes its byte order mark.
+        /// </summary>
+        /// <param name="encodingName">The row's encoding name.</param>
+        /// <returns>The encoding configured to emit its preamble.</returns>
+        private static Encoding EncodingWithByteOrderMark(string encodingName)
+        {
+            switch (encodingName)
+            {
+                case "utf-8": return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+                case "utf-16le": return new UnicodeEncoding(bigEndian: false, byteOrderMark: true);
+                case "utf-16be": return new UnicodeEncoding(bigEndian: true, byteOrderMark: true);
+                case "utf-32le": return new UTF32Encoding(bigEndian: false, byteOrderMark: true);
+                case "utf-32be": return new UTF32Encoding(bigEndian: true, byteOrderMark: true);
+                default: throw new ArgumentOutOfRangeException(nameof(encodingName), encodingName, "Unknown encoding row.");
+            }
+        }
+
+        /// <summary>
+        /// A tail that starts at offset 0 reads the byte order mark itself (<c>DetectEncoding</c>), skips it
+        /// and hands the encoding it names to the line splitter. Each row breaks a different arm if that arm
+        /// is deleted, mis-ordered or stops skipping the mark: the mark would show up as a leading U+FEFF
+        /// or the text would be decoded with the wrong encoding.
+        /// </summary>
+        /// <param name="encodingName">The encoding whose mark the file starts with.</param>
+        [Theory]
+        [InlineData("utf-8")]
+        [InlineData("utf-16le")]
+        [InlineData("utf-16be")]
+        [InlineData("utf-32le")]
+        [InlineData("utf-32be")]
+        public async Task RunFromPosition_FromOffsetZero_DecodesTheEncodingTheByteOrderMarkNamesAndSkipsTheMark(string encodingName)
+        {
+            // Arrange - ASCII-only text, so no 0x0A byte other than the terminator's own can occur (see #7379).
+            File.WriteAllText(_tempFilePath, "FIRST_LINE\nSECOND_LINE\n", EncodingWithByteOrderMark(encodingName));
+            var fileInfo = new FileInfo(_tempFilePath);
+
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
+
+                // Act
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
+
+                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count >= 2; },
+                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
+                    cancellationToken: TestContext.Current.CancellationToken);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert - exact text: a mark fed to the splitter shows up as a leading U+FEFF (or garbage),
+                // and a wrong encoding never yields these two strings.
+                lock (capturedLines)
+                {
+                    Assert.Equal(new[] { "FIRST_LINE", "SECOND_LINE" }, capturedLines.Select(l => l.Text));
+                }
             }
         }
 
