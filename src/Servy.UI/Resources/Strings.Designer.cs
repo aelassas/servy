@@ -123,7 +123,7 @@ namespace Servy.UI.Resources {
                 return ResourceManager.GetString("Msg_ServyHostUnavailableTitle", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to Servy Startup Warnings.
         /// </summary>
