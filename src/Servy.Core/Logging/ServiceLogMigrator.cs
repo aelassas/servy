@@ -122,8 +122,19 @@ namespace Servy.Core.Logging
         /// Access to the staged file or to the new log was denied. A delete refused this way is handled as described
         /// for <see cref="IOException"/>: the staged file is emptied first only when it can be opened for writing.
         /// </exception>
+        /// <remarks>
+        /// The read-only attribute is cleared on the staged file before anything is read, because it refuses both the
+        /// delete and the in-place emptying while leaving the rename that staged the file untouched.
+        /// </remarks>
         private static void MoveStagedLog(string stagingPath, string formerPath, string serviceFolder, string fileName)
         {
+            // The read-only attribute refuses the delete below and the emptying in its catch, but not the rename that
+            // staged this file, so a former log carrying it was appended again at every start. The rename has already
+            // moved the file to the staging name, so clearing it here affects only the file about to be deleted.
+            var attributes = File.GetAttributes(stagingPath);
+            if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                File.SetAttributes(stagingPath, attributes & ~FileAttributes.ReadOnly);
+
             if (new FileInfo(stagingPath).Length > 0)
             {
                 if (!Directory.Exists(serviceFolder))
