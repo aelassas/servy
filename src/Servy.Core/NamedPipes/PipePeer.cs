@@ -10,11 +10,6 @@ namespace Servy.Core.NamedPipes
     public static class PipePeer
     {
         /// <summary>
-        /// The only <c>GetNamedPipeClientComputerName</c> failure that proves the client is on this computer.
-        /// </summary>
-        private const int ErrorPipeLocal = 229;
-
-        /// <summary>
         /// Gets the process identifier of the client connected to a server pipe.
         /// </summary>
         /// <param name="serverStream">The connected server end of the pipe.</param>
@@ -62,7 +57,7 @@ namespace Servy.Core.NamedPipes
 
             // Only ERROR_PIPE_LOCAL proves the client is on this computer. Any other failure leaves the answer
             // unknown, and an unknown client must not be served as a local one.
-            return System.Runtime.InteropServices.Marshal.GetLastWin32Error() != ErrorPipeLocal;
+            return System.Runtime.InteropServices.Marshal.GetLastWin32Error() != Errors.ERROR_PIPE_LOCAL;
         }
 
         /// <summary>
