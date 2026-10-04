@@ -201,10 +201,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
-            // Create an existing unlocked target file on disk
+            // An existing, unlocked target that is stale and differs from the resource, so the copy reaches the lock probe
             File.WriteAllText(targetPath, "unlocked target");
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
 
-            // Ensure the manifest resource stream is provided
             var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
                          .Returns(() => new MemoryStream(dummyResourceBytes));
@@ -215,7 +215,10 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            // Lock probe should return false (unlocked), so ProcessKiller is never invoked
+            Assert.True(_resourceHelper.HasCopiedResources);
+            Assert.Equal(dummyResourceBytes, File.ReadAllBytes(targetPath));
+
+            // The unlocked probe short-circuits; the loose mock's default (false) would have failed the copy if it were reached
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
 
