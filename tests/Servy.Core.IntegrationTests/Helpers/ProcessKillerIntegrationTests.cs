@@ -357,8 +357,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         private bool WaitForProcessExit(Process process, int timeoutMs)
         {
-            if (process == null) return true;
-
             var sw = Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < timeoutMs)
             {
