@@ -379,4 +379,53 @@ namespace Servy.Core.UnitTests.Security
         private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference sid, bool breakInheritance = true)
             => TestReflection.InvokePublicStatic(typeof(SecurityHelper), "ApplySecurityRules", security, sid, breakInheritance);
     }
+
+    /// <summary>
+    /// Names the xUnit collection of the tests that swap <see cref="SecurityHelper.IsAdministratorCore"/>. The seam is
+    /// process-global and other classes read <see cref="SecurityHelper.IsAdministrator"/>, so the swapping tests must
+    /// not run in parallel with the rest of the assembly.
+    /// </summary>
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class ElevationSeamCollection
+    {
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "ElevationSeamSequential";
+    }
+
+    /// <summary>
+    /// Pins the current-user ACE of <see cref="SecurityHelper.ApplySecurityRules"/> against a synthetic elevation state,
+    /// so it is checked on elevated runners too, where the tests that read the real token skip themselves.
+    /// </summary>
+    [Collection(ElevationSeamCollection.Name)]
+    public class SecurityHelperElevationTests
+    {
+        [Theory]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        public void ApplySecurityRules_OrdinaryUser_GetsTheCurrentUserAceOnlyWhenNotElevated(bool elevated, bool expectAce)
+        {
+            // Arrange
+            var security = new DirectorySecurity();
+            var ordinarySid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => elevated;
+
+            try
+            {
+                // Act
+                SecurityHelper.ApplySecurityRules(security, ordinarySid);
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert: Full Control for the current user only without elevation, next to the two mandatory ACEs
+            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<FileSystemAccessRule>()
+                                .ToList();
+            Assert.Equal(expectAce, rules.Any(r => r.IdentityReference.Equals(ordinarySid) && r.FileSystemRights == FileSystemRights.FullControl));
+            Assert.Equal(expectAce ? 3 : 2, rules.Count);
+        }
+    }
 }
