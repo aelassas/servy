@@ -858,16 +858,23 @@ namespace Servy.Manager.ViewModels
                             if (service == null || string.IsNullOrWhiteSpace(service.Name)) return;
                             allDtosDict.TryGetValue(service.Name, out var dto);
 
+                            // Read the stored description BEFORE GetServiceUpdateInfo runs: it mutates the DTO it is
+                            // given and returns that same reference, so by the time the write-back guard below is
+                            // reached dto.Description already holds the service control manager's text (#7377)
+                            var marked = DecryptionFailureMarker.IsPresent(dto?.Description);
+
                             // Collect updates without touching the UI model yet
                             var result = GetServiceUpdateInfo(service, allServicesDict, dto, token);
 
                             if (result.UpdateInfo != null)
                                 uiUpdates.Add(result.UpdateInfo);
 
-                            // Never write back a service whose description carries a decryption failure marker: the
-                            // marker is not the description the service control manager reports, so syncing it would
-                            // store the marker text itself (#7334; the read no longer decrypts, see step 3)
-                            if (result.UpdatedDto != null && !DecryptionFailureMarker.HasDecryptionFailure(dto))
+                            // Never write back a service whose STORED description carries a decryption failure marker:
+                            // the drift the tick sees for such a row is the marker prefix itself rather than a metadata
+                            // change, so the refresh tick is not what should rewrite it - the next real save strips the
+                            // marker through DecryptionFailureMarker.Strip (#7334, #7377; the read no longer decrypts,
+                            // see step 3, so the stored text is all there is to recognize such a row by)
+                            if (result.UpdatedDto != null && !marked)
                                 changedDtos.Add(result.UpdatedDto);
                         });
                 }, token);
