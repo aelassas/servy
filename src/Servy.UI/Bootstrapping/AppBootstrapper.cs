@@ -381,6 +381,10 @@ namespace Servy.UI.Bootstrapping
                     // Replacing the service wrapper or the host needs every running Servy service and the host stopped. They
                     // are stopped once for all the files and the host reinstall, and started once at the end, rather than
                     // once per file: after an upgrade on a machine with many services that would delay start-up a lot.
+                    // Non-critical warnings are collected while the services are paused and shown after the resume: a modal
+                    // dialog awaited inside the try keeps every service the pause stopped down until someone clicks OK.
+                    var deferredWarnings = new List<(string Message, string? Title)>();
+
                     var pause = new ServyServicesPause(sh, hostInstaller);
                     try
                     {
@@ -421,43 +425,31 @@ namespace Servy.UI.Bootstrapping
                         {
                             string resourceName = $"{handleExeFileName}.exe";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window?)app.MainWindow,
+                            deferredWarnings.Add((
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
 
     #if DEBUG
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", cancellationToken: ct))
                         {
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window?)app.MainWindow,
+                            deferredWarnings.Add((
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyServiceUIFileName}.pdb"),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
 
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyRestarterFileName, "pdb", cancellationToken: ct))
                         {
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window?)app.MainWindow,
+                            deferredWarnings.Add((
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyRestarterFileName}.pdb"),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
 
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyHostFileName, "pdb", cancellationToken: ct))
                         {
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window?)app.MainWindow,
+                            deferredWarnings.Add((
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyHostFileName}.pdb"),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
     #else
                         // A file newly extracted into the vault carries no grant for the service accounts, so grant them
@@ -478,17 +470,25 @@ namespace Servy.UI.Bootstrapping
                         }
                         else
                         {
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window?)app.MainWindow,
+                            deferredWarnings.Add((
                                 string.Format(Resources.Strings.Msg_ServyHostUnavailable, hostResult.ErrorMessage),
-                                Resources.Strings.Msg_ServyHostUnavailableTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                Resources.Strings.Msg_ServyHostUnavailableTitle));
                         }
                     }
                     finally
                     {
                         await pause.ResumeAsync();
+                    }
+
+                    // The paused services are running again, so a dialog may now wait for the user.
+                    foreach (var (message, title) in deferredWarnings)
+                    {
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window?)app.MainWindow,
+                            message,
+                            title,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
                     }
 
                     stopwatch.Stop();
