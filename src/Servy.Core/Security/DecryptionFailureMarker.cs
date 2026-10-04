@@ -49,8 +49,15 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="service">The service, or <see langword="null"/>.</param>
         /// <returns><see langword="true"/> when the service must not be saved.</returns>
+        /// <remarks>
+        /// The decision comes from <see cref="ServiceDto.DecryptionFailed"/>, which the read path sets, and not
+        /// from the description text. A marker in the description is display text: Servy v9.5 persisted one into
+        /// the stored description (#5186), and such a row decrypts cleanly today, so reading the text here would
+        /// refuse every install, update and import of it for good while naming <c>aes_key.dat</c> as a cause that
+        /// is not true. The next save strips the stored marker through <see cref="Strip(string)"/>.
+        /// </remarks>
         public static bool HasDecryptionFailure(ServiceDto? service)
-            => service != null && IsPresent(service.Description);
+            => service != null && service.DecryptionFailed;
 
         /// <summary>
         /// Removes every leading marker from a description.
