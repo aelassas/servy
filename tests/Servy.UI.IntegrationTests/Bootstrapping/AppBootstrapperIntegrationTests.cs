@@ -201,8 +201,12 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
         #region Startup and Environmental Routing Tests
 
-        [Fact]
-        public async Task OnStartup_ValidEnvironment_ForcesSoftwareRenderingOnArg()
+        [Theory]
+        [InlineData(new[] { AppConfig.ForceSoftwareRenderingArg }, true)]
+        [InlineData(new[] { "--FORCE-SR" }, true)] // StringComparison.OrdinalIgnoreCase
+        [InlineData(new[] { "MyService" }, false)] // an unrelated positional argument
+        [InlineData(new string[0], false)] // no arguments at all
+        public async Task OnStartup_ValidEnvironment_SetsForceSoftwareRenderingOnlyFromTheArg(string[] args, bool expected)
         {
             // Execute inside the managed thread context message loop to stay decoupled from external race states
             await Helper.RunOnSTA(async () =>
@@ -228,7 +232,8 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
                 try
                 {
-                    var startupArgs = CreateStartupEventArgs(new[] { AppConfig.ForceSoftwareRenderingArg });
+                    // Push the command line arguments under test
+                    var startupArgs = CreateStartupEventArgs(args);
 
                     // Act
                     bool proceed = bootstrapper.OnStartup(app, startupArgs);
@@ -237,7 +242,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
                     Assert.True(adminChecks > 0, "The elevation check never read SecurityHelper.IsAdministratorCore, so this test measured the host instead of its arrangement.");
                     Assert.True(sqliteChecks > 0, "The SQLite version check never read DatabaseValidator.GetSqliteVersion, so this test measured the host instead of its arrangement.");
                     Assert.True(proceed);
-                    Assert.True(bootstrapper.ForceSoftwareRendering);
+                    Assert.Equal(expected, bootstrapper.ForceSoftwareRendering);
                 }
                 finally
                 {
