@@ -11,7 +11,7 @@ Servy lets you run any app as a native Windows service with full control over th
 
 This .NET Framework 4.8 version is designed for compatibility with older Windows operating systems, from Windows 7 SP1 to Windows 11 and Windows Server.
 
-Starting with v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, machine-bound DPAPI and AES-256 authenticated encryption, and automated ACL and DACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning.
+Starting with v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for monitoring and managing all installed services in real time.
 
