@@ -506,12 +506,11 @@ namespace Servy.Manager.UnitTests.Utils
                 // Act - the writer completes the line between two passes. Appending from the
                 // OnLoopCompleted handler itself is what makes that deterministic: the handler runs to
                 // completion before the loop's poll delay, so the newline is on disk before the next
-                // ReadLineAsync can begin. Observing the boundary by polling and appending afterwards
+                // read can begin. Observing the boundary by polling and appending afterwards
                 // leaves only the LogTailerEofPollIntervalMs window to land in, which an ARM64 CI runner
-                // loses often enough to fail the suite. Appending while a pass is mid-read lets that pass
-                // return "partial-" at EOF and then read "remainder" as a second line within the same pass,
-                // leaving no terminator information to re-join them by; that residual is tracked separately
-                // and is not the subject here, which is that the history hands the torn tail over whole.
+                // loses often enough to fail the suite. A line the writer completes while a pass is
+                // mid-read is LogLineSplitter's case since #7333 and is not the subject here, which is
+                // that the history hands the torn tail over whole.
                 var passes = 0;
                 var publishedAtFirstBoundary = -1;
                 tailer.OnLoopCompleted += () =>
@@ -772,10 +771,11 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
-        /// A pass that holds an unterminated tail back commits the offset just past that fragment before it
-        /// publishes the batch, so the fragment is the only record of the line's start. An exception on the
-        /// generic error path must therefore keep it: dropping it leaves the reopen resuming after those
-        /// bytes, and the console shows only the remainder of the line as a line of its own.
+        /// A pass that holds an unterminated tail back commits the offset at that fragment's first byte before
+        /// it publishes the batch, because the fragment itself lives only in the splitter, which an exception on
+        /// the generic error path discards with the handle. The reopen must therefore re-read the fragment from
+        /// disk: an offset committed past it leaves the reopen resuming after those bytes, and the console
+        /// shows only the remainder of the line as a line of its own.
         /// </summary>
         [Fact]
         public async Task RunFromPosition_SubscriberFaultsAfterHoldingBackATornTail_PublishesTheWholeLineAfterRecovery()
@@ -785,7 +785,7 @@ namespace Servy.Manager.UnitTests.Utils
             using (var cts = new CancellationTokenSource())
             {
                 // A threshold batch whose last line is torn: the pass publishes the complete lines, holds
-                // TORN_HEAD back and commits lastPosition past it.
+                // TORN_HEAD back and commits lastPosition at its first byte.
                 int threshold = AppConfig.LogTailerBatchFlushThreshold;
                 var completeLines = Enumerable.Range(1, threshold - 1).Select(i => $"Line_{i}").ToList();
                 File.WriteAllText(_tempFilePath, string.Join("\n", completeLines) + "\nTORN_HEAD");
@@ -799,7 +799,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                     // A subscriber that throws from this handler is the realistic trigger - ConsoleViewModel
                     // marshals to the UI thread from here - and it faults the pass after the flush, which is
-                    // after the fragment was held back and the offset committed past it.
+                    // after the fragment was held back and the offset committed at its first byte.
                     if (Interlocked.Exchange(ref throwOnce, 0) == 1)
                     {
                         throw new InvalidOperationException("Simulated subscriber fault after a threshold flush that held a torn tail back.");
@@ -838,7 +838,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Assert - the mid-pass fault must actually have fired, or nothing below is meaningful
                 Assert.Equal(0, Volatile.Read(ref throwOnce));
 
-                // Assert - the held-back fragment survived the error path, so the completed line is published
+                // Assert - the reopen re-read the held-back fragment from disk, so the completed line is published
                 // once and whole instead of as its remainder alone
                 lock (capturedLines)
                 {
