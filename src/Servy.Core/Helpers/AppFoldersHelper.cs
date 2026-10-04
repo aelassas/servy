@@ -63,7 +63,7 @@ namespace Servy.Core.Helpers
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Operational Folders:</b> Subfolders (db, security, logs, logs\service) are processed. If they reside within the Root Vault,
+        /// <b>Operational Folders:</b> Subfolders (db, security, logs, logs\services) are processed. If they reside within the Root Vault,
         /// inheritance is preserved to allow manually granted service account permissions to cascade down.
         /// </description>
         /// </item>

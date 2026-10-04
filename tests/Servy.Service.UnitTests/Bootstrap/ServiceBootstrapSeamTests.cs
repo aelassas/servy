@@ -138,7 +138,7 @@ namespace Servy.Service.UnitTests.Bootstrap
 
         /// <summary>
         /// The service log file is initialized before the <c>try</c>, which is what lets the catch-all log
-        /// a construction failure at all, and in the service's own folder, <c>logs\service\&lt;ServiceName&gt;\</c>,
+        /// a construction failure at all, and in the service's own folder, <c>logs\services\&lt;ServiceName&gt;\</c>,
         /// the only log folder the service account can write.
         /// </summary>
         [Fact]
@@ -152,13 +152,13 @@ namespace Servy.Service.UnitTests.Bootstrap
             Build(env);
 
             // Assert
-            var expected = Path.Combine(AppConfig.LogsFolderPath, "service", "My%3AService");
+            var expected = Path.Combine(AppConfig.LogsFolderPath, "services", "My%3AService");
             Assert.Equal(new[] { ("Servy.Service.log", expected) }, env.InitializedLoggers);
             Assert.Equal(ServiceLogPaths.GetFolderPath("My:Service"), expected);
         }
 
         /// <summary>
-        /// A command line that names no service falls back to <c>logs\service\</c>; such a wrapper fails to
+        /// A command line that names no service falls back to <c>logs\services\</c>; such a wrapper fails to
         /// start in <c>OnStart</c> anyway.
         /// </summary>
         [Fact]
@@ -173,7 +173,7 @@ namespace Servy.Service.UnitTests.Bootstrap
 
             // Assert
             Assert.Equal(new[] { ("Servy.Service.log", AppConfig.ServiceLogsFolderPath) }, env.InitializedLoggers);
-            Assert.Equal(Path.Combine(AppConfig.LogsFolderPath, "service"), AppConfig.ServiceLogsFolderPath);
+            Assert.Equal(Path.Combine(AppConfig.LogsFolderPath, "services"), AppConfig.ServiceLogsFolderPath);
         }
 
         /// <summary>Command lines that name no service.</summary>

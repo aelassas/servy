@@ -367,7 +367,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public async Task Harden_ServiceLogsFolderCannotBeCreated_IsReportedAsFailedAndTheFilesAreStillHardened()
         {
-            // Arrange: a regular file sits where logs\service\svc-one\ belongs, so creating that folder throws
+            // Arrange: a regular file sits where logs\services\svc-one\ belongs, so creating that folder throws
             Directory.CreateDirectory(Path.Combine(TempDirectory, ServiceLogsRoot));
             File.WriteAllText(Path.Combine(TempDirectory, ServiceLogsFolder), "not a folder");
             File.WriteAllText(Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe), "ui");
@@ -401,7 +401,7 @@ namespace Servy.Core.UnitTests.Security
             AddAce(key, LocalServiceSid);
             var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
 
-            // ... and the 10.1 layout: the shared logs\service\ grant, the log moved into it, and the folder of a service
+            // ... and an earlier layout: a grant on logs\services\ itself and on a log in it, and the folder of a service
             // the account no longer runs
             var serviceLogs = GrantedFolder(ServiceLogsRoot, LocalServiceSid);
             var movedLog = Path.Combine(serviceLogs, AppConfig.ServyServiceLogFileName);
@@ -425,7 +425,7 @@ namespace Servy.Core.UnitTests.Security
             Assert.True(ItemHasAce(formerLog, NetworkServiceSid));
             Assert.True(File.Exists(movedLog));
 
-            // ... and the only folder it can write is logs\service\svc-one\
+            // ... and the only folder it can write is logs\services\svc-one\
             Assert.Equal(new[] { ServiceLogsFolder }, result.GrantedFolders);
             Assert.True(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsFolder), LocalServiceSid));
         }
@@ -440,9 +440,9 @@ namespace Servy.Core.UnitTests.Security
             // Act
             var folders = ServyExePermissionsHardener.GetWritableFolders(new[] { "svc-one", "SVC-ONE", "  ", null!, "My:Svc" });
 
-            // Assert: one folder per distinct service; logs\service\ itself, the database, the keys, the administrative
+            // Assert: one folder per distinct service; logs\services\ itself, the database, the keys, the administrative
             // logs and the vault root are deliberately absent
-            Assert.Equal(new[] { Path.Combine("logs", "service", "svc-one"), Path.Combine("logs", "service", "My%3ASvc") }, folders);
+            Assert.Equal(new[] { Path.Combine("logs", "services", "svc-one"), Path.Combine("logs", "services", "My%3ASvc") }, folders);
         }
 
         [Fact]

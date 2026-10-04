@@ -143,7 +143,7 @@ namespace Servy.Core.IntegrationTests.Security
             // Assert: the service's own logs are writable and deletable (log rotation)...
             Assert.True(Has(AllowedRights(serviceLog, TargetSid), FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete));
 
-            // ...and a file anywhere else, logs\service\ itself, another service's folder, SQLite's side files and the
+            // ...and a file anywhere else, logs\services\ itself, another service's folder, SQLite's side files and the
             // administrative logs included, carries no grant at all
             Assert.Equal(0, AllowedRights(sharedServiceLog, TargetSid));
             Assert.Equal(0, AllowedRights(otherServiceLog, TargetSid));
@@ -188,8 +188,8 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Arrange: what the previous hardening wrote - List and Create Files plus an inherited Modify on db\ and
             // logs\, Read and Write on a protected Servy.db, Read on a protected key - and the files that inherited
-            // the folder grants (SQLite's -wal, the shared log). The 10.1 layout's grant on logs\service\ is there too, with
-            // the wrappers' shared log the host moved into it.
+            // the folder grants (SQLite's -wal, the shared log). An earlier layout's grant on logs\services\ is there too, with
+            // a log in it.
             CreateVault();
             var db = Path.Combine(_vault, AppConfig.DbFolderName);
             var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
@@ -221,13 +221,13 @@ namespace Servy.Core.IntegrationTests.Security
             var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
             // Assert: the account can neither read nor write anything in db\, security\ or logs\ any more, the moved log
-            // that stays in logs\service\ included
+            // that stays in logs\services\ included
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
             foreach (var item in new[] { db, Path.Combine(_vault, DbFile), wal, Path.Combine(_vault, AppConfig.SecurityFolderName), Path.Combine(_vault, KeyFile), logs, sharedLog, serviceLogs, movedLog })
                 Assert.Equal(0, AllowedRights(item, TargetSid));
             Assert.True(File.Exists(movedLog));
 
-            // ... and logs\service\svc-one\ is the one folder it writes
+            // ... and logs\services\svc-one\ is the one folder it writes
             AssertWritableFolder(Path.Combine(_vault, ServiceLogsFolder));
         }
 

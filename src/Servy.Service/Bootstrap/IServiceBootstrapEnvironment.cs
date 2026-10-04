@@ -28,7 +28,7 @@ namespace Servy.Service.Bootstrap
         /// </summary>
         /// <param name="logFileName">The name of the log file the service writes its own diagnostics to.</param>
         /// <param name="logDirectory">The folder the log file is written in: the service's own log folder,
-        /// <c>logs\service\&lt;ServiceName&gt;\</c> (<see cref="Servy.Core.Logging.ServiceLogPaths.GetFolderPath"/>), the only log
+        /// <c>logs\services\&lt;ServiceName&gt;\</c> (<see cref="Servy.Core.Logging.ServiceLogPaths.GetFolderPath"/>), the only log
         /// folder its service account can write.</param>
         void InitializeLogger(string logFileName, string logDirectory);
 

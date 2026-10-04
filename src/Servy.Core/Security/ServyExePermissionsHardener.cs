@@ -12,7 +12,7 @@ namespace Servy.Core.Security
     /// <summary>
     /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
     /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in
-    /// <c>logs\service\&lt;ServiceName&gt;\</c> of each of its own services, the only folders it writes. The account
+    /// <c>logs\services\&lt;ServiceName&gt;\</c> of each of its own services, the only folders it writes. The account
     /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and nothing at all on <c>db\</c>,
     /// <c>security\</c> and <c>logs\</c> or anything in them, the log folders of other services included.
     /// </summary>
@@ -45,12 +45,11 @@ namespace Servy.Core.Security
     /// Write on <c>Servy.db</c>, the folder grant that covered the <c>-wal</c>/<c>-shm</c> files, Read on the key) is
     /// removed when it is hardened again. The same goes for <c>logs\</c>, which holds the logs of the administrative
     /// tools and the host, and for every file and folder under it other than the account's own service log folders:
-    /// the whole tree is walked, so the grant a previous version gave on <c>logs\service\</c> and on the files in it
-    /// (such as the <c>Servy.Service.log</c> the host moved there, which stays there for the administrators) is removed
-    /// as well.
+    /// the whole tree is walked, so a grant a previous version gave on <c>logs\services\</c> itself or on any other
+    /// folder or file under <c>logs\</c> (such as the shared <c>Servy.Service.log</c>) is removed as well.
     /// </para>
     /// <para>
-    /// Each service writes in its own folder only, <c>logs\service\&lt;ServiceName&gt;\</c>
+    /// Each service writes in its own folder only, <c>logs\services\&lt;ServiceName&gt;\</c>
     /// (<see cref="ServiceLogPaths"/>), where its wrapper and its restarter log and rotate their files. The account
     /// gets List Folder and Create Files on the folder of each service it runs (creating the log, and the new file of a
     /// rotation, needs Create Files) and Read, Write and Delete on the files in it
@@ -490,7 +489,7 @@ namespace Servy.Core.Security
 
             RevokeVaultRootAccess(targetSid, result);
 
-            // Take back everything granted in db\, security\ and logs\ (a previous version's logs\service\ grant, the
+            // Take back everything granted in db\, security\ and logs\ (a previous version's grant on logs\services\ itself, the
             // folders of services the account no longer runs) before granting the account's own service log folders
             var writableFolders = GetWritableFolders(serviceNames);
             RevokeClosedFolders(targetSid, new HashSet<string>(writableFolders, StringComparer.OrdinalIgnoreCase), result, cancellationToken);
@@ -559,7 +558,7 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Lists the folders, relative to <see cref="VaultDirectory"/>, in which the services of an account create,
-        /// rewrite and delete files: <c>logs\service\&lt;ServiceName&gt;\</c> of each service, where its wrapper and its
+        /// rewrite and delete files: <c>logs\services\&lt;ServiceName&gt;\</c> of each service, where its wrapper and its
         /// restarter write and rotate their logs.
         /// </summary>
         /// <param name="serviceNames">The services that run under the account; blank names are ignored.</param>
@@ -590,7 +589,7 @@ namespace Servy.Core.Security
         /// <summary>
         /// Removes the target's explicit entries from each of the <see cref="GetClosedFolders"/> folders and from every
         /// file and folder under them, such as the grants on <c>db\Servy.db</c> and <c>security\aes_key.dat</c>, the
-        /// folder grants of <c>db\</c>, <c>logs\</c> and <c>logs\service\</c> that earlier versions wrote, and the
+        /// folder grants of <c>db\</c>, <c>logs\</c> and <c>logs\services\</c> that earlier versions wrote, and the
         /// grants on the log folders of services the account no longer runs. The entries the files inherited from those
         /// folder grants go with them.
         /// </summary>
