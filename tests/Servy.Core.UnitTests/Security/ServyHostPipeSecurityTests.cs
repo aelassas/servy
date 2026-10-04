@@ -72,6 +72,36 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Create_NullAccountList_GivesOnlySystemAndAdministrators()
+        {
+            // Arrange
+            Func<string, SecurityIdentifier?> resolver = _ => LocalService;
+
+            // Act
+            var security = ServyHostPipeSecurity.Create((IEnumerable<string>?)null, resolver);
+
+            // Assert
+            var rules = Rules(security);
+            Assert.Equal(2, rules.Count);
+            Assert.DoesNotContain(rules, r => LocalService.Equals(r.IdentityReference));
+        }
+
+        [Fact]
+        public void Create_AuthenticatedUsersGrantee_IsNotAdded()
+        {
+            // Arrange
+            var authenticatedUsers = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
+
+            // Act
+            var security = ServyHostPipeSecurity.Create(new[] { authenticatedUsers });
+
+            // Assert
+            var rules = Rules(security);
+            Assert.Equal(2, rules.Count);
+            Assert.DoesNotContain(rules, r => authenticatedUsers.Equals(r.IdentityReference));
+        }
+
+        [Fact]
         public void Create_Accounts_ResolvesTheServiceAccountsOnly()
         {
             // Arrange
