@@ -6,6 +6,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
@@ -120,6 +121,37 @@ namespace Servy.Manager.UnitTests.Services
                 _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out It.Ref<ServiceDto?>.IsAny), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportJson_Success, UiAppConfig.Caption), Times.Once);
                 Assert.True(_refreshCalled);
+            }
+        }
+
+        [Fact]
+        public async Task ImportJsonConfigAsync_ShouldShowDecryptionReason_WhenRepositoryRefusesUndecryptableRow()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+            var json = JsonConvert.SerializeObject(dto);
+            var refused = new ServiceDecryptionFailedException("MyService", "Password");
+
+            // A .json path the SUT's path-security guard accepts; nothing lands on disk until it is written
+            using (var tempFile = new TempFile(".json").Write(json))
+            {
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(tempFile.Path);
+                _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(refused);
+
+                ServiceDto? jsonParsedDto = dto;
+                _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out jsonParsedDto)).Returns(true);
+
+                // Act
+                await sut.ImportJsonConfigAsync(CancellationToken.None);
+
+                // Assert
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(refused.Message, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Servy.Core.Resources.Strings.Msg_UnexpectedError, It.IsAny<string>()), Times.Never);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                Assert.False(_refreshCalled);
             }
         }
 
