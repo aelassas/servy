@@ -4,6 +4,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
@@ -772,6 +773,69 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _serviceRepositoryMock.Verify(r => r.GetAllAsync(true, It.IsAny<CancellationToken>()), Times.Never);
                     _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
                         "TestService", "from the SCM", (int)ServiceStartType.Manual, It.IsAny<CancellationToken>()), Times.Once);
+                    _serviceRepositoryMock.Verify(r => r.UpsertBatchAsync(It.IsAny<IEnumerable<ServiceDto>>(), It.IsAny<CancellationToken>()), Times.Never);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task RefreshAllServicesAsync_StoredDescriptionCarriesDecryptionFailureMarker_WritesNothing()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the stored description is a persisted marker (#5186) in front of the original
+                // description, so both columns drift from what the SCM reports. The marker is read from the
+                // stored text before GetServiceUpdateInfo overwrites it, so the row stays out of the
+                // write-back instead of having its stored description replaced (#7377)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Status = ServiceStatus.Stopped,
+                        Pid = null
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                Status = ServiceStatus.Running,
+                                Description = "from the SCM",
+                                StartupType = ServiceStartType.Manual,
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                Description = DecryptionFailureMarker.LegacyBlocked
+                                    + DecryptionFailureMarker.OriginalDescriptionSeparator
+                                    + "the original description",
+                                StartupType = (int)ServiceStartType.Automatic,
+                            }
+                        });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
+                    await task;
+
+                    // Assert: nothing is written for the marked row, although the stored description and the
+                    // stored startup type both differ from what the SCM reports
+                    _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
                     _serviceRepositoryMock.Verify(r => r.UpsertBatchAsync(It.IsAny<IEnumerable<ServiceDto>>(), It.IsAny<CancellationToken>()), Times.Never);
                 }
             }, createApp: true);
