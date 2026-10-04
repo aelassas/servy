@@ -149,6 +149,48 @@ namespace Servy.Core.UnitTests.Logging
         }
 
         [Fact]
+        public void GetFolderName_NameUnderTheLimitWhoseEncodedFormIsOver_IsShortened()
+        {
+            // Arrange: 99 characters, but ':' encodes to "%3A", so the safe form is 101 characters
+            var serviceName = new string('s', 98) + ":";
+
+            // Act
+            var folder = ServiceLogPaths.GetFolderName(serviceName);
+
+            // Assert
+            Assert.Equal(64 + 1 + 16, folder.Length);
+            Assert.StartsWith(new string('s', 64) + "~", folder);
+        }
+
+        [Fact]
+        public void GetFolderName_NameOneOverTheLimit_IsShortened()
+        {
+            // Arrange
+            var serviceName = new string('s', ServiceLogPaths.MaxFolderNameLength + 1);
+
+            // Act
+            var folder = ServiceLogPaths.GetFolderName(serviceName);
+
+            // Assert
+            Assert.Equal(64 + 1 + 16, folder.Length);
+            Assert.StartsWith(new string('s', 64) + "~", folder);
+        }
+
+        [Fact]
+        public void GetFolderName_NameMadeOnlyOfEncodedCharacters_StaysWithinTheLimit()
+        {
+            // Arrange: 100 characters that each encode to three
+            var serviceName = new string(':', ServiceLogPaths.MaxFolderNameLength);
+
+            // Act
+            var folder = ServiceLogPaths.GetFolderName(serviceName);
+
+            // Assert: the cut lands on the escape at index 63, so 21 whole escapes, the separator and the hash
+            Assert.True(folder.Length <= ServiceLogPaths.MaxFolderNameLength);
+            Assert.Equal(string.Concat(Enumerable.Repeat("%3A", 21)) + "~", folder.Substring(0, 64));
+        }
+
+        [Fact]
         public void GetFolderName_LongName_IsShortenedWithAHashOfTheName()
         {
             // Arrange
