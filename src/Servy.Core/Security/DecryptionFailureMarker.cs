@@ -37,10 +37,14 @@ namespace Servy.Core.Security
             RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
-        /// Determines whether a description starts with a decryption failure marker.
+        /// Determines whether a description's text starts with a decryption failure marker. This checks the text only
+        /// and is not the save gate: whether a service may be saved is decided by <see cref="HasDecryptionFailure"/>.
         /// </summary>
-        /// <param name="description">The description.</param>
-        /// <returns><see langword="true"/> when the description carries a marker.</returns>
+        /// <param name="description">The description text, or <see langword="null"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> when the description text starts with a marker; <see langword="false"/> when it does
+        /// not, or when it is <see langword="null"/> or empty.
+        /// </returns>
         public static bool IsPresent(string? description)
             => !string.IsNullOrEmpty(description) && MarkerRegex.IsMatch(description);
 
