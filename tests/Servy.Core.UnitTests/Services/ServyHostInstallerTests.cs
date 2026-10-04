@@ -232,6 +232,44 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureInstalledAndRunningAsync_CancelledWhileStoppingTheServices_ThrowsAndStillStartsThemAgain()
+        {
+            // Arrange
+            RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"");
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            _controllers.Setup(c => c.GetServices()).Returns(Array.Empty<IServiceControllerWrapper>());
+            _serviceHelper.Setup(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken));
+
+            // Assert: a cancellation is not turned into a failed result, and the services are not left stopped
+            Assert.IsAssignableFrom<OperationCanceledException>(ex);
+            _host.Verify(h => h.Stop(), Times.Never);
+            _serviceHelper.Verify(s => s.StartServicesAsync(It.Is<IEnumerable<string>>(n => n.Single() == "UiService"), CancellationToken.None), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_RestartingTheStoppedServicesThrows_DoesNotEscapeAndTheResultStands()
+        {
+            // Arrange
+            RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"");
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            _controllers.Setup(c => c.GetServices()).Returns(Array.Empty<IServiceControllerWrapper>());
+            _serviceHelper.Setup(s => s.StartServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("restart refused"));
+            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken);
+
+            // Assert: the move succeeded, and a failing restart does not replace that result
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            _serviceHelper.Verify(s => s.StartServicesAsync(It.IsAny<IEnumerable<string>>(), CancellationToken.None), Times.Once);
+        }
+
+        [Fact]
         public async Task EnsureInstalledAndRunningAsync_HostFailsToStartFromTheNewPath_StillStartsTheStoppedServices()
         {
             // Arrange
@@ -460,6 +498,13 @@ namespace Servy.Core.UnitTests.Services
         public void IsSameExecutable_ComparesTheCommandLinesExecutable(string commandLine, string exePath, bool expected)
         {
             Assert.Equal(expected, ServyHostInstaller.IsSameExecutable(commandLine, exePath));
+        }
+
+        [Fact]
+        public void IsSameExecutable_PathThatCannotBeResolved_IsNotTheSameExecutable()
+        {
+            // An embedded NUL makes Path.GetFullPath throw ArgumentException on every runtime
+            Assert.False(ServyHostInstaller.IsSameExecutable("\"C:\\ProgramData\\Servy\\Servy\0Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe"));
         }
 
         [Fact]
