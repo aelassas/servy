@@ -1,5 +1,6 @@
 using Moq;
 using Moq.Protected;
+using Servy.Core.Config;
 using Servy.Testing;
 using Servy.UI.Resources;
 using Servy.UI.Services;
@@ -93,7 +94,7 @@ namespace Servy.UI.IntegrationTests.Services
         #region CheckUpdates Tests
 
         [Fact]
-        public async Task CheckUpdates_NoTagNameInJson_ShowsNoUpdates()
+        public async Task CheckUpdates_NoTagNameInJson_ShowsInvalidTagError()
         {
             // Arrange
             // Branch: if (string.IsNullOrEmpty(tagName))
@@ -155,7 +156,7 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         [Fact]
-        public async Task CheckUpdates_NewerVersionAvailable_UserConfirms_InHeadlessMode_DoesNotOpenBrowser()
+        public async Task CheckUpdates_NewerVersionAvailable_UserConfirms_InHeadlessMode_TakesTheOpenReleasePagePath()
         {
             // Arrange
             // 1. Mock GitHub API returning a newer version tag
@@ -181,11 +182,13 @@ namespace Servy.UI.IntegrationTests.Services
 
             // Act
             // Because UiHeadless.IsEnabled is true (via UiHeadlessFixture),
-            // HelpService.OpenExternalUrl short-circuits and will NOT call Process.Start.
-            await _service.CheckUpdatesAsync(Caption);
+            // HelpService.OpenExternalUrl short-circuits and will NOT call Process.Start; its headless
+            // console line is the observable proof that the confirm arm asked for the release page.
+            var captured = await ConsoleCapture.RunAsync(() => _service.CheckUpdatesAsync(Caption));
 
             // Assert
             _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption), Times.Once);
+            Assert.Contains($"[HEADLESS INFO] CheckUpdates: opening browser URL {AppConfig.LatestReleaseLink}", captured.StdOut);
         }
 
         [Fact]
@@ -202,10 +205,12 @@ namespace Servy.UI.IntegrationTests.Services
                 .ReturnsAsync(false);
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            var captured = await ConsoleCapture.RunAsync(() => _service.CheckUpdatesAsync(Caption));
 
             // Assert
-            // Declining ends the method: the prompt was shown once and nothing else was reported.
+            // Declining ends the method: the prompt was shown once, nothing else was reported and the
+            // release page was never requested (the headless console line is absent).
+            Assert.DoesNotContain("opening browser URL", captured.StdOut);
             _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption), Times.Once);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
