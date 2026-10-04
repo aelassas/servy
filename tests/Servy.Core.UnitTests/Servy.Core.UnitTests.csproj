@@ -143,7 +143,6 @@
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Helpers\ReservedNamesTests.cs" />
-    <Compile Include="Logging\ServiceLogMigratorTests.cs" />
     <Compile Include="Logging\ServiceLogPathsTests.cs" />
     <Compile Include="NamedPipes\NamedPipesServiceTests.cs" />
     <Compile Include="NamedPipes\ServyHostServerVerifierTests.cs" />
