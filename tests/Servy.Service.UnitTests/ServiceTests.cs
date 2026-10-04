@@ -28,6 +28,7 @@ using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
+    [Collection(ExitCodeTestsCollection.Name)]
     public class ServiceTests : IDisposable
     {
         private readonly ServiceTestContext _ctx;

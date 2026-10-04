@@ -30,6 +30,7 @@ namespace Servy.Service.UnitTests.Bootstrap
     /// Before the seam existed none of this was reachable from a unit test: every step touched the
     /// event log, ProgramData, SQLite or the process-global logger.
     /// </remarks>
+    [Collection(ExitCodeTestsCollection.Name)]
     public class ServiceBootstrapSeamTests : IDisposable
     {
         private readonly List<IDisposable> _built = new List<IDisposable>();
