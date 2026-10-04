@@ -957,7 +957,9 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Pure logic method to calculate what needs to change without touching UI models.
+        /// Calculates what needs to change for one service without touching the UI models. When the stored description or
+        /// startup type has drifted from the service control manager's, it writes the current values into
+        /// <paramref name="serviceDto"/> in place and returns that same instance as the DTO to write back.
         /// </summary>
         private (ServiceUpdateInfo? UpdateInfo, ServiceDto? UpdatedDto) GetServiceUpdateInfo(
             Service service,
