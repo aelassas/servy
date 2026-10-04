@@ -506,6 +506,10 @@ namespace Servy.Core.Security
                 HardenFile(target, targetSid, result);
             }
 
+            // Revoke permissions from Servy.Host.exe and appsettings.host.json for custom accounts
+            RevokeEntries(AppConfig.ServyHostExe, targetSid, result);
+            RevokeEntries(HostSettingsFileName, targetSid, result);
+
             var status = result.Failed.Count > 0
                 ? ExePermissionsHardeningStatus.Failed
                 : result.Missing.Count > 0 ? ExePermissionsHardeningStatus.Incomplete : ExePermissionsHardeningStatus.Hardened;
@@ -525,7 +529,6 @@ namespace Servy.Core.Security
                 new ExePermissionsTarget(AppConfig.ServyServiceUIExe, FileSystemRights.ReadAndExecute),
                 new ExePermissionsTarget(AppConfig.ServyServiceCLIExe, FileSystemRights.ReadAndExecute),
                 new ExePermissionsTarget(AppConfig.ServyRestarterExe, FileSystemRights.ReadAndExecute),
-                new ExePermissionsTarget(AppConfig.ServyHostExe, FileSystemRights.ReadAndExecute),
             };
 
             // Harden whichever handle binary is actually present (#6472); when neither is, report the one this
@@ -546,14 +549,13 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Adds the settings files: the wrapper's, the restarter's and the host's, all read-only.
+        /// Adds the settings files: the wrapper's and the restarter's, all read-only.
         /// </summary>
         /// <param name="targets">The list to add to.</param>
         private static void AddCommonTargets(List<ExePermissionsTarget> targets)
         {
             targets.Add(new ExePermissionsTarget(ServiceSettingsFileName, FileSystemRights.Read, optional: true));
             targets.Add(new ExePermissionsTarget(RestarterSettingsFileName, FileSystemRights.Read, optional: true));
-            targets.Add(new ExePermissionsTarget(HostSettingsFileName, FileSystemRights.Read, optional: true));
         }
 
         /// <summary>
