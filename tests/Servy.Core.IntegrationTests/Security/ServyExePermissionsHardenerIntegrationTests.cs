@@ -220,8 +220,8 @@ namespace Servy.Core.IntegrationTests.Security
             // Act
             var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
 
-            // Assert: the account can neither read nor write anything in db\, security\ or logs\ any more, the moved log
-            // that stays in logs\services\ included
+            // Assert: the account can neither read nor write anything in db\, security\ or logs\ any more, the log
+            // left in logs\services\ itself included
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
             foreach (var item in new[] { db, Path.Combine(_vault, DbFile), wal, Path.Combine(_vault, AppConfig.SecurityFolderName), Path.Combine(_vault, KeyFile), logs, sharedLog, serviceLogs, movedLog })
                 Assert.Equal(0, AllowedRights(item, TargetSid));
