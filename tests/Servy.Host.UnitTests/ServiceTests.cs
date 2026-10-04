@@ -636,6 +636,34 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public async Task RefreshPipeSecurityAsync_ScmFailsForOneService_StillKeepsTheLingeringAccountOfTheNext()
+        {
+            // Arrange: "gone" throws at the SCM, the next service still runs under its former account
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var networkService = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            _api.Setup(a => a.GetServiceProcessId("gone")).Throws(new InvalidOperationException("The specified service does not exist."));
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[]
+                {
+                    new ServiceDto { Name = "  " },
+                    new ServiceDto { Name = "gone", RunAsLocalSystem = true },
+                    new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" },
+                });
+            _sut.ResolveAccount = _ => localService;
+            _sut.ResolveProcessAccount = pid => pid == ServicePid ? networkService : null;
+
+            // Act
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+
+            // Assert: the failing service is skipped and logged, the next one's former account is still granted,
+            // and the blank-named row never reaches the SCM
+            var rules = _sut.CurrentPipeSecurity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().ToList();
+            Assert.Contains(rules, r => networkService.Equals(r.IdentityReference));
+            _logger.Verify(l => l.Debug(It.Is<string>(m => m.Contains("'gone'")), It.IsAny<Exception>()), Times.Once);
+            _api.Verify(a => a.GetServiceProcessId(It.Is<string>(n => string.IsNullOrWhiteSpace(n))), Times.Never);
+        }
+
+        [Fact]
         public async Task RefreshPipeSecurityAsync_AccountRemoved_IsNoLongerGranted()
         {
             // Arrange
