@@ -661,6 +661,49 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task StartAsync_StopPending_StartsOnlyOnceTheServiceIsStopped()
+        {
+            // Arrange
+            HostStatuses(ServiceControllerStatus.StopPending, ServiceControllerStatus.StopPending, ServiceControllerStatus.Stopped,
+                ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
+            ServiceControllerStatus? statusAtStart = null;
+            _host.Setup(h => h.Start()).Callback(() => statusAtStart = _host.Object.Status);
+
+            // Act
+            await Create().StartAsync(TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(ServiceControllerStatus.Stopped, statusAtStart);
+        }
+
+        [Fact]
+        public async Task StartAsync_StartPending_WaitsWithoutCallingStart()
+        {
+            // Arrange
+            HostStatuses(ServiceControllerStatus.StartPending, ServiceControllerStatus.StartPending, ServiceControllerStatus.Running);
+
+            // Act
+            await Create().StartAsync(TestContext.Current.CancellationToken);
+
+            // Assert
+            _host.Verify(h => h.Start(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StopAsync_StopPending_WaitsWithoutCallingStop()
+        {
+            // Arrange
+            HostStatuses(ServiceControllerStatus.StopPending, ServiceControllerStatus.StopPending, ServiceControllerStatus.Stopped);
+
+            // Act
+            await Create().StopAsync(TestContext.Current.CancellationToken);
+
+            // Assert
+            _host.Verify(h => h.Stop(), Times.Never);
+            Assert.Equal(ServiceControllerStatus.Stopped, _host.Object.Status);
+        }
+
+        [Fact]
         public async Task StartAndStop_Cancelled_Throw()
         {
             using (var cts = new CancellationTokenSource())
