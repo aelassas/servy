@@ -1085,6 +1085,36 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task ExportXmlAsync_UndecryptableRow_IsRefusedRatherThanWrittenWithoutItsSensitiveFields()
+        {
+            // Arrange
+            var ct = CancellationToken.None;
+            var id = await AddPoisonedAsync("PoisonExportXml");
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.ExportXmlAsync("PoisonExportXml", ct));
+
+            // Assert
+            Assert.Equal("PoisonExportXml", ex.ServiceName);
+            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+        }
+
+        [Fact]
+        public async Task ExportJsonAsync_UndecryptableRow_IsRefusedRatherThanWrittenWithoutItsSensitiveFields()
+        {
+            // Arrange
+            var ct = CancellationToken.None;
+            var id = await AddPoisonedAsync("PoisonExportJson");
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.ExportJsonAsync("PoisonExportJson", ct));
+
+            // Assert
+            Assert.Equal("PoisonExportJson", ex.ServiceName);
+            AssertRowUntouched(await _repository.GetByIdAsync(id, decrypt: false, ct));
+        }
+
+        [Fact]
         public async Task UpsertBatchAsync_BackgroundRefreshWithAnUndecryptableRow_SkipsItAndStillUpdatesTheOthers()
         {
             // Arrange: what the Manager's refresh timer writes back - every service as read, one of them undecryptable

@@ -751,6 +751,15 @@ namespace Servy.Manager.Services
                     return;
                 }
 
+                // A row read with a field that does not decrypt comes back with every sensitive field cleared. Written to
+                // a file it would look complete, and an import would store it over the real values once the key works again.
+                if (DecryptionFailureMarker.HasDecryptionFailure(dto))
+                {
+                    Logger.Warn($"Export of {service.Name} to {formatName} refused: its stored configuration does not decrypt with the current key.");
+                    await _messageBoxService.ShowErrorAsync(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, service.Name), UiAppConfig.Caption);
+                    return;
+                }
+
                 exportAction(dto, path);
 
                 Logger.Info($"Service configuration exported to {formatName} at: {path}");

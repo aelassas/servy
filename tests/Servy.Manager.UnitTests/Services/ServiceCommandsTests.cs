@@ -1327,6 +1327,39 @@ namespace Servy.Manager.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
         }
 
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ExportServiceConfigAsync_RowDoesNotDecrypt_RefusesTheExportWithAnError(string format)
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "UndecryptableService" };
+
+            // Generate a guaranteed unique filename without creating a zero-byte file on disk
+            using (var targetPath = new TempFile("_export_test." + format))
+            {
+                // What a decrypting read returns for a row with a field the current key cannot decrypt
+                var unreadableDto = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe", DecryptionFailed = true };
+
+                _fileDialogServiceMock.Setup(f => f.SaveXml(It.IsAny<string>())).Returns(targetPath.Path);
+                _fileDialogServiceMock.Setup(f => f.SaveJson(It.IsAny<string>())).Returns(targetPath.Path);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(unreadableDto);
+
+                // Act
+                if (format == "xml")
+                    await sut.ExportServiceToXmlAsync(service, CancellationToken.None);
+                else
+                    await sut.ExportServiceToJsonAsync(service, CancellationToken.None);
+
+                // Assert
+                Assert.False(File.Exists(targetPath.Path));
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, service.Name), UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
         [Fact]
         public async Task ExportServiceToJsonAsync_RepositoryThrowsException_HandlesExceptionGracefully()
         {

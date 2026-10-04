@@ -404,4 +404,7 @@
   <data name="Label_FailureProgramParameters" xml:space="preserve">
     <value>Failure Program Parameters</value>
   </data>
+  <data name="Msg_ExportDecryptionFailed" xml:space="preserve">
+    <value>Service '{0}' was not exported: at least one sensitive field cannot be decrypted with the current encryption key (aes_key.dat), so the file would be written without its parameters and environment variables. If the key file is corrupt or was replaced, restore the original aes_key.dat, or copy Servy.db back to the machine that has it, and export the configuration from there.</value>
+  </data>
 </root>

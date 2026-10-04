@@ -4,6 +4,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Security;
 using Servy.Core.Validation;
 using Servy.Testing;
 using System;
@@ -157,6 +158,27 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "JSON", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("{\"name\":\"svc\"}", File.ReadAllText(filePath));
+        }
+
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task Execute_ShouldFailWithTheReason_WhenTheStoredRowDoesNotDecrypt(string format)
+        {
+            // Arrange: the repository refuses to export a row whose sensitive fields no longer decrypt
+            var filePath = Path.Combine(TempDirectory, "out." + format);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "svc" });
+            _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ThrowsAsync(new ServiceDecryptionFailedException("svc", null));
+            _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ThrowsAsync(new ServiceDecryptionFailedException("svc", null));
+            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = format, Path = filePath };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, "svc"), result.Message);
+            Assert.False(File.Exists(filePath));
         }
 
         [Fact]

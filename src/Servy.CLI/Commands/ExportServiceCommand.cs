@@ -111,20 +111,28 @@ namespace Servy.CLI.Commands
                 string content;
                 string typeLabel = configFileType.ToString().ToUpperInvariant();
 
-                // 1. Perform Export based on type using standard switch syntax
-                switch (configFileType)
+                // 1. Perform Export based on type using standard switch syntax. A stored row that no longer decrypts is
+                // refused rather than written without its sensitive fields; say why, with what to do, rather than a generic failure.
+                try
                 {
-                    case ConfigFileType.Xml:
-                        content = await _serviceRepository.ExportXmlAsync(opts.ServiceName, cancellationToken: cancellationToken);
-                        break;
+                    switch (configFileType)
+                    {
+                        case ConfigFileType.Xml:
+                            content = await _serviceRepository.ExportXmlAsync(opts.ServiceName, cancellationToken: cancellationToken);
+                            break;
 
-                    case ConfigFileType.Json:
-                        content = await _serviceRepository.ExportJsonAsync(opts.ServiceName, cancellationToken: cancellationToken);
-                        break;
+                        case ConfigFileType.Json:
+                            content = await _serviceRepository.ExportJsonAsync(opts.ServiceName, cancellationToken: cancellationToken);
+                            break;
 
-                    default:
-                        // Providing a specific failure if an unsupported type is somehow passed
-                        return CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
+                        default:
+                            // Providing a specific failure if an unsupported type is somehow passed
+                            return CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
+                    }
+                }
+                catch (ServiceDecryptionFailedException)
+                {
+                    return CommandResult.Fail(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, opts.ServiceName));
                 }
 
                 // 2. Save the file (Logic extracted from the switch to avoid duplication)
