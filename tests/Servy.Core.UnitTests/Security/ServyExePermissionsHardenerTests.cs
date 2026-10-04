@@ -248,10 +248,9 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains(AppConfig.ServyServiceUIExe, result.Missing);
             Assert.Contains(AppConfig.ServyServiceCLIExe, result.Missing);
             Assert.Contains(AppConfig.ServyRestarterExe, result.Missing);
-            Assert.Contains(AppConfig.ServyHostExe, result.Missing);
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.DbFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.SecurityFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
-            Assert.Equal(new[] { AppConfig.ServyServiceUIExe + ".config", AppConfig.ServyServiceCLIExe + ".config", AppConfig.ServyRestarterExe + ".config", AppConfig.ServyHostExe + ".config" }, result.Skipped);
+            Assert.Equal(new[] { AppConfig.ServyServiceUIExe + ".config", AppConfig.ServyServiceCLIExe + ".config", AppConfig.ServyRestarterExe + ".config" }, result.Skipped);
         }
 
         [Fact]
@@ -524,13 +523,13 @@ namespace Servy.Core.UnitTests.Security
             var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
 
             // Assert
-            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, AppConfig.HandleExeFileName + ".exe" })
+            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.HandleExeFileName + ".exe" })
             {
                 Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
                 Assert.False(targets[exe].Optional);
             }
 
-            foreach (var config in new[] { AppConfig.ServyServiceUIExe + ".config", AppConfig.ServyServiceCLIExe + ".config", AppConfig.ServyRestarterExe + ".config", AppConfig.ServyHostExe + ".config" })
+            foreach (var config in new[] { AppConfig.ServyServiceUIExe + ".config", AppConfig.ServyServiceCLIExe + ".config", AppConfig.ServyRestarterExe + ".config" })
             {
                 Assert.Equal(FileSystemRights.Read, targets[config].Rights);
                 Assert.True(targets[config].Optional);
