@@ -349,10 +349,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <summary>
         /// Helper to poll for process exit with a timeout and explicit state refreshes.
         /// </summary>
-        private bool WaitForProcessExit(Process? process, int timeoutMs)
+        private bool WaitForProcessExit(Process process, int timeoutMs)
         {
-            if (process == null) return true;
-
             var sw = Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < timeoutMs)
             {
