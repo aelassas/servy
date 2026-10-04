@@ -476,7 +476,13 @@ namespace Servy.Core.Native
 
         /// <summary>Opens the access token of a process.</summary>
         [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern bool OpenProcessToken(SafeWinProcessHandle processHandle, uint desiredAccess, out Microsoft.Win32.SafeHandles.SafeAccessTokenHandle tokenHandle);
+        public static extern bool OpenProcessToken(SafeWinProcessHandle processHandle, uint desiredAccess, out SafeAccessTokenHandle tokenHandle);
+
+        /// <summary>
+        /// Access right required to query an access token (Win32 <c>TOKEN_QUERY</c>). Pass it as the
+        /// <c>desiredAccess</c> argument of <see cref="OpenProcessToken"/> to read the token's user.
+        /// </summary>
+        public const uint TOKEN_QUERY = 0x0008;
 
         /// <summary>Low-level NT function to retrieve process information.</summary>
         [DllImport("ntdll.dll")]
@@ -777,7 +783,7 @@ namespace Servy.Core.Native
         /// constructors because they cannot pass <c>PIPE_REJECT_REMOTE_CLIENTS</c>.
         /// </summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "CreateNamedPipeW")]
-        public static extern Microsoft.Win32.SafeHandles.SafePipeHandle CreateNamedPipe(
+        public static extern SafePipeHandle CreateNamedPipe(
             string name,
             uint openMode,
             uint pipeMode,
@@ -810,7 +816,7 @@ namespace Servy.Core.Native
         /// ERROR_PIPE_LOCAL when the client is on this computer.
         /// </summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetNamedPipeClientComputerNameW")]
-        public static extern bool GetNamedPipeClientComputerName(SafeHandle pipe, System.Text.StringBuilder clientComputerName, uint clientComputerNameLength);
+        public static extern bool GetNamedPipeClientComputerName(SafeHandle pipe, StringBuilder clientComputerName, uint clientComputerNameLength);
 
         /// <summary>Retrieves the process identifier of the server that owns the server end of a named pipe.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]

@@ -379,5 +379,24 @@ namespace Servy.Core.UnitTests.Native
         }
 
         #endregion
+
+        #region Access Right Constants Tests
+
+        [Fact]
+        public void TokenQuery_MatchesWin32TokenQueryAccessRight()
+        {
+            // Arrange
+            // winnt.h defines TOKEN_QUERY as 0x0008; ProcessAccount.TryGetUser passes it to
+            // OpenProcessToken to read the token's user (#7364).
+            const uint expected = 0x0008;
+
+            // Act
+            uint actual = NativeMethods.TOKEN_QUERY;
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        #endregion
     }
 }
