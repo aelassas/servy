@@ -370,16 +370,14 @@ namespace Servy.Core.Security
                 }
 
                 byte[] dynamicEntropy = MachineEntropy.Value;
+                byte[] primary;
 
                 try
                 {
-                    // 1. Primary Attempt (v7.9+ logic): Use machine-unique entropy
-                    var unprotectResult = EnsureLength(ProtectedData.Unprotect(encrypted, dynamicEntropy, ProtectionScope), length, materialName, path);
-
-                    // Reset failure counter on successful read with modern entropy
-                    MigrationFailureCounts.TryRemove(path, out _);
-
-                    return unprotectResult;
+                    // 1. Primary Attempt (v7.9+ logic): Use machine-unique entropy.
+                    // Only the decryption belongs here: a blob that decrypts but holds the wrong length is not a
+                    // legacy file, so its length is checked after this try and goes straight to the CRITICAL handler.
+                    primary = ProtectedData.Unprotect(encrypted, dynamicEntropy, ProtectionScope);
                 }
                 catch (CryptographicException primaryEx)
                 {
@@ -430,6 +428,13 @@ namespace Servy.Core.Security
                         return decryptedData;
                     }
                 }
+
+                var unprotectResult = EnsureLength(primary, length, materialName, path);
+
+                // Reset failure counter on successful read with modern entropy
+                MigrationFailureCounts.TryRemove(path, out _);
+
+                return unprotectResult;
             }
             catch (CryptographicException ex)
             {
