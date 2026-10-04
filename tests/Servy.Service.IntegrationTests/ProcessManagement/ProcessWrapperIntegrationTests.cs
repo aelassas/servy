@@ -1792,6 +1792,33 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Theory]
+        [InlineData(Errors.ERROR_INVALID_HANDLE)]
+        [InlineData(Errors.ERROR_GEN_FAILURE)]
+        [InlineData(1234)]   // default arm of ClassifyAttachFailure
+        public void SendCtrlC_AttachFailsOnLiveProcess_WarnsOnceAndMakesNoFurtherConsoleCall(int error)
+        {
+            // Arrange
+            var native = new RecordingConsoleNative { AttachResult = false, LastError = error };
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                var expected = new[] { "FreeConsole", "AttachConsole(" + wrapper.Id + ")" };
+
+                // Act
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+
+                // Assert
+                Assert.False((bool)result!);
+                Assert.Equal(expected, native.Calls);
+                Assert.Single(_logger.Warnings, m => m.Contains("Sending Ctrl+C: Failed to attach to")
+                    && m.Contains("(Error: " + error + ")"));
+                Assert.DoesNotContain(_logger.Infos, m => m.Contains("shares a console group"));
+
+                // Cleanup
+                TestProcessCleanup.KillNow(wrapper);
+            }
+        }
+
         [Fact]
         public void TryStopGracefullyOrKill_AttachReportsTheProcessGone_ReturnsNullWithoutKilling()
         {
