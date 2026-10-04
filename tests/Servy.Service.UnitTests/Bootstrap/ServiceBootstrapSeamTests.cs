@@ -15,8 +15,8 @@ namespace Servy.Service.UnitTests.Bootstrap
     /// <summary>
     /// Covers the production constructor of <see cref="Service"/> through
     /// <see cref="IServiceBootstrapEnvironment"/>: the <c>Timing:*</c> parsing, the
-    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, the CVE-2025-6965 SQLite guard, the data-stack
-    /// wiring and the exit-code rules of the surrounding <c>catch</c>.
+    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, the per-service log folder and the exit-code rules of
+    /// the surrounding <c>catch</c>.
     /// </summary>
     /// <remarks>
     /// Before the seam existed none of this was reachable from a unit test: every step touched the
@@ -120,11 +120,10 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
-        /// A successful construction wires the four objects the data stack carries and enables shutdown
-        /// notifications.
+        /// A successful construction enables shutdown notifications and names the service after the event source.
         /// </summary>
         [Fact]
-        public void Constructor_Success_WiresTheDataStackAndEnablesShutdown()
+        public void Constructor_Success_EnablesShutdownAndUsesTheEventSourceName()
         {
             // Arrange
             var env = new FakeBootstrapEnvironment();
@@ -441,23 +440,8 @@ namespace Servy.Service.UnitTests.Bootstrap
         /// </summary>
         private sealed class FakeBootstrapEnvironment : IServiceBootstrapEnvironment
         {
-            /// <summary>The connection string <see cref="LoadCoreSettings"/> returns.</summary>
-            public const string ConnectionString = "Data Source=:memory:";
-
-            /// <summary>The AES key path <see cref="LoadCoreSettings"/> returns.</summary>
-            public const string KeyPath = @"C:\servy-tests\aes_key.dat";
-
-            /// <summary>The AES IV path <see cref="LoadCoreSettings"/> returns.</summary>
-            public const string IvPath = @"C:\servy-tests\aes_iv.dat";
-
             /// <summary>Gets the in-memory configuration values <see cref="BuildConfiguration"/> serves.</summary>
             public Dictionary<string, string?> Settings { get; } = new Dictionary<string, string?>();
-
-            /// <summary>Gets or sets the answer <see cref="IsSqliteVersionSafe"/> gives.</summary>
-            public bool SqliteVersionIsSafe { get; set; } = true;
-
-            /// <summary>Gets or sets the version <see cref="IsSqliteVersionSafe"/> reports.</summary>
-            public string? DetectedSqliteVersion { get; set; } = AppConfig.MinRequiredSqliteVersion.ToString();
 
             /// <summary>Gets or sets the exception <see cref="EnsureEventSourceExists"/> raises, if any.</summary>
             public Exception? EventSourceFailure { get; set; }
@@ -493,11 +477,6 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <returns>The built configuration.</returns>
             public IConfiguration BuildConfiguration() =>
                 new ConfigurationBuilder().AddInMemoryCollection(Settings).Build();
-
-            /// <summary>Returns the fixed test paths.</summary>
-            /// <returns>The core settings the constructor reads its paths from.</returns>
-            public CoreSettingsLoader.CoreSettings LoadCoreSettings() =>
-                new CoreSettingsLoader.CoreSettings(ConnectionString, KeyPath, IvPath);
 
             /// <summary>Records the instance logger and does nothing else.</summary>
             /// <param name="configuration">Ignored.</param>
