@@ -327,6 +327,31 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureInstalledAndRunningAsync_SecondConfigurationReadFails_FailsAndTouchesNothing()
+        {
+            // Arrange: the first pass reports a size, the second one fails
+            var queryHandle = _handles.Service(8);
+            int size = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Returns(() => _handles.Scm(1));
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", SERVICE_QUERY_CONFIG)).Returns(queryHandle);
+            _api.Setup(a => a.QueryServiceConfig(queryHandle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = size))
+                .Returns(false);
+            _api.Setup(a => a.QueryServiceConfig(queryHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
+                .Returns(false);
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(122);
+
+            // Act
+            var (result, log) = await LogCapture.RunAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("could not be read", result.ErrorMessage);
+            Assert.Contains("Could not read the 'Servy' service's configuration. Win32 error: 122", log);
+            AssertNothingTouched();
+        }
+
+        [Fact]
         public async Task EnsureInstalledAndRunningAsync_OpenServiceFailsForAnotherReason_FailsAndTouchesNothing()
         {
             // Arrange: access denied is not "not installed"
@@ -467,6 +492,19 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void GetState_ScmCallThrows_ReturnsUnknown()
+        {
+            // Arrange
+            _api.Setup(a => a.OpenSCManager(null, null, It.IsAny<uint>())).Throws(new InvalidOperationException("SCM unavailable"));
+
+            // Act
+            var state = Create().GetState();
+
+            // Assert: ServyServicesPause reads the state outside any catch of its own
+            Assert.Equal(ServyHostServiceState.Unknown, state);
+        }
+
+        [Fact]
         public void ReadRegistration_Installed_ReturnsTheCommandLine()
         {
             RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"");
@@ -525,6 +563,26 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Equal(new[] { "UiService", "CliService", "Net48Service" }, names);
+        }
+
+        [Fact]
+        public void GetRunningServyServices_OneServiceRemovedWhileEnumerating_StillFindsTheLaterDependents()
+        {
+            // Arrange: the first controller's service was deleted after the list was taken
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string>());
+            var removed = new Mock<IServiceControllerWrapper>();
+            removed.SetupGet(s => s.Status).Throws(new InvalidOperationException("The service does not exist."));
+            _controllers.Setup(c => c.GetServices()).Returns(new[]
+            {
+                removed.Object,
+                Controller("Net48Service", ServiceControllerStatus.Running, "Servy"),
+            });
+
+            // Act
+            var names = Create().GetRunningServyServices(_serviceHelper.Object);
+
+            // Assert: the removed service is skipped on its own, so the dependents after it are not lost
+            Assert.Equal(new[] { "Net48Service" }, names);
         }
 
         [Fact]
