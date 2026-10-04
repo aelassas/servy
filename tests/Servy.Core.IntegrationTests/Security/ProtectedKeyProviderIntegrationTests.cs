@@ -623,6 +623,55 @@ namespace Servy.Core.IntegrationTests.Security
             }
         }
 
+        [Fact]
+        public void GetKey_AnotherHolderWritesTheKeyWhileWeWaitForTheLock_ReturnsTheirKeyAndKeepsTheirFile()
+        {
+            // Arrange
+            // A real key file for the "winning" process, produced at a side path so this test's lock is not involved
+            byte[] winnerKey;
+            var winnerKeyPath = GetTempFilePath("winner.key");
+            using (var winner = new ProtectedKeyProvider(winnerKeyPath, GetTempFilePath("winner.iv")))
+            {
+                winnerKey = winner.GetKey();
+            }
+            byte[] winnerFile = File.ReadAllBytes(winnerKeyPath);
+
+            var keyPath = GetTempFilePath("race.key");
+            var ivPath = GetTempFilePath("race.iv");
+            byte[]? loserKey = null;
+            Exception? loserError = null;
+
+            using (var holder = new Mutex(false, KeyVaultMutexName(keyPath)))
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                holder.WaitOne();
+                var loser = new Thread(() =>
+                {
+                    try { loserKey = provider.GetKey(); }
+                    catch (Exception ex) { loserError = ex; }
+                });
+                loser.Start();
+
+                // Wait until the provider is blocked on the lock: past the outer File.Exists, before the inner one
+                var deadline = DateTime.UtcNow.AddSeconds(5);
+                while ((loser.ThreadState & ThreadState.WaitSleepJoin) == 0 && DateTime.UtcNow < deadline)
+                {
+                    Thread.Sleep(10);
+                }
+
+                // The winner writes its key while the provider waits, then hands the lock over
+                File.Copy(winnerKeyPath, keyPath);
+                holder.ReleaseMutex();
+
+                // Act
+                Assert.True(loser.Join(TimeSpan.FromSeconds(10)), "GetKey did not return after the lock was released");
+            }
+
+            // Assert
+            Assert.Null(loserError);
+            Assert.Equal(winnerKey, loserKey);
+            Assert.Equal(winnerFile, File.ReadAllBytes(keyPath));
+        }
         #endregion
 
         #region Test Lifecycle
