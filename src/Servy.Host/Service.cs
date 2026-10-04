@@ -415,8 +415,10 @@ namespace Servy.Host
         }
 
         /// <summary>
-        /// Waits briefly for tasks to finish. A task cancelled by the stop itself ends Canceled, which is what stopping
-        /// is for, so cancellations are not errors here; any other failure still propagates.
+        /// Waits briefly for tasks to finish. Cancellations are not errors here, since a stop is what cancels; any other
+        /// failure still propagates. Neither the listener loop nor a connection handler lets an
+        /// <see cref="OperationCanceledException"/> escape since #7353, so this only keeps a stop from failing should a
+        /// task ever end Canceled.
         /// </summary>
         /// <param name="tasks">The tasks to wait for.</param>
         private static void WaitIgnoringCancellation(Task[] tasks)
@@ -427,7 +429,7 @@ namespace Servy.Host
             }
             catch (AggregateException ex) when (ex.Flatten().InnerExceptions.All(e => e is OperationCanceledException))
             {
-                // Stopped before they ran
+                // Only cancellations, which a stop is allowed to cause
             }
         }
 
