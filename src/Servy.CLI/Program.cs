@@ -70,6 +70,9 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         public static async Task<int> Main(string[] args)
         {
+            // Record the System variables as they are at start, so one changed later is picked up (#7393)
+            SystemEnvironmentHelper.InitializeForApplication();
+
             using (var cts = new CancellationTokenSource())
             {
                 // Hook Ctrl+C and Ctrl+Break

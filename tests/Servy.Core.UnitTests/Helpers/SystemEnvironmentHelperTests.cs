@@ -6,261 +6,351 @@ using Xunit;
 namespace Servy.Core.UnitTests.Helpers
 {
     /// <summary>
-    /// Covers <see cref="SystemEnvironmentHelper"/>: the process-environment pass, the registry fallback for the
-    /// placeholders the process does not know (#7393), and the case-insensitive replacement it relies on. The
-    /// registry is replaced by a dictionary, so no test depends on the machine's System variables.
+    /// Covers <see cref="SystemEnvironmentHelper"/> and <see cref="SystemEnvironmentRefresher"/>: a System variable
+    /// added, changed or removed after the process started is applied to the process environment without a restart
+    /// (#7393), with the application rules (only while the process still holds the old System value) and the service
+    /// rules (the registry is the source, a User variable wins, <c>Path</c> joins both). The registry is replaced by
+    /// dictionaries and every variable has a unique name, so no test depends on the machine or on another test.
     /// </summary>
-    public class SystemEnvironmentHelperTests
+    public class SystemEnvironmentHelperTests : IDisposable
     {
-        /// <summary>
-        /// Returns a variable name no process or registry defines, so a placeholder of it is never resolved by accident.
-        /// </summary>
-        /// <returns>A unique variable name.</returns>
-        private static string UniqueName() => "SERVY_TEST_" + Guid.NewGuid().ToString("N");
+        /// <summary>The System variables the fake registry returns; <see langword="null"/> makes it unreadable.</summary>
+        private Dictionary<string, string> _system = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The user variables the fake registry returns.</summary>
+        private readonly Dictionary<string, string> _user = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The process variables this test created, removed again by <see cref="Dispose"/>.</summary>
+        private readonly List<string> _names = new List<string>();
+
+        /// <summary>The number of System registry reads.</summary>
+        private int _reads;
+
+        /// <summary>Whether setting a process variable throws.</summary>
+        private bool _throwOnSet;
 
         /// <summary>
-        /// Expands <paramref name="input"/> against <paramref name="system"/>, counting the reads and recording every
-        /// process variable set.
+        /// Removes every process variable the test created.
         /// </summary>
-        /// <param name="input">The string to expand.</param>
-        /// <param name="system">The System variables the fake registry returns, or <see langword="null"/>.</param>
-        /// <param name="reads">The number of registry reads.</param>
-        /// <param name="sets">The process variables set, in order.</param>
-        /// <param name="throwOnSet">Whether setting a process variable throws.</param>
-        /// <returns>The expanded string.</returns>
-        private static string Expand(
-            string input,
-            Dictionary<string, string> system,
-            out int reads,
-            out List<KeyValuePair<string, string>> sets,
-            bool throwOnSet = false)
+        public void Dispose()
         {
-            var readCount = 0;
-            var recorded = new List<KeyValuePair<string, string>>();
-            var result = SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(
-                input,
-                () => { readCount++; return system; },
+            foreach (var name in _names)
+                Environment.SetEnvironmentVariable(name, null);
+        }
+
+        /// <summary>
+        /// Returns a variable name no process or registry defines, and schedules its removal.
+        /// </summary>
+        /// <returns>A unique variable name.</returns>
+        private string UniqueName()
+        {
+            var name = "SERVY_TEST_" + Guid.NewGuid().ToString("N");
+            _names.Add(name);
+            return name;
+        }
+
+        /// <summary>
+        /// Creates a refresher over the fake registry that writes the real process environment.
+        /// </summary>
+        /// <param name="pathName">The variable treated as <c>Path</c>.</param>
+        /// <returns>The refresher.</returns>
+        private SystemEnvironmentRefresher CreateRefresher(string pathName = "Path")
+            => new SystemEnvironmentRefresher(
+                () => { _reads++; return _system; },
+                () => _user,
                 (name, value) =>
                 {
-                    if (throwOnSet) throw new InvalidOperationException("set refused");
-                    recorded.Add(new KeyValuePair<string, string>(name, value));
-                });
-            reads = readCount;
-            sets = recorded;
-            return result;
-        }
+                    if (_throwOnSet) throw new InvalidOperationException("set refused");
+                    Environment.SetEnvironmentVariable(name, value);
+                },
+                pathName);
 
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void ExpandSystemEnvironmentVariables_NullOrEmpty_ReturnsInputWithoutReadingTheRegistry(string input)
+        [InlineData(@"C:\Apps\tool.exe")]
+        public void ExpandSystemEnvironmentVariables_NoPlaceholder_ReturnsInputWithoutReadingTheRegistry(string input)
         {
-            // Arrange & Act
-            var result = Expand(input, new Dictionary<string, string>(), out var reads, out _);
+            // Arrange
+            var refresher = CreateRefresher();
+
+            // Act
+            var result = SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(input, refresher);
 
             // Assert
             Assert.Equal(input, result);
-            Assert.Equal(0, reads);
+            Assert.Equal(0, _reads);
         }
 
         [Fact]
-        public void ExpandSystemEnvironmentVariables_NoPlaceholder_ReturnsInputWithoutReadingTheRegistry()
+        public void ExpandSystemEnvironmentVariables_Placeholder_RefreshesThenExpands()
         {
-            // Arrange & Act
-            var result = Expand(@"C:\Apps\tool.exe", new Dictionary<string, string>(), out var reads, out _);
-
-            // Assert
-            Assert.Equal(@"C:\Apps\tool.exe", result);
-            Assert.Equal(0, reads);
-        }
-
-        [Fact]
-        public void ExpandSystemEnvironmentVariables_ProcessVariable_IsExpandedWithoutReadingTheRegistry()
-        {
-            // Arrange
+            // Arrange: a System variable added after the process started
             var name = UniqueName();
-            Environment.SetEnvironmentVariable(name, @"C:\Process");
-            try
-            {
-                // Act
-                var result = Expand($@"%{name}%\tool.exe", new Dictionary<string, string> { [name] = @"C:\Registry" }, out var reads, out _);
-
-                // Assert: the process value wins and the registry is never read
-                Assert.Equal(@"C:\Process\tool.exe", result);
-                Assert.Equal(0, reads);
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable(name, null);
-            }
-        }
-
-        [Fact]
-        public void ExpandSystemEnvironmentVariables_RegistryUnreadable_ReturnsTheProcessExpansion()
-        {
-            // Arrange
-            var name = UniqueName();
+            _system[name] = @"C:\Python312\python.exe";
+            var refresher = CreateRefresher();
 
             // Act
-            var result = Expand($@"%{name}%\tool.exe", null, out var reads, out var sets);
-
-            // Assert
-            Assert.Equal($@"%{name}%\tool.exe", result);
-            Assert.Equal(1, reads);
-            Assert.Empty(sets);
-        }
-
-        [Fact]
-        public void ExpandSystemEnvironmentVariables_RegistryEmpty_ReturnsTheProcessExpansion()
-        {
-            // Arrange
-            var name = UniqueName();
-
-            // Act
-            var result = Expand($@"%{name}%\tool.exe", new Dictionary<string, string>(), out var reads, out var sets);
-
-            // Assert
-            Assert.Equal($@"%{name}%\tool.exe", result);
-            Assert.Equal(1, reads);
-            Assert.Empty(sets);
-        }
-
-        [Fact]
-        public void ExpandSystemEnvironmentVariables_NewSystemVariable_IsResolvedCaseInsensitivelyAndSetInTheProcess()
-        {
-            // Arrange: the placeholder's case differs from the registry name's
-            var name = UniqueName();
-            var system = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [name] = @"C:\Python312\python.exe" };
-
-            // Act
-            var result = Expand($"\"%{name.ToLowerInvariant()}%\" -m app", system, out var reads, out var sets);
+            var result = SystemEnvironmentHelper.ExpandSystemEnvironmentVariables($"\"%{name.ToLowerInvariant()}%\" -m app", refresher);
 
             // Assert
             Assert.Equal("\"C:\\Python312\\python.exe\" -m app", result);
-            Assert.Equal(1, reads);
-            Assert.Equal(new[] { new KeyValuePair<string, string>(name, @"C:\Python312\python.exe") }, sets);
+            Assert.Equal(1, _reads);
+            Assert.Equal(@"C:\Python312\python.exe", Environment.GetEnvironmentVariable(name));
         }
 
         [Fact]
-        public void ExpandSystemEnvironmentVariables_ExpandableRegistryValue_IsExpandedBeforeUseAndBeforeTheProcessSet()
+        public void Refresh_RegistryUnreadable_ChangesNothing()
+        {
+            // Arrange
+            var name = UniqueName();
+            Environment.SetEnvironmentVariable(name, "process");
+            var refresher = CreateRefresher();
+            refresher.UseRegistryAsSource();
+            _system = null;
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("process", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_NoBaseline_AddsMissingVariablesOnly()
+        {
+            // Arrange: no baseline was captured, so a differing value cannot be told from an override
+            var added = UniqueName();
+            var existing = UniqueName();
+            Environment.SetEnvironmentVariable(existing, "process");
+            _system[added] = "new";
+            _system[existing] = "registry";
+            var refresher = CreateRefresher();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("new", Environment.GetEnvironmentVariable(added));
+            Assert.Equal("process", Environment.GetEnvironmentVariable(existing));
+        }
+
+        [Fact]
+        public void Refresh_Application_ChangedValueStillHeldByTheProcess_IsUpdated()
+        {
+            // Arrange: the process got the System value at start, then it changed in Windows
+            var name = UniqueName();
+            _system[name] = @"C:\Java\jdk-17";
+            Environment.SetEnvironmentVariable(name, @"C:\Java\jdk-17");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = @"C:\Java\jdk-21";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"C:\Java\jdk-21", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_ChangedValueOverriddenByTheProcess_IsKept()
+        {
+            // Arrange: the process holds its own value (a User variable or the parent's), not the System one
+            var name = UniqueName();
+            _system[name] = @"C:\Java\jdk-17";
+            Environment.SetEnvironmentVariable(name, @"D:\MyJava");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = @"C:\Java\jdk-21";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"D:\MyJava", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_ChangedListPrefix_KeepsTheUserPart()
+        {
+            // Arrange: like Path, the process value is the System value followed by the user's
+            var name = UniqueName();
+            _system[name] = @"C:\Sys1";
+            Environment.SetEnvironmentVariable(name, @"C:\Sys1;C:\User1");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = @"C:\Sys1;C:\Sys2";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"C:\Sys1;C:\Sys2;C:\User1", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_RemovedVariable_IsRemovedOnlyWhenStillTheSystemValue()
+        {
+            // Arrange
+            var removed = UniqueName();
+            var overridden = UniqueName();
+            _system[removed] = "system";
+            _system[overridden] = "system";
+            Environment.SetEnvironmentVariable(removed, "system");
+            Environment.SetEnvironmentVariable(overridden, "own");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system.Remove(removed);
+            _system.Remove(overridden);
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Null(Environment.GetEnvironmentVariable(removed));
+            Assert.Equal("own", Environment.GetEnvironmentVariable(overridden));
+        }
+
+        [Fact]
+        public void Refresh_Application_UpdatesTheBaseline_SoAKeptOverrideIsNeverRevisited()
+        {
+            // Arrange: a first refresh applies a change; a second with the same registry must change nothing
+            var name = UniqueName();
+            _system[name] = "v1";
+            Environment.SetEnvironmentVariable(name, "v1");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = "v2";
+            refresher.Refresh();
+            Environment.SetEnvironmentVariable(name, "own");
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("own", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_ExpandableValue_IsExpanded()
         {
             // Arrange: a REG_EXPAND_SZ value read raw
             var name = UniqueName();
-            var windir = Environment.GetEnvironmentVariable("SystemRoot");
-            var system = new Dictionary<string, string> { [name] = @"%SystemRoot%\System32" };
+            _system[name] = @"%SystemRoot%\System32";
+            var refresher = CreateRefresher();
 
             // Act
-            var result = Expand($@"%{name}%\cmd.exe", system, out _, out var sets);
-
-            // Assert: neither the result nor the process variable keeps the raw %SystemRoot%
-            Assert.Equal($@"{windir}\System32\cmd.exe", result);
-            Assert.Equal($@"{windir}\System32", Assert.Single(sets).Value);
-        }
-
-        [Fact]
-        public void ExpandSystemEnvironmentVariables_NewVariableReferringToAnotherNewVariable_IsResolvedInALaterPass()
-        {
-            // Arrange: JAVA_BIN refers to JAVA_HOME, both added after the process started. JAVA_HOME is enumerated
-            // first, so its placeholder only appears once JAVA_BIN is replaced and needs a second pass
-            var home = UniqueName();
-            var bin = UniqueName();
-            var system = new Dictionary<string, string> { [home] = @"C:\Java\jdk-21", [bin] = $@"%{home}%\bin" };
-
-            // Act
-            var result = Expand($@"%{bin}%\java.exe", system, out var reads, out _);
+            refresher.Refresh();
 
             // Assert
-            Assert.Equal(@"C:\Java\jdk-21\bin\java.exe", result);
-            Assert.Equal(1, reads);
+            Assert.Equal(Environment.GetEnvironmentVariable("SystemRoot") + @"\System32", Environment.GetEnvironmentVariable(name));
         }
 
         [Fact]
-        public void ExpandSystemEnvironmentVariables_EmptyRegistryValueOrUnknownName_LeavesThePlaceholder()
+        public void Refresh_NewVariableReferringToAnotherNewVariable_IsResolvedInALaterPass()
         {
-            // Arrange
-            var empty = UniqueName();
-            var unknown = UniqueName();
-            var system = new Dictionary<string, string> { [empty] = string.Empty };
+            // Arrange: JAVA_BIN is enumerated first and refers to JAVA_HOME, both added after start
+            var home = UniqueName();
+            var bin = UniqueName();
+            _system[bin] = $@"%{home}%\bin";
+            _system[home] = @"C:\Java\jdk-21";
+            var refresher = CreateRefresher();
 
             // Act
-            var result = Expand($@"%{empty}%\%{unknown}%\50%", system, out _, out var sets);
+            refresher.Refresh();
 
-            // Assert: nothing is replaced, the literal '%' is kept and no process variable is set
-            Assert.Equal($@"%{empty}%\%{unknown}%\50%", result);
-            Assert.Empty(sets);
+            // Assert
+            Assert.Equal(@"C:\Java\jdk-21\bin", Environment.GetEnvironmentVariable(bin));
         }
 
         [Fact]
-        public void ExpandSystemEnvironmentVariables_ProcessSetThrows_StillReplacesThePlaceholder()
+        public void Refresh_EmptyValueAndPerAccountVariable_AreNeverApplied()
+        {
+            // Arrange: USERNAME=SYSTEM sits in the System key; a service running as a user must keep its own
+            var empty = UniqueName();
+            _system[empty] = string.Empty;
+            _system["USERNAME"] = "SYSTEM";
+            var before = Environment.GetEnvironmentVariable("USERNAME");
+            var refresher = CreateRefresher();
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Null(Environment.GetEnvironmentVariable(empty));
+            Assert.Equal(before, Environment.GetEnvironmentVariable("USERNAME"));
+        }
+
+        [Fact]
+        public void Refresh_Service_RegistryWinsOverTheInheritedValue()
+        {
+            // Arrange: the Service Control Manager's boot-time value is stale
+            var name = UniqueName();
+            Environment.SetEnvironmentVariable(name, "boot");
+            _system[name] = "now";
+            var refresher = CreateRefresher();
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("now", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Service_UserVariableOfTheSameName_Wins()
         {
             // Arrange
             var name = UniqueName();
-            var system = new Dictionary<string, string> { [name] = @"D:\Tools" };
+            Environment.SetEnvironmentVariable(name, "user");
+            _system[name] = "system";
+            _user[name] = "user";
+            var refresher = CreateRefresher();
+            refresher.UseRegistryAsSource();
 
             // Act
-            var result = Expand($@"%{name}%\tool.exe", system, out _, out _, throwOnSet: true);
+            refresher.Refresh();
 
             // Assert
-            Assert.Equal(@"D:\Tools\tool.exe", result);
+            Assert.Equal("user", Environment.GetEnvironmentVariable(name));
         }
 
         [Fact]
-        public void GetSystemVariablesMissingFromProcess_RegistryUnreadable_ReturnsEmpty()
+        public void Refresh_Service_PathIsTheSystemValueFollowedByTheUserValue()
         {
-            // Arrange & Act
-            var missing = SystemEnvironmentHelper.GetSystemVariablesMissingFromProcess(() => null);
+            // Arrange: a unique name stands in for Path, so the test never touches the real one
+            var path = UniqueName();
+            Environment.SetEnvironmentVariable(path, @"C:\Old;C:\User");
+            _system[path] = @"C:\Sys1;C:\Sys2;";
+            _user[path] = @"C:\User";
+            var refresher = CreateRefresher(path);
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
 
             // Assert
-            Assert.Empty(missing);
+            Assert.Equal(@"C:\Sys1;C:\Sys2;C:\User", Environment.GetEnvironmentVariable(path));
         }
 
         [Fact]
-        public void GetSystemVariablesMissingFromProcess_ReturnsOnlyNonEmptyVariablesTheProcessLacks_Expanded()
+        public void Refresh_ProcessSetThrows_IsIgnored()
         {
-            // Arrange: one variable the process has, one it lacks, one empty
-            var inherited = UniqueName();
-            var added = UniqueName();
-            var empty = UniqueName();
-            var windir = Environment.GetEnvironmentVariable("SystemRoot");
-            Environment.SetEnvironmentVariable(inherited, "process value");
-            try
-            {
-                var system = new Dictionary<string, string>
-                {
-                    [inherited] = "registry value",
-                    [added] = @"%SystemRoot%\Tools",
-                    [empty] = string.Empty,
-                };
+            // Arrange
+            var name = UniqueName();
+            _system[name] = "value";
+            _throwOnSet = true;
+            var refresher = CreateRefresher();
 
-                // Act
-                var missing = SystemEnvironmentHelper.GetSystemVariablesMissingFromProcess(() => system);
-
-                // Assert: the inherited value keeps precedence, the empty one is skipped, the new one is expanded
-                var entry = Assert.Single(missing);
-                Assert.Equal(added, entry.Key);
-                Assert.Equal($@"{windir}\Tools", entry.Value);
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable(inherited, null);
-            }
-        }
-
-        [Theory]
-        [InlineData(null, "%A%", "x", null)]
-        [InlineData("", "%A%", "x", "")]
-        [InlineData("abc", null, "x", "abc")]
-        [InlineData("abc", "", "x", "abc")]
-        [InlineData("abc", "%A%", "x", "abc")]
-        [InlineData("%a%\\%A%\\%a%", "%A%", "v", "v\\v\\v")]
-        [InlineData("pre-%A%-post", "%a%", null, "pre--post")]
-        public void ReplaceIgnoreCase_ReplacesEveryOccurrenceIgnoringCase(string source, string oldValue, string newValue, string expected)
-        {
-            // Arrange & Act
-            var result = SystemEnvironmentHelper.ReplaceIgnoreCase(source, oldValue, newValue);
+            // Act
+            var ex = Record.Exception(() => refresher.Refresh());
 
             // Assert
-            Assert.Equal(expected, result);
+            Assert.Null(ex);
+            Assert.Null(Environment.GetEnvironmentVariable(name));
         }
     }
 }

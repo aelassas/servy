@@ -84,9 +84,9 @@ namespace Servy.Core.Helpers
         /// and resolving relative segment traversals (e.g., directory shifts via '..').
         /// </summary>
         /// <remarks>
-        /// Variables are expanded by <see cref="SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(string)"/>: the process
-        /// environment first, then the System variables in the registry for a placeholder the process does not know, so a
-        /// System variable added after the process started resolves without a restart.
+        /// Variables are expanded by <see cref="SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(string)"/>, against the
+        /// process environment brought up to date with the System variables in the registry, so a System variable added,
+        /// changed or removed after the process started is seen without a restart.
         /// </remarks>
         /// <param name="inputPath">The original raw path string to resolve.</param>
         /// <returns>A fully qualified, normalized absolute path string; or <c>null</c> if the input is empty.</returns>

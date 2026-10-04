@@ -311,6 +311,9 @@ namespace Servy.UI.Bootstrapping
         /// <returns>A Task representing the asynchronous initialization process.</returns>
         public async Task InitializeAppAsync(Application app, StartupEventArgs e)
         {
+            // Record the System variables as they are at start, so one changed later is picked up (#7393)
+            SystemEnvironmentHelper.InitializeForApplication();
+
             string serviceName = null;
             var showSplash = true;
             var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
