@@ -7,6 +7,7 @@ using Servy.Core.NamedPipes;
 using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -1114,6 +1115,61 @@ namespace Servy.Host.UnitTests
                     // the listener instances are no longer scheduled with the token, so cancelling the host does not
                     // end the ones the thread pool has not started yet as Canceled, and StopListening tolerates a
                     // cancellation from either wait. A throw here is a regression and must fail the test.
+                    host.StopListening();
+                }
+            }
+        }
+
+        [Fact]
+        public void ListenForPipeConnectionsAsync_PipeCreationFails_BacksOffThenAcceptsTheNextClient()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            var calls = 0;
+            var firstFailure = Stopwatch.StartNew();
+            long firstSuccessMs = -1;
+            _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidDataException("bad frame"));
+            using (var handled = new ManualResetEventSlim())
+            {
+                logger.Setup(l => l.Error("Exception in HandleConnectionAsync.", It.IsAny<InvalidDataException>())).Callback(() => handled.Set());
+                using (var host = new Service(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object)
+                {
+                    PipeName = pipeName,
+                    RequestTimeoutMs = 5000,
+                    // Every listener's first attempt fails (the first ServyHostListenerCount calls), so a client can only
+                    // ever be accepted by a listener that went round the loop after its back-off
+                    ServerStreamFactory = (name, security) =>
+                    {
+                        if (Interlocked.Increment(ref calls) <= AppConfig.ServyHostListenerCount)
+                            throw new IOException("All pipe instances are busy.");
+
+                        Interlocked.CompareExchange(ref firstSuccessMs, firstFailure.ElapsedMilliseconds, -1);
+                        return new NamedPipeServerStream(name, PipeDirection.InOut,
+                            NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                    },
+                })
+                {
+                    host.StartListening();
+
+                    // Act
+                    bool observed;
+                    using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                    {
+                        client.Connect(10000);
+                        observed = handled.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                    }
+
+                    // Assert: a listener that gave up after its failure would leave no instance to connect to
+                    Assert.True(observed);
+                    logger.Verify(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<IOException>()), Times.AtLeastOnce());
+
+                    // The retry waited for the back-off instead of spinning straight into the next attempt
+                    Assert.True(Interlocked.Read(ref firstSuccessMs) >= AppConfig.ScmPollIntervalMs / 2,
+                        $"The first pipe instance was created {Interlocked.Read(ref firstSuccessMs)} ms after the first failure.");
+
+                    // Same drain as the sibling tests, called plainly: a throw from it fails the test
                     host.StopListening();
                 }
             }
