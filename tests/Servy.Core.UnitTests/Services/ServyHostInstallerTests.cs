@@ -320,6 +320,43 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureInstalledAndRunningAsync_ReconfigureRefused_FailsWithoutStarting()
+        {
+            // Arrange
+            var existing = RegisteredAs($"\"{_hostExe}\"");
+            _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(false);
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+            HostStatuses(ServiceControllerStatus.Stopped);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to configure the 'Servy' service", result.ErrorMessage);
+            _host.Verify(h => h.Start(), Times.Never);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_CreateServiceRefused_FailsWithoutStarting()
+        {
+            // Arrange
+            NotRegistered();
+            _api.Setup(a => a.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
+                It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(() => _handles.Service(0));
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to create the 'Servy' service", result.ErrorMessage);
+            _host.Verify(h => h.Start(), Times.Never);
+        }
+
+        [Fact]
         public async Task EnsureInstalledAndRunningAsync_ServiceNeverStarts_FailsAfterTheTimeout()
         {
             // Arrange
@@ -481,6 +518,20 @@ namespace Servy.Core.UnitTests.Services
 
             await Create().StopAsync(TestContext.Current.CancellationToken);
 
+            _host.Verify(h => h.Stop(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StopAsync_NotInstalled_ReturnsWithoutStopping()
+        {
+            // Arrange: on a first install the host is stopped before it exists
+            _host.SetupGet(h => h.Status).Throws(new InvalidOperationException("not installed"));
+
+            // Act
+            var ex = await Record.ExceptionAsync(() => Create().StopAsync(TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Null(ex);
             _host.Verify(h => h.Stop(), Times.Never);
         }
 
@@ -680,6 +731,97 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.Equal(0, updated);
             Assert.Contains("Could not add the 'Servy' dependency to service 'Legacy'", log);
+        }
+
+        [Fact]
+        public async Task EnsureServicesDependOnHostAsync_ScmCannotBeOpened_LogsAndUpdatesNothing()
+        {
+            // Arrange
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(() => _handles.Scm(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, TestContext.Current.CancellationToken));
+
+            // Assert: no service is looked at through a handle that never opened
+            Assert.Equal(0, updated);
+            Assert.Contains("Failed to open the Service Control Manager", log);
+            _api.Verify(a => a.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task EnsureServicesDependOnHostAsync_OpenServiceFailsForAnotherReason_IsLoggedWithItsWin32Error()
+        {
+            // Arrange: access denied is a service that did not get the dependency, unlike a service that does not exist
+            var scm = _handles.Scm(1);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            _api.Setup(a => a.OpenService(scm, "Legacy", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(() => _handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Equal(0, updated);
+            Assert.Contains("Could not open service 'Legacy'", log);
+            Assert.Contains("Win32 error: 5", log);
+        }
+
+        [Fact]
+        public async Task EnsureServicesDependOnHostAsync_ServiceDoesNotExist_IsSkippedWithoutAWarning()
+        {
+            // Arrange: a database-only record is expected, so it is not worth a warning
+            var scm = _handles.Scm(1);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            _api.Setup(a => a.OpenService(scm, "DbOnly", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(() => _handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "DbOnly" }, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Equal(0, updated);
+            Assert.DoesNotContain("Could not open service", log);
+        }
+
+        [Fact]
+        public async Task EnsureServicesDependOnHostAsync_OneServiceThrows_IsLoggedAndTheNextOneIsStillUpdated()
+        {
+            // Arrange
+            var scm = _handles.Scm(1);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+            _api.Setup(a => a.OpenService(scm, "Broken", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Throws(new System.ComponentModel.Win32Exception(5));
+            var handle = DependsOn(scm, "Legacy", 5);
+            _api.Setup(a => a.ChangeServiceConfig(handle, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, SERVICE_NO_CHANGE, null, null, IntPtr.Zero,
+                It.IsAny<string>(), null, null, null)).Returns(true);
+
+            // Act
+            var (updated, log) = await LogCapture.RunAsync(() => Create().EnsureServicesDependOnHostAsync(new[] { "Broken", "Legacy" }, TestContext.Current.CancellationToken));
+
+            // Assert: one bad service does not stop every later service from getting the host dependency
+            Assert.Equal(1, updated);
+            Assert.Contains("Could not add the 'Servy' dependency to service 'Broken'.", log);
+        }
+
+        [Fact]
+        public void EnsureServicesDependOnHostAsync_CancelledBeforeTheFirstService_ThrowsWithoutOpeningAny()
+        {
+            // Arrange
+            var scm = _handles.Scm(1);
+            _api.Setup(a => a.OpenSCManager(null, null, SC_MANAGER_CONNECT)).Returns(scm);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                // Act
+                var ex = Record.Exception(() => { Create().EnsureServicesDependOnHostAsync(new[] { "Legacy" }, cts.Token); });
+
+                // Assert
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+            }
+
+            _api.Verify(a => a.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
         }
 
         [Fact]
