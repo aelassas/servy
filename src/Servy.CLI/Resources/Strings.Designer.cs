@@ -367,51 +367,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to show configuration for service '{0}'.
-        /// </summary>
-        public static string Msg_ShowServiceAction {
-            get {
-                return ResourceManager.GetString("Msg_ShowServiceAction", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Displayed configuration for service '{0}'..
-        /// </summary>
-        public static string Msg_ShowServiceLogged {
-            get {
-                return ResourceManager.GetString("Msg_ShowServiceLogged", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Ensure the service exists in the Servy database and that your shell is running as Administrator..
-        /// </summary>
-        public static string Msg_ShowServiceSuggestion {
-            get {
-                return ResourceManager.GetString("Msg_ShowServiceSuggestion", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to list services.
-        /// </summary>
-        public static string Msg_ShowServicesAction {
-            get {
-                return ResourceManager.GetString("Msg_ShowServicesAction", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Listed {0} service(s)..
-        /// </summary>
-        public static string Msg_ShowServicesLogged {
-            get {
-                return ResourceManager.GetString("Msg_ShowServicesLogged", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to DESCRIPTION.
         /// </summary>
         public static string Msg_Show_Column_Description {
@@ -1038,6 +993,51 @@ namespace Servy.CLI.Resources {
         public static string Msg_Show_Yes {
             get {
                 return ResourceManager.GetString("Msg_Show_Yes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to show configuration for service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_ShowServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_ShowServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Displayed configuration for service &apos;{0}&apos;..
+        /// </summary>
+        public static string Msg_ShowServiceLogged {
+            get {
+                return ResourceManager.GetString("Msg_ShowServiceLogged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to list services.
+        /// </summary>
+        public static string Msg_ShowServicesAction {
+            get {
+                return ResourceManager.GetString("Msg_ShowServicesAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Listed {0} service(s)..
+        /// </summary>
+        public static string Msg_ShowServicesLogged {
+            get {
+                return ResourceManager.GetString("Msg_ShowServicesLogged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ensure the service exists in the Servy database and that your shell is running as Administrator..
+        /// </summary>
+        public static string Msg_ShowServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_ShowServiceSuggestion", resourceCulture);
             }
         }
         
