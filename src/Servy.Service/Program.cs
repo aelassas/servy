@@ -1,3 +1,4 @@
+using Servy.Core.Helpers;
 using Servy.Core.Native;
 using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
@@ -19,6 +20,9 @@ namespace Servy.Service
         {
             _ = NativeMethods.FreeConsole();
             _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
+
+            // The environment came from the Service Control Manager at boot: System variables follow the registry (#7393)
+            SystemEnvironmentHelper.InitializeForService();
 
             ServiceBase[] servicesToRun =
             {
