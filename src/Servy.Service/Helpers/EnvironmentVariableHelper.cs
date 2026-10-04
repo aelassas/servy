@@ -151,6 +151,27 @@ namespace Servy.Service.Helpers
         /// </returns>
         public static Dictionary<string, string?> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
         {
+            return DecodePercentEscapes(ExpandEnvironmentVariablesEncoded(environmentVariables));
+        }
+
+        /// <summary>
+        /// Performs the same expansion as <see cref="ExpandEnvironmentVariables(List{EnvironmentVariable})"/>,
+        /// but leaves every '%%' escape encoded as <see cref="PercentEscapeToken"/> instead of collapsing it to '%'.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="PercentEscapeToken"/> contains no '%', so a caller can audit the result for unexpanded
+        /// placeholders without mistaking an escaped percent for one, then pass it to
+        /// <see cref="DecodePercentEscapes(Dictionary{string, string})"/> to obtain the public result.
+        /// </remarks>
+        /// <param name="environmentVariables">
+        /// A list of custom environment variables to include. May be <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// A dictionary containing system environment variables combined with the provided custom ones,
+        /// fully expanded, with '%%' escapes still encoded as <see cref="PercentEscapeToken"/>.
+        /// </returns>
+        internal static Dictionary<string, string?> ExpandEnvironmentVariablesEncoded(List<EnvironmentVariable> environmentVariables)
+        {
             var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
             // Isolate custom definitions from system environmental maps to prevent cross-contamination
@@ -257,13 +278,25 @@ namespace Servy.Service.Helpers
                 result[key] = Environment.ExpandEnvironmentVariables(systemExpanded);
             }
 
+            return result;
+        }
+
+        /// <summary>
+        /// Collapses every <see cref="PercentEscapeToken"/> in the values of <paramref name="values"/> into a literal '%'.
+        /// </summary>
+        /// <param name="values">
+        /// A dictionary returned by <see cref="ExpandEnvironmentVariablesEncoded(List{EnvironmentVariable})"/>. It is updated in place.
+        /// </param>
+        /// <returns>The same <paramref name="values"/> instance, with every escape decoded.</returns>
+        internal static Dictionary<string, string?> DecodePercentEscapes(Dictionary<string, string?> values)
+        {
             // 5. Decode escaped percentages: Collapse the protective token into a literal '%'
-            foreach (var key in result.Keys.Where(k => !string.IsNullOrEmpty(result[k])).ToList())
+            foreach (var key in values.Keys.Where(k => !string.IsNullOrEmpty(values[k])).ToList())
             {
-                result[key] = result[key]!.Replace(PercentEscapeToken, "%");
+                values[key] = values[key]!.Replace(PercentEscapeToken, "%");
             }
 
-            return result;
+            return values;
         }
 
         /// <summary>
@@ -279,6 +312,28 @@ namespace Servy.Service.Helpers
         /// </returns>
         public static string ExpandEnvironmentVariables(string input, IDictionary<string, string?> expandedEnv)
         {
+            return DecodePercentEscapes(ExpandEnvironmentVariablesEncoded(input, expandedEnv));
+        }
+
+        /// <summary>
+        /// Performs the same expansion as <see cref="ExpandEnvironmentVariables(string, IDictionary{string, string})"/>,
+        /// but leaves every '%%' escape encoded as <see cref="PercentEscapeToken"/> instead of collapsing it to '%'.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="PercentEscapeToken"/> contains no '%', so a caller can audit the result for unexpanded
+        /// placeholders without mistaking an escaped percent for one, then pass it to
+        /// <see cref="DecodePercentEscapes(string)"/> to obtain the public result.
+        /// </remarks>
+        /// <param name="input">The string containing environment variable references (e.g. "%ProgramFiles%\\MyApp").</param>
+        /// <param name="expandedEnv">
+        /// A dictionary of environment variables previously built by <see cref="ExpandEnvironmentVariables(List{EnvironmentVariable})"/>.
+        /// </param>
+        /// <returns>
+        /// The input string with all environment variable references expanded, and '%%' escapes still encoded
+        /// as <see cref="PercentEscapeToken"/>.
+        /// </returns>
+        internal static string ExpandEnvironmentVariablesEncoded(string input, IDictionary<string, string?> expandedEnv)
+        {
             if (string.IsNullOrEmpty(input)) return input;
 
             // Encode '%%' to protect it during dictionary and OS expansion
@@ -288,10 +343,20 @@ namespace Servy.Service.Helpers
             // only one pass is needed here. We pass 'protectInjectedValues: true' so that any literal
             // '%' characters injected from the dictionary aren't accidentally re-expanded by the OS.
             string result = ExpandWithDictionary(encodedInput, expandedEnv, null, null, protectInjectedValues: true);
-            result = Environment.ExpandEnvironmentVariables(result);
+            return Environment.ExpandEnvironmentVariables(result);
+        }
+
+        /// <summary>
+        /// Collapses every <see cref="PercentEscapeToken"/> in <paramref name="value"/> into a literal '%'.
+        /// </summary>
+        /// <param name="value">A string returned by <see cref="ExpandEnvironmentVariablesEncoded(string, IDictionary{string, string})"/>.</param>
+        /// <returns><paramref name="value"/> unchanged when it is <c>null</c> or empty; otherwise the decoded string.</returns>
+        internal static string DecodePercentEscapes(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
 
             // Decode '%%' protection token back to a single literal '%'
-            return result.Replace(PercentEscapeToken, "%");
+            return value.Replace(PercentEscapeToken, "%");
         }
 
         /// <summary>

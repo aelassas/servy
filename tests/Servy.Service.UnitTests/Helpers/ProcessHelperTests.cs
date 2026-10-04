@@ -234,6 +234,43 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void ExpandAndAudit_EscapedPercentsInVariable_DecodesWithoutUnexpandedWarning()
+        {
+            // Arrange
+            // Two '%%' escapes decode to '50%off%', which looks like a placeholder only after decoding
+            var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "LABEL", Value = "50%%off%%" } };
+
+            // Act
+            var result = ProcessHelper.ExpandAndAudit(vars, "arg1", _mockLogger.Object, "Test");
+
+            // Assert
+            Assert.Equal("50%off%", result.env["LABEL"]);
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => msg.Contains("Unexpanded environment variable")),
+                It.IsAny<Exception>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public void ExpandAndAudit_EscapedPercentsInArguments_DecodesWithoutUnexpandedWarning()
+        {
+            // Arrange
+            // The escaped date format decodes to '%Y%-%m%', which looks like two placeholders only after decoding
+            var vars = new List<EnvironmentVariable>();
+            string args = "--format %%Y%%-%%m%%";
+
+            // Act
+            var result = ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Test");
+
+            // Assert
+            Assert.Equal("--format %Y%-%m%", result.expandedArgs);
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => msg.Contains("Unexpanded environment variable")),
+                It.IsAny<Exception>()),
+                Times.Never);
+        }
+
+        [Fact]
         public void ExpandAndAudit_NullLogger_SkipsWarningsAndStillExpands()
         {
             // Arrange
