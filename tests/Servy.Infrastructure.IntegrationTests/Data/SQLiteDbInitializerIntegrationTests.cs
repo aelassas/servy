@@ -804,12 +804,17 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 const string missingColumn = "Name";
                 Assert.Contains(missingColumn, expectedColumns);
 
-                // Rebuild the table intentionally omitting 'Name', changing 'EnableSizeRotation' to TEXT (type mismatch),
+                // A second omitted column that is INTEGER, so the type reaching the ADD COLUMN arm is pinned for
+                // a non-TEXT affinity as well.
+                const string missingIntegerColumn = "PreviousStopTimeout";
+                Assert.Contains(missingIntegerColumn, expectedColumns);
+
+                // Rebuild the table intentionally omitting 'Name' and 'PreviousStopTimeout', changing 'EnableSizeRotation' to TEXT (type mismatch),
                 // and adding an 'OrphanColumn' (orphan branch).
                 var corruptedTableDef = new List<string> { "Id INTEGER PRIMARY KEY", "OrphanColumn TEXT" };
                 foreach (var col in expectedColumns)
                 {
-                    if (col == missingColumn) continue; // Force missing branch
+                    if (col == missingColumn || col == missingIntegerColumn) continue; // Force missing branch
                     if (col == "EnableSizeRotation")
                     {
                         corruptedTableDef.Add($"{col} TEXT"); // Force mismatch branch
@@ -840,6 +845,18 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains(missingColumn, finalColumns);
                 // The orphan remains (we just log it, we don't drop it automatically)
                 Assert.Contains("OrphanColumn", finalColumns);
+
+                // The restored columns must come back with the declared definition, not just the name:
+                // 'Name' is TEXT NOT NULL (EnsureAlterableDefinition adds the DEFAULT '') and
+                // 'PreviousStopTimeout' is INTEGER. ('isNotNull' is the alias because 'notNull' parses as SQLite's NOTNULL operator.)
+                Assert.Contains(missingIntegerColumn, finalColumns);
+                var restoredName = conn.QuerySingle($"SELECT type, \"notnull\" AS isNotNull, dflt_value AS dflt FROM pragma_table_info('{SqlConstants.ServicesTableName}') WHERE name = @Name;", new { Name = missingColumn });
+                Assert.Equal("TEXT", (string)restoredName.type);
+                Assert.Equal(1L, (long)restoredName.isNotNull);
+                Assert.Equal("''", (string)restoredName.dflt);
+
+                var restoredIntegerType = conn.QuerySingle<string>($"SELECT type FROM pragma_table_info('{SqlConstants.ServicesTableName}') WHERE name = @Name;", new { Name = missingIntegerColumn });
+                Assert.Equal("INTEGER", restoredIntegerType);
 
                 // Note: Mismatches are logged, not automatically altered, because SQLite doesn't support ALTER COLUMN type.
                 var typeMismatchType = conn.QuerySingle<string>($"SELECT type FROM pragma_table_info('{SqlConstants.ServicesTableName}') WHERE name = 'EnableSizeRotation';");
