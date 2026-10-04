@@ -96,8 +96,6 @@ namespace Servy.Core.Helpers
             string extension,
             CancellationToken cancellationToken = default)
         {
-            bool copyDone = false; // Tracks if the physical file copy succeeded
-
             try
             {
                 if (!TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
@@ -129,16 +127,11 @@ namespace Servy.Core.Helpers
                     // Restore pre-existing ACLs on the newly written file
                     RestoreFileSecurity(targetPath, existingAcl);
 
-                    copyDone = true; // File write succeeded natively within the execution path
                     HasCopiedResources = true;
                 }
 
-                if (copyDone)
-                {
-                    Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
-                }
-
-                return copyDone;
+                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
+                return true;
             }
             catch (OperationCanceledException)
             {
@@ -364,19 +357,16 @@ namespace Servy.Core.Helpers
         /// <returns><see langword="true"/> only when both exist and are identical; any failure counts as different.</returns>
         private static bool IsSameAsEmbeddedResource(Assembly assembly, string resourceName, string filePath)
         {
-            Stream? resource = null;
             try
             {
-                resource = assembly.GetManifestResourceStream(resourceName);
-                if (resource == null)
-                    return false;
-
-                var start = resource.CanSeek ? resource.Position : 0;
-                try
+                using (var resource = assembly.GetManifestResourceStream(resourceName))
                 {
+                    if (resource == null)
+                        return false;
+
                     using (var file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                     {
-                        if (resource.CanSeek && file.Length != resource.Length - start)
+                        if (resource.CanSeek && file.Length != resource.Length)
                             return false;
 
                         var a = new byte[81920];
@@ -396,25 +386,11 @@ namespace Servy.Core.Helpers
                         }
                     }
                 }
-                finally
-                {
-                    // A seekable resource stream is rewound and left open, so a caller holding the same instance can
-                    // still read it; a forward-only one cannot be reused anyway
-                    if (resource.CanSeek)
-                    {
-                        resource.Position = start;
-                        resource = null;
-                    }
-                }
             }
             catch (Exception ex)
             {
                 Logger.Debug($"Could not compare '{filePath}' with the embedded resource '{resourceName}': {ex.Message}");
                 return false;
-            }
-            finally
-            {
-                resource?.Dispose();
             }
         }
 

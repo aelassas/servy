@@ -568,13 +568,12 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public async Task CopyEmbeddedResource_DifferentContent_WritesTheWholeResourceAfterTheComparison()
         {
-            // Arrange: ONE stream instance serves the comparison and the copy, so the comparison has to rewind it
+            // Arrange: Each call to GetManifestResourceStream returns a fresh stream instance
             var newContent = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60 };
-            var shared = new MemoryStream(newContent);
             var targetPath = Path.Combine(TempDirectory, "upgrade.exe");
             File.WriteAllBytes(targetPath, new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x61 });
             File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(shared);
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(() => new MemoryStream(newContent));
 
             // Act
             var result = await _resourceHelper.CopyEmbeddedResourceAsync(_mockAssembly.Object, "Servy.Resources", "upgrade", "exe", cancellationToken: TestContext.Current.CancellationToken);
