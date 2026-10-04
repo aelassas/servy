@@ -14,7 +14,7 @@ namespace Servy.Host.UnitTests.Bootstrap
     /// <summary>
     /// Covers the production constructor of the Servy host <see cref="Service"/> through
     /// <see cref="IServiceBootstrapEnvironment"/>: the log file, the <c>EnableEventLog</c> to <c>AutoLog</c> mapping,
-    /// the CVE-2025-6965 SQLite guard, the data-stack wiring, the migration of the former service log, and the
+    /// the CVE-2025-6965 SQLite guard, the data-stack wiring, and the
     /// exit-code rules of the surrounding <c>catch</c>.
     /// </summary>
     public class ServiceBootstrapSeamTests : IDisposable
@@ -45,7 +45,7 @@ namespace Servy.Host.UnitTests.Bootstrap
             // Act
             var service = Build(env);
 
-            // Assert: the database (and its migrations) is opened before the former service log is moved
+            // Assert: the database (and its migrations) is opened last, once logging and the SQLite guard are in place
             Assert.Equal(new[]
             {
                 "InitializeLogger(Servy.Host.log)",
@@ -55,7 +55,6 @@ namespace Servy.Host.UnitTests.Bootstrap
                 "ConfigureLogging",
                 "IsSqliteVersionSafe",
                 "CreateDataStack",
-                "MigrateLegacyServiceLog",
             }, env.Calls.Where(c => !c.StartsWith("Create", StringComparison.Ordinal) || c == "CreateDataStack").ToArray());
             Assert.Equal(new[] { FakeBootstrapEnvironment.ConnectionString, FakeBootstrapEnvironment.KeyPath, FakeBootstrapEnvironment.IvPath }, env.DataStackArguments);
             Assert.Same(env.Stack!.ServiceRepository, TestReflection.GetField<IServiceRepository>(service, "_serviceRepository"));
@@ -109,7 +108,6 @@ namespace Servy.Host.UnitTests.Bootstrap
                 // Assert
                 Assert.Equal(AppConfig.ServiceSpecificErrorCode, termination.ExitCodes[0]);
                 Assert.Empty(env.DataStackArguments);
-                Assert.DoesNotContain("MigrateLegacyServiceLog", env.Calls);
                 Assert.Contains(env.Errors, e => e.Message!.Contains("3.40.0") && e.Message.Contains("CVE-2025-6965"));
             }
             finally
@@ -135,7 +133,6 @@ namespace Servy.Host.UnitTests.Bootstrap
                 // Assert
                 Assert.Equal(AppConfig.ServiceSpecificErrorCode, termination.ExitCode);
                 Assert.Contains(env.Errors, e => ReferenceEquals(e.Exception, failure));
-                Assert.DoesNotContain("MigrateLegacyServiceLog", env.Calls);
             }
             finally
             {
@@ -327,8 +324,6 @@ namespace Servy.Host.UnitTests.Bootstrap
                     new Mock<IServiceRepository>().Object);
                 return Stack;
             }
-
-            public void MigrateLegacyServiceLog() => Calls.Add("MigrateLegacyServiceLog");
 
             public IWindowsServiceApi CreateWindowsServiceApi()
             {

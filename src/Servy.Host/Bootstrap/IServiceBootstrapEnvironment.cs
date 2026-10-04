@@ -10,7 +10,7 @@ namespace Servy.Host.Bootstrap
     /// Seam over the machine-touching and process-global calls that the production constructor of
     /// <see cref="Service"/> would otherwise make inline: the global logger, the Windows event source, the
     /// <c>appsettings.host.json</c> configuration, the core data-layer settings, the SQLite version check, the
-    /// creation of the database and repository stack, the migration of the former service log, and the
+    /// creation of the database and repository stack, and the
     /// Service Control Manager and pipe-client identification used to authorize callers.
     /// </summary>
     /// <remarks>
@@ -94,13 +94,6 @@ namespace Servy.Host.Bootstrap
         /// as the inline block did, so the constructor's <c>catch</c> handles it.
         /// </exception>
         ServiceDataStack CreateDataStack(string connectionString, string aesKeyFilePath, string aesIVFilePath);
-
-        /// <summary>
-        /// Moves the content of the wrappers' former log, <c>logs\Servy.Service.log</c>, to
-        /// <c>logs\service\Servy.Service.log</c>, where it stays for the administrators; the wrappers themselves now
-        /// log in <c>logs\service\&lt;ServiceName&gt;\</c>.
-        /// </summary>
-        void MigrateLegacyServiceLog();
 
         /// <summary>
         /// Creates the Service Control Manager API the service uses to tell which process a service runs in.

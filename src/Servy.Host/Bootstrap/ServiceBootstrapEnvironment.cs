@@ -125,14 +125,6 @@ namespace Servy.Host.Bootstrap
         }
 
         /// <summary>
-        /// Calls <see cref="ServiceLogMigrator.Migrate()"/>.
-        /// </summary>
-        public void MigrateLegacyServiceLog()
-        {
-            ServiceLogMigrator.Migrate();
-        }
-
-        /// <summary>
         /// Creates a <see cref="WindowsServiceApi"/>.
         /// </summary>
         /// <returns>The API.</returns>
