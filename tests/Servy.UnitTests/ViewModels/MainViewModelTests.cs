@@ -9,7 +9,9 @@ using Servy.Services;
 using Servy.UI.Services;
 using Servy.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -957,6 +959,60 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(hydrated.StopTimeout.Value.ToString(), _viewModel.StopTimeout);
             Assert.Equal(hydrated.PreStopTimeoutSeconds.Value.ToString(), _viewModel.PreStopTimeoutSeconds);
             Assert.Equal(hydrated.RunAsLocalSystem.Value, _viewModel.RunAsLocalSystem);
+        }
+
+        [Theory]
+        [InlineData((int)ServiceStartType.Unknown)]
+        [InlineData(999)]
+        public void BindServiceDtoToModel_UndefinedEnumValues_FallBackToDefaults(int startupType)
+        {
+            // Arrange - every enum int is outside its enum, or is the excluded Unknown (the #6069 shape)
+            var dto = new ServiceDto
+            {
+                Name = "LegacyEnums",
+                ExecutablePath = "C:\\proc.exe",
+                StartupType = startupType,
+                Priority = 999,
+                DateRotationType = 999,
+                RecoveryAction = 999
+            };
+
+            // Act
+            _viewModel.BindServiceDtoToModel(dto);
+
+            // Assert
+            Assert.Equal(DefaultStartupType, _viewModel.SelectedStartupType);
+            Assert.Equal(DefaultProcessPriority, _viewModel.SelectedProcessPriority);
+            Assert.Equal(DefaultDateRotationType, _viewModel.SelectedDateRotationType);
+            Assert.Equal(DefaultRecoveryAction, _viewModel.SelectedRecoveryAction);
+        }
+
+        private static readonly string[] BoolFlags =
+        {
+            nameof(ServiceDto.EnableConsoleUI), nameof(ServiceDto.EnableSizeRotation), nameof(ServiceDto.EnableDateRotation),
+            nameof(ServiceDto.UseLocalTimeForRotation), nameof(ServiceDto.EnableHealthMonitoring), nameof(ServiceDto.RecoveryOnCleanExit),
+            nameof(ServiceDto.EnableHeartbeatUrlFlags), nameof(ServiceDto.PreLaunchIgnoreFailure), nameof(ServiceDto.EnableDebugLogs),
+            nameof(ServiceDto.PreStopLogAsError)
+        };
+
+        public static IEnumerable<object[]> BoolFlagNames => BoolFlags.Select(flag => new object[] { flag });
+
+        [Theory]
+        [MemberData(nameof(BoolFlagNames))]
+        public void BindServiceDtoToModel_OneFlagTrue_BindsOnlyThatFlag(string flag)
+        {
+            // Arrange - every flag explicitly false except the one under test, so a constant or a
+            // flag read from another field fails at least one row
+            var dto = new ServiceDto { Name = "Flags", ExecutablePath = "C:\\proc.exe" };
+            foreach (var name in BoolFlags)
+                typeof(ServiceDto).GetProperty(name).SetValue(dto, name == flag);
+
+            // Act
+            _viewModel.BindServiceDtoToModel(dto);
+
+            // Assert - the DTO and view model properties share their names for all ten flags
+            foreach (var name in BoolFlags)
+                Assert.Equal(name == flag, (bool)typeof(MainViewModel).GetProperty(name).GetValue(_viewModel));
         }
 
         [Fact]
