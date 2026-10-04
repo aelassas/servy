@@ -321,16 +321,18 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task InstallService_WithoutPipeService_InstallsWithoutError()
+        public async Task InstallService_WithoutPipeService_InstallsWithoutAPipeRefreshError()
         {
             // Arrange
             ArrangeServiceCreated();
 
             // Act
-            var result = await CreateManager(null).InstallServiceAsync(CreateOptions(@".\svc-account"), TestContext.Current.CancellationToken);
+            var (result, log) = await LogCapture.RunAsync(() => CreateManager(null).InstallServiceAsync(CreateOptions(@".\svc-account"), TestContext.Current.CancellationToken));
 
-            // Assert
+            // Assert: no pipe service means the refresh is skipped, not attempted and swallowed; the null guard is the
+            // only thing keeping a NullReferenceException out of this error line
             Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.DoesNotContain("Servy host named pipe", log);
         }
 
         #endregion
