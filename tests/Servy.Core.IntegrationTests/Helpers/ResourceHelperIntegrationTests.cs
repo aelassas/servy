@@ -533,14 +533,19 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             DateTime expectedTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
 
-            // Act
-            var result = await _resourceHelper.CopyEmbeddedResourceAsync(_mockAssembly.Object, "Servy.Resources", "unchanged", "exe", cancellationToken: TestContext.Current.CancellationToken);
+            // A running service keeps its wrapper open for reading, which the lock probe reports as locked, so the
+            // killer is reachable here unless the identical-content check stops the copy first
+            using (var runningImage = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete))
+            {
+                // Act
+                var result = await _resourceHelper.CopyEmbeddedResourceAsync(_mockAssembly.Object, "Servy.Resources", "unchanged", "exe", cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert: reported as done, but the file and whatever holds it open are left alone and write time is updated to host time
-            Assert.True(result);
-            Assert.False(_resourceHelper.HasCopiedResources);
-            Assert.Equal(expectedTime, File.GetLastWriteTimeUtc(targetPath));
-            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+                // Assert: reported as done, but the file and whatever holds it open are left alone and write time is updated to host time
+                Assert.True(result);
+                Assert.False(_resourceHelper.HasCopiedResources);
+                Assert.Equal(expectedTime, File.GetLastWriteTimeUtc(targetPath));
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+            }
         }
 
         [Fact]
