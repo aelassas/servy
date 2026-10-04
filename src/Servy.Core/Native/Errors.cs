@@ -30,6 +30,9 @@ namespace Servy.Core.Native
         /// <summary>The pipe is not connected (no console attached to the target process).</summary>
         public const int ERROR_PIPE_NOT_CONNECTED = 233;
 
+        /// <summary>The pipe client is on this computer (GetNamedPipeClientComputerName failure).</summary>
+        public const int ERROR_PIPE_LOCAL = 229;
+
         /// <summary>An instance of the service is already running.</summary>
         public const int ERROR_SERVICE_ALREADY_RUNNING = 1056;
 
