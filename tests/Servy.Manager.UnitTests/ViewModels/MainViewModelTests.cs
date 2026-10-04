@@ -382,6 +382,69 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SearchCommand_SupersededWhileApplyIsQueued_KeepsGridAndStartsNoRefresh()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                _serviceCommandsMock.SetupSequence(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<Service> { new Service { Name = "Old", IsInstalled = true } })
+                    .ReturnsAsync(new List<Service> { new Service { Name = "New", IsInstalled = true } });
+
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+
+                var oldRow = vm.ServicesView.Cast<ServiceRowViewModel>().Single();
+                var ctsBefore = TestReflection.GetField<CancellationTokenSource>(vm, "_cts");
+
+                // When the second search queues its Background apply callback (after the rows-built check),
+                // cancel it at Normal priority so the cancellation lands before the callback runs.
+                var cancelPosted = false;
+                DispatcherHookEventHandler onPosted = (s, e) =>
+                {
+                    var searches = _serviceCommandsMock.Invocations.Count(i => i.Method.Name == nameof(IServiceCommands.SearchServicesAsync));
+                    if (!cancelPosted && searches == 2 && e.Operation.Priority == DispatcherPriority.Background)
+                    {
+                        cancelPosted = true;
+                        currentDispatcher.BeginInvoke(DispatcherPriority.Normal,
+                            new Action(() => TestReflection.InvokeNonPublic(vm, "ClearActiveSearchContext")));
+                    }
+                };
+                currentDispatcher.Hooks.OperationPosted += onPosted;
+
+                try
+                {
+                    // Act
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.SearchCommand.ExecuteAsync(null);
+                    });
+                }
+                finally
+                {
+                    currentDispatcher.Hooks.OperationPosted -= onPosted;
+                }
+
+                // Assert
+                Assert.True(cancelPosted, "The second search never queued its apply callback.");
+
+                // The superseded search did not replace the grid or dispose the rows it holds
+                Assert.Same(oldRow, vm.ServicesView.Cast<ServiceRowViewModel>().Single());
+                Assert.False(TestReflection.GetField<bool>(oldRow, "_disposed"));
+
+                // And it did not swap the refresh token source, so no refresh was started
+                Assert.Same(ctsBefore, TestReflection.GetField<CancellationTokenSource>(vm, "_cts"));
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SearchCommand_NullDispatcher_ExitsWithoutSearching()
         {
             await Helper.RunOnSTA(async () =>
