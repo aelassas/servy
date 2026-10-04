@@ -242,10 +242,9 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains(AppConfig.ServyServiceUIExe, result.Missing);
             Assert.Contains(AppConfig.ServyServiceCLIExe, result.Missing);
             Assert.Contains(AppConfig.ServyRestarterExe, result.Missing);
-            Assert.Contains(AppConfig.ServyHostExe, result.Missing);
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.DbFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.SecurityFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
-            Assert.Equal(new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName }, result.Skipped);
+            Assert.Equal(new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName }, result.Skipped);
         }
 
         [Fact]
@@ -518,13 +517,13 @@ namespace Servy.Core.UnitTests.Security
             var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
 
             // Assert
-            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, "Servy.Host.exe" })
+            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe })
             {
                 Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
                 Assert.False(targets[exe].Optional);
             }
 
-            foreach (var settings in new[] { "appsettings.service.json", "appsettings.restarter.json", "appsettings.host.json" })
+            foreach (var settings in new[] { "appsettings.service.json", "appsettings.restarter.json" })
             {
                 Assert.Equal(FileSystemRights.Read, targets[settings].Rights);
                 Assert.True(targets[settings].Optional);
