@@ -443,6 +443,7 @@ namespace Servy.Host.IntegrationTests
         public async Task ClientOnAnotherComputer_ThroughSmb_CannotOpenThePipeEvenWhenGranted()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+            Assert.SkipUnless(IsServerServiceRunning(), "The Server (LanmanServer) service is not running, so no SMB client can be simulated.");
 
             // Arrange: the test account is granted, and connects through \\<machine>\pipe\..., i.e. over SMB as a remote
             // client. The identifier is told to report an administrator, so nothing but the pipe's own remote-client
@@ -466,9 +467,11 @@ namespace Servy.Host.IntegrationTests
                 }
             });
 
-            // Assert: never connected, never identified; the same account still connects locally
+            // Assert: never connected, never identified, and refused by the pipe itself - access denied - not by a missing
+            // SMB path or a timeout; the same account still connects locally
             Assert.NotNull(error);
             Assert.False(opened, "A client on another computer opened the pipe: " + error);
+            Assert.IsType<UnauthorizedAccessException>(error);
             Assert.Null(_identifier.LastWasRemote);
             _identifier.IsAdministrator = false;
             Assert.NotNull(await Task.Run(() => Client().GetByName(ServiceName, ct), ct));
@@ -493,6 +496,16 @@ namespace Servy.Host.IntegrationTests
             Assert.False(_identifier.LastWasRemote);
             Assert.NotNull(config);
             Assert.Equal("C:\\app.exe", config!.ExecutablePath);
+        }
+
+        /// <summary>
+        /// Tells whether the Server (<c>LanmanServer</c>) service is running; a client can only reach a pipe through
+        /// <c>\\&lt;machine&gt;\pipe\...</c> over SMB while it is.
+        /// </summary>
+        private static bool IsServerServiceRunning()
+        {
+            using (var server = new System.ServiceProcess.ServiceController("LanmanServer"))
+                return server.Status == System.ServiceProcess.ServiceControllerStatus.Running;
         }
 
         /// <summary>
