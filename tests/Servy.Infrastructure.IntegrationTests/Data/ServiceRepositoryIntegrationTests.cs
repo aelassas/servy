@@ -46,7 +46,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             public void InitializeSchema()
             {
                 // Execute the production migration sequence onto the active in-memory connection
-                SQLiteDbInitializer.Initialize(_masterConnection);
+                SQLiteDbInitializer.Initialize(_masterConnection, legacyRecoveryFolderPath: null);
             }
 
             public void Dispose()

@@ -45,7 +45,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var conn = CreateConnection())
             {
                 // Act
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -99,7 +99,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 conn.Execute($"CREATE VIEW {SqlConstants.ServicesTableName} AS SELECT 1 AS Id;");
 
                 // Act & Assert
-                Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn));
+                Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null));
 
                 // Assert
                 // Verify the transaction was successfully rolled back
@@ -119,7 +119,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Act & Assert
                 // Reconciliation must be refused outright: it would ADD COLUMN for anything the
                 // newer version renamed.
-                var ex = Assert.Throws<InvalidOperationException>(() => SQLiteDbInitializer.Initialize(conn));
+                var ex = Assert.Throws<InvalidOperationException>(() => SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null));
                 Assert.Contains($"schema version {SQLiteDbInitializer.LatestSchemaVersion + 1}", ex.Message);
                 Assert.Contains("newer version of Servy", ex.Message);
 
@@ -162,7 +162,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Act
                 // Trigger migration, executing MIN(Id) evaluation to clean up duplicates deterministically
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -209,7 +209,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Act
                 // Triggers ApplyVersion4 table-rebuild execution path
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -257,7 +257,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     END;");
 
                 // Act
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var dependents = conn.Query<(string Type, string Name)>($"SELECT type, name FROM sqlite_master WHERE tbl_name='{SqlConstants.ServicesTableName}' AND type IN ('index', 'trigger');").ToList();
@@ -289,7 +289,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 ");
 
                 // Act
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert: The skips should allow the initialization to complete cleanly without throwing SQL syntax errors
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -334,7 +334,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Id, Name, ExecutablePath, EnableRotation) VALUES (1, 'LegacyV1', 'C:\\LegacyV1.exe', 1);");
 
                 // Act
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert: V2 renamed the column in place, so the V1 user's setting survived the chain
                 var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
@@ -376,7 +376,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 InsertLegacyRow(conn, context, duplicateSeed);
 
                 // Act: Trigger initialization to catch version 5 -> 6 transition pipeline branch
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -445,7 +445,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                         Logger.Initialize(logFileName, LogLevel.Warn, logDirectory: logDirectory);
 
                         // Act: run the version 5 -> 6 transition, which performs the dedup pass
-                        SQLiteDbInitializer.Initialize(conn);
+                        SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                     }
                     finally
                     {
@@ -492,7 +492,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 InsertLegacyRow(conn, context, duplicateSeed);
 
                 // Act
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert: Verify UNICODE_NOCASE successfully group-collapsed and purged the duplicate non-ASCII character entries
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -529,7 +529,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange: Execute complete initialization runner to build schema and spin custom collations up
             using (var conn = CreateConnection())
             {
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Access internal definition engines seamlessly via centralized test reflection helper
                 var expectedCols = (IEnumerable<string>)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetExpectedColumns");
@@ -596,7 +596,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
 
                 // Act: Run full initialization loop to trigger the V6 -> V7 ApplyVersion7 schema migration pipeline
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -636,7 +636,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
 
                 // Act: Run full initialization loop to trigger the V7 -> V8 ApplyVersion8 schema migration pipeline
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -680,7 +680,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 InsertLegacyRow(conn, context, new Dictionary<string, string> { { "Name", "'AppWithTabPaddedAccount'" }, { "UserAccount", "'\tdomain\\tab_svc\t'" } });
 
                 // Act: Run initialization to trigger V8 -> V9 migration
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -713,14 +713,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange: Initialize schema to latest version and seed both clean and padded rows directly
             using (var conn = CreateConnection())
             {
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Insert clean row 'zombietest' and whitespace-padded row ' zombietest ' with required NOT NULL columns
                 conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES ('zombietest', 'C:\\path\\exe');");
                 conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath) VALUES (' zombietest ', 'C:\\path\\exe');");
 
                 // Act: Re-run Initialize on an existing database containing padded zombie collisions
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert: Verify detector scan leaves both records intact and unharmed in the database
                 var names = conn.Query<string>($"SELECT Name FROM {SqlConstants.ServicesTableName} WHERE Name LIKE '%zombietest%';").ToList();
@@ -747,7 +747,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 using (var conn = CreateConnection())
                 {
-                    SQLiteDbInitializer.Initialize(conn);
+                    SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                     // Seed the clean row and its whitespace-padded twin; the unique index tolerates both
                     // because ' zombielog ' and 'zombielog' differ outside of casing.
@@ -761,7 +761,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                         Logger.Initialize(logFileName, LogLevel.Warn, logDirectory: logDirectory);
 
                         // Act: re-run Initialize so the detector scans a database that already holds a collision
-                        SQLiteDbInitializer.Initialize(conn);
+                        SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                     }
                     finally
                     {
@@ -799,7 +799,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var conn = CreateConnection())
             {
                 // Step 1: Perform a full baseline initialization to get the perfect expected schema.
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 var expectedColumns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
 
                 // Step 2: Sabotage the schema
@@ -836,7 +836,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 conn.Execute($"UPDATE SchemaInfo SET Version = {SQLiteDbInitializer.LatestSchemaVersion} WHERE Id = 1;");
 
                 // Act - Run Initialize again
-                SQLiteDbInitializer.Initialize(conn);
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
                 var finalColumns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
