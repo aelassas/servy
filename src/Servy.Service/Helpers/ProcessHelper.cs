@@ -89,10 +89,11 @@ namespace Servy.Service.Helpers
         {
             string prefix = string.IsNullOrWhiteSpace(contextPrefix) ? string.Empty : $"[{contextPrefix}] ";
 
-            // 1. Expand environment variables list
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            // 1. Expand environment variables list, keeping '%%' escapes encoded until the audit has run
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariablesEncoded(vars);
 
-            // 2. Audit the user-configured variables (system entries were inherited, not configured)
+            // 2. Audit the user-configured variables (system entries were inherited, not configured).
+            // The escape token contains no '%', so a correctly escaped '%%' cannot match as a placeholder.
             foreach (var name in vars.Select(v => v.Name).Where(n => !string.IsNullOrWhiteSpace(n)))
             {
                 if (expandedEnv.TryGetValue(name, out var value))
@@ -101,11 +102,14 @@ namespace Servy.Service.Helpers
                 }
             }
 
-            // 3. Expand command-line arguments using the expanded environment
-            var expandedArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(rawArgs, expandedEnv);
+            EnvironmentVariableHelper.DecodePercentEscapes(expandedEnv);
 
-            // 4. Audit arguments for leftover placeholders
-            LogUnexpandedPlaceholders(expandedArgs, $"{prefix}Arguments", logger);
+            // 3. Expand command-line arguments using the expanded environment, escapes still encoded
+            var encodedArgs = EnvironmentVariableHelper.ExpandEnvironmentVariablesEncoded(rawArgs, expandedEnv);
+
+            // 4. Audit arguments for leftover placeholders, then decode the escapes
+            LogUnexpandedPlaceholders(encodedArgs, $"{prefix}Arguments", logger);
+            var expandedArgs = EnvironmentVariableHelper.DecodePercentEscapes(encodedArgs);
 
             return (expandedEnv, expandedArgs);
         }
