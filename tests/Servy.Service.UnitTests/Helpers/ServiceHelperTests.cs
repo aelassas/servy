@@ -566,8 +566,10 @@ namespace Servy.Service.UnitTests.Helpers
             }
         }
 
-        [Fact]
-        public void RestartService_PassesTheServiceNameAndItsOwnLogFolder()
+        [Theory]
+        [InlineData("My Service", "My Service")]
+        [InlineData("My:Service", "My%3AService")]
+        public void RestartService_PassesTheServiceNameAndItsOwnLogFolder(string serviceName, string expectedFolderName)
         {
             // Arrange: the restarter runs under the service account, which can only write logs\services\<ServiceName>\
             var mockLog = new Mock<IServyLogger>();
@@ -581,11 +583,13 @@ namespace Servy.Service.UnitTests.Helpers
                     .Returns((Process)null);
 
                 // Act
-                _helper.RestartService("My Service", mockLog.Object);
+                _helper.RestartService(serviceName, mockLog.Object);
 
-                // Assert
+                // Assert: the restarter logs in the same encoded folder the wrapper logs in
+                var expectedFolder = Path.Combine(AppConfig.ServiceLogsFolderPath, expectedFolderName);
                 Assert.NotNull(started);
-                Assert.Equal($"\"My Service\" \"{Path.Combine(AppConfig.ServiceLogsFolderPath, "My Service")}\"", started.Arguments);
+                Assert.Equal($"\"{serviceName}\" \"{expectedFolder}\"", started.Arguments);
+                Assert.Equal(expectedFolder, Servy.Service.Service.GetLogDirectory(new[] { "Servy.Service.exe", serviceName }));
                 Assert.False(started.UseShellExecute);
             }
         }
