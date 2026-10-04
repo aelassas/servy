@@ -150,6 +150,7 @@
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />
     <Compile Include="Models\LogEntryModelTests.cs" />
+    <Compile Include="Models\LogLineTests.cs" />
     <Compile Include="TrackedViewModels.cs" />
     <Compile Include="Utils\HistoryResultTests.cs" />
     <Compile Include="Utils\LogLineSplitterTests.cs" />
