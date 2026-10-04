@@ -1,6 +1,8 @@
 using Moq;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -8,6 +10,7 @@ namespace Servy.Core.UnitTests.Services
     /// Unit tests for <see cref="ServyServicesPause"/>: one stop of the running Servy services and the host before an
     /// update, one start after it, and never a stop of a service that only borrows the host's name.
     /// </summary>
+    [Collection(LoggerCollection.Name)]
     public class ServyServicesPauseTests
     {
         private readonly Mock<IServiceHelper> _serviceHelper = new Mock<IServiceHelper>();
@@ -33,6 +36,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void Constructor_NullArguments_Throw()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ServyServicesPause(null!, _host.Object));
             Assert.Throws<ArgumentNullException>(() => new ServyServicesPause(_serviceHelper.Object, null!));
         }
@@ -59,8 +63,13 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task Resume_WithoutPause_DoesNothing()
         {
-            await Create().ResumeAsync();
+            // Arrange
+            var pause = Create();
 
+            // Act
+            await pause.ResumeAsync();
+
+            // Assert
             Assert.Empty(_calls);
         }
 
@@ -98,6 +107,38 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task Pause_StopOfTheServicesIsCancelled_ResumeStillStartsThem()
+        {
+            // Arrange
+            _serviceHelper.Setup(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+            var pause = Create();
+
+            // Act
+            await Assert.ThrowsAsync<OperationCanceledException>(() => pause.PauseAsync(TestContext.Current.CancellationToken));
+            await pause.ResumeAsync();
+
+            // Assert: the services that were asked to stop are started again, and the host was never touched
+            _serviceHelper.Verify(s => s.StartServicesAsync(It.Is<IEnumerable<string>>(n => n.SequenceEqual(new[] { "A", "B" })), CancellationToken.None), Times.Once);
+            Assert.Equal(new[] { "start A+B" }, _calls);
+        }
+
+        [Fact]
+        public async Task Pause_HostStopFails_ResumeStartsTheServicesButNotTheHost()
+        {
+            // Arrange
+            _host.Setup(h => h.StopAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("stop refused"));
+            var pause = Create();
+
+            // Act
+            await Assert.ThrowsAsync<InvalidOperationException>(() => pause.PauseAsync(TestContext.Current.CancellationToken));
+            await pause.ResumeAsync();
+
+            // Assert: the host never stopped, so it is not started again
+            Assert.Equal(new[] { "stop A+B", "start A+B" }, _calls);
+        }
+
+        [Fact]
         public async Task Resume_HostOrServicesFailToStart_IsLoggedAndDoesNotThrow()
         {
             // Arrange
@@ -108,10 +149,11 @@ namespace Servy.Core.UnitTests.Services
             await pause.PauseAsync(TestContext.Current.CancellationToken);
 
             // Act
-            var ex = await Record.ExceptionAsync(() => pause.ResumeAsync());
+            var log = await LogCapture.RunAsync(() => pause.ResumeAsync());
 
-            // Assert: the services are still asked to start after the host failed
-            Assert.Null(ex);
+            // Assert: ResumeAsync did not throw, both failures are logged, and the services are still asked to start after the host failed
+            Assert.Contains("failed to start after the update", log);
+            Assert.Contains("2 Servy service(s) stopped for the update failed to start again", log);
             _serviceHelper.Verify(s => s.StartServicesAsync(It.Is<IEnumerable<string>>(n => n.SequenceEqual(new[] { "A", "B" })), CancellationToken.None), Times.Once);
         }
     }
