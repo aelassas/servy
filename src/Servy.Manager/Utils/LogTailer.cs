@@ -75,14 +75,6 @@ namespace Servy.Manager.Utils
             info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition;
 
         /// <summary>
-        /// Probes the end of a file stream to determine if it terminates with a trailing newline byte.
-        /// Restores the original stream position upon completion.
-        /// </summary>
-        /// <param name="fs">The open file stream to inspect.</param>
-        /// <returns><c>true</c> if the file is empty or ends with <c>\n</c>; otherwise, <c>false</c>.</returns>
-        private static bool EndsWithNewline(FileStream fs) => EndsWithNewlineAt(fs, fs.Length);
-
-        /// <summary>
         /// Probes whether the byte immediately before <paramref name="offset"/> is a trailing newline.
         /// Restores the original stream position upon completion.
         /// </summary>
@@ -117,17 +109,24 @@ namespace Servy.Manager.Utils
         /// <remarks>
         /// A <c>\n</c> byte never occurs inside a multi-byte UTF-8 sequence, so scanning raw bytes is safe.
         /// The stream position is left wherever the scan ended; callers seek before reading again.
+        /// <para>
+        /// The scan starts at <paramref name="end"/> rather than at the live length, because the history
+        /// load measures a file the service is still appending to: a byte the writer added after the
+        /// length was snapshotted belongs to the live tail, not to the fragment being located.
+        /// </para>
         /// </remarks>
         /// <param name="fs">The open file stream to inspect.</param>
+        /// <param name="end">The exclusive byte offset to scan back from.</param>
         /// <returns>
-        /// The offset just past the last <c>\n</c> byte, or <c>0</c> when the file contains none.
+        /// The offset just past the last <c>\n</c> byte before <paramref name="end"/>, or <c>0</c> when
+        /// there is none.
         /// </returns>
         /// <exception cref="EndOfStreamException">
         /// Thrown when the stream ends before the expected number of bytes has been read.
         /// </exception>
-        private static long OffsetAfterLastNewline(FileStream fs)
+        private static long OffsetAfterLastNewline(FileStream fs, long end)
         {
-            long pos = fs.Length;
+            long pos = end;
             byte[] buffer = new byte[AppConfig.LogTailerHistoryScanBufferSize];
 
             while (pos > 0)
@@ -499,16 +498,23 @@ namespace Servy.Manager.Utils
 
                 using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 {
-                    finalPos = fs.Length;
-                    if (fs.Length == 0) return lines;
+                    // The service is still appending to this file, so the length is read ONCE and every
+                    // step below describes the bytes [0, end) only. Reading it again per step let the
+                    // writer move the end between two steps, and the position handed to the live tailer
+                    // then no longer matched the lines returned: the torn fragment was published twice,
+                    // or a whole line fell between the history and the tail.
+                    long end = fs.Length;
+
+                    finalPos = end;
+                    if (end == 0) return lines;
 
                     // Pre-increment the line count if the file does not end with a trailing newline.
                     // This ensures the backward scanner accurately bounds the "last N lines" even when
                     // catching a live log file mid-flush.
-                    bool tornTail = !EndsWithNewline(fs);
+                    bool tornTail = !EndsWithNewlineAt(fs, end);
                     int count = tornTail ? 1 : 0;
 
-                    long pos = fs.Length;
+                    long pos = end;
                     byte[] buffer = new byte[AppConfig.LogTailerHistoryScanBufferSize];
 
                     // Backwards scan for newline characters to locate the start of the last 'maxLines'
@@ -547,9 +553,29 @@ namespace Servy.Manager.Utils
 
                     // Read forward from the discovered position. Resolve the torn tail's first byte
                     // before the StreamReader takes the stream over, so nothing seeks underneath it.
-                    long tornTailStart = tornTail ? OffsetAfterLastNewline(fs) : 0;
+                    long tornTailStart = tornTail ? OffsetAfterLastNewline(fs, end) : 0;
+
+                    // Read exactly [pos, end). Feeding the FileStream itself to the StreamReader let it
+                    // read on to the live end of file, so lines appended during the load entered the
+                    // history while finalPos still pointed before them and the live tailer published them
+                    // a second time. The slice holds the same bytes the reader already decoded: at most
+                    // maxLines lines plus the torn tail.
+                    byte[] slice = new byte[end - pos];
                     fs.Seek(pos, SeekOrigin.Begin);
-                    using (StreamReader sr = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+
+                    // Deterministic read loop for .NET Framework 4.8, as the backward scan above uses.
+                    int sliceBytesRead = 0;
+                    while (sliceBytesRead < slice.Length)
+                    {
+                        int bytesRead = fs.Read(slice, sliceBytesRead, slice.Length - sliceBytesRead);
+                        if (bytesRead == 0)
+                        {
+                            throw new EndOfStreamException("Expected to read more bytes from log history stream, but reached EOF.");
+                        }
+                        sliceBytesRead += bytesRead;
+                    }
+
+                    using (StreamReader sr = new StreamReader(new MemoryStream(slice), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                     {
                         string line;
                         var tempLines = new List<string>();
