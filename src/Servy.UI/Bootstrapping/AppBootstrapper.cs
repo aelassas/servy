@@ -373,6 +373,11 @@ namespace Servy.UI.Bootstrapping
 
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                     var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
+
+                    // Non-critical warnings raised while the services are paused are collected and shown after the resume: a
+                    // modal dialog awaited inside the try keeps every service the pause stopped down until someone clicks OK.
+                    var deferredWarnings = new List<(string Message, string Title)>();
+
                     var pause = new ServyServicesPause(sh, hostInstaller);
                     try
                     {
@@ -493,17 +498,25 @@ namespace Servy.UI.Bootstrapping
                         }
                         else
                         {
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window)app.MainWindow,
+                            deferredWarnings.Add((
                                 string.Format(Resources.Strings.Msg_ServyHostUnavailable, hostResult.ErrorMessage),
-                                Resources.Strings.Msg_ServyHostUnavailableTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                Resources.Strings.Msg_ServyHostUnavailableTitle));
                         }
                     }
                     finally
                     {
                         await pause.ResumeAsync();
+                    }
+
+                    // The paused services are running again, so a dialog may now wait for the user.
+                    foreach (var (message, title) in deferredWarnings)
+                    {
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
+                            splash ?? (Window)app.MainWindow,
+                            message,
+                            title,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning));
                     }
 
                     stopwatch.Stop();
