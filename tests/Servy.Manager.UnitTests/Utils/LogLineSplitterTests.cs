@@ -46,13 +46,11 @@ namespace Servy.Manager.UnitTests.Utils
             // Act
             var firstRead = ReadAll(splitter, Encoding.UTF8.GetBytes("complete\npartial-"));
             int pendingAfterFirstRead = splitter.PendingByteCount;
-            string peekedAfterFirstRead = splitter.PeekPending();
             var secondRead = ReadAll(splitter, Encoding.UTF8.GetBytes("remainder\n"));
 
             // Assert
             Assert.Equal(new[] { "complete" }, firstRead);
             Assert.Equal("partial-".Length, pendingAfterFirstRead);
-            Assert.Equal("partial-", peekedAfterFirstRead);
             Assert.Equal(new[] { "partial-remainder" }, secondRead);
             Assert.Equal(0, splitter.PendingByteCount);
         }
@@ -156,26 +154,6 @@ namespace Servy.Manager.UnitTests.Utils
             // Assert
             Assert.Equal(new[] { text }, lines);
             Assert.Equal(0, splitter.PendingByteCount);
-        }
-
-        /// <summary>
-        /// The tailing loop resets the splitter when the file rotated or was truncated, because the
-        /// bytes read before the swap no longer belong to the line being assembled.
-        /// </summary>
-        [Fact]
-        public void Reset_PendingFragment_IsDiscarded()
-        {
-            // Arrange
-            var splitter = new LogLineSplitter(Encoding.UTF8);
-            ReadAll(splitter, Encoding.UTF8.GetBytes("stale-"));
-
-            // Act
-            splitter.Reset();
-            var lines = ReadAll(splitter, Encoding.UTF8.GetBytes("fresh\n"));
-
-            // Assert
-            Assert.Equal(0, splitter.PendingByteCount);
-            Assert.Equal(new[] { "fresh" }, lines);
         }
     }
 }

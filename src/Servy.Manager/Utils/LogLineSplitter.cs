@@ -123,27 +123,6 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
-        /// Decodes the unterminated trailing fragment without consuming it.
-        /// </summary>
-        /// <returns>The pending fragment as text; <see cref="string.Empty"/> when nothing is pending.</returns>
-        internal string PeekPending()
-        {
-            return _pending.Count == 0 ? string.Empty : _encoding.GetString(_pending.ToArray(), 0, _pending.Count);
-        }
-
-        /// <summary>
-        /// Discards the unterminated trailing fragment.
-        /// </summary>
-        /// <remarks>
-        /// Called when the file rotated or was truncated, so the bytes read before the swap no
-        /// longer belong to the line being assembled.
-        /// </remarks>
-        internal void Reset()
-        {
-            _pending.Clear();
-        }
-
-        /// <summary>
         /// Decodes the pending bytes as a finished line, dropping the terminator and one optional
         /// preceding carriage return.
         /// </summary>
