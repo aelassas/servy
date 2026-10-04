@@ -590,6 +590,71 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public async Task RefreshPipeAccess_RepositoryFails_AnswersAFailure()
+        {
+            // Arrange
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ThrowsAsync(new IOException("database is locked"));
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostRefreshPipeAccessAction, null), Administrator, CancellationToken.None);
+
+            // Assert: the DACL was not rebuilt, so the caller must not be told the new account has access (#7392)
+            Assert.False(response.Success);
+            Assert.Contains("not refreshed", response.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_RepositoryFailsAtStartup_IsRetriedUntilTheServicesAreRead()
+        {
+            // Arrange: the database is busy at boot for the first read only (#7392)
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            _sut.ResolveAccount = _ => localService;
+            _sut.UnresolvedAccountRetryDelayMs = 10;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.SetupSequence(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new IOException("database is locked"))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" } });
+
+            // Act
+            _sut.StartListening();
+            var granted = false;
+            for (var i = 0; i < 500 && !granted; i++)
+            {
+                granted = _sut.CurrentPipeSecurity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
+                if (!granted) await Task.Delay(10, CancellationToken.None);
+            }
+            _sut.StopListening();
+
+            // Assert: granted once the retry read the services, with no new install or restart
+            Assert.True(granted);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_RepositoryNeverReadable_StopsRetryingAfterTheConfiguredCount()
+        {
+            // Arrange
+            var reads = 0;
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .Callback(() => Interlocked.Increment(ref reads))
+                .ThrowsAsync(new IOException("database is locked"));
+
+            // Act
+            _sut.StartListening();
+            var last = -1;
+            for (var i = 0; i < 100 && last != Volatile.Read(ref reads); i++)
+            {
+                last = Volatile.Read(ref reads);
+                await Task.Delay(100, CancellationToken.None);
+            }
+            _sut.StopListening();
+
+            // Assert: the first read plus the configured retries, then nothing until the next refresh
+            Assert.Equal(1 + AppConfig.ServyHostUnresolvedAccountRetryCount, Volatile.Read(ref reads));
+        }
+
+        [Fact]
         public async Task RefreshPipeSecurityAsync_OvertakenByALaterRead_DoesNotReplaceTheNewerDacl()
         {
             // Arrange: rebuild A reads one service and then blocks resolving its account, the way a domain lookup does

@@ -464,17 +464,24 @@ namespace Servy.Host
         /// recycles the instance that is waiting for a client, so the next connection is checked against the new DACL.
         /// </summary>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
-        /// <returns>A task that completes when the DACL has been rebuilt.</returns>
-        internal Task RefreshPipeSecurityAsync(CancellationToken ct) => RefreshPipeSecurityAsync(isRetry: false, ct);
+        /// <returns>
+        /// A task whose result is <see langword="true"/> when the DACL was rebuilt (or a rebuild that read the services
+        /// later already published a newer one), and <see langword="false"/> when the services could not be read: the
+        /// previous DACL is then kept and another rebuild is scheduled.
+        /// </returns>
+        internal Task<bool> RefreshPipeSecurityAsync(CancellationToken ct) => RefreshPipeSecurityAsync(isRetry: false, ct);
 
         /// <summary>
-        /// Rebuilds the pipe's DACL and, when an account could not be resolved or a running service process still holds an
-        /// account its service no longer names, schedules another rebuild.
+        /// Rebuilds the pipe's DACL and, when the services could not be read, an account could not be resolved or a running
+        /// service process still holds an account its service no longer names, schedules another rebuild.
         /// </summary>
         /// <param name="isRetry">Whether this is a scheduled retry; any other refresh starts a new series of retries.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
-        /// <returns>A task that completes when the DACL has been rebuilt.</returns>
-        private async Task RefreshPipeSecurityAsync(bool isRetry, CancellationToken ct)
+        /// <returns>
+        /// A task whose result is <see langword="true"/> when the DACL was rebuilt, and <see langword="false"/> when the
+        /// services could not be read and the previous DACL was kept.
+        /// </returns>
+        private async Task<bool> RefreshPipeSecurityAsync(bool isRetry, CancellationToken ct)
         {
             // Taken before the read, so the number orders the rebuilds by WHEN THEY READ the services rather than by
             // when they finish resolving the accounts, which can take seconds for a domain account (#7365)
@@ -504,7 +511,11 @@ namespace Servy.Host
                     if (_pipeSecurity == null)
                         _pipeSecurity = ServyHostPipeSecurity.Create((IEnumerable<System.Security.Principal.SecurityIdentifier>)null);
                 }
-                return;
+
+                // A transient failure (the database busy at boot) would otherwise leave the pipe closed to every service
+                // account until the next install or restart (#7392)
+                ScheduleUnresolvedAccountRetry(0, 0, isRetry, readFailed: true);
+                return false;
             }
 
             var unresolved = 0;
@@ -536,7 +547,7 @@ namespace Servy.Host
                 // one would drop the accounts only that later read saw. Its ScheduleUnresolvedAccountRetry decision is
                 // the newer one too, so this rebuild makes none (#7365)
                 if (generation < _refreshPublished)
-                    return;
+                    return true;
 
                 _refreshPublished = generation;
                 _pipeSecurity = security;
@@ -551,6 +562,7 @@ namespace Servy.Host
             }
 
             ScheduleUnresolvedAccountRetry(unresolved, lingering, isRetry);
+            return true;
         }
 
         /// <summary>
@@ -595,24 +607,31 @@ namespace Servy.Host
         /// Rebuilds the DACL again later when an account could not be resolved, for example a domain or gMSA account while
         /// no domain controller is reachable at boot, so its service is not locked out until the next install or restart;
         /// or when a running process still holds an account its service no longer names, so that account is revoked once
-        /// the process has exited.
+        /// the process has exited; or when the services could not be read at all, so a transient failure does not leave the
+        /// pipe closed to every service account.
         /// </summary>
         /// <param name="unresolved">The number of accounts the last rebuild could not resolve.</param>
         /// <param name="lingering">The number of accounts granted only because a running service process still uses them.</param>
         /// <param name="isRetry">Whether the last rebuild was itself a retry.</param>
-        private void ScheduleUnresolvedAccountRetry(int unresolved, int lingering, bool isRetry)
+        /// <param name="readFailed">
+        /// Whether the last rebuild could not read the services; retried the same bounded number of times as an unresolved
+        /// account, and counted toward the same limit.
+        /// </param>
+        private void ScheduleUnresolvedAccountRetry(int unresolved, int lingering, bool isRetry, bool readFailed = false)
         {
             int attempt;
             CancellationToken token;
             lock (_securityLock)
             {
-                if (!isRetry || unresolved == 0)
+                var failed = readFailed || unresolved > 0;
+                if (!isRetry || !failed)
                     _unresolvedRetryAttempts = 0;
 
                 // Only while the listener runs: its token is what stops a waiting retry when the host stops. Unresolved
-                // accounts are retried a bounded number of times; a lingering account is rechecked until its process exits.
+                // accounts and failed reads are retried a bounded number of times; a lingering account is rechecked until
+                // its process exits.
                 var listener = _cancellationSource;
-                var retryUnresolved = unresolved > 0 && _unresolvedRetryAttempts < AppConfig.ServyHostUnresolvedAccountRetryCount;
+                var retryUnresolved = failed && _unresolvedRetryAttempts < AppConfig.ServyHostUnresolvedAccountRetryCount;
                 if ((!retryUnresolved && lingering == 0) || listener == null || _unresolvedRetryPending)
                     return;
 
@@ -621,6 +640,9 @@ namespace Servy.Host
                 attempt = retryUnresolved ? ++_unresolvedRetryAttempts : _unresolvedRetryAttempts;
             }
 
+            if (readFailed)
+                _logger?.Warn("The service accounts could not be read, so the Servy host named pipe DACL was not rebuilt. " +
+                    $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
             if (unresolved > 0)
                 _logger?.Warn($"{unresolved} service account(s) could not be resolved and are not granted access to the Servy host named pipe yet. " +
                     $"Retrying in {UnresolvedAccountRetryDelayMs} ms (attempt {attempt} of {AppConfig.ServyHostUnresolvedAccountRetryCount}).");
@@ -780,7 +802,10 @@ namespace Servy.Host
                     if (!caller.IsAdministrator)
                         return Deny(request, caller, "only an administrator can refresh the pipe access");
 
-                    await RefreshPipeSecurityAsync(ct);
+                    // A failed read kept the previous DACL: the caller must not be told the new account has access (#7392)
+                    if (!await RefreshPipeSecurityAsync(ct))
+                        return Fail("The service accounts could not be read; the Servy host named pipe access was not refreshed.");
+
                     return new IpcResponseDto { Success = true };
                 }
 
