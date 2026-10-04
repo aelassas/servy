@@ -7,7 +7,7 @@
 
 Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
 
-Starting with v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, machine-bound DPAPI and AES-256 authenticated encryption, and automated ACL and DACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning.
+Starting with v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for monitoring and managing all installed services in real time.
 
