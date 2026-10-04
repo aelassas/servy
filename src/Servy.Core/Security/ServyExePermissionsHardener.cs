@@ -70,6 +70,9 @@ namespace Servy.Core.Security
     /// </remarks>
     public class ServyExePermissionsHardener : IServyExePermissionsHardener
     {
+        /// <summary>The file name of the host's settings file in the vault.</summary>
+        internal static readonly string HostSettingsFileName = AppConfig.ServyHostSettingsFileName;
+
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
         private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
@@ -503,6 +506,10 @@ namespace Servy.Core.Security
                 HardenFile(target, targetSid, result);
             }
 
+            // Revoke permissions from Servy.Host.exe and appsettings.host.json for custom accounts
+            RevokeEntries(AppConfig.ServyHostExe, targetSid, result);
+            RevokeEntries(HostSettingsFileName, targetSid, result);
+
             var status = result.Failed.Count > 0
                 ? ExePermissionsHardeningStatus.Failed
                 : result.Missing.Count > 0 ? ExePermissionsHardeningStatus.Incomplete : ExePermissionsHardeningStatus.Hardened;
@@ -518,7 +525,7 @@ namespace Servy.Core.Security
         /// optional). The database and the encryption key are not listed: the service account has no access to them.</returns>
         internal IReadOnlyList<ExePermissionsTarget> GetTargetFiles()
         {
-            var executables = new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe };
+            var executables = new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe };
 
             var targets = executables
                 .Select(exe => new ExePermissionsTarget(exe, FileSystemRights.ReadAndExecute))

@@ -1727,6 +1727,11 @@ namespace Servy.Core.Config
         public static readonly string ServyHostExe = $"{ServyHostFileName}.exe";
 
         /// <summary>
+        /// The file name of the Servy host service's settings file.
+        /// </summary>
+        public static readonly string ServyHostSettingsFileName = $"{ServyHostExe}.config";
+
+        /// <summary>
         /// The name of the local Named Pipe used for inter-process communication between wrapped services and the Servy host.
         /// </summary>
         public const string ServyHostNamedPipeName = "SERVY_HOST_IPC_PIPE";
