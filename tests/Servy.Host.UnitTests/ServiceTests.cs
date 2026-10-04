@@ -201,6 +201,19 @@ namespace Servy.Host.UnitTests
             return data;
         }
 
+        /// <summary>
+        /// The one repository call each declared action's case must make, keyed by action. An action declared later has
+        /// no entry until its author says what its case does.
+        /// </summary>
+        private static readonly Dictionary<string, Action<Mock<IServiceRepository>>> ExpectedRepositoryCall = new Dictionary<string, Action<Mock<IServiceRepository>>>
+        {
+            [AppConfig.ServyHostGetByNameAction] = r => r.Verify(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()), Times.Once),
+            [AppConfig.ServyHostUpdateRuntimeStateAction] = r => r.Verify(x => x.UpdateRuntimeStateAsync(ServiceName, It.IsAny<ServiceRuntimeStateDto>(), It.IsAny<CancellationToken>()), Times.Once),
+            [AppConfig.ServyHostGetRestartAttemptsAction] = r => r.Verify(x => x.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>()), Times.Once),
+            [AppConfig.ServyHostUpdateRestartAttemptsAction] = r => r.Verify(x => x.UpdateRestartAttemptsAsync(ServiceName, 1, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once),
+            [AppConfig.ServyHostRefreshPipeAccessAction] = r => r.Verify(x => x.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once),
+        };
+
         [Theory]
         [MemberData(nameof(EveryServyHostAction))]
         public async Task ProcessRequestAsync_EveryDeclaredAction_IsHandledByItsOwnCase(string action)
@@ -217,8 +230,13 @@ namespace Servy.Host.UnitTests
             // Act
             var response = await _sut.ProcessRequestAsync(request, Administrator, CancellationToken.None);
 
-            // Assert: an action declared without a guard entry and a case of its own would end in "Unknown IPC action"
+            // Assert: it succeeded, through its own handler's repository call and no other handler's. An action declared
+            // without a guard entry and a case of its own would end in "Unknown IPC action", one stacked onto another
+            // action's case would make that action's call, and a case that does nothing would make none
             Assert.True(response.Success, $"'{action}': {response.ErrorMessage}");
+            Assert.True(ExpectedRepositoryCall.ContainsKey(action), $"'{action}' is declared but the test does not say which repository call its case makes.");
+            ExpectedRepositoryCall[action](_repository);
+            _repository.VerifyNoOtherCalls();
         }
 
         [Theory]
