@@ -75,6 +75,12 @@ namespace Servy.Host
         /// <summary>The retries spent since the last refresh that was not itself a retry; guarded by <see cref="_securityLock"/>.</summary>
         private int _unresolvedRetryAttempts;
 
+        /// <summary>The number of the last DACL rebuild that started reading the services; guarded by <see cref="_securityLock"/>.</summary>
+        private long _refreshStarted;
+
+        /// <summary>The number of the DACL rebuild whose result is published in <see cref="_pipeSecurity"/>; guarded by <see cref="_securityLock"/>.</summary>
+        private long _refreshPublished;
+
         #endregion
 
         #region Test Seams
@@ -472,6 +478,14 @@ namespace Servy.Host
         /// <returns>A task that completes when the DACL has been rebuilt.</returns>
         private async Task RefreshPipeSecurityAsync(bool isRetry, CancellationToken ct)
         {
+            // Taken before the read, so the number orders the rebuilds by WHEN THEY READ the services rather than by
+            // when they finish resolving the accounts, which can take seconds for a domain account (#7365)
+            long generation;
+            lock (_securityLock)
+            {
+                generation = ++_refreshStarted;
+            }
+
             IEnumerable<string> accounts;
             IEnumerable<ServiceDto> services;
             try
@@ -520,6 +534,13 @@ namespace Servy.Host
             CancellationTokenSource[] waiting;
             lock (_securityLock)
             {
+                // A rebuild that read the services later has already published, so its DACL is the newer one and this
+                // one would drop the accounts only that later read saw. Its ScheduleUnresolvedAccountRetry decision is
+                // the newer one too, so this rebuild makes none (#7365)
+                if (generation < _refreshPublished)
+                    return;
+
+                _refreshPublished = generation;
                 _pipeSecurity = security;
                 waiting = _waitingInstanceCts.ToArray();
             }

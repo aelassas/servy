@@ -590,6 +590,47 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public async Task RefreshPipeSecurityAsync_OvertakenByALaterRead_DoesNotReplaceTheNewerDacl()
+        {
+            // Arrange: rebuild A reads one service and then blocks resolving its account, the way a domain lookup does
+            // while no controller answers; rebuild B reads both services and publishes first (#7365)
+            var accountX = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var accountY = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            var serviceX = new ServiceDto { Name = "x", RunAsLocalSystem = false, UserAccount = "svc-x" };
+            var serviceY = new ServiceDto { Name = "y", RunAsLocalSystem = false, UserAccount = "svc-y" };
+            _repository.SetupSequence(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { serviceX })
+                .ReturnsAsync(new[] { serviceX, serviceY });
+            var resolving = new ManualResetEventSlim(false);
+            var release = new ManualResetEventSlim(false);
+            var lookups = 0;
+            _sut.ResolveAccount = account =>
+            {
+                if (Interlocked.Increment(ref lookups) == 1)
+                {
+                    resolving.Set();
+                    release.Wait();
+                }
+
+                return account == "svc-y" ? accountY : accountX;
+            };
+            bool Granted(SecurityIdentifier sid) => _sut.CurrentPipeSecurity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => sid.Equals(r.IdentityReference));
+
+            // Act
+            var a = Task.Run(() => _sut.RefreshPipeSecurityAsync(CancellationToken.None));
+            resolving.Wait();
+            await _sut.RefreshPipeSecurityAsync(CancellationToken.None);
+            var publishedByB = Granted(accountY);
+            release.Set();
+            await a;
+
+            // Assert: A finished last, but B read the services later, so B's DACL stays published
+            Assert.True(publishedByB);
+            Assert.True(Granted(accountY));
+            Assert.True(Granted(accountX));
+        }
+
+        [Fact]
         public async Task RefreshPipeSecurityAsync_Cancelled_Propagates()
         {
             _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
