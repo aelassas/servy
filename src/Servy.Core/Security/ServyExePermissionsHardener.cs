@@ -506,7 +506,7 @@ namespace Servy.Core.Security
                 HardenFile(target, targetSid, result);
             }
 
-            // Revoke permissions from Servy.Host.exe and appsettings.host.json for custom accounts
+            // Revoke permissions from Servy.Host.Net48.exe and Servy.Host.Net48.exe.config for custom accounts
             RevokeEntries(AppConfig.ServyHostExe, targetSid, result);
             RevokeEntries(HostSettingsFileName, targetSid, result);
 
