@@ -1628,6 +1628,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var dto = new ServiceDto { Name = "LegacyRow", Description = "KeepMe", Password = "XYZ" };
             var ex = new SecureDataLegacyBlockedException("v1 payload refused by policy");
+            Assert.False(dto.DecryptionFailed);
 
             // Act & Assert
             // 1. Branch path verification: Guard tracking on null DTO elements
@@ -1640,6 +1641,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Contains("[LEGACY ENCRYPTION BLOCKED]", dto.Description);
             Assert.Contains("KeepMe", dto.Description);
             Assert.Equal("XYZ", dto.Password);
+            Assert.True(dto.DecryptionFailed);
         }
 
         [Fact]
@@ -1655,10 +1657,13 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Act
             TestReflection.InvokeNonPublic(repo, "SafeDecrypt", dto);
 
-            // Assert: flagged as policy-refused, not scrubbed as corrupt
+            // Assert: flagged as policy-refused, not scrubbed as corrupt, and refused for saving by the
+            // flag every save-side check reads (#7348), not by the description text
             Assert.Contains("[LEGACY ENCRYPTION BLOCKED]", dto.Description);
             Assert.DoesNotContain("[DECRYPTION FAILED", dto.Description);
             Assert.Equal("XYZ", dto.Password);
+            Assert.True(dto.DecryptionFailed);
+            Assert.True(DecryptionFailureMarker.HasDecryptionFailure(dto));
         }
 
         #endregion
