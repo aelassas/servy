@@ -863,6 +863,36 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public void WaitIgnoringCancellation_OnlyCancelledTasks_DoesNotThrow()
+        {
+            // Arrange
+            var tasks = new[] { Task.FromCanceled(new CancellationToken(canceled: true)), Task.CompletedTask };
+
+            // Act
+            var ex = Record.Exception(() => Service.WaitIgnoringCancellation(tasks));
+
+            // Assert
+            Assert.Null(ex);
+        }
+
+        [Fact]
+        public void WaitIgnoringCancellation_AFaultedTaskBesideACancelledOne_Propagates()
+        {
+            // Arrange
+            var tasks = new[]
+            {
+                Task.FromCanceled(new CancellationToken(canceled: true)),
+                Task.FromException(new InvalidOperationException("listener failed")),
+            };
+
+            // Act
+            var ex = Assert.Throws<AggregateException>(() => Service.WaitIgnoringCancellation(tasks));
+
+            // Assert
+            Assert.Contains(ex.Flatten().InnerExceptions, e => e is InvalidOperationException);
+        }
+
+        [Fact]
         public void OnStop_LoggerDisposeHangs_ReturnsAfterTheFlushBudget()
         {
             // Arrange

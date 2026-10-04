@@ -433,7 +433,12 @@ namespace Servy.Host
         /// task ever end Canceled.
         /// </summary>
         /// <param name="tasks">The tasks to wait for.</param>
-        private static void WaitIgnoringCancellation(Task[] tasks)
+        /// <exception cref="AggregateException">Thrown when a task faulted, whether or not other tasks were canceled.</exception>
+        /// <remarks>
+        /// Internal only so that <c>Servy.Host.UnitTests</c> (through <c>InternalsVisibleTo</c>) can call it with tasks
+        /// that ended Canceled or Faulted. <see cref="StopListening"/> calls it exactly as before; the body is unchanged.
+        /// </remarks>
+        internal static void WaitIgnoringCancellation(Task[] tasks)
         {
             try
             {
