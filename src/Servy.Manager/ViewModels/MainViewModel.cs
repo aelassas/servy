@@ -818,7 +818,7 @@ namespace Servy.Manager.ViewModels
 
                 if (snapshot.Count == 0)
                 {
-                    return; // nothing to refresh: skip the SCM enumeration and the decrypting DB read
+                    return; // nothing to refresh: skip the SCM enumeration and the DB read
                 }
 
                 // 2. Fetch OS Info in bulk (Off UI thread)
