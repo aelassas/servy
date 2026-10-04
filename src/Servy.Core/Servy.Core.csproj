@@ -199,6 +199,7 @@
     <Compile Include="Security\SecureData.cs" />
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
+    <Compile Include="Helpers\SystemEnvironmentHelper.cs" />
     <Compile Include="Services\ServiceDtoSerializer.cs" />
     <Compile Include="Services\ServyHostInstaller.cs" />
     <Compile Include="Services\ServyHostServiceState.cs" />

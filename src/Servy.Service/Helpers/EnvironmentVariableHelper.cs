@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
 using System.Collections;
@@ -191,6 +192,15 @@ namespace Servy.Service.Helpers
                 systemEnv[key] = val;
             }
 
+            // A service inherits the Service Control Manager's environment, which never sees a System variable added
+            // after boot. Add those from the registry, never overriding an inherited one, so the child process and the
+            // expansion below see what a freshly started service would see (#7393).
+            foreach (var missing in SystemEnvironmentHelper.GetSystemVariablesMissingFromProcess())
+            {
+                result[missing.Key] = missing.Value;
+                systemEnv[missing.Key] = missing.Value;
+            }
+
             // 2. Merge Custom Variables with SECURITY CHECK & ESCAPE PROTECTION
             if (environmentVariables != null)
             {
@@ -278,7 +288,7 @@ namespace Servy.Service.Helpers
                 // Safely expand remaining real system placeholders (e.g. %ProgramData%) without touching
                 // protected tokens. We use protectInjectedValues: true to shelter any nested percentage content.
                 string systemExpanded = ExpandWithDictionary(result[key], systemEnv, null, null, protectInjectedValues: true);
-                result[key] = Environment.ExpandEnvironmentVariables(systemExpanded);
+                result[key] = SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(systemExpanded);
             }
 
             return result;
@@ -346,7 +356,9 @@ namespace Servy.Service.Helpers
             // only one pass is needed here. We pass 'protectInjectedValues: true' so that any literal
             // '%' characters injected from the dictionary aren't accidentally re-expanded by the OS.
             string result = ExpandWithDictionary(encodedInput, expandedEnv, null, null, protectInjectedValues: true);
-            return Environment.ExpandEnvironmentVariables(result);
+            // The service inherits the Service Control Manager's environment, which never sees a System variable added
+            // after boot; the registry fallback resolves it without a restart (#7393)
+            return SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(result);
         }
 
         /// <summary>

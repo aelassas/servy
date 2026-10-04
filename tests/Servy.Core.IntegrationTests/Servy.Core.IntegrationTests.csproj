@@ -125,6 +125,7 @@
     <Compile Include="Helpers\HandleExeIntegrationTestBase.cs" />
     <Compile Include="Helpers\HandleHelperIntegrationTests.cs" />
     <Compile Include="Helpers\ProcessHelperIntegrationTests.cs" />
+    <Compile Include="Helpers\SystemEnvironmentHelperIntegrationTests.cs" />
     <Compile Include="Helpers\ProcessIntegrationTestsCollection.cs" />
     <Compile Include="Helpers\ProcessKillerIntegrationTests.cs" />
     <Compile Include="Helpers\ResourceHelperIntegrationTests.cs" />

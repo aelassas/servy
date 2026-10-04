@@ -867,5 +867,52 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         #endregion
+
+        #region System variables added after the service started (#7393)
+
+        /// <summary>
+        /// Removes a System variable from this process, as if it had been added to Windows after the service started,
+        /// and records its value so <see cref="Dispose"/> restores it.
+        /// </summary>
+        /// <param name="name">The System variable to remove.</param>
+        private void RemoveOsVariable(string name)
+        {
+            if (!_originalOsVars.ContainsKey(name))
+            {
+                _originalOsVars[name] = Environment.GetEnvironmentVariable(name);
+            }
+
+            Environment.SetEnvironmentVariable(name, null);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_StringOverload_SystemVariableMissingFromTheProcess_IsResolvedFromTheRegistry()
+        {
+            // Arrange: "OS" is a System variable on every Windows installation
+            RemoveOsVariable("OS");
+
+            // Act
+            var result = EnvironmentVariableHelper.ExpandEnvironmentVariables("--platform %OS%", new Dictionary<string, string>());
+
+            // Assert
+            Assert.Equal("--platform Windows_NT", result);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ListOverload_CustomVariableReferringToAMissingSystemVariable_IsResolvedFromTheRegistry()
+        {
+            // Arrange
+            RemoveOsVariable("OS");
+            var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TARGET_OS", Value = "%OS%-x64" } };
+
+            // Act
+            var result = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert: the custom variable resolves, and the child process gets the System variable itself
+            Assert.Equal("Windows_NT-x64", result["TARGET_OS"]);
+            Assert.Equal("Windows_NT", result["OS"]);
+        }
+
+        #endregion
     }
 }
