@@ -142,6 +142,7 @@
     <Compile Include="Helpers\ConfigParserTests.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
+    <Compile Include="Helpers\RegexWrapperTests.cs" />
     <Compile Include="Helpers\ReservedNamesTests.cs" />
     <Compile Include="Logging\ServiceLogPathsTests.cs" />
     <Compile Include="NamedPipes\NamedPipesServiceTests.cs" />
