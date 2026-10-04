@@ -777,6 +777,96 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public void RefreshPipeSecurityAsync_RetryRebuildThrows_LogsTheError()
+        {
+            // Arrange: the first lookup cannot resolve the account, so a retry is scheduled; the retry's lookup fails
+            var lookups = 0;
+            _sut.ResolveAccount = _ =>
+            {
+                if (Interlocked.Increment(ref lookups) == 1) return null;
+                throw new InvalidOperationException("LSA unavailable");
+            };
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @"CONTOSO\svc-gmsa$" } });
+            using (var logged = new ManualResetEventSlim())
+            {
+                _logger.Setup(l => l.Error(It.Is<string>(s => s.Contains("could not be resolved")), It.IsAny<InvalidOperationException>()))
+                    .Callback(() => logged.Set());
+
+                // Act
+                _sut.StartListening();
+                var observed = logged.Wait(TimeSpan.FromSeconds(10));
+                _sut.StopListening();
+
+                // Assert: a failed retry is logged rather than left unobserved in the background task
+                Assert.True(observed);
+                Assert.Equal(2, Volatile.Read(ref lookups));
+            }
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_RetryRebuildCancelled_LogsNoRebuildFailure()
+        {
+            // Arrange: the account is unresolved, and the retry's repository read is cancelled, as when the host stops
+            var reads = 0;
+            _sut.ResolveAccount = _ => null;
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .Returns<bool, CancellationToken>((decrypt, ct) =>
+                {
+                    if (Interlocked.Increment(ref reads) == 1)
+                        return Task.FromResult<IEnumerable<ServiceDto>>(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @"CONTOSO\svc-gmsa$" } });
+                    throw new OperationCanceledException();
+                });
+
+            // Act
+            _sut.StartListening();
+            for (var i = 0; i < 500 && Volatile.Read(ref reads) < 2; i++)
+                await Task.Delay(10, CancellationToken.None);
+            await Task.Delay(100, CancellationToken.None);
+            _sut.StopListening();
+
+            // Assert: the retry ran, and its cancellation is not reported as a failed rebuild (the listener's own
+            // "Error accepting Named Pipe connection." lines are not this test's subject)
+            Assert.Equal(2, Volatile.Read(ref reads));
+            _logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("could not be resolved")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_HostStoppedDuringRetryDelay_RetriesAgainAfterRestart()
+        {
+            // Arrange: an account that resolves only on its third lookup, and a retry delay longer than the test
+            var localService = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var lookups = 0;
+            _sut.ResolveAccount = _ => Interlocked.Increment(ref lookups) < 3 ? null : localService;
+            _sut.UnresolvedAccountRetryDelayMs = 60000;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new[] { new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @"CONTOSO\svc-gmsa$" } });
+
+            // Act: stop while the first retry waits, then start again with a short delay
+            _sut.StartListening();
+            _sut.StopListening();
+            await Task.Delay(200, CancellationToken.None);
+            _sut.UnresolvedAccountRetryDelayMs = 10;
+            _sut.StartListening();
+            var granted = false;
+            for (var i = 0; i < 500 && !granted; i++)
+            {
+                granted = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
+                if (!granted) await Task.Delay(10, CancellationToken.None);
+            }
+            _sut.StopListening();
+
+            // Assert: the cancelled wait released the pending flag, so the restarted host retried and granted the account
+            Assert.True(granted);
+            Assert.Equal(3, Volatile.Read(ref lookups));
+        }
+
+        [Fact]
         public async Task RefreshPipeSecurityAsync_OvertakenByALaterRead_DoesNotReplaceTheNewerDacl()
         {
             // Arrange: rebuild A reads one service and then blocks resolving its account, the way a domain lookup does
