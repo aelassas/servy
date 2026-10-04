@@ -32,6 +32,14 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Constructor_NullProcessHelper_ThrowsArgumentNullException()
+        {
+            // Arrange, Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new ServiceValidationRules(null!));
+            Assert.Equal("processHelper", ex.ParamName);
+        }
+
+        [Fact]
         public void Validate_NullDto_ReturnsError()
         {
             // Act
@@ -120,7 +128,8 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto);
 
             // Assert
-            Assert.DoesNotContain(result.Errors, e => e.Contains("reserved for the Servy host service"));
+            Assert.DoesNotContain(string.Format(Strings.Msg_ServiceNameReservedForServyHost, name), result.Errors);
+            Assert.Empty(result.Errors);
         }
 
         [Fact]
