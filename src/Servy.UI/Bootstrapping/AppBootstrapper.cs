@@ -480,9 +480,11 @@ namespace Servy.UI.Bootstrapping
                         await pause.ResumeAsync();
                     }
 
-                    // The paused services are running again, so a dialog may now wait for the user.
-                    foreach (var (message, title) in deferredWarnings)
+                    // The paused services are running again, so a dialog may now wait for the user: one dialog for
+                    // all the warnings, rather than one per warning in a row.
+                    if (deferredWarnings.Count > 0)
                     {
+                        var (message, title) = CombineWarnings(deferredWarnings);
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
                             splash ?? (Window?)app.MainWindow,
                             message,
@@ -698,6 +700,25 @@ namespace Servy.UI.Bootstrapping
                 // fatal but should be noted for debugging resource leaks.
                 Logger.Warn($"{name} cleanup failed", ex);
             }
+        }
+
+        /// <summary>
+        /// Combines the non-critical start-up warnings into the text and caption of the one dialog that shows them.
+        /// </summary>
+        /// <param name="warnings">The warnings collected while the Servy services were paused, in the order they occurred; at least one.</param>
+        /// <returns>
+        /// The single warning's own message and caption when there is one; otherwise every message, in order and separated by a
+        /// blank line, under the generic <see cref="Resources.Strings.Msg_StartupWarningsTitle"/> caption.
+        /// </returns>
+        private static (string Message, string? Title) CombineWarnings(IReadOnlyList<(string Message, string? Title)> warnings)
+        {
+            if (warnings.Count == 1)
+            {
+                return warnings[0];
+            }
+
+            var message = string.Join(Environment.NewLine + Environment.NewLine, warnings.Select(w => w.Message));
+            return (message, Resources.Strings.Msg_StartupWarningsTitle);
         }
     }
 }
