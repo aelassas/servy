@@ -697,4 +697,56 @@ namespace Servy.Core.IntegrationTests.Security
 
         #endregion
     }
+
+    /// <summary>
+    /// Integration tests for what <see cref="ProtectedKeyProvider"/> reports when it refuses a key file.
+    /// The reports go through the static logger that <see cref="LogCapture"/> redirects, which is why these
+    /// tests join <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
+    /// </summary>
+    [Collection(CoreOsIntegrationCollection.Name)]
+    public class ProtectedKeyProviderRejectionLogIntegrationTests : TempDirectoryTestBase
+    {
+        #region Rejection Report Tests
+
+        [Fact]
+        public void GetKey_EntropyProtectedBlobOfTheWrongLength_ReportsTheLengthWithoutALegacyFallbackWarning()
+        {
+            // Arrange: a blob protected with the provider's own machine entropy that holds 16 bytes instead of the 32-byte key
+            var keyPath = GetTempFilePath("short_entropy.key");
+            var ivPath = GetTempFilePath("short_entropy.iv");
+            var machineEntropy = TestReflection.GetFieldStatic<Lazy<byte[]>>(typeof(ProtectedKeyProvider), "MachineEntropy").Value;
+            var blob = ProtectedData.Protect(new byte[16], machineEntropy, DataProtectionScope.LocalMachine);
+            File.WriteAllBytes(keyPath, blob);
+
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var captured = LogCapture.Run(() => Record.Exception(() => provider.GetKey()));
+
+                // Assert: refused as CRITICAL for its real reason, the length, and never reported as a legacy v7.8 file
+                var ex = Assert.IsType<InvalidOperationException>(captured.Result);
+                Assert.StartsWith("CRITICAL:", ex.Message);
+                var reason = Assert.IsType<CryptographicException>(ex.InnerException);
+                Assert.Contains($"holds 16 bytes instead of {AppConfig.AesKeySizeBytes}", reason.Message);
+                Assert.DoesNotContain("SECURITY DEGRADATION WARNING", captured.Log);
+                Assert.Equal(blob, File.ReadAllBytes(keyPath));
+            }
+        }
+
+        #endregion
+
+        #region Test Lifecycle
+
+        /// <summary>
+        /// Builds a path inside this test's own temporary directory.
+        /// </summary>
+        /// <param name="fileName">The file name to place in the temporary directory.</param>
+        /// <returns>The absolute path of <paramref name="fileName"/> under the test's temporary directory.</returns>
+        private string GetTempFilePath(string fileName)
+        {
+            return Path.Combine(TempDirectory, fileName);
+        }
+
+        #endregion
+    }
 }
