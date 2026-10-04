@@ -245,7 +245,7 @@ namespace Servy.Core.Config
         /// write their logs under its service account. A service account can write in the folders of its own services
         /// only, and not in this folder itself.
         /// </summary>
-        public const string ServiceLogsFolderName = "service";
+        public const string ServiceLogsFolderName = "services";
 
         /// <summary>
         /// The path of the folder that holds the per-service log folders; see <see cref="ServiceLogsFolderName"/>.

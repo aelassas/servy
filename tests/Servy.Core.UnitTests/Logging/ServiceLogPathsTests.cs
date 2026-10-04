@@ -10,7 +10,7 @@ namespace Servy.Core.UnitTests.Logging
 {
     /// <summary>
     /// Unit tests for <see cref="ServiceLogPaths"/>, which maps a service to its own log folder,
-    /// <c>logs\service\&lt;ServiceName&gt;\</c>, under a name that is valid on NTFS and that no other service shares.
+    /// <c>logs\services\&lt;ServiceName&gt;\</c>, under a name that is valid on NTFS and that no other service shares.
     /// </summary>
     public class ServiceLogPathsTests
     {
@@ -228,7 +228,7 @@ namespace Servy.Core.UnitTests.Logging
             var path = ServiceLogPaths.GetFolderPath("My:Service");
 
             // Assert
-            Assert.Equal(Path.Combine(AppConfig.ProgramDataPath, "logs", "service", "My%3AService"), path);
+            Assert.Equal(Path.Combine(AppConfig.ProgramDataPath, "logs", "services", "My%3AService"), path);
         }
 
         [Fact]
@@ -238,7 +238,7 @@ namespace Servy.Core.UnitTests.Logging
             var path = ServiceLogPaths.GetRelativeFolderPath("MyService");
 
             // Assert
-            Assert.Equal(Path.Combine("logs", "service", "MyService"), path);
+            Assert.Equal(Path.Combine("logs", "services", "MyService"), path);
         }
     }
 }

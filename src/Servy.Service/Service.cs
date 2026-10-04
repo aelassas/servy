@@ -338,7 +338,7 @@ namespace Servy.Service
 
         /// <summary>
         /// Gets the folder the wrapper writes its log in: the log folder of the service named on its command line,
-        /// <c>logs\service\&lt;ServiceName&gt;\</c> (<see cref="ServiceLogPaths.GetFolderPath"/>).
+        /// <c>logs\services\&lt;ServiceName&gt;\</c> (<see cref="ServiceLogPaths.GetFolderPath"/>).
         /// </summary>
         /// <param name="args">The wrapper's command line, as <see cref="Helpers.IServiceHelper.GetArgs"/> returns it;
         /// element 1 is the service name, as <see cref="CommandLine.StartOptionsParser.Parse"/> reads it.</param>

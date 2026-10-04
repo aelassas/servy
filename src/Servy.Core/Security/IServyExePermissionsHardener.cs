@@ -15,7 +15,7 @@ namespace Servy.Core.Security
         /// <summary>
         /// Grants <paramref name="targetAccount"/> the least privilege its Servy services need in the vault and locks
         /// Servy's files down for it: it can write in the log folder of each of <paramref name="serviceNames"/>
-        /// (<c>logs\service\&lt;ServiceName&gt;\</c>) and nowhere else.
+        /// (<c>logs\services\&lt;ServiceName&gt;\</c>) and nowhere else.
         /// </summary>
         /// <param name="targetAccount">The account the services run under (e.g. <c>DOMAIN\svc-servy</c>, <c>.\user</c>, <c>DOMAIN\gMSA$</c>).</param>
         /// <param name="serviceNames">Every service that runs under the account. The account loses its access to the log

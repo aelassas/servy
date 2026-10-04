@@ -569,7 +569,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void RestartService_PassesTheServiceNameAndItsOwnLogFolder()
         {
-            // Arrange: the restarter runs under the service account, which can only write logs\service\<ServiceName>\
+            // Arrange: the restarter runs under the service account, which can only write logs\services\<ServiceName>\
             var mockLog = new Mock<IServyLogger>();
             ProcessStartInfo started = null;
 

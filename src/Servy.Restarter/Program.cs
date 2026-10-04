@@ -21,7 +21,7 @@ namespace Servy.Restarter
         /// <summary>
         /// Main method. Expects one required argument: the service name to restart.
         /// An optional second argument names the logging directory: the wrapper passes the service's own
-        /// <c>logs\service\&lt;ServiceName&gt;\</c> folder, the only log folder its service account can write.
+        /// <c>logs\services\&lt;ServiceName&gt;\</c> folder, the only log folder its service account can write.
         /// </summary>
         /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies the log directory.</param>
         public static void Main(string[] args)
@@ -43,7 +43,7 @@ namespace Servy.Restarter
         internal static void Run(string[] args, IServiceRestarter restarter, IRestarterBootstrapEnvironment environment = null)
         {
             string customLogDir = args.Length > 1 ? args[1] : null;
-            // The wrapper passes logs\service\<ServiceName>\, the only log folder its service account can write
+            // The wrapper passes logs\services\<ServiceName>\, the only log folder its service account can write
             Logger.Initialize(AppConfig.ServyRestarterLogFileName, logDirectory: customLogDir);
 
             IServyLogger rootLogger = null; // Declare as nullable for safe finally disposal

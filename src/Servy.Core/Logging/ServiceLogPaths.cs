@@ -9,7 +9,7 @@ using System.Text;
 namespace Servy.Core.Logging
 {
     /// <summary>
-    /// Maps a service to its own log folder, <c>%ProgramData%\Servy\logs\service\&lt;ServiceName&gt;\</c>, where its
+    /// Maps a service to its own log folder, <c>%ProgramData%\Servy\logs\services\&lt;ServiceName&gt;\</c>, where its
     /// wrapper (<c>Servy.Service.log</c>) and its restarter (<c>Servy.Restarter.log</c>) write and rotate their logs.
     /// </summary>
     /// <remarks>
@@ -100,7 +100,7 @@ namespace Servy.Core.Logging
             => Path.Combine(AppConfig.ServiceLogsFolderPath, GetFolderName(serviceName));
 
         /// <summary>
-        /// Gets the log folder of a service relative to the vault (<c>logs\service\&lt;ServiceName&gt;</c>).
+        /// Gets the log folder of a service relative to the vault (<c>logs\services\&lt;ServiceName&gt;</c>).
         /// </summary>
         /// <param name="serviceName">The service name, as registered with the Service Control Manager.</param>
         /// <returns>The path of the service's log folder relative to <see cref="AppConfig.ProgramDataPath"/>.</returns>
