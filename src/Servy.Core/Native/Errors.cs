@@ -27,11 +27,11 @@ namespace Servy.Core.Native
         /// <summary>Represents the Win32 error code indicating the provided buffer is too small to contain the data.</summary>
         public const int ERROR_INSUFFICIENT_BUFFER = 122;
 
-        /// <summary>The pipe is not connected (no console attached to the target process).</summary>
-        public const int ERROR_PIPE_NOT_CONNECTED = 233;
-
         /// <summary>The pipe client is on this computer (GetNamedPipeClientComputerName failure).</summary>
         public const int ERROR_PIPE_LOCAL = 229;
+
+        /// <summary>The pipe is not connected (no console attached to the target process).</summary>
+        public const int ERROR_PIPE_NOT_CONNECTED = 233;
 
         /// <summary>An instance of the service is already running.</summary>
         public const int ERROR_SERVICE_ALREADY_RUNNING = 1056;
