@@ -191,7 +191,7 @@ namespace Servy.Host.IntegrationTests
             _host.StartListening();
 
             // Act
-            var results = await Task.WhenAll(Enumerable.Range(0, 12).Select(_ => Task.Run(() => Client(requestTimeoutMs: 20000, connectTimeoutMs: 20000).GetByName(ServiceName, ct), ct)));
+            var results = await Task.WhenAll(Enumerable.Range(0, 12).Select(_ => Task.Factory.StartNew(() => Client(requestTimeoutMs: 20000, connectTimeoutMs: 20000).GetByName(ServiceName, ct), ct, TaskCreationOptions.LongRunning, TaskScheduler.Default)));
 
             // Assert
             Assert.All(results, r => Assert.Equal(ServiceName, r!.Name));
