@@ -27,7 +27,7 @@ env:
   TEST_DIR: "./tests"
   # Directories and file extensions to exclude from cloc analysis
   CLOC_EXCLUDE_DIRS: "bin,obj,data"
-  CLOC_EXCLUDE_EXTS: "Designer.cs,g.cs,resx,manifest,json,xml"
+  CLOC_EXCLUDE_EXTS: "Designer.cs,g.cs,resx,manifest,json,xml,xaml"
 
 jobs:
   loc_job:
