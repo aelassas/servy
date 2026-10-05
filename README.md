@@ -145,7 +145,7 @@ Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=githu
 
 Thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source license](https://www.jetbrains.com/community/opensource/) for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
 
-Special thanks to everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions have shaped the project and made it better with every release.
+Thanks to everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions have shaped the project and made it better with every release.
 
 <p>
   <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy">
