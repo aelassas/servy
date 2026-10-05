@@ -8,9 +8,9 @@ Servy v10.2 introduces **full per-service security isolation** (see [Security.md
 
 ### Key Highlights
 
-* **Full Per-Service Security Isolation:** Custom service accounts can no longer read or modify other services' configurations, runtime states, or logs. Decryption and database access are now proxied through the isolated `Servy` host process (`Servy.Host.exe`) via a DACL-restricted local Named Pipe.
-* **Per-Service Log Isolation:** Each wrapped service now writes its wrapper and restarter logs to an isolated subfolder (`%ProgramData%\Servy\logs\service\<ServiceName>\`). Custom service accounts hold permissions strictly within their own log subfolder and cannot access or tamper with logs from other services.
-* **Automated Vault & Binary Hardening:** Servy automatically enforces strict ACL lockdown rules on the `%ProgramData%\Servy` root vault and core binaries (`.exe`/`.dll`), removing the need for manual sysadmin hardening scripts or elevated permissions setup.
+* **Full Per-Service Security Isolation:** Custom service accounts can no longer read or modify other service configurations, runtime states, or logs. Decryption and database access are now proxied through the isolated `Servy` host Windows service (`Servy.Host.exe`) via a DACL-restricted local Named Pipe.
+* **Per-Service Log Isolation:** Each wrapped service now writes its wrapper and restarter logs to an isolated subfolder (`%ProgramData%\Servy\logs\services\<ServiceName>\`). Custom service accounts hold permissions strictly within their own log subfolder and cannot access or tamper with logs from other services.
+* **Automated Vault & Binary Hardening:** Now, Servy automatically enforces strict ACL lockdown rules on the `%ProgramData%\Servy` root vault and core binaries (`.exe`/`.dll`), removing the need for manual sysadmin hardening scripts or elevated permissions setup.
 * **CLI `show` Command (#7018):** Inspect and print service configurations directly from the terminal in a clean, human-readable format.
 
 ### Complete List of Changes
