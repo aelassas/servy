@@ -331,7 +331,7 @@ jobs:
               Copy-Item $signed (Join-Path $target "Servy.Host.Net48.exe") -Force
               Write-Host "Injecting matching Servy.Host.pdb into $target"
               Copy-Item $pdb (Join-Path $target "Servy.Host.Net48.pdb") -Force
-          }          
+          }
 
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Restarter.exe
