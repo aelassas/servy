@@ -1,12 +1,8 @@
 # ==========================================================================================
-# GitHub Actions Workflow - LoC
+# GitHub Actions Workflow - Lines of Code (LoC) Badges
 # ------------------------------------------------------------------------------------------
-# Calculates lines of code for:
-# - Production code
-# - Test code
-# - Total code
-# Generates badges and deploys them to the "loc"
-# branch for README / documentation usage.
+# Calculates lines of executable code (excluding comments and blank lines) using `cloc`.
+# Generates SVG badges via Shields.io and deploys them to the orphan `loc` branch.
 # ==========================================================================================
 
 name: loc
@@ -22,108 +18,120 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write  # Required to push badges to the loc branch
+  contents: write  # Required to push generated badges to the `loc` branch
 
 env:
   LOC_BADGE_COLOR: green
-  # Shared exclusions, hoisted so one edit reaches both badges. The prod and tests
-  # lists differ only by the scope selector that sits between these two halves:
-  # prod excludes tests, the tests badge excludes tests/data and src instead.
-  LOC_IGNORE_HEAD: '.gitignore|*.txt|.github|setup'
-  LOC_IGNORE_TAIL: 'bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+  # Path to production and test source directories
+  PROD_DIR: "./src"
+  TEST_DIR: "./tests"
+  # Directories and file extensions to exclude from cloc analysis
+  CLOC_EXCLUDE_DIRS: "bin,obj,data"
+  CLOC_EXCLUDE_EXTS: "Designer.cs,g.cs,resx,manifest,json,xml"
 
 jobs:
   loc_job:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    name: Generate LoC badges
+    name: Generate LoC Badges
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # ----------------------------
-      # Production LoC
-      # ----------------------------
-      - name: Create prod LoC badge
-        uses: shadowmoose/GHA-LoC-Badge@8c8191e02ebe2e4b4764f4711228bddcaeb88f19 #v1.0.0
+      - name: Install cloc
+        run: sudo apt-get update && sudo apt-get install -y cloc
+
+      # ------------------------------------------------------------------------------------
+      # Step 1: Calculate Production Lines of Code
+      # ------------------------------------------------------------------------------------
+      - name: Calculate Prod LoC & Generate Badge
         id: loc_prod
-        with:
-          debug: true
-          directory: ./
-          badge_label: 'LoC prod'
-          badge_color: ${{ env.LOC_BADGE_COLOR }}
-          badge: ./output/loc-prod.svg
-          ignore: '${{ env.LOC_IGNORE_HEAD }}|tests|${{ env.LOC_IGNORE_TAIL }}'
-
-      # ----------------------------
-      # Tests LoC
-      # ----------------------------
-      - name: Create tests LoC badge
-        uses: shadowmoose/GHA-LoC-Badge@8c8191e02ebe2e4b4764f4711228bddcaeb88f19 #v1.0.0
-        id: loc_tests
-        with:
-          debug: true
-          directory: ./
-          badge_label: 'LoC tests'
-          badge_color: ${{ env.LOC_BADGE_COLOR }}
-          badge: ./output/loc-tests.svg
-          ignore: '${{ env.LOC_IGNORE_HEAD }}|tests/data|src|${{ env.LOC_IGNORE_TAIL }}'
-
-      # ----------------------------
-      # Total LoC
-      # ----------------------------
-      - name: Create total LoC badge
-        id: loc_total
-        env:
-          PROD_LINES: ${{ steps.loc_prod.outputs.total_lines }}
-          TESTS_LINES: ${{ steps.loc_tests.outputs.total_lines }}
         shell: bash
         run: |
-          # Compute total
-          TOTAL=$(( PROD_LINES + TESTS_LINES ))
-          echo "Total LoC: $TOTAL"
-
-          # Force locale for printf to add commas
-          export LC_ALL=en_US.UTF-8
-          TOTAL_COMMA=$(printf "%'d" $TOTAL)
-          echo "Formatted total: $TOTAL_COMMA"
-
-          # Set output for later steps
-          echo "total_lines=$TOTAL" >> $GITHUB_OUTPUT
-
-          # Ensure output directory exists
           mkdir -p ./output
 
-          # Use shields.io static badge generation with URL-encoded label
-          # Percent-encode commas defensively so the badge message survives any URL handling verbatim
-          ENCODED_TOTAL=$(echo "$TOTAL_COMMA" | sed 's/,/%2C/g')
+          # Execute cloc in CSV output mode and extract the 5th column (code lines)
+          # Use directory/extension filters defined in workflow environment variables
+          PROD_LOC=$(cloc "${PROD_DIR}" \
+            --exclude-dir="${CLOC_EXCLUDE_DIRS}" \
+            --exclude-ext="${CLOC_EXCLUDE_EXTS}" \
+            --csv 2>/dev/null | awk -F',' 'END{print $5}')
 
-          URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${LOC_BADGE_COLOR}"
-          echo "URL: ${URL}"
+          # Default to 0 if directory is empty or command returns no code lines
+          PROD_LOC=${PROD_LOC:-0}
+          echo "prod_lines=${PROD_LOC}" >> $GITHUB_OUTPUT
 
-          # Fail step on HTTP errors (-f) and show errors (-S) to prevent publishing garbage
-          curl -fsS --retry 3 --retry-delay 3 --retry-all-errors -o ./output/loc-total.svg "${URL}"
+          # Format output with comma separators for readability
+          export LC_ALL=en_US.UTF-8
+          PROD_COMMA=$(printf "\%'d" "${PROD_LOC}")
+          ENCODED_PROD=$(echo "${PROD_COMMA}" | sed 's/,/%2C/g')
 
-      # ----------------------------
-      # Summary
-      # ----------------------------
-      - name: Summary
+          # Fetch badge SVG from Shields.io
+          curl -fsS --retry 3 -o ./output/loc-prod.svg \
+            "https://img.shields.io/badge/LoC%20prod-${ENCODED_PROD}-${LOC_BADGE_COLOR}"
+
+      # ------------------------------------------------------------------------------------
+      # Step 2: Calculate Test Lines of Code
+      # ------------------------------------------------------------------------------------
+      - name: Calculate Tests LoC & Generate Badge
+        id: loc_tests
+        shell: bash
+        run: |
+          TESTS_LOC=$(cloc "${TEST_DIR}" \
+            --exclude-dir="${CLOC_EXCLUDE_DIRS}" \
+            --exclude-ext="${CLOC_EXCLUDE_EXTS}" \
+            --csv 2>/dev/null | awk -F',' 'END{print $5}')
+
+          TESTS_LOC=${TESTS_LOC:-0}
+          echo "tests_lines=${TESTS_LOC}" >> $GITHUB_OUTPUT
+
+          export LC_ALL=en_US.UTF-8
+          TESTS_COMMA=$(printf "\%'d" "${TESTS_LOC}")
+          ENCODED_TESTS=$(echo "${TESTS_COMMA}" | sed 's/,/%2C/g')
+
+          curl -fsS --retry 3 -o ./output/loc-tests.svg \
+            "https://img.shields.io/badge/LoC%20tests-${ENCODED_TESTS}-${LOC_BADGE_COLOR}"
+
+      # ------------------------------------------------------------------------------------
+      # Step 3: Calculate Total Lines of Code
+      # ------------------------------------------------------------------------------------
+      - name: Calculate Total LoC & Generate Badge
+        id: loc_total
         env:
-          PROD_SUMMARY: ${{ steps.loc_prod.outputs.total_lines }}
-          TESTS_SUMMARY: ${{ steps.loc_tests.outputs.total_lines }}
+          PROD_LINES: ${{ steps.loc_prod.outputs.prod_lines }}
+          TESTS_LINES: ${{ steps.loc_tests.outputs.tests_lines }}
+        shell: bash
+        run: |
+          TOTAL=$(( PROD_LINES + TESTS_LINES ))
+          echo "total_lines=${TOTAL}" >> $GITHUB_OUTPUT
+
+          export LC_ALL=en_US.UTF-8
+          TOTAL_COMMA=$(printf "\%'d" "${TOTAL}")
+          ENCODED_TOTAL=$(echo "${TOTAL_COMMA}" | sed 's/,/%2C/g')
+
+          curl -fsS --retry 3 -o ./output/loc-total.svg \
+            "https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${LOC_BADGE_COLOR}"
+
+      # ------------------------------------------------------------------------------------
+      # Step 4: Add Workflow Summary
+      # ------------------------------------------------------------------------------------
+      - name: Write Step Summary
+        env:
+          PROD_SUMMARY: ${{ steps.loc_prod.outputs.prod_lines }}
+          TESTS_SUMMARY: ${{ steps.loc_tests.outputs.tests_lines }}
           TOTAL_SUMMARY: ${{ steps.loc_total.outputs.total_lines }}
         shell: bash
         run: |
-          echo "### LoC Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Prod:  $PROD_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests: $TESTS_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
-          echo "- Total: $TOTAL_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
+          echo "### Lines of Code Summary (Excludes Comments & Blank Lines)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production:** ${PROD_SUMMARY} lines" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tests:** ${TESTS_SUMMARY} lines" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total:** ${TOTAL_SUMMARY} lines" >> $GITHUB_STEP_SUMMARY
 
-      # ----------------------------
-      # Deploy badges (Native Git)
-      # ----------------------------
-      - name: Deploy to loc branch
+      # ------------------------------------------------------------------------------------
+      # Step 5: Publish Badges to the `loc` Branch
+      # ------------------------------------------------------------------------------------
+      - name: Deploy Badges to Orphan Branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -133,9 +141,9 @@ jobs:
         run: |
           cd ./output
           git init
-          git config user.name "$GIT_USER_NAME"
-          git config user.email "$GIT_USER_EMAIL"
+          git config user.name "${GIT_USER_NAME}"
+          git config user.email "${GIT_USER_EMAIL}"
           git checkout -b loc
           git add -A
-          git commit -m "update loc badges"
+          git commit -m "chore: update LoC badges"
           git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" loc --force
