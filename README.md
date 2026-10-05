@@ -42,7 +42,7 @@ scoop install servy
 Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
 > [!NOTE]
-> **Legacy OS Support (Windows 7 SP1 / 8.x / Server 2008 R2):** Package managers carry the self-contained modern build. For older platforms, download `servy-x.x-net48-x64-installer.exe` or `servy-x.x-net48-x64-portable.7z` directly from [GitHub Releases](https://github.com/aelassas/servy/releases/latest) (requires .NET Framework 4.8).
+> Legacy OS Support (Windows 7 SP1 / 8.x / Server 2008 R2): Package managers carry the self-contained modern build. For older platforms, download `servy-x.x-net48-x64-installer.exe` or `servy-x.x-net48-x64-portable.7z` directly from [GitHub Releases](https://github.com/aelassas/servy/releases/latest) (requires .NET Framework 4.8).
 
 ## Quick Example
 
