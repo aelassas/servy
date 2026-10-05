@@ -64,7 +64,7 @@ jobs:
 
           # Format output with comma separators for readability
           export LC_ALL=en_US.UTF-8
-          PROD_COMMA=$(printf "\%'d" "${PROD_LOC}")
+          PROD_COMMA=$(printf "%'d" "${PROD_LOC}")
           ENCODED_PROD=$(echo "${PROD_COMMA}" | sed 's/,/%2C/g')
 
           # Fetch badge SVG from Shields.io
@@ -87,7 +87,7 @@ jobs:
           echo "tests_lines=${TESTS_LOC}" >> $GITHUB_OUTPUT
 
           export LC_ALL=en_US.UTF-8
-          TESTS_COMMA=$(printf "\%'d" "${TESTS_LOC}")
+          TESTS_COMMA=$(printf "%'d" "${TESTS_LOC}")
           ENCODED_TESTS=$(echo "${TESTS_COMMA}" | sed 's/,/%2C/g')
 
           curl -fsS --retry 3 -o ./output/loc-tests.svg \
@@ -107,7 +107,7 @@ jobs:
           echo "total_lines=${TOTAL}" >> $GITHUB_OUTPUT
 
           export LC_ALL=en_US.UTF-8
-          TOTAL_COMMA=$(printf "\%'d" "${TOTAL}")
+          TOTAL_COMMA=$(printf "%'d" "${TOTAL}")
           ENCODED_TOTAL=$(echo "${TOTAL_COMMA}" | sed 's/,/%2C/g')
 
           curl -fsS --retry 3 -o ./output/loc-total.svg \
