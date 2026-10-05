@@ -69,7 +69,7 @@ jobs:
 
           # Fetch badge SVG from Shields.io
           curl -fsS --retry 3 -o ./output/loc-prod.svg \
-            "https://img.shields.io/badge/LoC%20prod-${ENCODED_PROD}-${LOC_BADGE_COLOR}"
+            "https://img.shields.io/badge/LoC_prod-${ENCODED_PROD}-${LOC_BADGE_COLOR}"
 
       # ------------------------------------------------------------------------------------
       # Step 2: Calculate Test Lines of Code
@@ -91,7 +91,7 @@ jobs:
           ENCODED_TESTS=$(echo "${TESTS_COMMA}" | sed 's/,/%2C/g')
 
           curl -fsS --retry 3 -o ./output/loc-tests.svg \
-            "https://img.shields.io/badge/LoC%20tests-${ENCODED_TESTS}-${LOC_BADGE_COLOR}"
+            "https://img.shields.io/badge/LoC_tests-${ENCODED_TESTS}-${LOC_BADGE_COLOR}"
 
       # ------------------------------------------------------------------------------------
       # Step 3: Calculate Total Lines of Code
@@ -111,7 +111,7 @@ jobs:
           ENCODED_TOTAL=$(echo "${TOTAL_COMMA}" | sed 's/,/%2C/g')
 
           curl -fsS --retry 3 -o ./output/loc-total.svg \
-            "https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${LOC_BADGE_COLOR}"
+            "https://img.shields.io/badge/LoC_total-${ENCODED_TOTAL}-${LOC_BADGE_COLOR}"
 
       # ------------------------------------------------------------------------------------
       # Step 4: Add Workflow Summary
