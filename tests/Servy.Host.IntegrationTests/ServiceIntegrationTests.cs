@@ -453,6 +453,46 @@ namespace Servy.Host.IntegrationTests
         }
 
         [Fact]
+        public void AccountSandbox_ItsScriptDirectory_IsNotWritableByEveryoneNorByTheAccountsItRunsAs()
+        {
+            if (!(_isElevated)) return; // NotElevatedSkipReason
+
+            // Arrange: the sandbox runs its scripts as SYSTEM and as service accounts, so a folder others can write to would
+            // let any local user run code as SYSTEM
+            using (var sandbox = new AccountSandbox(_pipeName))
+            {
+                var broad = new[]
+                {
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+                    new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
+                };
+                var runAs = new[]
+                {
+                    new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null),
+                    new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null),
+                };
+
+                // Act
+                var scripts = new DirectoryInfo(sandbox.ScriptDirectory).GetAccessControl();
+                var results = new DirectoryInfo(sandbox.ResultDirectory).GetAccessControl();
+                var scriptRules = scripts.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToList();
+                var resultRules = results.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToList();
+
+                // Assert
+                Assert.True(scripts.AreAccessRulesProtected);
+                Assert.True(results.AreAccessRulesProtected);
+                foreach (var sid in broad)
+                {
+                    Assert.DoesNotContain(scriptRules, r => sid.Equals(r.IdentityReference));
+                    Assert.DoesNotContain(resultRules, r => sid.Equals(r.IdentityReference));
+                }
+                const FileSystemRights Write = FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.Delete | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
+                Assert.DoesNotContain(scriptRules, r => runAs.Any(sid => sid.Equals(r.IdentityReference)) && (r.FileSystemRights & Write) != 0);
+            }
+        }
+
+        [Fact]
         public async Task ClientOnAnotherComputer_ThroughSmb_CannotOpenThePipeEvenWhenGranted()
         {
             if (!(_isElevated)) return; // NotElevatedSkipReason
@@ -614,19 +654,68 @@ namespace Servy.Host.IntegrationTests
                 // net.exe asks for confirmation, and so fails without a console, for a password longer than 14 characters
                 LocalUserPassword = "Aa1!" + Guid.NewGuid().ToString("N").Substring(0, 10);
 
-                _directory = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), "ServyPipeTests", _taskPrefix);
-                Directory.CreateDirectory(_directory);
-                var security = new DirectorySecurity();
-                security.SetAccessRuleProtection(true, false);
-                security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.FullControl,
-                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
-                new DirectoryInfo(_directory).SetAccessControl(security);
-
                 // A plain local user. Performance Log Users holds "Log on as a batch job" by default, which a scheduled
                 // task needs, and grants nothing on the pipe.
                 Run("net.exe", $"user {LocalUser} {LocalUserPassword} /add");
                 Run("net.exe", $"localgroup \"Performance Log Users\" {LocalUser} /add");
+
+                // The scripts run as SYSTEM, Network Service, Local Service and the local user, so no one else may be able to
+                // replace them: a uniquely named folder directly under the drive root (there is no shared parent to squat),
+                // refused if it already exists, created with its protected DACL in one call. The run-as accounts may read
+                // and execute the scripts and write only into the "out" subfolder that holds the result files.
+                _directory = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory), "ServyPipeTests_" + _taskPrefix);
+                if (Directory.Exists(_directory))
+                    throw new InvalidOperationException($"'{_directory}' already exists; refusing a directory this run did not create.");
+
+                var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+                var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                var runAs = new[]
+                {
+                    new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null),
+                    new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null),
+                    (SecurityIdentifier)new NTAccount(Environment.MachineName, LocalUser).Translate(typeof(SecurityIdentifier)),
+                };
+
+                var scripts = ProtectedSecurity(system, admins);
+                foreach (var sid in runAs) scripts.AddAccessRule(Rule(sid, FileSystemRights.ReadAndExecute));
+                new DirectoryInfo(_directory).Create(scripts);
+
+                var results = ProtectedSecurity(system, admins);
+                foreach (var sid in runAs) results.AddAccessRule(Rule(sid, FileSystemRights.Modify));
+                new DirectoryInfo(ResultDirectory).Create(results);
             }
+
+            /// <summary>
+            /// Gets the folder that holds the scripts the scheduled tasks run.
+            /// </summary>
+            public string ScriptDirectory => _directory;
+
+            /// <summary>
+            /// Gets the subfolder the run-as accounts write their result files into.
+            /// </summary>
+            public string ResultDirectory => Path.Combine(_directory, "out");
+
+            /// <summary>
+            /// Creates a protected (no inherited rules) security descriptor that grants full control to the given owners.
+            /// </summary>
+            /// <param name="owners">The accounts that get full control.</param>
+            /// <returns>The descriptor, ready for more rules.</returns>
+            private static DirectorySecurity ProtectedSecurity(params SecurityIdentifier[] owners)
+            {
+                var security = new DirectorySecurity();
+                security.SetAccessRuleProtection(true, false);
+                foreach (var sid in owners) security.AddAccessRule(Rule(sid, FileSystemRights.FullControl));
+                return security;
+            }
+
+            /// <summary>
+            /// Creates an allow rule that is inherited by every file and subfolder.
+            /// </summary>
+            /// <param name="sid">The account.</param>
+            /// <param name="rights">The rights to allow.</param>
+            /// <returns>The rule.</returns>
+            private static FileSystemAccessRule Rule(SecurityIdentifier sid, FileSystemRights rights)
+                => new FileSystemAccessRule(sid, rights, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow);
 
             public string LocalUser { get; }
 
@@ -653,7 +742,7 @@ namespace Servy.Host.IntegrationTests
             public async Task<string> ConnectAsAsync(string runAs, string password, CancellationToken ct)
             {
                 var run = ++_run;
-                var output = Path.Combine(_directory, $"out{run}.txt");
+                var output = Path.Combine(ResultDirectory, $"out{run}.txt");
                 var script = Path.Combine(_directory, $"c{run}.ps1");
                 File.WriteAllText(script,
                     "$out = '" + output + "'\r\n" +
