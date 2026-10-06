@@ -41,8 +41,9 @@ scoop install servy
 
 Servy is available in the official [Patch My PC catalog](https://patchmypc.com/supported-products/) for enterprise automated deployment and updates via Microsoft Intune and ConfigMgr (SCCM).
 
-> [!NOTE]
-> Legacy OS Support (Windows 7 SP1 / 8.x / Server 2008 R2): Package managers carry the self-contained modern build. For older platforms, download `servy-x.x-net48-x64-installer.exe` or `servy-x.x-net48-x64-portable.7z` directly from [GitHub Releases](https://github.com/aelassas/servy/releases/latest) (requires .NET Framework 4.8).
+**Legacy OS Support**
+
+Package managers carry the self-contained modern build. For older platforms (Windows 7 SP1 / 8.x / Server 2008 R2), download `servy-x.x-net48-x64-installer.exe` or `servy-x.x-net48-x64-portable.7z` directly from [GitHub Releases](https://github.com/aelassas/servy/releases/latest) (requires .NET Framework 4.8).
 
 ## Quick Example
 
@@ -63,31 +64,27 @@ This installs `MyService` to run a Node.js server in the background with auto-st
 
 See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other runtimes.
 
+Here is the deduplicated, streamlined bullet list:
+
 ## Features
 
-* Clean, simple UI
-* Monitor and manage all installed services with Servy Manager
-* Real-time CPU and RAM monitoring with live performance graphs for installed services
-* Real-time service stdout and stderr output preview in Servy Console
-* Service dependency tree visualization with status indicators
-* CLI and PowerShell module for full scripting and automated deployments
-* Run any executable as a Windows service
-* Set service name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
-* Environment variable expansion supported in parameters, process paths, and startup directories
-* Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
-* Redirect stdout/stderr to log files with automatic size-based and date-based rotations
-* Run pre-launch hooks before starting the service, with retries, timeout, logging and failure handling
-* Run post-launch hooks after the application starts successfully
-* Run pre-stop and post-stop hooks before and after the application stops
-* Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
-* Supports `Ctrl+C` propagation to descendant processes of the wrapped process
-* Prevent orphaned/zombie processes with improved lifecycle management while ensuring resource cleanup
-* Health checks and automatic service recovery
-* Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
-* Export/Import service configurations for easy backups and automation
-* Service Event Notification alerts on service failures via Windows notifications and email
-* Modern build (default, self-contained): Windows 10 (1809+), Windows 11 and Windows Server 2016+, on x64 and ARM64
-* Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, 8.x and Windows Server 2008 R2+, x64 only - see the [version comparison](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison)
+* Clean, simple UI to monitor and manage all installed services
+* Real-time CPU and RAM monitoring with live performance graphs
+* Real-time stdout and stderr tailing and searching
+* Interactive service dependency tree visualization with status indicators
+* CLI (`servy-cli`) and PowerShell module (`Servy.psm1`) for full scripting and automated deployments
+* Comprehensive configuration: name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
+* Environment variable expansion in parameters, process paths, and startup directories
+* Support for Local System, local or domain accounts, Active Directory accounts, and gMSAs
+* Automatic size-based and date-based log file rotations
+* Configurable pre-launch, post-launch, pre-stop, and post-stop hooks with retries, timeouts, and failure handling
+* Clean shutdown handling: `Ctrl+C` for CLI apps, close-window for GUI apps, `Ctrl+C` propagation to descendant processes, and force-kill for unresponsive tasks
+* Robust process lifecycle management to prevent orphaned or zombie processes
+* Health checks, automatic service recovery, and Heartbeat Ping URLs (e.g., [healthchecks.io](https://healthchecks.io/))
+* Service event notification alerts via Windows notifications, email, WhatsApp, and other configured channels
+* Export and import service configurations for backups and migration
+* Modern build (default, self-contained): Windows 10 (1809+), Windows 11, and Windows Server 2016+ (x64 and ARM64)
+* Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, 8.x, and Windows Server 2008 R2+ (x64 only) - see the [version comparison](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison)
 
 ## Changelog
 
