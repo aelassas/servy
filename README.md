@@ -76,6 +76,9 @@ Here is the deduplicated, streamlined bullet list:
 * Comprehensive configuration: name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
 * Environment variable expansion in parameters, process paths, and startup directories
 * Support for Local System, local or domain accounts, Active Directory accounts, and gMSAs
+* Per-service isolation via Windows Named Pipes with kernel-level PID validation and DACL access checks
+* Automated DACL & ACL hardening to secure vault data, logs, and IPC endpoints against unauthorized access
+* Sensitive data protected by DPAPI, HKDF, and AES-256 HMAC encryption
 * Automatic size-based and date-based log file rotations
 * Configurable pre-launch, post-launch, pre-stop, and post-stop hooks with retries, timeouts, and failure handling
 * Clean shutdown handling: `Ctrl+C` for CLI apps, close-window for GUI apps, `Ctrl+C` propagation to descendant processes, and force-kill for unresponsive tasks
