@@ -46,9 +46,9 @@ Servy is available in the official [Patch My PC catalog](https://patchmypc.com/s
 
 ## Quick Example
 
-You can manage services using the [desktop app (GUI)](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), the [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
+You can manage services using the [desktop app](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
-Here's a minimal example using the CLI to run a Node.js app as a Windows service. Run it from an elevated PowerShell prompt: installing, starting and stopping a Windows service all require administrator privileges.
+Here's a minimal example using the CLI to run a Node.js server as a Windows service. Run it from an elevated PowerShell prompt: installing, starting and stopping a Windows service all require administrator privileges.
 
 ```powershell
 servy-cli install `
@@ -59,30 +59,9 @@ servy-cli install `
   --enableHealth
 ```
 
-This creates a service named `MyService` that runs your Node.js server in the background, starts automatically with Windows, and has [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery) enabled.
+This installs `MyService` to run a Node.js server in the background with auto-startup and [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery).
 
-Then start the service:
-
-```powershell
-servy-cli start --name="MyService"
-```
-
-Or from an **elevated** Command Prompt:
-
-```cmd
-sc.exe start MyService
-```
-
-Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other popular frameworks.
-
-## Quick Links
-
-* [Download](https://github.com/aelassas/servy/releases/latest)
-* [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
-* [Overview](https://github.com/aelassas/servy/wiki/Overview)
-* [Usage](https://github.com/aelassas/servy/wiki/Usage)
-* [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
-* [Full Documentation](https://github.com/aelassas/servy/wiki)
+See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other runtimes.
 
 ## Features
 
@@ -120,11 +99,11 @@ See [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
-Servy is free and open-source. If Servy has helped you, saved you hours of development time, or powered your production workflows, supporting its maintenance makes a direct impact.
+Servy is free and open source. If it has helped you, saved you time, or powered your production workflows, consider supporting its development and maintenance.
 
-Building and maintaining software, publishing signed releases, delivering security updates, and providing system support takes dedicated time and financial resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/) or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
+Maintaining the project, publishing signed releases, and shipping security updates takes real time and resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
 
-If you have suggestions, feature requests, or issues, feel free to [open an issue](https://github.com/aelassas/servy/issues), or [submit a pull request](https://github.com/aelassas/servy/pulls).
+If you have suggestions, feature requests, or bug reports, feel free to [open an issue](https://github.com/aelassas/servy/issues) or [submit a pull request](https://github.com/aelassas/servy/pulls).
 
 ## Stats for Nerds
 
