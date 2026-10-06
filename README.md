@@ -64,30 +64,46 @@ This installs `MyService` to run a Node.js server in the background with auto-st
 
 See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other runtimes.
 
-Here is the deduplicated, streamlined bullet list:
-
 ## Features
 
-* Clean, simple UI to monitor and manage all installed services
-* Real-time CPU and RAM monitoring with live performance graphs
-* Real-time stdout and stderr tailing and searching
-* Interactive service dependency tree visualization with status indicators
-* CLI (`servy-cli`) and PowerShell module (`Servy.psm1`) for full scripting and automated deployments
-* Comprehensive configuration: name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
-* Environment variable expansion in parameters, process paths, and startup directories
-* Support for Local System, local or domain accounts, Active Directory accounts, and gMSAs
-* Per-service isolation via Windows Named Pipes with kernel-level PID validation and DACL access checks
-* Automated DACL & ACL hardening to secure vault data, logs, and IPC endpoints against unauthorized access
-* Sensitive data protected by DPAPI, HKDF, and AES-256 HMAC encryption
-* Automatic size-based and date-based log file rotations
-* Configurable pre-launch, post-launch, pre-stop, and post-stop hooks with retries, timeouts, and failure handling
-* Clean shutdown handling: `Ctrl+C` for CLI apps, close-window for GUI apps, `Ctrl+C` propagation to descendant processes, and force-kill for unresponsive tasks
-* Robust process lifecycle management to prevent orphaned or zombie processes
-* Health checks, automatic service recovery, and Heartbeat Ping URLs (e.g., [healthchecks.io](https://healthchecks.io/))
-* Service event notification alerts via Windows notifications, email, WhatsApp, and other configured channels
-* Export and import service configurations for backups and migration
-* Modern build (default, self-contained): Windows 10 (1809+), Windows 11, and Windows Server 2016+ (x64 and ARM64)
-* Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, 8.x, and Windows Server 2008 R2+ (x64 only) - see the [version comparison](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison)
+**Service configuration**
+
+* Set the name, description, startup type, process priority, CPU affinity, working directory, parameters, environment variables, and dependencies of each service.
+* Use environment variables in parameters, process paths, and startup directories.
+* Run services as Local System, a local or domain account, or a group managed service account (gMSA).
+* Run pre-launch, post-launch, pre-stop, and post-stop hooks, with retries, timeouts, and failure handling.
+
+**Reliability**
+
+* Restart the process automatically when it crashes, hangs, or stops, based on health checks.
+* Send heartbeat pings to an external URL such as [healthchecks.io](https://healthchecks.io/).
+* Stop processes cleanly: `Ctrl+C` for console apps, a close request for GUI apps, `Ctrl+C` propagation to child processes, and force termination when a process does not respond.
+* Terminate the whole process tree on stop so that no orphaned processes remain.
+* Send notifications on service events through Windows notifications and email.
+
+**Logging and monitoring**
+
+* Capture stdout and stderr to log files, with size-based or date-based rotation.
+* View CPU and RAM usage as live graphs.
+* View, tail, and search stdout and stderr in real time.
+* View service dependencies as a tree with the status of each service.
+
+**Management tools**
+
+* Manage services with the desktop app, the Manager app, the CLI (`servy-cli`), or the PowerShell module (`Servy.psm1`).
+* Script deployments and use Servy in CI/CD pipelines.
+* Export and import service configurations for backup and migration.
+
+**Security**
+
+* Isolate each service through Windows named pipes, with kernel-level PID validation and DACL access checks.
+* Restrict access to vault data, logs, and IPC endpoints with automated ACL hardening.
+* Protect sensitive data with DPAPI, HKDF, and AES-256 with HMAC authenticated encryption.
+
+**Supported platforms**
+
+* Modern build (default, self-contained): Windows 10 (1809 or later), Windows 11, and Windows Server 2016 or later, on x64 and ARM64.
+* Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, Windows 8.x, and Windows Server 2008 R2 or later, on x64 only. See the [version comparison](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison).
 
 ## Changelog
 
