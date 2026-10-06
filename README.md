@@ -17,47 +17,6 @@ Servy offers a desktop app, a CLI, and a PowerShell module that let you create, 
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It allows non-service apps to run in the background and start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, LLMs, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
-## Quick Links
-* [Download](https://github.com/aelassas/servy/releases/latest)
-* [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
-* [Overview](https://github.com/aelassas/servy/wiki/Overview)
-* [Usage](https://github.com/aelassas/servy/wiki/Usage)
-* [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
-* [Full Documentation](https://github.com/aelassas/servy/wiki)
-
-## Features
-
-* Clean, simple UI
-* Monitor and manage all installed services with Servy Manager
-* Real-time CPU and RAM monitoring with live performance graphs for installed services
-* Real-time service stdout and stderr output preview in Servy Console
-* Service dependency tree visualization with status indicators
-* CLI and PowerShell module for full scripting and automated deployments
-* Run any executable as a Windows service
-* Set service name, description, startup type, priority, CPU affinity, working directory, environment variables, and dependencies
-* Environment variable expansion supported in parameters, process paths, and startup directories
-* Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
-* Redirect stdout/stderr to log files with automatic size-based and date-based rotations
-* Run pre-launch hooks before starting the service, with retries, timeout, logging and failure handling
-* Run post-launch hooks after the application starts successfully
-* Run pre-stop and post-stop hooks before and after the application stops
-* Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
-* Supports `Ctrl+C` propagation to descendant processes of the wrapped process
-* Prevent orphaned/zombie processes with improved lifecycle management while ensuring resource cleanup
-* Health checks and automatic service recovery
-* Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
-* Export/Import service configurations for easy backups and automation
-* Service Event Notification alerts on service failures via Windows notifications and email
-* Compatible with Windows 7 SP1 through 11 (x64/ARM64) and Windows Server editions
-
-## Support & Contributing
-
-Servy is free and open-source. If Servy has helped you, saved you hours of development time, or powered your production workflows, supporting its maintenance makes a direct impact.
-
-Building and maintaining software, publishing signed releases, delivering security updates, and providing system support takes dedicated time and financial resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/) or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
-
-If you have suggestions, feature requests, or issues, feel free to [open an issue](https://github.com/aelassas/servy/issues), or [submit a pull request](https://github.com/aelassas/servy/pulls).
-
 ## License
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for third-party software notices and licenses.
