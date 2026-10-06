@@ -1,6 +1,6 @@
 ## Why Servy?
 
-I used NSSM for a long time and kept running into the same limitations, so I built Servy to replace it.
+When I discovered NSSM years ago, I was captivated by the concept and found it very interesting. One day, I decided to write a simple tool to do the same thing, and that's how Servy was born. I decided to focus on simplicity and security, and put it on GitHub so others could contribute code, report bugs, and suggest improvements.
 
 NSSM is a lightweight tool that runs ordinary programs as Windows services. It has not been updated in over a decade. It does not reliably stop a program together with all the other programs that it started, and it lacks several features I needed:
 
