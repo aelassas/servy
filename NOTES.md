@@ -1,8 +1,37 @@
 ## Why Servy?
 
-I've been using NSSM for a while, but I kept facing the same issues again and again, so I ended up building my own tool and putting it on GitHub.
+I used NSSM for a long time and kept running into the same limitations, so I built Servy to replace it.
 
-While NSSM is a lightweight Windows service wrapper, it hasn't seen an update in over a decade. It struggles with complex process tree cleanup and lacks essential features like pre/post start/stop hooks, date-based log rotation, CPU/RAM monitoring, CPU affinity, email notifications, heartbeat ping URLs, and advanced recovery options. That's why I ended up building Servy to fix these issues and add the missing features I needed.
+NSSM is a lightweight Windows service wrapper, but it has not been updated in over a decade. It does not reliably clean up complex process trees, and it lacks several features I needed:
+
+* Pre-launch, post-launch, pre-stop, and post-stop hooks
+* Date-based log rotation
+* CPU and RAM monitoring
+* CPU affinity
+* Email notifications
+* Heartbeat ping URLs
+* Advanced recovery options
+
+Servy adds these features. It is intended as a successor to the discontinued NSSM, with a focus on ease of use and security, and I plan to keep maintaining it.
+
+Servy is open source. Anyone can contribute code, report bugs, or suggest new features.
+
+### NSSM and security
+
+NSSM is also not a secure choice for production use:
+
+* NSSM stores its configuration in the Windows registry, under `HKLM\SYSTEM\CurrentControlSet\Services\<name>\Parameters`. Values such as the application path, parameters, and environment variables are stored in plain text.
+* By default, non-administrator local users can read this registry key. Any secret passed to the application through its parameters or environment variables is therefore exposed to every local user.
+* NSSM does not isolate services from each other and does not protect its logs or configuration with access controls.
+* NSSM receives no security updates, so known weaknesses are not fixed.
+
+Servy addresses these issues with the following measures:
+
+* Each service is isolated through Windows named pipes, with kernel-level PID validation and DACL access checks.
+* Access to vault data, logs, and IPC endpoints is restricted through automated ACL hardening.
+* Sensitive data is protected with DPAPI, HKDF, and AES-256 with HMAC authenticated encryption.
+
+See the [Security Model](https://github.com/aelassas/servy/wiki/Security) for details.
 
 ## Points of Interest
 
