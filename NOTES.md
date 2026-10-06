@@ -33,7 +33,7 @@ Servy addresses these issues with the following measures:
 
 See the [Security Model](https://github.com/aelassas/servy/wiki/Security) for details.
 
-## Points of Interest
+## Points of interest
 
 ### Architecture
 
