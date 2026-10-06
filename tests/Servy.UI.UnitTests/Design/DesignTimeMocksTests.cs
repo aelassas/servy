@@ -61,6 +61,26 @@ namespace Servy.UI.UnitTests.Design
             Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
         }
 
+        [Fact]
+        public async Task DesignTimeServiceRepository_RuntimeAndRestartMembers_ReturnNeutralValues()
+        {
+            // Arrange
+            var repo = new DesignTimeServiceRepository();
+            var ct = TestContext.Current.CancellationToken;
+
+            // Act
+            var runtime = await repo.UpdateRuntimeStateAsync("test", new ServiceRuntimeStateDto(), cancellationToken: ct);
+            var description = await repo.UpdateDescriptionAndStartupTypeAsync("test", "desc", 2, cancellationToken: ct);
+            var attempts = await repo.GetRestartAttemptsAsync("test", ct);
+            var written = await repo.UpdateRestartAttemptsAsync("test", 3, DateTime.UtcNow, ct);
+
+            // Assert - the designer stubs complete with a neutral value and never report a write
+            Assert.Equal(0, runtime);
+            Assert.Equal(0, description);
+            Assert.Null(attempts);
+            Assert.Equal(0, written);
+        }
+
         #endregion
 
         #region Service Manager Tests
