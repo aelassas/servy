@@ -155,5 +155,77 @@ namespace Servy.Manager.UnitTests.Utils
             Assert.Equal(new[] { text }, lines);
             Assert.Equal(0, splitter.PendingByteCount);
         }
+
+        /// <summary>
+        /// The constructor rejects a null encoding by name, so a caller that forgot to resolve one fails
+        /// at construction and not later inside the first read.
+        /// </summary>
+        [Fact]
+        public void Constructor_NullEncoding_ThrowsArgumentNullException()
+        {
+            // Arrange
+#pragma warning disable CS8625
+            Encoding encoding = null;
+#pragma warning restore CS8625
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => new LogLineSplitter(encoding));
+
+            // Assert
+            Assert.Equal("encoding", ex.ParamName);
+        }
+
+        /// <summary>
+        /// The argument guards are the contract the tailer relies on when it passes its read count
+        /// straight through. Each row trips a different guard, and the parameter name is what tells the
+        /// guards apart: ThrowsAny covers both the null and the range exception types.
+        /// </summary>
+        /// <param name="nullBuffer">Whether to pass a null buffer instead of a 4-byte one.</param>
+        /// <param name="count">The count passed to the call.</param>
+        /// <param name="index">The starting index passed to the call.</param>
+        /// <param name="expectedParam">The parameter the thrown exception must name.</param>
+        [Theory]
+        [InlineData(true, 0, 0, "buffer")]
+        [InlineData(false, -1, 0, "count")]
+        [InlineData(false, 5, 0, "count")]
+        [InlineData(false, 2, -1, "index")]
+        public void TryReadLine_InvalidArguments_ThrowsNamingTheParameter(bool nullBuffer, int count, int index, string expectedParam)
+        {
+            // Arrange
+            var splitter = new LogLineSplitter(Encoding.UTF8);
+#pragma warning disable CS8600
+            byte[] buffer = nullBuffer ? null : new byte[4];
+#pragma warning restore CS8600
+
+            // Act
+            var ex = Assert.ThrowsAny<ArgumentException>(() =>
+            {
+                int position = index;
+                string line;
+#pragma warning disable CS8604
+                splitter.TryReadLine(buffer, count, ref position, out line);
+#pragma warning restore CS8604
+            });
+
+            // Assert
+            Assert.Equal(expectedParam, ex.ParamName);
+        }
+
+        /// <summary>
+        /// A log written with LF endings holds an empty line as a bare 0x0A at the start of a line, so
+        /// the carriage-return probe sees fewer bytes than the sequence is long and must not match.
+        /// </summary>
+        [Fact]
+        public void TryReadLine_BareLineFeedAtLineStart_ReturnsAnEmptyLine()
+        {
+            // Arrange
+            var splitter = new LogLineSplitter(Encoding.UTF8);
+
+            // Act
+            var lines = ReadAll(splitter, Encoding.UTF8.GetBytes("\nnext\n"));
+
+            // Assert
+            Assert.Equal(new[] { string.Empty, "next" }, lines);
+        }
     }
 }
