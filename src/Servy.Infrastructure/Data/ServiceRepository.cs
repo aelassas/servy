@@ -69,7 +69,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
-            EnsureStoredRowDecryptable(service, await GetByNameAsync(service.Name, decrypt: false, cancellationToken));
+            EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
             var encryptedService = CreateEncryptedClone(service);
 
             await PatchRuntimeStateAsync(
