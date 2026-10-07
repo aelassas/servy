@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Builds the Servy self-contained installer and portable ZIP package.
+    Builds the Servy self-contained installer and portable 7z package.
 
 .DESCRIPTION
     This script compiles all Servy applications (WPF, CLI, Manager) as self-contained,
