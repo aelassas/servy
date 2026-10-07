@@ -220,12 +220,12 @@ namespace Servy.Core.IntegrationTests.Helpers
                 parent.Refresh();
 
                 // Assert
-                Assert.True(childExited, "The target child process should have been terminated.");
+                Assert.True(childExited, $"The target child process (PID {childId}) should have been terminated. KillProcessTreeAndParents returned {result}; parent.HasExited={parent.HasExited}.");
                 Assert.False(parent.HasExited, "The parent process should remain alive because killParents was false.");
 
                 // The downward walk reports success unless a PID vanished mid-walk. The child is confirmed
                 // dead above, so a false here means the walk itself failed.
-                Assert.True(result, $"KillProcessTreeAndParents returned false and the target child process (PID {childId}) is still running.");
+                Assert.True(result, $"KillProcessTreeAndParents returned false although the target child process (PID {childId}) exited.");
             }
             finally
             {
