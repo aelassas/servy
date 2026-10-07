@@ -349,5 +349,69 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Null(ex);
             Assert.Null(Environment.GetEnvironmentVariable(name));
         }
+
+        [Fact]
+        public void Refresh_Application_VariableAddedAfterBaselineButHeldByTheProcess_IsKept()
+        {
+            // Arrange: the name is not in the baseline, and the process already has its own value
+            var name = UniqueName();
+            Environment.SetEnvironmentVariable(name, "own");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system![name] = "registry";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("own", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_EmptyValueAndPerAccountVariable_AreNeverApplied()
+        {
+            // Arrange: HOMESHARE is a per-account name; it is absent from the process, then restored afterwards
+            var empty = UniqueName();
+            var original = Environment.GetEnvironmentVariable("HOMESHARE");
+            try
+            {
+                Environment.SetEnvironmentVariable("HOMESHARE", null);
+                _system![empty] = string.Empty;
+                _system["HOMESHARE"] = @"\\server\share";
+                var refresher = CreateRefresher();
+                refresher.CaptureBaseline();
+
+                // Act
+                refresher.Refresh();
+
+                // Assert
+                Assert.Null(Environment.GetEnvironmentVariable(empty));
+                Assert.Null(Environment.GetEnvironmentVariable("HOMESHARE"));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("HOMESHARE", original);
+            }
+        }
+
+        [Fact]
+        public void Refresh_Service_UserRegistryUnreadable_StillAppliesTheSystemValue()
+        {
+            // Arrange
+            var name = UniqueName();
+            Environment.SetEnvironmentVariable(name, "boot");
+            _system![name] = "now";
+            var refresher = new SystemEnvironmentRefresher(
+                () => _system,
+                () => null,
+                (n, v) => Environment.SetEnvironmentVariable(n, v));
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("now", Environment.GetEnvironmentVariable(name));
+        }
     }
 }
