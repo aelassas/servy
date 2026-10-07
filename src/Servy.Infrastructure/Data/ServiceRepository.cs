@@ -64,8 +64,8 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
-            EnsureStoredRowDecryptable(service, await GetByNameAsync(service.Name, decrypt: false, cancellationToken));
-            var encryptedService = CreateEncryptedClone(service);
+            EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
+            var encryptedService = CreateEncryptedClone(service!);
 
             await PatchRuntimeStateAsync(
                 incoming: encryptedService,
@@ -81,7 +81,7 @@ namespace Servy.Infrastructure.Data
                 SELECT id FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
             var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
-            service.Id = id;
+            service!.Id = id;
 
             return id;
         }
