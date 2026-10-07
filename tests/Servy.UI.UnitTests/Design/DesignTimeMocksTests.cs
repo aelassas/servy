@@ -58,8 +58,6 @@ namespace Servy.UI.UnitTests.Design
             Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: ct));
 
             // Act & Assert - Void/Int branches
-            repo.Upsert(new ServiceDto());
-            repo.Delete("test");
             Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
             Assert.Equal(0, await repo.DeleteAsync("test", cancellationToken: ct));
             Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
@@ -145,7 +143,7 @@ namespace Servy.UI.UnitTests.Design
         #region UI Services Tests
 
         [Fact]
-        public void DesignTimeMessageBoxService_Methods_ReturnAlreadyCompletedTasks()
+        public async Task DesignTimeMessageBoxService_Methods_ReturnAlreadyCompletedTasks()
         {
             // Arrange
             var service = new DesignTimeMessageBoxService();
@@ -156,7 +154,7 @@ namespace Servy.UI.UnitTests.Design
             // on - a stub that started yielding would leave it awaiting something that never resumes.
             var confirm = service.ShowConfirmAsync("Message", "Caption");
             Assert.Equal(TaskStatus.RanToCompletion, confirm.Status);
-            Assert.True(confirm.Result);
+            Assert.True(await confirm);
             Assert.Equal(TaskStatus.RanToCompletion, service.ShowErrorAsync("Err", "Cap").Status);
             Assert.Equal(TaskStatus.RanToCompletion, service.ShowInfoAsync("Inf", "Cap").Status);
             Assert.Equal(TaskStatus.RanToCompletion, service.ShowWarningAsync("Warn", "Cap").Status);
@@ -201,9 +199,9 @@ namespace Servy.UI.UnitTests.Design
             // Capture the tasks instead of awaiting them: awaiting an already-completed task
             // asserts nothing, while synchronous completion is the property the designer depends
             // on - a stub that started yielding would leave it awaiting something that never resumes.
-            Assert.Equal(TaskStatus.RanToCompletion, service.OpenDocumentationAsync("caption").Status);
-            Assert.Equal(TaskStatus.RanToCompletion, service.CheckUpdatesAsync("caption").Status);
-            Assert.Equal(TaskStatus.RanToCompletion, service.OpenAboutDialogAsync("about", "caption").Status);
+            Assert.Equal(TaskStatus.RanToCompletion, service.OpenDocumentationAsync("caption", CancellationToken.None).Status);
+            Assert.Equal(TaskStatus.RanToCompletion, service.CheckUpdatesAsync("caption", CancellationToken.None).Status);
+            Assert.Equal(TaskStatus.RanToCompletion, service.OpenAboutDialogAsync("about", "caption", CancellationToken.None).Status);
         }
 
         [Fact]

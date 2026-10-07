@@ -69,7 +69,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
-            EnsureStoredRowDecryptable(service, await GetByNameAsync(service?.Name, decrypt: false, cancellationToken));
+            EnsureStoredRowDecryptable(service, await GetByNameAsync(service.Name, decrypt: false, cancellationToken));
             var encryptedService = CreateEncryptedClone(service);
 
             await PatchRuntimeStateAsync(
@@ -372,34 +372,6 @@ namespace Servy.Infrastructure.Data
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 result = await queryExecutor(sql, new { Name = name });
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Orchestrates a synchronous data store command using a unified legacy whitespace fallback execution pattern.
-        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical
-        /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
-        /// </summary>
-        /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
-        /// <param name="sql">The parameterized SQL statement to execute (must use a @Name parameter).</param>
-        /// <param name="queryExecutor">Delegate that runs <paramref name="sql"/> with the supplied parameters.</param>
-        /// <param name="name">The service name as given; queried trimmed first, then verbatim.</param>
-        /// <param name="fallbackEvaluationPredicate">Returns true when the trimmed-name result is "empty" and the verbatim-name fallback should be attempted.</param>
-        /// <returns>The result of the trimmed-name query, or the verbatim-name fallback result for legacy whitespace rows.</returns>
-        private static T ResolveWithLegacyFallback<T>(
-            string sql,
-            Func<string, object, T> queryExecutor,
-            string name,
-            Func<T, bool> fallbackEvaluationPredicate)
-        {
-            var result = queryExecutor(sql, new { Name = name.Trim() });
-
-            // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
-            if (fallbackEvaluationPredicate(result) && name != name.Trim())
-            {
-                result = queryExecutor(sql, new { Name = name });
             }
 
             return result;
