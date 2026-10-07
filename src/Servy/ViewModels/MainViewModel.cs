@@ -371,10 +371,10 @@ namespace Servy.ViewModels
         /// </summary>
         public List<EnumDisplayItem<RecoveryAction>> RecoveryActions { get; } = new List<EnumDisplayItem<RecoveryAction>>
         {
-            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
             new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
             new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
             new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
+            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
         };
 
         /// <summary>
