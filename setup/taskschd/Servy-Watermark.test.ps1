@@ -73,12 +73,19 @@ try {
     # ----------------------------------------------------
     # Test 3: Update-Watermark Basic Flow
     # ----------------------------------------------------
-    $initialTime = [DateTime]::UtcNow.AddMinutes(-10)
-    Update-Watermark -TimestampFile $timestampFile -TimeCreated $initialTime -ScriptDir $tempDir
-    $updatedVal = Read-Watermark -TimestampFile $timestampFile
+    # Arrange: a watermark file that holds an OLDER timestamp than the one being committed
+    $olderTime = [DateTime]::UtcNow.AddMinutes(-10)
+    $newerTime = $olderTime.AddMinutes(5)
+    $advanceFile = Join-Path $tempDir "advance.txt"
+    Set-Content -Path $advanceFile -Value $olderTime.ToString("o") -Encoding UTF8
 
-    if ($null -eq $updatedVal -or [Math]::Abs(($updatedVal - $initialTime).TotalMilliseconds) -gt (10 * 60 * 1000)) {
-        Write-Host "FAIL: Update-Watermark failed to update timestamp file." -ForegroundColor Red
+    # Act
+    Update-Watermark -TimestampFile $advanceFile -TimeCreated $newerTime -ScriptDir $tempDir
+    $updatedVal = Read-Watermark -TimestampFile $advanceFile
+
+    # Assert: the file now holds the NEWER timestamp (1 s tolerance for the ISO round-trip only)
+    if ($null -eq $updatedVal -or [Math]::Abs(($updatedVal - $newerTime).TotalMilliseconds) -gt 1000) {
+        Write-Host "FAIL: Update-Watermark failed to advance the timestamp file. Expected '$($newerTime.ToString("o"))', got '$updatedVal'." -ForegroundColor Red
         exit 1
     }
     Write-Host "  [OK] Update-Watermark advances watermark file to new timestamp." -ForegroundColor Gray
@@ -87,17 +94,23 @@ try {
     # Test 4: Update-Watermark Race / Stale Write Prevention
     # ----------------------------------------------------
     # Scenario: File currently holds T2 (newer). A process attempts to commit T1 (older).
-    $t1 = $initialTime.AddMinutes(2)
-    $t2 = $initialTime.AddMinutes(5)
+    # Arrange
+    $t1 = $olderTime.AddMinutes(2)
+    $t2 = $olderTime.AddMinutes(5)
+    $staleFile = Join-Path $tempDir "stale.txt"
+    Update-Watermark -TimestampFile $staleFile -TimeCreated $t2 -ScriptDir $tempDir
+    $seeded = Read-Watermark -TimestampFile $staleFile
+    if ($null -eq $seeded -or [Math]::Abs(($seeded - $t2).TotalMilliseconds) -gt 1000) {
+        Write-Host "FAIL: Update-Watermark did not seed the first-run watermark with T2." -ForegroundColor Red
+        exit 1
+    }
 
-    # First write T2 to target
-    Update-Watermark -TimestampFile $timestampFile -TimeCreated $t2 -ScriptDir $tempDir
+    # Act: attempt the stale write with T1 < T2
+    Update-Watermark -TimestampFile $staleFile -TimeCreated $t1 -ScriptDir $tempDir
+    $finalVal = Read-Watermark -TimestampFile $staleFile
 
-    # Attempt stale write with T1 < T2
-    Update-Watermark -TimestampFile $timestampFile -TimeCreated $t1 -ScriptDir $tempDir
-    $finalVal = Read-Watermark -TimestampFile $timestampFile
-
-    if ([Math]::Abs(($finalVal -$t2).TotalMilliseconds) -gt (5 * 60 * 1000)) {
+    # Assert: T2 survives (the tolerance must stay far below the 3-minute T2-T1 gap)
+    if ($null -eq $finalVal -or [Math]::Abs(($finalVal - $t2).TotalMilliseconds) -gt 1000) {
         Write-Host "FAIL: Update-Watermark allowed a stale write ($t1) to overwrite a newer watermark ($t2)." -ForegroundColor Red
         exit 1
     }
