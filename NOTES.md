@@ -1,35 +1,30 @@
 ## Why Servy?
 
-When I discovered NSSM years ago, I was captivated by the concept and found it very interesting. One day, I decided to write a simple tool to do the same thing, and that's how Servy was born. I decided to focus on simplicity and security, and put it on GitHub so others could contribute code, report bugs, and suggest improvements.
+When I discovered NSSM years ago, I liked the concept and found it very interesting. One day, I decided to write a simple tool to do the same thing, and that's how Servy was born. I decided to focus on simplicity and security, and put it on GitHub so others could contribute code, report bugs, and suggest improvements.
 
-NSSM is a lightweight tool that runs ordinary programs as Windows services. It has not been updated in over a decade. It does not reliably stop a program together with all the other programs that it started, and it lacks several features I needed:
+NSSM is a lightweight tool that runs programs as Windows services, but it has not been updated in over a decade. It struggles to reliably stop complex process trees, often leaving orphaned child processes. Additionally, it lacks critical modern features such as pre and post lifecycle execution scripts, date-based log rotation, real-time CPU and memory monitoring, CPU affinity, email notifications, heartbeat ping health checks, and advanced failure recovery options.
 
-* Running scripts before and after a program starts or stops
-* Starting a new log file by date
-* Monitoring how much processor and memory a program uses
-* Choosing which processor cores a program may use
-* Email notifications
-* Heartbeat ping URLs, which let an external monitoring service confirm that a program is still running
-* Advanced options for recovering from failures
-
-Servy adds these features. It is intended as a successor to the discontinued NSSM, with a focus on ease of use and security, and I plan to keep maintaining it.
+Servy adds these features. It is intended as a successor to the discontinued NSSM, with a focus on ease of use and security, and I plan to keep maintaining it providing bug fixes, security updates, and new features.
 
 Servy is open source. Anyone can contribute code, report bugs, or suggest new features.
 
 ### NSSM and security
 
-NSSM is also not a secure choice for production use:
+NSSM is not a secure choice for production environments:
 
-* NSSM keeps its settings in the Windows registry, the database where Windows stores its configuration. Settings such as program arguments and environment variables are stored as plain, readable text.
-* By default, regular users of the computer can read these settings. A password or key passed to a program through them is therefore visible to every local user.
-* NSSM does not keep services separate from each other, and it does not restrict who can read its logs and settings.
-* NSSM receives no security updates, so known weaknesses are not fixed.
+* NSSM stores its configurations in the Windows Registry under `HKLM\SYSTEM\CurrentControlSet\Services\<ServiceName>\Parameters`.
+* Configuration settings, including executable paths, command-line parameters, arguments, and environment variables, **are saved as plain, readable text**.
+* Any user can read these Registry entries, meaning sensitive data such as database passwords, API keys, and connection strings are exposed to anyone with access to the system.
+* NSSM does not isolate service permissions, leaving log files and parameters completely unrestricted across local accounts.
+* NSSM receives no security updates, leaving long-standing vulnerabilities unpatched.
 
-Servy addresses these issues with the following measures:
+Servy protects service configurations, sensitive data, and runtime states with a zero-trust model:
 
-* Each service is kept separate from the others, and Servy checks the identity of every program that asks for information.
-* Servy automatically restricts who can open its stored settings, its logs, and the channel it uses to communicate between its parts.
-* Sensitive data is encrypted with strong, widely used methods, and the encryption key is protected by Windows and tied to the computer.
+* All configurations and sensitive data are stored in a secure vault protected by DPAPI, HKDF key derivation, and AES-256 HMAC encryption.
+* Servy automatically enforces strict Access Control Lists (ACLs) on stored configurations, log files, and IPC communication channels to block unauthorized access.
+* Each service context is fully isolated, and Servy authenticates the identity of every process requesting configuration data.
+
+In other words, Servy ensures that sensitive information is never exposed to unauthorized users and that each service operates within a secure, isolated environment.
 
 See the [Security Model](https://github.com/aelassas/servy/wiki/Security) for details.
 
