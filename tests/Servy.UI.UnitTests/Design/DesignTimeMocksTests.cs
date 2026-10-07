@@ -54,8 +54,6 @@ namespace Servy.UI.UnitTests.Design
             Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: ct));
 
             // Act & Assert - Void/Int branches
-            repo.Upsert(new ServiceDto());
-            repo.Delete("test");
             Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
             Assert.Equal(0, await repo.DeleteAsync("test", cancellationToken: ct));
             Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
@@ -141,7 +139,7 @@ namespace Servy.UI.UnitTests.Design
         #region UI Services Tests
 
         [Fact]
-        public void DesignTimeMessageBoxService_Methods_ReturnAlreadyCompletedTasks()
+        public async Task DesignTimeMessageBoxService_Methods_ReturnAlreadyCompletedTasks()
         {
             // Arrange
             var service = new DesignTimeMessageBoxService();
@@ -152,7 +150,7 @@ namespace Servy.UI.UnitTests.Design
             // on - a stub that started yielding would leave it awaiting something that never resumes.
             var confirm = service.ShowConfirmAsync("Message", "Caption");
             Assert.True(confirm.IsCompletedSuccessfully);
-            Assert.True(confirm.Result);
+            Assert.True(await confirm);
             Assert.True(service.ShowErrorAsync("Err", "Cap").IsCompletedSuccessfully);
             Assert.True(service.ShowInfoAsync("Inf", "Cap").IsCompletedSuccessfully);
             Assert.True(service.ShowWarningAsync("Warn", "Cap").IsCompletedSuccessfully);
@@ -197,9 +195,9 @@ namespace Servy.UI.UnitTests.Design
             // Capture the tasks instead of awaiting them: awaiting an already-completed task
             // asserts nothing, while synchronous completion is the property the designer depends
             // on - a stub that started yielding would leave it awaiting something that never resumes.
-            Assert.True(service.OpenDocumentationAsync("caption").IsCompletedSuccessfully);
-            Assert.True(service.CheckUpdatesAsync("caption").IsCompletedSuccessfully);
-            Assert.True(service.OpenAboutDialogAsync("about", "caption").IsCompletedSuccessfully);
+            Assert.True(service.OpenDocumentationAsync("caption", TestContext.Current.CancellationToken).IsCompletedSuccessfully);
+            Assert.True(service.CheckUpdatesAsync("caption", TestContext.Current.CancellationToken).IsCompletedSuccessfully);
+            Assert.True(service.OpenAboutDialogAsync("about", "caption", TestContext.Current.CancellationToken).IsCompletedSuccessfully);
         }
 
         [Fact]

@@ -23,9 +23,6 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeServiceRepository : IServiceRepository
     {
-        public void Upsert(ServiceDto service) { /* no-op */ }
-        public void Delete(string name) { /* no-op */ }
-
         public Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
