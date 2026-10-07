@@ -95,7 +95,7 @@ namespace Servy.Core.Logging
         /// <param name="logDirectory">
         /// An optional custom directory path for log files. Pass <c>null</c> (the default) to leave the
         /// currently configured directory unchanged; pass an empty string to reset it to
-        /// <see cref="LogsPath"/>. A non-empty value becomes the new log directory.
+        /// <see cref="AppConfig.LogsFolderPath"/>. A non-empty value becomes the new log directory.
         /// </param>
         public static void Initialize(
             string fileName,
