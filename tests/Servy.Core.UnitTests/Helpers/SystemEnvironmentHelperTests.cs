@@ -212,7 +212,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void Refresh_Application_UpdatesTheBaseline_SoAKeptOverrideIsNeverRevisited()
         {
-            // Arrange: a first refresh applies a change; a second with the same registry must change nothing
+            // Arrange: a first refresh applies a change and moves the baseline to v2
             var name = UniqueName();
             _system![name] = "v1";
             Environment.SetEnvironmentVariable(name, "v1");
@@ -220,13 +220,13 @@ namespace Servy.Core.UnitTests.Helpers
             refresher.CaptureBaseline();
             _system[name] = "v2";
             refresher.Refresh();
-            Environment.SetEnvironmentVariable(name, "own");
+            Environment.SetEnvironmentVariable(name, "v1"); // the user deliberately goes back to the old value
 
             // Act
             refresher.Refresh();
 
-            // Assert
-            Assert.Equal("own", Environment.GetEnvironmentVariable(name));
+            // Assert: the registry did not change since the baseline, so v1 is a kept override and stays
+            Assert.Equal("v1", Environment.GetEnvironmentVariable(name));
         }
 
         [Fact]
