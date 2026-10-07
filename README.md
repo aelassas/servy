@@ -79,7 +79,7 @@ See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Exa
 * Send heartbeat pings to an external URL such as [healthchecks.io](https://healthchecks.io/).
 * Stop processes cleanly: `Ctrl+C` for console apps, a close request for GUI apps, `Ctrl+C` propagation to child processes, and force termination when a process does not respond.
 * Terminate the whole process tree on stop so that no orphaned processes remain.
-* Send notifications on service events through Windows notifications, email, WhatsApp, webhooks and other channels.
+* Send notifications on service events through OS notifications, email, WhatsApp, webhooks and other channels.
 
 **Logging and monitoring**
 
