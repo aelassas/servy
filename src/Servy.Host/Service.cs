@@ -270,6 +270,7 @@ namespace Servy.Host
                 // Now every log from this point forward (including validation errors) is prefixed.
                 _logger = _logger?.CreateScoped(AppConfig.ServyHostServiceName);
 
+                // START LISTENING
                 StartListening();
             }
             catch (Exception ex)
