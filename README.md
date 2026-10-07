@@ -68,7 +68,7 @@ See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Exa
 
 **Service configuration**
 
-* Set the name, description, startup type, process priority, CPU affinity, working directory, parameters, environment variables, and dependencies of each service.
+* Set the name, display name, description, startup type, process priority, CPU affinity, working directory, parameters, environment variables, and dependencies of each service.
 * Use environment variables in parameters, process paths, and startup directories.
 * Run services as Local System, a local or domain account, or a group managed service account (gMSA).
 * Run pre-launch, post-launch, pre-stop, and post-stop hooks, with retries, timeouts, and failure handling.
@@ -79,7 +79,7 @@ See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Exa
 * Send heartbeat pings to an external URL such as [healthchecks.io](https://healthchecks.io/).
 * Stop processes cleanly: `Ctrl+C` for console apps, a close request for GUI apps, `Ctrl+C` propagation to child processes, and force termination when a process does not respond.
 * Terminate the whole process tree on stop so that no orphaned processes remain.
-* Send notifications on service events through Windows notifications and email.
+* Send notifications on service events through Windows notifications, email, WhatsApp, webhooks and other channels.
 
 **Logging and monitoring**
 
