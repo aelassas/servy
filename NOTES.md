@@ -2,11 +2,9 @@
 
 When I discovered NSSM years ago, I liked the concept and found it very interesting. One day, I decided to write a simple tool to do the same thing, and that's how Servy was born. I decided to focus on simplicity and security, and put it on GitHub so others could contribute code, report bugs, and suggest improvements.
 
-NSSM is a lightweight tool that runs programs as Windows services, but it has not been updated in over a decade. It struggles to reliably stop complex process trees, often leaving orphaned child processes. Additionally, it lacks critical modern features such as pre and post lifecycle execution scripts, date-based log rotation, real-time CPU and memory monitoring, CPU affinity, email notifications, heartbeat ping health checks, and advanced failure recovery options.
+NSSM is a lightweight tool that runs programs as native Windows services, but it has not been updated in over a decade. It is not secure for production environments. It also struggles to reliably stop complex process trees, often leaving orphaned child processes. Additionally, it lacks critical features such as pre and post lifecycle execution scripts, date-based log rotation, real-time CPU and RAM monitoring, CPU affinity, email notifications, heartbeat ping health checks, and advanced failure recovery options.
 
-Servy adds these features. It is intended as a successor to the discontinued NSSM, with a focus on ease of use and security, and I plan to keep maintaining it providing bug fixes, security updates, and new features.
-
-Servy is open source. Anyone can contribute code, report bugs, or suggest new features.
+Servy adds these features. It is intended as a successor to the discontinued NSSM, with a focus on ease of use and security, and I plan to keep maintaining it by providing bug fixes, security updates, and new features.
 
 ### NSSM and security
 
