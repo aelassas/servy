@@ -294,10 +294,10 @@ namespace Servy.ViewModels
         /// </summary>
         public List<EnumDisplayItem<DateRotationType>> DateRotationTypes { get; } = new List<EnumDisplayItem<DateRotationType>>
         {
+            new EnumDisplayItem<DateRotationType> { Value = DateRotationType.None, DisplayName = Strings.DateRotationType_None },
             new EnumDisplayItem<DateRotationType> { Value = DateRotationType.Daily, DisplayName = Strings.DateRotationType_Daily },
             new EnumDisplayItem<DateRotationType> { Value = DateRotationType.Weekly, DisplayName = Strings.DateRotationType_Weekly },
             new EnumDisplayItem<DateRotationType> { Value = DateRotationType.Monthly, DisplayName = Strings.DateRotationType_Monthly },
-            new EnumDisplayItem<DateRotationType> { Value = DateRotationType.None, DisplayName = Strings.DateRotationType_None },
         };
 
         /// <summary>
@@ -375,10 +375,10 @@ namespace Servy.ViewModels
         /// </summary>
         public List<EnumDisplayItem<RecoveryAction>> RecoveryActions { get; } = new List<EnumDisplayItem<RecoveryAction>>
         {
+            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
             new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
             new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
             new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
-            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
         };
 
         /// <summary>
