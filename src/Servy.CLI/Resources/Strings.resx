@@ -332,6 +332,9 @@
   <data name="Msg_Show_Label_EnvironmentVariables" xml:space="preserve">
     <value>Environment Variables</value>
   </data>
+  <data name="Msg_Show_Label_AllowOverriddenRuntimeVars" xml:space="preserve">
+    <value>Allow Overridden Runtime Vars</value>
+  </data>
   <data name="Msg_Show_Label_Dependencies" xml:space="preserve">
     <value>Dependencies</value>
   </data>

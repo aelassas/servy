@@ -307,6 +307,12 @@ namespace Servy.CLI.Options
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        [Option("allowOverriddenRuntimeVars", HelpText = "Allow overriding of protected runtime variables (e.g., JAVA_HOME, JAVA_OPTS, CATALINA_OPTS) by the service's environment variables.")]
+        public bool AllowOverriddenRuntimeVars { get; set; }
+
+        /// <summary>
         /// Gets or sets Windows service dependencies.
         /// Optional.
         /// </summary>

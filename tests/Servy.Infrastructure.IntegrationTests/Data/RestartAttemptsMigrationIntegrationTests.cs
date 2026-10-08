@@ -49,7 +49,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void Initialize_FreshDatabase_HasTheRestartAttemptsColumnsAtVersion10()
+        public void Initialize_FreshDatabase_HasTheRestartAttemptsColumnsAtVersion11()
         {
             using (var conn = CreateConnection())
             {
@@ -57,8 +57,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
-                Assert.Equal(10, SQLiteDbInitializer.LatestSchemaVersion);
-                Assert.Equal(10, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(11, SQLiteDbInitializer.LatestSchemaVersion);
+                Assert.Equal(11, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
                 var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").ToDictionary(r => (string)r.name, r => (string)r.type);
                 Assert.Equal("INTEGER", columns["RestartAttempts"]);
                 Assert.Equal("INTEGER", columns["RestartAttemptsUpdatedAtTicks"]);
@@ -70,18 +70,19 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             using (var conn = CreateConnection())
             {
-                // Arrange: a version 9 database, i.e. without the two columns
+                // Arrange: a version 9 database, i.e. without the version 10 and 11 columns
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 AddService(conn, "existing");
                 conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN RestartAttempts;");
                 conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN RestartAttemptsUpdatedAtTicks;");
+                conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN AllowOverriddenRuntimeVars;");
                 conn.Execute("UPDATE SchemaInfo SET Version = 9 WHERE Id = 1;");
 
                 // Act
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
-                Assert.Equal(10, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(11, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
                 Assert.Equal((null, null), ReadCounter(conn, "existing"));
             }
         }
@@ -193,7 +194,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Assert: nothing imported, nothing deleted, and the migration itself did not fail
                 Assert.Equal((null, null), ReadCounter(conn, "Locked"));
                 Assert.True(File.Exists(path));
-                Assert.Equal(10, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(11, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
 
                 // Act: the next start
                 SQLiteDbInitializer.Initialize(conn, _recoveryFolder);

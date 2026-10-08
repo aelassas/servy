@@ -107,6 +107,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.FailureProgramStartupDirectory, service.FailureProgramStartupDirectory);
             Assert.Equal(dto.FailureProgramParameters, service.FailureProgramParameters);
             Assert.Equal(dto.EnvironmentVariables, service.EnvironmentVariables);
+            Assert.Equal(dto.AllowOverriddenRuntimeVars, service.AllowOverriddenRuntimeVars);
             Assert.Equal(dto.ServiceDependencies, service.ServiceDependencies);
             Assert.Equal(dto.RunAsLocalSystem, service.RunAsLocalSystem);
             Assert.Equal(dto.UserAccount, service.UserAccount);
@@ -263,6 +264,7 @@ namespace Servy.Core.UnitTests.Mappers
                 FailureProgramParameters = "--param1",
                 FailureProgramStartupDirectory = @"C:\apps",
                 EnvironmentVariables = "KEY1=VALUE1",
+                AllowOverriddenRuntimeVars = true,
                 ServiceDependencies = "DepA,DepB",
                 RunAsLocalSystem = false,
                 UserAccount = "User2",

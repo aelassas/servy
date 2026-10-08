@@ -460,6 +460,11 @@ namespace Servy.Core.Config
         public const int DefaultStopTimeout = 5;
 
         /// <summary>
+        /// Default flag for allowing overridden runtime environment variables. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultAllowOverriddenRuntimeVars = false;
+
+        /// <summary>
         /// The maximum time, in milliseconds, that the Servy service will wait for a launched
         /// Servy.Restarter.Net48.exe process to exit before force-terminating it.
         /// </summary>

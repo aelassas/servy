@@ -282,6 +282,12 @@ namespace Servy.Core.DTOs
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
+        /// Whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        [SqlColumn("INTEGER")]
+        public bool? AllowOverriddenRuntimeVars { get; set; }
+
+        /// <summary>
         /// Optional names of dependent services, separated by semicolons.
         /// </summary>
         [SqlColumn("TEXT")]

@@ -63,6 +63,7 @@ namespace Servy.Infrastructure.Data
 
             // Advanced Tab
             "EnvironmentVariables",
+            "AllowOverriddenRuntimeVars",
             "ServiceDependencies",
 
             // LogOn Tab

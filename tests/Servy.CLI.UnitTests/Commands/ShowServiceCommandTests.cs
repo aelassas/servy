@@ -710,6 +710,7 @@ namespace Servy.CLI.UnitTests.Commands
             dto.EnableDateRotation = true;
             dto.MaxRotations = 7;
             dto.EnvironmentVariables = "API_TOKEN=9f3c1a; API_HOST=example.internal";
+            dto.AllowOverriddenRuntimeVars = true;
 
             GivenService(dto, "telegraf");
             GivenStatus(ServiceControllerStatus.Running);
@@ -721,44 +722,45 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             var expected = string.Join(Environment.NewLine, new[]
             {
-                @"Name                    : telegraf",
-                @"Status                  : Running",
-                @"Pid                     : 7312",
-                @"Display Name            : Telegraf Agent",
-                @"Description             : Metrics collection agent",
-                @"Startup Type            : AutomaticDelayedStart",
-                @"Priority                : Normal",
-                @"Executable              : C:\Program Files\telegraf\telegraf.exe",
-                @"Startup Dir             : C:\Program Files\telegraf",
-                @"Parameters              : ********",
+                @"Name                            : telegraf",
+                @"Status                          : Running",
+                @"Pid                             : 7312",
+                @"Display Name                    : Telegraf Agent",
+                @"Description                     : Metrics collection agent",
+                @"Startup Type                    : AutomaticDelayedStart",
+                @"Priority                        : Normal",
+                @"Executable                      : C:\Program Files\telegraf\telegraf.exe",
+                @"Startup Dir                     : C:\Program Files\telegraf",
+                @"Parameters                      : ********",
                 string.Empty,
                 @"Account",
-                @"  Local System          : No",
-                @"  User Account          : .\telegraf-svc",
-                @"  Password              : ********",
+                @"  Local System                  : No",
+                @"  User Account                  : .\telegraf-svc",
+                @"  Password                      : ********",
                 string.Empty,
                 @"Logs",
-                @"  Stdout                : C:\Program Files\telegraf\log\out.log",
-                @"  Stderr                : C:\Program Files\telegraf\log\err.log",
-                @"  Active Stdout         : -",
-                @"  Active Stderr         : -",
-                @"  Size Rotation         : Yes",
-                @"  Rotation Size         : 10 MB",
-                @"  Date Rotation         : Yes",
-                @"  Rotation Period       : Daily",
-                @"  Max Files             : 7",
-                @"  Local Time            : No",
+                @"  Stdout                        : C:\Program Files\telegraf\log\out.log",
+                @"  Stderr                        : C:\Program Files\telegraf\log\err.log",
+                @"  Active Stdout                 : -",
+                @"  Active Stderr                 : -",
+                @"  Size Rotation                 : Yes",
+                @"  Rotation Size                 : 10 MB",
+                @"  Date Rotation                 : Yes",
+                @"  Rotation Period               : Daily",
+                @"  Max Files                     : 7",
+                @"  Local Time                    : No",
                 string.Empty,
                 @"Timeouts",
-                @"  Start                 : 10s",
-                @"  Stop                  : 5s",
+                @"  Start                         : 10s",
+                @"  Stop                          : 5s",
                 string.Empty,
                 @"Environment",
-                @"  Environment Variables : ********",
+                @"  Environment Variables         : ********",
+                @"  Allow Overridden Runtime Vars : Yes",
                 string.Empty,
                 @"Other",
-                @"  Console UI            : No",
-                @"  Debug Logs            : No"
+                @"  Console UI                    : No",
+                @"  Debug Logs                    : No"
             });
 
             Assert.Equal(expected, result.Message);

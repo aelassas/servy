@@ -125,6 +125,7 @@ namespace Servy.CLI.Commands
                     HeartbeatUrlTimeoutSeconds = heartbeatUrlTimeout,
                     EnableHeartbeatUrlFlags = opts.EnableHeartbeatUrlFlags,
                     EnvironmentVariables = opts.EnvironmentVariables,
+                    AllowOverriddenRuntimeVars = opts.AllowOverriddenRuntimeVars,
                     ServiceDependencies = opts.ServiceDependencies,
 
                     Username = opts.User?.Trim(),

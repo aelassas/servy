@@ -510,6 +510,7 @@ namespace Servy.Core.Services
                             HeartbeatUrl = options.HeartbeatUrl,
                             HeartbeatUrlTimeoutSeconds = options.HeartbeatUrlTimeoutSeconds,
                             EnableHeartbeatUrlFlags = options.EnableHeartbeatUrlFlags,
+                            AllowOverriddenRuntimeVars = options.AllowOverriddenRuntimeVars,
                             FailureProgramPath = options.FailureProgramPath,
                             FailureProgramStartupDirectory = options.FailureProgramStartupDirectory,
                             FailureProgramParameters = options.FailureProgramExecutableArgs,

@@ -85,7 +85,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
 
             // Verify Placement 1: Failure threshold reached emits fail-flag ping
@@ -127,7 +127,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Never);
 
             // The counter is reset through the host so the next manual start begins from zero
@@ -230,7 +230,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
 
             // The incremented counter was saved
@@ -272,7 +272,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -313,7 +313,7 @@ namespace Servy.Service.UnitTests
                         It.IsAny<IProcessWrapper>(),
                         It.IsAny<StartProcessCallback>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                        It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                        It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                     break;
                 case RecoveryAction.RestartService:
                     _ctx.Helper.Verify(h => h.RestartService(service.ServiceName, It.IsAny<IServyLogger>()), Times.Once);
@@ -404,7 +404,7 @@ namespace Servy.Service.UnitTests
 
             _ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                                   It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                   .Callback(() =>
                   {
                       processHasExited = false;
@@ -444,7 +444,7 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
             _ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<StartProcessCallback>(),
                                                   It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                                                   Times.Once);
         }
 
@@ -537,7 +537,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Never);
             Assert.Empty(store.Writes);
         }
@@ -576,7 +576,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<StartProcessCallback>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
 
             // The write never landed, so the stored counter is unchanged

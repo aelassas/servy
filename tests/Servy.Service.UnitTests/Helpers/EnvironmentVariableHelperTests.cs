@@ -40,7 +40,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void ExpandEnvironmentVariables_NullList_ReturnsSystemVariables()
         {
             // Arrange & Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(null);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(null, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.NotNull(expanded);
@@ -111,7 +111,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert - the malformed entries are dropped ...
             Assert.False(expanded.ContainsKey(""));
@@ -134,7 +134,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal(string.Empty, expanded["EMPTY_VAR"]);
@@ -152,7 +152,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // Verify that the null-valued variable is skipped as a substitution source (reference remains literal)...
@@ -175,7 +175,7 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.False(string.IsNullOrEmpty(osSystemRoot), "Precondition failed: SystemRoot OS variable is not set.");
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
             string result = EnvironmentVariableHelper.ExpandEnvironmentVariables("%SystemRoot%", expanded);
 
             // Assert
@@ -193,7 +193,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal("HelloWorld", expanded["MY_VAR"]);
@@ -210,7 +210,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal("C:\\Logs", expanded["LOG_DIR"]);
@@ -228,7 +228,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             var programData = Environment.GetEnvironmentVariable("ProgramData");
@@ -246,7 +246,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
             string expected = Environment.GetEnvironmentVariable("TEMP") + "\\MyApp";
 
             // Assert
@@ -263,7 +263,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Contains("%DOES_NOT_EXIST%", expanded["BROKEN"]);
@@ -278,7 +278,7 @@ namespace Servy.Service.UnitTests.Helpers
                 new EnvironmentVariable { Name = "APP_HOME", Value = "C:\\MyApp" }
             };
 
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Act
             string input = "%APP_HOME%\\data";
@@ -302,7 +302,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // The literal '%%' should be safely decoded back to '%' after expansion passes.
@@ -319,7 +319,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // The double percent should collapse to a single percent, leaving the literal placeholder intact
@@ -335,7 +335,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 new EnvironmentVariable { Name = "MY_CUSTOM", Value = "Value" }
             };
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Act
             // Tests an escaped 100%, an escaped variable marker, and a live variable marker side-by-side
@@ -355,7 +355,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 new EnvironmentVariable { Name = "CUSTOM_LITERAL", Value = "%%PATH%%" }
             };
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Verify the dictionary baseline is correct: contains literal "%PATH%"
             Assert.Equal("%PATH%", expandedEnv["CUSTOM_LITERAL"]);
@@ -381,7 +381,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 new EnvironmentVariable { Name = "MIXED_BAG", Value = "Escaped=%%SystemRoot%%, Real=%SystemRoot%" }
             };
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Act
             string input = "Result->%MIXED_BAG%";
@@ -412,7 +412,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             string resultValue = expanded["LITERAL_MSG"];
@@ -439,7 +439,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // The fixed-point engine safely halts and leaves the unresolvable macro boundaries intact.
@@ -458,7 +458,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // The self-referencing token should be skipped and remain safely intact in the string,
@@ -479,7 +479,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal("C:\\BaseOSPath;\\MyTools", expanded[osVarName]);
@@ -502,7 +502,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal("C:\\Inherited\\Child", expanded[osVarName]);
@@ -521,7 +521,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // Pin down the precise literal values generated by the single-pass
@@ -548,7 +548,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            string log = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars));
+            string log = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
 
             // Assert
             int warnings = CountOccurrences(log, "Direct cycle detected for variable 'CYCLE_ONCE_VAR'");
@@ -611,7 +611,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // The custom value should be ignored; the system value must remain intact.
@@ -636,7 +636,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             // Verify rejection of malicious values
@@ -661,7 +661,7 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void ExpandEnvironmentVariables_BlocksEveryVariableInProtectedSet()
+        public void ExpandEnvironmentVariables_BlocksEveryVariableInProtectedSet_WhenOverrideDisabled()
         {
             // Arrange
             const string HijackSentinel = "__SERVY_HIJACK__";
@@ -671,7 +671,7 @@ namespace Servy.Service.UnitTests.Helpers
                 .ToList();
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars, allowOverriddenRuntimeVars: false);
 
             // Assert: Verify that no user-configured value overrode any protected variable
             var leakedVariables = EnvironmentVariableHelper.ProtectedVariableNames
@@ -719,7 +719,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.False(expanded.TryGetValue("pAtH", out var pathVal) && pathVal == "C:\\Evil");
@@ -738,10 +738,97 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal("SafeValue", expanded["CUSTOM_APP_SETTING"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ImmutableCoreSystemVariables_NeverAllowedToOverridden_EvenWhenPolicyEnabled()
+        {
+            // Arrange
+            string systemPath = Environment.GetEnvironmentVariable("PATH");
+            string systemComSpec = Environment.GetEnvironmentVariable("COMSPEC");
+            string systemWinDir = Environment.GetEnvironmentVariable("WINDIR");
+
+            var userVars = EnvironmentVariableHelper.ImmutableProtectedVariableNames
+                .Select(name => new EnvironmentVariable { Name = name, Value = "C:\\HackedPath" })
+                .ToList();
+
+            // Act: Enable allowOverriddenRuntimeVars policy flag
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars, allowOverriddenRuntimeVars: true);
+
+            // Assert: Immutable core system variables (PATH, COMSPEC, WINDIR) must remain strictly intact
+            Assert.NotEqual("C:\\HackedPath", expanded["PATH"]);
+            Assert.Equal(systemPath, expanded["PATH"]);
+
+            Assert.NotEqual("C:\\HackedPath", expanded["COMSPEC"]);
+            Assert.Equal(systemComSpec, expanded["COMSPEC"]);
+
+            Assert.NotEqual("C:\\HackedPath", expanded["WINDIR"]);
+            Assert.Equal(systemWinDir, expanded["WINDIR"]);
+
+            // Verify that zero immutable variables were overridden
+            var leakedImmutableVars = EnvironmentVariableHelper.ImmutableProtectedVariableNames
+                .Where(name => expanded.TryGetValue(name, out var val) && val == "C:\\HackedPath")
+                .ToList();
+
+            Assert.Empty(leakedImmutableVars);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_OverridableRuntimeVariables_AllowedWhenPolicyEnabled()
+        {
+            // Arrange
+            var userVars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "JAVA_HOME", Value = "C:\\Program Files\\Java\\jdk-21" },
+                new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" },
+                new EnvironmentVariable { Name = "CATALINA_OPTS", Value = "-Denv=production" },
+                new EnvironmentVariable { Name = "NODE_OPTIONS", Value = "--max-old-space-size=4096" }
+            };
+
+            // Act: Enable allowOverriddenRuntimeVars policy flag
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars, allowOverriddenRuntimeVars: true);
+
+            // Assert: Overridable runtime variables should be accepted and updated
+            Assert.Equal("C:\\Program Files\\Java\\jdk-21", expanded["JAVA_HOME"]);
+            Assert.Equal("-Xmx2048m", expanded["JAVA_OPTS"]);
+            Assert.Equal("-Denv=production", expanded["CATALINA_OPTS"]);
+            Assert.Equal("--max-old-space-size=4096", expanded["NODE_OPTIONS"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_OverridableRuntimeVariables_BlockedWhenPolicyDisabled()
+        {
+            // Arrange
+            var userVars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "JAVA_HOME", Value = "C:\\Program Files\\Java\\jdk-21" },
+                new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" },
+                new EnvironmentVariable { Name = "CATALINA_OPTS", Value = "-Denv=production" },
+                new EnvironmentVariable { Name = "NODE_OPTIONS", Value = "--max-old-space-size=4096" }
+            };
+
+            // Act: Disable allowOverriddenRuntimeVars policy flag
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars, allowOverriddenRuntimeVars: false);
+
+            // Assert: Overridable runtime variables should be blocked
+            string javaHomeVal;
+            string javaOptsVal;
+            string catalinaOptsVal;
+            string nodeOptsVal;
+
+            expanded.TryGetValue("JAVA_HOME", out javaHomeVal);
+            expanded.TryGetValue("JAVA_OPTS", out javaOptsVal);
+            expanded.TryGetValue("CATALINA_OPTS", out catalinaOptsVal);
+            expanded.TryGetValue("NODE_OPTIONS", out nodeOptsVal);
+
+            Assert.NotEqual("C:\\Program Files\\Java\\jdk-21", javaHomeVal);
+            Assert.NotEqual("-Xmx2048m", javaOptsVal);
+            Assert.NotEqual("-Denv=production", catalinaOptsVal);
+            Assert.NotEqual("--max-old-space-size=4096", nodeOptsVal);
         }
 
         #endregion
@@ -765,7 +852,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             Assert.Equal(maxLen, expanded["OVERFLOW_VAR"]?.Length);
@@ -796,7 +883,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             string resultValue = expanded["OVERFLOW_VAR"];
@@ -825,7 +912,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
             string resultValue = expanded["FRAGMENT_VAR"];
@@ -906,7 +993,7 @@ namespace Servy.Service.UnitTests.Helpers
             var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TARGET_OS", Value = "%OS%-x64" } };
 
             // Act
-            var result = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+            var result = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert: the custom variable resolves, and the child process gets the System variable itself
             Assert.Equal("Windows_NT-x64", result["TARGET_OS"]);

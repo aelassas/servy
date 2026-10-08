@@ -16,12 +16,14 @@ namespace Servy.Service.Helpers
     /// <param name="arguments">Command-line arguments for the child.</param>
     /// <param name="workingDirectory">Working directory the child is started in.</param>
     /// <param name="environmentVariables">Environment block to inject.</param>
+    /// <param name="allowOverriddenRuntimeVars">If set to <c>true</c>, allows runtime environment variables to be overridden; if <c>false</c>, preserves existing runtime variables.</param>
     /// <param name="cancellationToken">Token observed while starting.</param>
     public delegate void StartProcessCallback(
         string exePath,
         string arguments,
         string workingDirectory,
         List<EnvironmentVariable> environmentVariables,
+        bool allowOverriddenRuntimeVars,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -131,6 +133,7 @@ namespace Servy.Service.Helpers
         /// <param name="realArgs">Command-line arguments.</param>
         /// <param name="workingDir">Working directory for the process.</param>
         /// <param name="environmentVariables">Environment variables.</param>
+        /// <param name="allowOverriddenRuntimeVars">If set to <c>true</c>, allows runtime environment variables to be overridden; if <c>false</c>, preserves existing runtime variables.</param>
         /// <param name="logger">Logger instance.</param>
         /// <param name="stopTimeoutMs">Timeout in milliseconds to wait for the process to stop.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -144,6 +147,7 @@ namespace Servy.Service.Helpers
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
+            bool allowOverriddenRuntimeVars,
             IServyLogger logger,
             int stopTimeoutMs,
             CancellationToken cancellationToken = default);

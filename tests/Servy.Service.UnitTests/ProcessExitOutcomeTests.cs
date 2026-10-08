@@ -149,6 +149,7 @@ namespace Servy.Service.UnitTests
                         It.IsAny<string>(),
                         It.IsAny<string>(),
                         It.IsAny<List<EnvironmentVariable>>(),
+                        It.IsAny<bool>(),
                         It.IsAny<IServyLogger>(),
                         It.IsAny<int>(),
                         It.IsAny<CancellationToken>()))
@@ -174,6 +175,7 @@ namespace Servy.Service.UnitTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<List<EnvironmentVariable>>(),
+                    It.IsAny<bool>(),
                     It.IsAny<IServyLogger>(),
                     It.IsAny<int>(),
                     It.IsAny<CancellationToken>()), Times.Once);
@@ -229,6 +231,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(),
+                It.IsAny<bool>(),
                 It.IsAny<IServyLogger>(),
                 It.IsAny<int>(),
                 It.IsAny<CancellationToken>()), Times.Never);

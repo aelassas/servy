@@ -403,6 +403,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Allow overridden runtime environment variables..
+        /// </summary>
+        public static string Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Check to enable console UI support..
         /// </summary>
         public static string Automation_CheckBoxEnableConsoleUI_HelpText {
@@ -1776,6 +1785,15 @@ namespace Servy.Resources {
         public static string Label_AdvancedTab {
             get {
                 return ResourceManager.GetString("Label_AdvancedTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Allow Overridden Runtime Environment Variables (e.g., JAVA_HOME, JAVA_OPTS).
+        /// </summary>
+        public static string Label_AllowOverriddenRuntimeVars {
+            get {
+                return ResourceManager.GetString("Label_AllowOverriddenRuntimeVars", resourceCulture);
             }
         }
         

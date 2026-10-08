@@ -90,6 +90,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(),
+                It.IsAny<bool>(),
                 It.IsAny<IServyLogger>(),
                 It.IsAny<int>(),
                 It.IsAny<CancellationToken>()), Times.Never);
@@ -125,12 +126,13 @@ namespace Servy.Service.UnitTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<List<EnvironmentVariable>>(),
+                    It.IsAny<bool>(),
                     It.IsAny<IServyLogger>(),
                     It.IsAny<int>(),
                     It.IsAny<CancellationToken>()))
-                .Callback<IProcessWrapper, StartProcessCallback, string, string, string, List<EnvironmentVariable>, IServyLogger, int, CancellationToken>(
-                    (process, startProcess, exePath, arguments, workingDirectory, environmentVariables, logger, stopTimeoutMs, cancellationToken) =>
-                        startProcess(exePath, arguments, workingDirectory, environmentVariables ?? new List<EnvironmentVariable>(), cancellationToken));
+                .Callback<IProcessWrapper, StartProcessCallback, string, string, string, List<EnvironmentVariable>, bool, IServyLogger, int, CancellationToken>(
+                    (process, startProcess, exePath, arguments, workingDirectory, environmentVariables, allowOverriddenRuntimeVars, logger, stopTimeoutMs, cancellationToken) =>
+                        startProcess(exePath, arguments, workingDirectory, environmentVariables ?? new List<EnvironmentVariable>(), allowOverriddenRuntimeVars, cancellationToken));
 
             // Act
             service.InvokeInitiateRecovery();

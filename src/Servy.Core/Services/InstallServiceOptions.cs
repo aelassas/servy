@@ -106,6 +106,11 @@ namespace Servy.Core.Services
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
+        /// Whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        public bool AllowOverriddenRuntimeVars { get; set; }
+
+        /// <summary>
         /// Names of the services this service depends on, separated by semicolons or newlines (not commas).
         /// A name may carry a leading '+' to reference a load-order group. Not validated by
         /// <see cref="IServiceManager.InstallServiceAsync"/>; callers run <see cref="Servy.Core.Validation.IServiceValidationRules"/>

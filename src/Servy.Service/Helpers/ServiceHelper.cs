@@ -218,6 +218,9 @@ namespace Servy.Service.Helpers
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramStartupDirectory: {options.FailureProgramStartupDirectory}\n\n" +
 
+                  "--------Advanced---------------\n" +
+                  $"- allowOverriddenRuntimeVars: {options.AllowOverriddenRuntimeVars}\n\n" +
+
                   "--------Pre-Launch-------------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchStartupDirectory: {options.PreLaunchStartupDirectory}\n" +
@@ -339,6 +342,7 @@ namespace Servy.Service.Helpers
                     string realArgs,
                     string workingDir,
                     List<EnvironmentVariable> environmentVariables,
+                    bool allowOverriddenRuntimeVars,
                     IServyLogger logger,
                     int stopTimeoutMs,
                     CancellationToken cancellationToken = default)
@@ -387,7 +391,7 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                startProcess.Invoke(realExePath, realArgs, workingDir, environmentVariables, cancellationToken);
+                startProcess.Invoke(realExePath, realArgs, workingDir, environmentVariables, allowOverriddenRuntimeVars, cancellationToken);
 
                 logger?.Info("Process restarted.");
             }

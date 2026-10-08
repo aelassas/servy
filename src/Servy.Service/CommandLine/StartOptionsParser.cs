@@ -96,6 +96,7 @@ namespace Servy.Service.CommandLine
                 EnableHeartbeatUrlFlags = serviceDto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags,
 
                 EnvironmentVariables = SafeParseEnvVars(serviceDto.EnvironmentVariables, nameof(serviceDto.EnvironmentVariables), serviceName),
+                AllowOverriddenRuntimeVars = serviceDto.AllowOverriddenRuntimeVars ?? AppConfig.DefaultAllowOverriddenRuntimeVars,
 
                 // Pre-Launch settings
                 PreLaunchExecutablePath = SafeResolvePath(processHelper, serviceDto.PreLaunchExecutablePath, nameof(serviceDto.PreLaunchExecutablePath), serviceName),

@@ -330,6 +330,15 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Info_EnvironmentVariables" xml:space="preserve">
     <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=', \" to escape '"', \; to escape ';', \\ to escape '\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion. Example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
   </data>
+  <data name="Label_AllowOverriddenRuntimeVars" xml:space="preserve">
+    <value>Allow Overridden Runtime Environment Variables (e.g., JAVA_HOME, JAVA_OPTS)</value>
+  </data>
+  <data name="Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText" xml:space="preserve">
+    <value>Allow overridden runtime environment variables.</value>
+  </data>
+  <data name="Label_EnvironmentVariables" xml:space="preserve">
+    <value>Environment Variables</value>
+  </data>
 
   <!-- Service Dependencies -->
   <data name="Label_ServiceDependencies" xml:space="preserve">

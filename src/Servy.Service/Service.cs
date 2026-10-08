@@ -1224,6 +1224,7 @@ namespace Servy.Service
                 Arguments = args,
                 StartupDirectory = workingDir,
                 EnvironmentVariables = vars,
+                AllowOverriddenRuntimeVars = options.AllowOverriddenRuntimeVars,
                 WaitChunkMs = _waitChunkMs,
                 ScmAdditionalTimeMs = _scmAdditionalTimeMs,
                 OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, null)),
@@ -1474,6 +1475,7 @@ namespace Servy.Service
                     Arguments = rawArgs ?? string.Empty,
                     StartupDirectory = workingDir,
                     EnvironmentVariables = _options.EnvironmentVariables,
+                    AllowOverriddenRuntimeVars = _options.AllowOverriddenRuntimeVars,
                     FireAndForget = true,
                     EnableConsoleUI = _options.EnableConsoleUI,
                 };
@@ -1560,6 +1562,7 @@ namespace Servy.Service
                     Arguments = args,
                     StartupDirectory = workingDir,
                     EnvironmentVariables = options.EnvironmentVariables,
+                    AllowOverriddenRuntimeVars = _options.AllowOverriddenRuntimeVars,
                     FireAndForget = (effectiveTimeoutMs == 0),
                     TimeoutMs = effectiveTimeoutMs,
                     WaitChunkMs = _waitChunkMs,
@@ -1722,7 +1725,13 @@ namespace Servy.Service
         /// <param name="token">The cancellation token for the operation.</param>
         private void StartMonitoredProcess(StartOptions options, CancellationToken token)
         {
-            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.StartupDirectory, options.EnvironmentVariables, token);
+            StartProcess(
+                options.ExecutablePath,
+                options.ExecutableArgs,
+                options.StartupDirectory,
+                options.EnvironmentVariables,
+                options.AllowOverriddenRuntimeVars,
+                token);
             SetProcessPriority(options.Priority);
             SetProcessCpuAffinity(options.CpuAffinity);
         }
@@ -1766,12 +1775,14 @@ namespace Servy.Service
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
         /// <param name="environmentVariables">Environment variables to pass to the process.</param>
+        /// <param name="allowOverriddenRuntimeVars">If set to <c>true</c>, allows runtime environment variables to be overridden; if <c>false</c>, preserves existing runtime variables.</param>
         /// <param name="token">The cancellation token for the operation.</param>
         private void StartProcess(
             string realExePath,
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
+            bool allowOverriddenRuntimeVars,
             CancellationToken token = default)
         {
             _ = AllocConsole(); // inherited
@@ -1786,6 +1797,7 @@ namespace Servy.Service
                 realArgs,
                 workingDir,
                 environmentVariables,
+                allowOverriddenRuntimeVars,
                 enableConsoleUI,
                 _logger,
                 "StartProcess");
@@ -2392,9 +2404,9 @@ namespace Servy.Service
                 case RecoveryAction.RestartProcess:
                     _serviceHelper.RestartProcess(
                         _childProcess,
-                        (exe, args, dir, envVars, ct) =>
+                        (exe, args, dir, envVars, allowOverriddenRuntimeVars, ct) =>
                         {
-                            StartProcess(exe, args, dir, envVars, ct);
+                            StartProcess(exe, args, dir, envVars, allowOverriddenRuntimeVars, ct);
                             SetProcessPriority(_options?.Priority ?? ProcessPriorityClass.Normal);
                             SetProcessCpuAffinity(_options?.CpuAffinity);
                         },
@@ -2402,6 +2414,7 @@ namespace Servy.Service
                         _realArgs,
                         _workingDir,
                         _environmentVariables,
+                        _options?.AllowOverriddenRuntimeVars ?? false,
                         _logger,
                         ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout),
                         _cancellationSource?.Token ?? CancellationToken.None

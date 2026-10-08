@@ -454,6 +454,15 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        public bool AllowOverriddenRuntimeVars
+        {
+            get => _config.AllowOverriddenRuntimeVars;
+            set => Set(() => _config.AllowOverriddenRuntimeVars, v => _config.AllowOverriddenRuntimeVars = v, value);
+        }
+
+        /// <summary>
         /// Gets or sets the semicolon- or newline-separated list of dependent service names.
         /// </summary>
         public string ServiceDependencies
@@ -993,6 +1002,7 @@ namespace Servy.ViewModels
             FailureProgramParameters = string.Empty;
 
             EnvironmentVariables = string.Empty;
+            AllowOverriddenRuntimeVars = DefaultAllowOverriddenRuntimeVars;
             ServiceDependencies = string.Empty;
 
             RunAsLocalSystem = DefaultRunAsLocalSystem;
@@ -1408,6 +1418,7 @@ namespace Servy.ViewModels
             FailureProgramStartupDirectory = hydrated.FailureProgramStartupDirectory ?? string.Empty;
             FailureProgramParameters = hydrated.FailureProgramParameters ?? string.Empty;
             EnvironmentVariables = SafeFormatEnvironmentVariables(hydrated.EnvironmentVariables, nameof(hydrated.EnvironmentVariables), hydrated.Name);
+            AllowOverriddenRuntimeVars = hydrated.AllowOverriddenRuntimeVars.Value;
             ServiceDependencies = StringHelper.FormatServiceDependencies(hydrated.ServiceDependencies);
             RunAsLocalSystem = hydrated.RunAsLocalSystem.Value;
             UserAccount = hydrated.UserAccount ?? string.Empty;
@@ -1528,6 +1539,7 @@ namespace Servy.ViewModels
 
                 // Normalized Strings
                 EnvironmentVariables = StringHelper.NormalizeString(EnvironmentVariables),
+                AllowOverriddenRuntimeVars = AllowOverriddenRuntimeVars,
                 ServiceDependencies = StringHelper.NormalizeString(ServiceDependencies),
 
                 // Credentials

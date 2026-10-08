@@ -278,6 +278,11 @@ namespace Servy.Core.Domain
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        public bool AllowOverriddenRuntimeVars { get; set; }
+
+        /// <summary>
         /// Gets or sets a semicolon- or newline-separated list of dependent service names.
         /// </summary>
         public string ServiceDependencies { get; set; }
@@ -584,6 +589,7 @@ namespace Servy.Core.Domain
                 HeartbeatUrlTimeoutSeconds = HeartbeatUrlTimeoutSeconds,
                 EnableHeartbeatUrlFlags = EnableHeartbeatUrlFlags,
                 EnvironmentVariables = EnvironmentVariables,
+                AllowOverriddenRuntimeVars = AllowOverriddenRuntimeVars,
                 ServiceDependencies = ServiceDependencies,
                 Username = RunAsLocalSystem ? null : UserAccount,
                 Password = RunAsLocalSystem ? null : Password,

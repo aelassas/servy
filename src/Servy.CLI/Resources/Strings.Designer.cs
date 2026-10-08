@@ -547,6 +547,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Allow Overridden Runtime Vars.
+        /// </summary>
+        public static string Msg_Show_Label_AllowOverriddenRuntimeVars {
+            get {
+                return ResourceManager.GetString("Msg_Show_Label_AllowOverriddenRuntimeVars", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Console UI.
         /// </summary>
         public static string Msg_Show_Label_ConsoleUI {
