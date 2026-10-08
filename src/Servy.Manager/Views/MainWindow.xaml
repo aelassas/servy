@@ -145,12 +145,14 @@
                     VirtualizingStackPanel.VirtualizationMode="Recycling"
                     VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                     ScrollViewer.CanContentScroll="True"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
                     VirtualizingStackPanel.ScrollUnit="Pixel"
                     EnableRowVirtualization="True"
                     EnableColumnVirtualization="True"
                     AutoGenerateColumns="False"
                     CanUserAddRows="False"
                     CanUserDeleteRows="False"
+                    CanUserResizeColumns="True"
                     CanUserResizeRows="False"
                     IsReadOnly="True"
                     SelectionUnit="FullRow"
@@ -159,8 +161,42 @@
                     AutomationProperties.AutomationId="ServicesDataGrid"
                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ServicesDataGrid_HelpText}"
                     Style="{StaticResource DataGridSelectionColorsStyle}">
+            <DataGrid.Resources>
+              <ContextMenu x:Key="ColumnHeaderContextMenu" Opened="ColumnHeaderContextMenu_Opened">
+                <MenuItem Header="{x:Static resx:Strings.Column_Description}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColDescription}" />
+                <MenuItem Header="{x:Static resx:Strings.Column_Status}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColStatus}" />
+                <MenuItem Header="{x:Static resx:Strings.Column_StartupType}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColStartupType}" />
+                <MenuItem Header="{x:Static resx:Strings.Column_LogOnAs}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColLogOnAs}" />
+                <MenuItem Header="{x:Static resx:Strings.Column_Pid}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColPid}" />
+                <MenuItem Header="{x:Static resx:Strings.Column_CPU}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColCpu}" />
+                <MenuItem Header="{x:Static resx:Strings.Column_RAM}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColRam}" />
+              </ContextMenu>
+            </DataGrid.Resources>
+
             <DataGrid.ColumnHeaderStyle>
               <Style TargetType="DataGridColumnHeader">
+                <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                 <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ColumnHeader_PreviewMouseLeftButtonDown" />
               </Style>
             </DataGrid.ColumnHeaderStyle>
@@ -221,13 +257,15 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}"
+              <DataGridTemplateColumn x:Name="ColName"
+                                      Header="{x:Static resx:Strings.Column_Name}"
                                       Width="120"
                                       MinWidth="100"
                                       CanUserReorder="False"
                                       SortMemberPath="Name">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_NameColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -247,13 +285,15 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}"
+              <DataGridTemplateColumn x:Name="ColDescription"
+                                      Header="{x:Static resx:Strings.Column_Description}"
                                       Width="*"
                                       MinWidth="160"
                                       CanUserReorder="False"
                                       SortMemberPath="Description">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_DescriptionColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -272,12 +312,14 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Status}"
+              <DataGridTemplateColumn x:Name="ColStatus"
+                                      Header="{x:Static resx:Strings.Column_Status}"
                                       MinWidth="80"
                                       CanUserReorder="False"
                                       SortMemberPath="Status">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_StatusColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -292,12 +334,14 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}"
+              <DataGridTemplateColumn x:Name="ColStartupType"
+                                      Header="{x:Static resx:Strings.Column_StartupType}"
                                       MinWidth="120"
                                       CanUserReorder="False"
                                       SortMemberPath="StartupType">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_StartupTypeColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -312,13 +356,15 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_LogOnAs}"
+              <DataGridTemplateColumn x:Name="ColLogOnAs"
+                                      Header="{x:Static resx:Strings.Column_LogOnAs}"
                                       Width="100"
                                       MinWidth="80"
                                       CanUserReorder="False"
                                       SortMemberPath="LogOnAs">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_LogOnAsColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -338,12 +384,14 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Pid}"
+              <DataGridTemplateColumn x:Name="ColPid"
+                                      Header="{x:Static resx:Strings.Column_Pid}"
                                       MinWidth="60"
                                       CanUserReorder="False"
                                       SortMemberPath="Pid">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_PidColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -358,12 +406,14 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_CPU}"
+              <DataGridTemplateColumn x:Name="ColCpu"
+                                      Header="{x:Static resx:Strings.Column_CPU}"
                                       MinWidth="60"
                                       CanUserReorder="False"
                                       SortMemberPath="CpuUsage">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_CpuColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
@@ -378,12 +428,14 @@
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
 
-              <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_RAM}"
+              <DataGridTemplateColumn x:Name="ColRam"
+                                      Header="{x:Static resx:Strings.Column_RAM}"
                                       MinWidth="70"
                                       CanUserReorder="False"
                                       SortMemberPath="RamUsage">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
                     <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_RamColumnHeader_Name}" />
                   </Style>
                 </DataGridTemplateColumn.HeaderStyle>
