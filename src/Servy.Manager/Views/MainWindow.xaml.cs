@@ -428,6 +428,40 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
+        /// Handles the <see cref="ContextMenu.Opened"/> event for the column header context menu.
+        /// Synchronizes the checked state of each menu item with the current visibility of its target column.
+        /// </summary>
+        /// <param name="sender">The source of the event, expected to be a <see cref="ContextMenu"/>.</param>
+        /// <param name="e">Event arguments containing event data.</param>
+        private void ColumnHeaderContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu contextMenu)
+            {
+                foreach (var item in contextMenu.Items)
+                {
+                    if (item is MenuItem menuItem && menuItem.Tag is DataGridColumn column)
+                    {
+                        menuItem.IsChecked = column.Visibility == Visibility.Visible;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles the <see cref="MenuItem.Click"/> event for column visibility toggle items.
+        /// Shows or hides the associated <see cref="DataGridColumn"/> based on the menu item's checked state.
+        /// </summary>
+        /// <param name="sender">The source of the event, expected to be a <see cref="MenuItem"/> whose <see cref="FrameworkElement.Tag"/> references a <see cref="DataGridColumn"/>.</param>
+        /// <param name="e">Event arguments containing event data.</param>
+        private void ToggleColumnVisibility_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is DataGridColumn column)
+            {
+                column.Visibility = menuItem.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
         /// Handles the <see cref="Window.Closed"/> event.
         /// </summary>
         /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
