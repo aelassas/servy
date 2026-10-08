@@ -806,6 +806,11 @@ namespace Servy.ViewModels
         public IAsyncCommand OpenDocumentationCommand { get; }
 
         /// <summary>
+        /// Command to open the list of runtime variables wiki page.
+        /// </summary>
+        public IAsyncCommand OpenRuntimeVariablesLinkCommand { get; }
+
+        /// <summary>
         /// Command to check for updates.
         /// </summary>
         public IAsyncCommand CheckUpdatesCommand { get; }
@@ -924,6 +929,7 @@ namespace Servy.ViewModels
             BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
+            OpenRuntimeVariablesLinkCommand = new AsyncCommand(OpenRuntimeVariablesLinkAsync, name: nameof(OpenRuntimeVariablesLinkCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
 
@@ -1288,6 +1294,14 @@ namespace Servy.ViewModels
         private async Task OpenDocumentationAsync(object parameter)
         {
             await _helpService.OpenDocumentationAsync(UiAppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Opens the Servy protected runtime variables documentation page in the default browser.
+        /// </summary>
+        private async Task OpenRuntimeVariablesLinkAsync(object parameter)
+        {
+            await ServiceCommands.OpenRuntimeVariablesLinkAsync();
         }
 
         /// <summary>

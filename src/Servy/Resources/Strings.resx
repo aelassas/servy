@@ -336,8 +336,8 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText" xml:space="preserve">
     <value>Allow overridden runtime environment variables.</value>
   </data>
-  <data name="Label_EnvironmentVariables" xml:space="preserve">
-    <value>Environment Variables</value>
+  <data name="Label_RuntimeVariablesLink" xml:space="preserve">
+    <value>See list of runtime variables.</value>
   </data>
 
   <!-- Service Dependencies -->

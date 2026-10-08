@@ -50,6 +50,11 @@ namespace Servy.Core.Config
         public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
 
         /// <summary>
+        /// The URL to the Servy wiki page that documents the runtime environment variables.
+        /// </summary>
+        public const string RuntimeVariablesUrl = "https://github.com/aelassas/servy/wiki/Environment-Variables#protected-variables";
+
+        /// <summary>
         /// Command-line argument used to bypass hardware acceleration and force
         /// the application to use software-based rendering.
         /// </summary>

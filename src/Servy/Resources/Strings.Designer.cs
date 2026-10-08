@@ -2167,6 +2167,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to See list of runtime variables..
+        /// </summary>
+        public static string Label_RuntimeVariablesLink {
+            get {
+                return ResourceManager.GetString("Label_RuntimeVariablesLink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to seconds.
         /// </summary>
         public static string Label_Seconds {
