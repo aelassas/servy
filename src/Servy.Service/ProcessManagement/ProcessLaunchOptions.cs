@@ -36,6 +36,11 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         public List<EnvironmentVariable> EnvironmentVariables { get; set; } = new List<EnvironmentVariable>();
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        public bool AllowOverriddenRuntimeVars { get; set; }
+
         #region Behavioral Flags
 
         /// <summary>

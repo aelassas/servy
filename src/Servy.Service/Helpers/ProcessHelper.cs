@@ -28,17 +28,19 @@ namespace Servy.Service.Helpers
         /// Expands environment variables and command-line arguments, auditing both for unexpanded placeholders.
         /// </summary>
         /// <param name="vars">The list of environment variables to expand.</param>
+        /// <param name="allowOverriddenRuntimeVars">If set to <c>true</c>, allows runtime environment variables to be overridden; if <c>false</c>, preserves existing runtime variables.</param>
         /// <param name="rawArgs">The raw command-line arguments to expand.</param>
         /// <param name="logger">The logger instance for logging messages.</param>
         /// <param name="contextPrefix">An optional prefix for logging (e.g., "Pre-Launch", "Post-Stop").</param>
         /// <returns>A tuple containing the expanded environment dictionary and the expanded arguments string.</returns>
-        public static (Dictionary<string, string?> env, string expandedArgs) ExpandAndAudit(
-            List<EnvironmentVariable> vars, string rawArgs, IServyLogger? logger, string contextPrefix = "")
+        public static (Dictionary<string, string> env, string expandedArgs) ExpandAndAudit(
+            List<EnvironmentVariable> vars, bool allowOverriddenRuntimeVars,
+            string rawArgs, IServyLogger logger, string contextPrefix = "")
         {
             string prefix = string.IsNullOrWhiteSpace(contextPrefix) ? string.Empty : $"[{contextPrefix}] ";
 
             // 1. Expand environment variables list, keeping '%%' escapes encoded until the audit has run
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariablesEncoded(vars);
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariablesEncoded(vars, allowOverriddenRuntimeVars);
 
             // 2. Audit the user-configured variables (system entries were inherited, not configured).
             // The escape token contains no '%', so a correctly escaped '%%' cannot match as a placeholder.

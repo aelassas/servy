@@ -232,6 +232,7 @@ namespace Servy.CLI.Commands
 
             var environment = new Section(Strings.Msg_Show_Group_Environment);
             environment.IfSet(Strings.Msg_Show_Label_EnvironmentVariables, Secret(dto.EnvironmentVariables, decrypted));
+            environment.IfSet(Strings.Msg_Show_Label_AllowOverriddenRuntimeVars, FormatBoolean(dto.AllowOverriddenRuntimeVars));
             environment.IfSet(Strings.Msg_Show_Label_Dependencies, dto.ServiceDependencies);
             sections.Add(environment);
 

@@ -17,7 +17,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Single Source of Truth for the absolute latest schema migration version sequence.
         /// </summary>
-        public const int LatestSchemaVersion = 10;
+        public const int LatestSchemaVersion = 11;
 
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
@@ -223,8 +223,16 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 10;
                         }
 
+                        // Version 11 Migration to add AllowOverriddenRuntimeVars
+                        if (currentVersion < 11)
+                        {
+                            ApplyVersion11(connection, transaction);
+                            UpdateSchemaVersion(connection, 11, transaction);
+                            currentVersion = 11;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 11) { ... }
+                        // if (currentVersion < 12) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion > LatestSchemaVersion)
@@ -758,6 +766,12 @@ namespace Servy.Infrastructure.Data
             AddColumnIfMissing(connection, transaction, version, "RestartAttempts");
             AddColumnIfMissing(connection, transaction, version, "RestartAttemptsUpdatedAtTicks");
         }
+
+        /// <summary>
+        /// Applies the Version 11 schema migration: adds the <c>AllowOverriddenRuntimeVars</c> column, which allows
+        /// overridden runtime environment variables.
+        /// </summary>
+        private static void ApplyVersion11(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 11, "AllowOverriddenRuntimeVars");
 
         #endregion
 

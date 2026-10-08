@@ -404,7 +404,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => _helper.RestartProcess(
-                null!, null!, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, cancellationToken: TestContext.Current.CancellationToken));
+                null!, null!, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -419,10 +419,10 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
             StartProcessCallback startAction =
-                (exe, args, dir, env, ct) => startActionInvoked = true;
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(),false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockProcess.Verify(p => p.Stop(1000), Times.Once);
@@ -443,10 +443,10 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
             StartProcessCallback startAction =
-                (exe, args, dir, env, ct) => startActionInvoked = true;
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockLog.Verify(l => l.Warn(It.Is<string>(s => s.Contains("error while getting process PID")), It.IsAny<Exception>()), Times.Once);
@@ -467,10 +467,10 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
             StartProcessCallback startAction =
-                (exe, args, dir, env, ct) => startActionInvoked = true;
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("proceeding with launch anyway")), It.IsAny<UnauthorizedAccessException>()), Times.Once);
@@ -492,10 +492,10 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
             StartProcessCallback startAction =
-                (exe, args, dir, env, ct) => startActionInvoked = true;
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             // Stop() itself succeeds here; only the descendant sweep fails, which is the inner of the
@@ -518,10 +518,10 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             StartProcessCallback startAction =
-                (exe, args, dir, env, ct) => { throw new InvalidOperationException("Launch failed"); };
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => { throw new InvalidOperationException("Launch failed"); };
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             // The whole stop sequence succeeds here and only the relaunch throws, so the exception

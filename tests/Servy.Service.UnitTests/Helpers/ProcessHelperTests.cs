@@ -83,7 +83,7 @@ namespace Servy.Service.UnitTests.Helpers
             string args = "arg1";
 
             // Act
-            var result = ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Test");
+            var result = ProcessHelper.ExpandAndAudit(vars, false, args, _mockLogger.Object, "Test");
 
             // Assert
             Assert.Equal("Value", result.env["VAR"]);
@@ -107,7 +107,7 @@ namespace Servy.Service.UnitTests.Helpers
                 var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "VAR", Value = "Value" } };
 
                 // Act
-                var result = ProcessHelper.ExpandAndAudit(vars, "arg1", _mockLogger.Object, "Test");
+                var result = ProcessHelper.ExpandAndAudit(vars, false, "arg1", _mockLogger.Object, "Test");
 
                 // Assert
                 Assert.Contains("%SERVY_TEST_NOT_DEFINED%", result.env[inheritedName]);
@@ -128,7 +128,7 @@ namespace Servy.Service.UnitTests.Helpers
             string args = "run %UNKNOWN%";
 
             // Act
-            ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Prefix");
+            ProcessHelper.ExpandAndAudit(vars, false, args, _mockLogger.Object, "Prefix");
 
             // Assert
             _mockLogger.Verify(l => l.Warn(
@@ -146,7 +146,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void ExpandAndAudit_HandlesEmptyInputGracefully()
         {
             // Act - should not throw or log for test inputs
-            ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "", _mockLogger.Object);
+            ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), false, "", _mockLogger.Object);
 
             // Assert
             VerifyNoRealWarnings();
@@ -168,7 +168,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 // Act
                 // Pass a custom environment variable so the audit step executes
-                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TRIGGER", Value = "trigger" } }, "trigger", _mockLogger.Object);
+                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TRIGGER", Value = "trigger" } }, false, "trigger", _mockLogger.Object);
 
                 // Assert
                 _mockLogger.Verify(l => l.Error(
@@ -200,7 +200,7 @@ namespace Servy.Service.UnitTests.Helpers
             try
             {
                 // Act
-                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "anything", _mockLogger.Object);
+                ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), false, "anything", _mockLogger.Object);
 
                 // Assert
                 _mockLogger.Verify(l => l.Warn(
@@ -231,7 +231,7 @@ namespace Servy.Service.UnitTests.Helpers
             string rawArgs = "cmd %VAR%";
 
             // Act
-            ProcessHelper.ExpandAndAudit(emptyVars, rawArgs, _mockLogger.Object, prefix!);
+            ProcessHelper.ExpandAndAudit(emptyVars, false, rawArgs, _mockLogger.Object, prefix!);
 
             // Assert
             // Verify that a null, empty, or whitespace prefix does not leave stray brackets
@@ -250,7 +250,7 @@ namespace Servy.Service.UnitTests.Helpers
             string args = @"--config %APP_HOME%\config.json";
 
             // Act
-            var result = ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Test");
+            var result = ProcessHelper.ExpandAndAudit(vars, false, args, _mockLogger.Object, "Test");
 
             // Assert
             Assert.Equal(@"--config C:\App\config.json", result.expandedArgs);
@@ -265,7 +265,7 @@ namespace Servy.Service.UnitTests.Helpers
             var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "LABEL", Value = "50%%off%%" } };
 
             // Act
-            var result = ProcessHelper.ExpandAndAudit(vars, "arg1", _mockLogger.Object, "Test");
+            var result = ProcessHelper.ExpandAndAudit(vars, false, "arg1", _mockLogger.Object, "Test");
 
             // Assert
             Assert.Equal("50%off%", result.env["LABEL"]);
@@ -284,7 +284,7 @@ namespace Servy.Service.UnitTests.Helpers
             string args = "--format %%Y%%-%%m%%";
 
             // Act
-            var result = ProcessHelper.ExpandAndAudit(vars, args, _mockLogger.Object, "Test");
+            var result = ProcessHelper.ExpandAndAudit(vars, false, args, _mockLogger.Object, "Test");
 
             // Assert
             Assert.Equal("--format %Y%-%m%", result.expandedArgs);
@@ -304,7 +304,7 @@ namespace Servy.Service.UnitTests.Helpers
             string args = "run %UNKNOWN%";
 
             // Act
-            var result = ProcessHelper.ExpandAndAudit(vars, args, null, "Prefix");
+            var result = ProcessHelper.ExpandAndAudit(vars, false, args, null, "Prefix");
 
             // Assert
             // Both placeholders stay unexpanded, so the warning site is reached with no logger to write to
@@ -330,7 +330,7 @@ namespace Servy.Service.UnitTests.Helpers
                 // The timeout arm reports through logger?.Error; with a null logger it must stay silent
                 var result = ProcessHelper.ExpandAndAudit(
                     new List<EnvironmentVariable> { new EnvironmentVariable { Name = "TRIGGER", Value = "trigger" } },
-                    "trigger", null);
+                    false, "trigger", null);
 
                 // Assert
                 Assert.Equal("trigger", result.env["TRIGGER"]);

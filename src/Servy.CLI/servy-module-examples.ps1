@@ -77,6 +77,7 @@ $installParams = @{
     FailureProgramParams       = "/c exit 0 --param 2001"
 
     EnvVars                    = "var1=val1; var2=val2;"
+    AllowOverriddenRuntimeVars = $true
     Deps                       = "Tcpip;Dnscache"
     # User                     = ".\DummySvc"
     # Password                 = ("ChangeMe!" | ConvertTo-SecureString -AsPlainText -Force)

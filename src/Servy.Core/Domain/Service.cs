@@ -1,5 +1,6 @@
 using Servy.Core.Common;
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ComponentModel;
@@ -272,6 +273,11 @@ namespace Servy.Core.Domain
         /// Gets or sets environment variables for the service in the form "KEY=VALUE;KEY2=VALUE2".
         /// </summary>
         public string? EnvironmentVariables { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        public bool AllowOverriddenRuntimeVars { get; set; }
 
         /// <summary>
         /// Gets or sets a semicolon- or newline-separated list of dependent service names.
@@ -580,6 +586,7 @@ namespace Servy.Core.Domain
                 HeartbeatUrlTimeoutSeconds = HeartbeatUrlTimeoutSeconds,
                 EnableHeartbeatUrlFlags = EnableHeartbeatUrlFlags,
                 EnvironmentVariables = EnvironmentVariables,
+                AllowOverriddenRuntimeVars = AllowOverriddenRuntimeVars,
                 ServiceDependencies = ServiceDependencies,
                 Username = RunAsLocalSystem ? null : UserAccount,
                 Password = RunAsLocalSystem ? null : Password,

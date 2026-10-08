@@ -150,6 +150,11 @@ namespace Servy.Service.CommandLine
         public List<EnvironmentVariable> EnvironmentVariables { get; set; } = new List<EnvironmentVariable>();
 
         /// <summary>
+        /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// </summary>
+        public bool AllowOverriddenRuntimeVars { get; set; }
+
+        /// <summary>
         /// Gets or sets the full path to the pre-launch executable to run.
         /// </summary>
         [ServicePath("Pre-launch executable path", isFile: true)]

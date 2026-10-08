@@ -1100,6 +1100,9 @@ function Install-ServyService {
         .PARAMETER EnvVars
             Environment variables for the service process. Format: Name=Value;Name=Value. Optional.
 
+        .PARAMETER AllowOverriddenRuntimeVars
+            Switch to allow runtime environment variables to override the configured values. Optional.
+
         .PARAMETER Deps
             Windows service dependencies (by service name, not display name). Optional.
 
@@ -1350,6 +1353,8 @@ function Install-ServyService {
         })]
         [string] $EnvVars,
 
+        [switch] $AllowOverriddenRuntimeVars,
+
         [ValidatePattern('^[a-zA-Z0-9_.\s;$+-]+$')]
         [string] $Deps,
 
@@ -1540,6 +1545,7 @@ function Install-ServyService {
     if ($RecoveryOnCleanExit)                     { $argsList = Add-Arg $argsList "--recoveryOnCleanExit" -Flag }
     if ($EnableHeartbeatUrlFlags)                 { $argsList = Add-Arg $argsList "--enableHeartbeatUrlFlags" -Flag }
     if ($PreLaunchIgnoreFailure)                  { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
+    if ($AllowOverriddenRuntimeVars)              { $argsList = Add-Arg $argsList "--allowOverriddenRuntimeVars" -Flag }
     if ($EnableDebugLogs)                         { $argsList = Add-Arg $argsList "--debug" -Flag }
     if ($PreStopLogAsError)                       { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 

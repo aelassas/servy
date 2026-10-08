@@ -187,6 +187,7 @@ namespace Servy.Services
                     EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags,
 
                     EnvironmentVariables = dto.EnvironmentVariables,
+                    AllowOverriddenRuntimeVars = dto.AllowOverriddenRuntimeVars ?? AppConfig.DefaultAllowOverriddenRuntimeVars,
                     ServiceDependencies = dto.ServiceDependencies,
 
                     PreLaunchExePath = dto.PreLaunchExecutablePath,

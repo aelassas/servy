@@ -700,6 +700,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
+        #region V11 AllowOverriddenRuntimeVars Migration Branches
+
+        [Fact]
+        public void ApplyVersion11_UpgradesFromVersion10_AppendsAllowOverriddenRuntimeVarsColumnCleanly()
+        {
+            // Arrange: Establish schema explicitly at target Version 10 configuration checkpoint
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 10);
+
+                // Build a pristine pre-v11 database using modern collation logic
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT COLLATE UNICODE_NOCASE NOT NULL" };
+                var seedData = new Dictionary<string, string> { { "Name", "'OverriddenRuntimeVarsApp'" } };
+
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+
+                // Act: Run full initialization loop to trigger the V10 -> V11 ApplyVersion11 schema migration pipeline
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+
+                // Assert
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
+
+                // Confirm the structural migration successfully appended the AllowOverriddenRuntimeVars property
+                Assert.Contains("AllowOverriddenRuntimeVars", columns);
+
+                // Verify that default values for the fresh migration column resolve safely to 0 / NULL for historical records
+                var migratedRow = conn.QuerySingle($"SELECT AllowOverriddenRuntimeVars FROM {SqlConstants.ServicesTableName} WHERE Id = 1;");
+                Assert.True(migratedRow.AllowOverriddenRuntimeVars == null || migratedRow.AllowOverriddenRuntimeVars == 0L);
+            }
+        }
+
+        #endregion
+
         #region Legacy Whitespace Zombie Detection
 
         [Fact]

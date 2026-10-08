@@ -19,7 +19,6 @@ export const baselineEnvKeys = new Set([
   "HOMEDRIVE",
   "HOMEPATH",
   "INIT_CWD",
-  "JAVA_HOME",
   "LANG",
   "LOCALAPPDATA",
   "LOGONSERVER",

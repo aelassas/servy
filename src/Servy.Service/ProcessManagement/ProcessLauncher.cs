@@ -57,6 +57,7 @@ namespace Servy.Service.ProcessManagement
         /// <param name="arguments">The raw command-line arguments to pass to the executable; can be null or empty.</param>
         /// <param name="workingDirectory">The startup working directory for the process. If null or whitespace, defaults to the executable's directory location.</param>
         /// <param name="environmentVariables">A list of <see cref="EnvironmentVariable"/> objects containing custom keys and values to inject into the execution scope.</param>
+        /// <param name="allowOverriddenRuntimeVars">If set to <c>true</c>, allows runtime environment variables to be overridden; if <c>false</c>, preserves existing runtime variables.</param>
         /// <param name="enableConsoleUI">If set to <c>true</c>, preserves standard I/O handles and shows the window; if <c>false</c>, hides the process window and redirects streams for logging capture.</param>
         /// <param name="logger">The <see cref="IServyLogger"/> instance used to emit environmental auditing and telemetry data; can be null.</param>
         /// <param name="auditContext">A descriptive keyword or method name specifying the operational scope to include in security audit trail logs.</param>
@@ -66,12 +67,18 @@ namespace Servy.Service.ProcessManagement
             string arguments,
             string? workingDirectory,
             List<EnvironmentVariable> environmentVariables,
+            bool allowOverriddenRuntimeVars,
             bool enableConsoleUI,
             IServyLogger? logger,
             string auditContext)
         {
             // 1. Resolve environment variables and arguments
-            var (expandedEnv, finalArgs) = Helpers.ProcessHelper.ExpandAndAudit(environmentVariables, arguments ?? string.Empty, logger, auditContext);
+            var (expandedEnv, finalArgs) = Helpers.ProcessHelper.ExpandAndAudit(
+                environmentVariables,
+                allowOverriddenRuntimeVars,
+                arguments ?? string.Empty,
+                logger,
+                auditContext);
 
             // 2. Configure ProcessStartInfo with unified defaults
             var psi = new ProcessStartInfo
@@ -154,6 +161,7 @@ namespace Servy.Service.ProcessManagement
                 options.Arguments ?? string.Empty,
                 options.StartupDirectory,
                 options.EnvironmentVariables,
+                options.AllowOverriddenRuntimeVars,
                 options.EnableConsoleUI,
                 logger,
                 options.AuditContext);

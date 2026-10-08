@@ -79,6 +79,7 @@ namespace Servy.Core.Helpers
 
             // Environment & Dependencies Normalization
             dto.EnvironmentVariables = StringHelper.NormalizeString(dto.EnvironmentVariables);
+            dto.AllowOverriddenRuntimeVars = dto.AllowOverriddenRuntimeVars ?? AppConfig.DefaultAllowOverriddenRuntimeVars;
             dto.ServiceDependencies = StringHelper.NormalizeString(dto.ServiceDependencies);
             dto.PreLaunchEnvironmentVariables = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
 

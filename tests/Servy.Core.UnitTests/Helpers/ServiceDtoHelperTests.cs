@@ -269,6 +269,7 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, dto.HeartbeatInterval);
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, dto.MaxFailedChecks);
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, dto.MaxRestartAttempts);
+            Assert.Equal(AppConfig.DefaultAllowOverriddenRuntimeVars, dto.AllowOverriddenRuntimeVars);
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, dto.PreLaunchTimeoutSeconds);
             Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, dto.PreLaunchRetryAttempts);
             Assert.Equal(AppConfig.DefaultPreLaunchIgnoreFailure, dto.PreLaunchIgnoreFailure);

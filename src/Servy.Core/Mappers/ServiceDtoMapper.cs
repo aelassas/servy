@@ -73,6 +73,7 @@ namespace Servy.Core.Mappers
                 FailureProgramStartupDirectory = hydratedDto.FailureProgramStartupDirectory,
                 FailureProgramParameters = hydratedDto.FailureProgramParameters,
                 EnvironmentVariables = hydratedDto.EnvironmentVariables,
+                AllowOverriddenRuntimeVars = hydratedDto.AllowOverriddenRuntimeVars!.Value,
                 ServiceDependencies = hydratedDto.ServiceDependencies,
                 RunAsLocalSystem = hydratedDto.RunAsLocalSystem!.Value,
                 UserAccount = hydratedDto.UserAccount,

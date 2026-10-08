@@ -509,6 +509,7 @@ namespace Servy.Core.Services
                             FailureProgramStartupDirectory = options.FailureProgramStartupDirectory,
                             FailureProgramParameters = options.FailureProgramExecutableArgs,
                             EnvironmentVariables = options.EnvironmentVariables,
+                            AllowOverriddenRuntimeVars = options.AllowOverriddenRuntimeVars,
                             ServiceDependencies = options.ServiceDependencies,
                             RunAsLocalSystem = string.IsNullOrWhiteSpace(options.Username),
                             UserAccount = options.Username,
