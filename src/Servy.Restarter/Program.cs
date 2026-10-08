@@ -181,15 +181,7 @@ namespace Servy.Restarter
                 executable = space < 0 ? commandLine : commandLine.Substring(0, space);
             }
 
-            string fileName;
-            try
-            {
-                fileName = Path.GetFileName(executable);
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
+            var fileName = Path.GetFileName(executable);
 
             return string.Equals(fileName, AppConfig.ServyServiceUIExe, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(fileName, AppConfig.ServyServiceCLIExe, StringComparison.OrdinalIgnoreCase);
