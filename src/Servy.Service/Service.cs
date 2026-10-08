@@ -1562,7 +1562,7 @@ namespace Servy.Service
                     Arguments = args,
                     StartupDirectory = workingDir,
                     EnvironmentVariables = options.EnvironmentVariables,
-                    AllowOverriddenRuntimeVars = _options.AllowOverriddenRuntimeVars,
+                    AllowOverriddenRuntimeVars = options.AllowOverriddenRuntimeVars,
                     FireAndForget = (effectiveTimeoutMs == 0),
                     TimeoutMs = effectiveTimeoutMs,
                     WaitChunkMs = _waitChunkMs,

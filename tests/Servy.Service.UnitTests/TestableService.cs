@@ -125,9 +125,9 @@ namespace Servy.Service.UnitTests
             (IProcessWrapper)ServiceReflection.ChildProcessField.GetValue(this);
 
         // Expose the private StartProcess method for direct invocation
-        public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables, CancellationToken cancellationToken)
+        public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables, bool allowOverriddenRuntimeVars, CancellationToken cancellationToken)
         {
-            ServiceReflection.StartProcessMethod.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables, cancellationToken });
+            ServiceReflection.StartProcessMethod.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables, allowOverriddenRuntimeVars, cancellationToken });
         }
 
         // Expose the private SafeKillProcess method, including the timeout it computes its deadline from

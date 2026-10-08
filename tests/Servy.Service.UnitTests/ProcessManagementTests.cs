@@ -35,7 +35,7 @@ namespace Servy.Service.UnitTests
                 .Returns(mockProcess.Object);
 
             // Act
-            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), CancellationToken.None);
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), false, CancellationToken.None);
 
             // Assert
             var childProcess = service.GetChildProcess();
@@ -74,7 +74,7 @@ namespace Servy.Service.UnitTests
 
             // Act
             var ex = Assert.Throws<TargetInvocationException>(() =>
-                service.InvokeStartProcess("C:\\missing.exe", "", "C:\\", new List<EnvironmentVariable>(), CancellationToken.None));
+                service.InvokeStartProcess("C:\\missing.exe", "", "C:\\", new List<EnvironmentVariable>(), false, CancellationToken.None));
 
             // Assert: the failure is rethrown to the caller so OnStart can signal the SCM
             Assert.IsType<Win32Exception>(ex.InnerException);
@@ -113,7 +113,7 @@ namespace Servy.Service.UnitTests
 
             // Act
             var ex = Assert.Throws<TargetInvocationException>(() =>
-                service.InvokeStartProcess("C:\\denied.exe", "", "C:\\", new List<EnvironmentVariable>(), CancellationToken.None));
+                service.InvokeStartProcess("C:\\denied.exe", "", "C:\\", new List<EnvironmentVariable>(), false, CancellationToken.None));
 
             // Assert: the secondary failure is downgraded to a warning and never masks the original one
             Assert.IsType<Win32Exception>(ex.InnerException);
@@ -461,7 +461,7 @@ namespace Servy.Service.UnitTests
                 .Returns(mockProcess.Object);
 
             // Act
-            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), CancellationToken.None);
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), false, CancellationToken.None);
 
             // Assert
             _ctx.Logger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Console UI support enabled")), It.IsAny<Exception>()), Times.Once);

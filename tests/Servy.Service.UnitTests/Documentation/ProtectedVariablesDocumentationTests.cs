@@ -36,10 +36,10 @@ namespace Servy.Service.UnitTests.Documentation
 
             string markdownContent = File.ReadAllText(Path.Combine(WikiPath, WikiPageFileName));
 
-            // 1. Strictly bound the scope to the 'Protected Variables' section up to the next heading
+            // 1. Strictly bound the scope to the '### Protected Variables' section up to the next heading of level <= 3
             var sectionMatch = Regex.Match(
                 markdownContent,
-                @"###\s+Protected Variables(?<section_content>.*?)(?=\n#{1,3}\s+|\Z)",
+                @"###\s+Protected Variables(?<section_content>.*?)(?=\n#{1,3}\s+[^\#]|\Z)",
                 RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
             Assert.True(sectionMatch.Success, "Failed to locate the '### Protected Variables' section in the Wiki markdown.");
@@ -67,6 +67,10 @@ namespace Servy.Service.UnitTests.Documentation
                         if (columns.Length >= 3)
                         {
                             string envVarsColumn = columns[2];
+
+                            // Exclude table headers (e.g., "| Category | Environment Variables | ... |")
+                            if (envVarsColumn.Contains("Environment Variables"))
+                                continue;
 
                             foreach (Match match in backtickRegex.Matches(envVarsColumn))
                             {
