@@ -782,6 +782,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
@@ -810,17 +811,23 @@
 
               <CheckBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                         IsChecked="{Binding AllowOverriddenRuntimeVars}"
-                        Margin="0,15"
+                        Margin="0,15,0,5"
                         AutomationProperties.Name="{x:Static resx:Strings.Label_AllowOverriddenRuntimeVars}"
                         AutomationProperties.AutomationId="CheckBoxAllowOverriddenRuntimeVars"
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText}">
                 <TextBlock Text="{x:Static resx:Strings.Label_AllowOverriddenRuntimeVars}" />
               </CheckBox>
-              
-              <TextBlock Grid.Row="3" Grid.Column="0"
+
+              <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,10">
+                <Hyperlink Command="{Binding OpenRuntimeVariablesLinkCommand}">
+                  <TextBlock Text="{x:Static resx:Strings.Label_RuntimeVariablesLink}" />
+                </Hyperlink>
+              </TextBlock>
+
+              <TextBlock Grid.Row="4" Grid.Column="0"
                          Text="{x:Static resx:Strings.Label_ServiceDependencies}"
                          Margin="0,5,10,5" />
-              <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+              <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding ServiceDependencies, UpdateSourceTrigger=PropertyChanged}"
                        Height="120" MinHeight="120" MaxHeight="120"
@@ -830,7 +837,7 @@
                        AutomationProperties.Name="{x:Static resx:Strings.Label_ServiceDependencies}"
                        AutomationProperties.AutomationId="TextBoxServiceDependencies"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxServiceDependencies_HelpText}" />
-              <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+              <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
                          Text="{x:Static resx:Strings.Info_ServiceDependencies}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />

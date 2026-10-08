@@ -18,5 +18,6 @@ namespace Servy.Design
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task OpenManagerAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task OpenRuntimeVariablesLinkAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

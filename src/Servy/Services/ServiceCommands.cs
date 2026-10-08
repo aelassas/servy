@@ -399,6 +399,33 @@ namespace Servy.Services
             }
         }
 
+        /// <inheritdoc />
+        public Task OpenRuntimeVariablesLinkAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = AppConfig.RuntimeVariablesUrl,
+                    UseShellExecute = true
+                };
+
+                _processHelper.Start(psi);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to open runtime variables link at '{AppConfig.RuntimeVariablesUrl}'.", ex);
+            }
+
+            return Task.CompletedTask;
+        }
+
         #endregion
 
         #region Private Helpers

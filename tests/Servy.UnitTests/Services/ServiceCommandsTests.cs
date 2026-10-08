@@ -1614,6 +1614,65 @@ namespace Servy.UnitTests.Services
 
         #endregion
 
+        #region OpenRuntimeVariablesLinkAsync Tests
+
+        [Fact]
+        public async Task OpenRuntimeVariablesLink_LaunchesBrowserWithCorrectUrl()
+        {
+            // Arrange
+            ProcessStartInfo? capturedPsi = null;
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Callback<ProcessStartInfo>(psi => capturedPsi = psi);
+
+            var sut = CreateSut();
+
+            // Act
+            await sut.OpenRuntimeVariablesLinkAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+            Assert.NotNull(capturedPsi);
+            Assert.Equal("https://github.com/aelassas/servy/wiki/Environment-Variables#protected-variables", capturedPsi.FileName);
+            Assert.True(capturedPsi.UseShellExecute);
+        }
+
+        [Fact]
+        public async Task OpenRuntimeVariablesLink_OperationCanceled_PropagatesInsteadOfMasking()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+
+                var sut = CreateSut();
+
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(
+                    () => sut.OpenRuntimeVariablesLinkAsync(cancellationToken: cts.Token));
+
+                _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task OpenRuntimeVariablesLink_ProcessStartThrowsException_CatchesAndLogsWithoutRethrowing()
+        {
+            // Arrange
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new InvalidOperationException("Failed to open browser shell."));
+
+            var sut = CreateSut();
+
+            // Act & Assert (Should complete safely without throwing an unhandled exception)
+            await sut.OpenRuntimeVariablesLinkAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+        }
+
+        #endregion
+
         #region OperationCanceledException Propagation Tests
 
         [Fact]
