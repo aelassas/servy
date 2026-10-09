@@ -132,6 +132,14 @@ try {
     # ----------------------------------------------------
     # Test 6: Get-EventsToProcess
     # ----------------------------------------------------
+    # Arrange: stub returns events in a deliberately non-chronological order. The events travel
+    # in a global because the stub scriptblock runs later, outside this scope, and cannot see local variables.
+    $base = [DateTime]::UtcNow
+    $global:WatermarkTestEvents = @(
+        [PSCustomObject]@{ Message = "[Svc2] Error 2"; TimeCreated = $base.AddMinutes(-1) },
+        [PSCustomObject]@{ Message = "ServyToast: Notification feedback loop"; TimeCreated = $base.AddMinutes(-2) },
+        [PSCustomObject]@{ Message = "[Svc1] Error 1"; TimeCreated = $base.AddMinutes(-5) }
+    )
     # Forcefully overwrite the internal function definition inside the module's function drive
     $module = Get-Module Servy-Watermark
     & $module {
@@ -140,20 +148,27 @@ try {
                 $LastProcessed,
                 [int]$EventLogErrorId = 3103
             )
-            return @(
-                [PSCustomObject]@{ Message = "[Svc1] Error 1"; TimeCreated = [DateTime]::UtcNow.AddMinutes(-5) },
-                [PSCustomObject]@{ Message = "ServyToast: Notification feedback loop"; TimeCreated = [DateTime]::UtcNow.AddMinutes(-2) },
-                [PSCustomObject]@{ Message = "[Svc2] Error 2"; TimeCreated = [DateTime]::UtcNow.AddMinutes(-1) }
-            )
+            return $global:WatermarkTestEvents
         }
     }
 
-    $validWatermark = [DateTime]::UtcNow.AddMinutes(-10)
-    $processedEvents = Get-EventsToProcess -ScriptDir $tempDir -LastProcessed $validWatermark
+    # Act: normal run with a valid watermark
+    $validWatermark = $base.AddMinutes(-10)
+    $processedEvents = @(Get-EventsToProcess -ScriptDir $tempDir -LastProcessed $validWatermark)
 
-    if ($null -eq $processedEvents -or $processedEvents.Count -ne 2) {
-        $actualCount = if ($null -eq $processedEvents) { 0 } else { $processedEvents.Count }
-        Write-Host "FAIL: Get-EventsToProcess failed to filter feedback loops or fetch events correctly. Expected 2 events, got $actualCount." -ForegroundColor Red
+    # Assert: both genuine events survive, the feedback event is dropped, oldest first
+    $names = ($processedEvents | ForEach-Object { $_.Message }) -join '|'
+    if ($names -ne "[Svc1] Error 1|[Svc2] Error 2") {
+        Write-Host "FAIL: Get-EventsToProcess returned '$names'; expected '[Svc1] Error 1|[Svc2] Error 2' (feedback event dropped, chronological order)." -ForegroundColor Red
+        exit 1
+    }
+
+    # Act: first run (no watermark)
+    $firstRun = @(Get-EventsToProcess -ScriptDir $tempDir -LastProcessed $null)
+
+    # Assert: only the newest valid event is returned
+    if ($firstRun.Count -ne 1 -or $firstRun[0].Message -ne "[Svc2] Error 2") {
+        Write-Host "FAIL: Get-EventsToProcess first run should return only '[Svc2] Error 2'." -ForegroundColor Red
         exit 1
     }
     Write-Host "  [OK] Get-EventsToProcess correctly pre-filters feedback loops and sorts events." -ForegroundColor Gray
@@ -170,6 +185,7 @@ catch {
     exit 1
 }
 finally {
+    Remove-Variable -Name WatermarkTestEvents -Scope Global -ErrorAction SilentlyContinue
     if (Test-Path $tempDir) {
         Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
