@@ -150,15 +150,28 @@ namespace Servy.Manager.Views
 
                 if (_isFirstLoad || scrollToEnd)
                 {
-                    sv.ScrollToEnd();
+                    ScrollToEnd();
                     _isFirstLoad = false;
                 }
                 else if (DataContext is ConsoleViewModel vm && sv.VerticalOffset >= (sv.ScrollableHeight - AutoFollowBandPx) && !vm.IsPaused)
                 {
                     // Only auto-scroll if the user hasn't paused (by selecting or scrolling up)
-                    sv.ScrollToEnd();
+                    ScrollToEnd();
                 }
             }), DispatcherPriority.DataBind);
+        }
+
+        /// <summary>
+        /// Scrolls the log list to the last item and snaps the scroll viewer to the bottom.
+        /// </summary>
+        private void ScrollToEnd()
+        {
+            if (LogList.Items.Count > 0)
+            {
+                LogList.ScrollIntoView(LogList.Items[LogList.Items.Count - 1]);
+                var sv = Helper.GetVisualChild<ScrollViewer>(LogList);
+                sv?.ScrollToEnd();
+            }
         }
 
         /// <summary>
