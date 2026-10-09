@@ -1,5 +1,30 @@
 # Changelog
 
+## [Servy 10.3](https://github.com/aelassas/servy/releases/tag/v10.3)
+
+**Date:** 2026-10-09 | **Tag:** [`v10.3`](https://github.com/aelassas/servy/tree/v10.3)
+
+* feat(service): add `AllowOverriddenRuntimeVars` option to allow runtime environment variable expansion (#7411)
+* feat(manager): add column visibility toggle and enable column resizing in services table (#7412)
+* fix(desktop): move `None` date rotation option to top of dropdown
+* fix(manager): fix console log tailer scroll bottom gap
+* ci(loc.yml): switch to `cloc` for accurate code-only line counts
+* docs: add [Embedding in Custom Installers](https://github.com/aelassas/servy/wiki/Embedding-in-Custom-Installers) guide
+
+### Downloads
+* [servy-10.3-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-arm64-installer.exe) - 115.13 MB
+* [servy-10.3-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-arm64-portable.7z) - 116.41 MB
+* [servy-10.3-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-net48-sbom.xml) - 0.03 MB
+* [servy-10.3-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-net48-x64-installer.exe) - 4.43 MB
+* [servy-10.3-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-net48-x64-portable.7z) - 2.17 MB
+* [servy-10.3-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-sbom.xml) - 0.04 MB
+* [servy-10.3-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-x64-installer.exe) - 121.41 MB
+* [servy-10.3-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.3/servy-10.3-x64-portable.7z) - 119.62 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.3.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.3.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.2...v10.3
+
 ## [Servy 10.2](https://github.com/aelassas/servy/releases/tag/v10.2)
 
 **Date:** 2026-10-05 | **Tag:** [`v10.2`](https://github.com/aelassas/servy/tree/v10.2)
