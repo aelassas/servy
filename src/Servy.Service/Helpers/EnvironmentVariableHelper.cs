@@ -24,7 +24,7 @@ namespace Servy.Service.Helpers
     ///     new EnvironmentVariable { Name = "APP_HOME", Value = "%LOG_DIR%\\bin" }
     /// };
     ///
-    /// var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(customVars);
+    /// var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(customVars, allowOverriddenRuntimeVars: false);
     ///
     /// // expandedEnv["LOG_DIR"] = "C:\\ProgramData\\Servy\\logs"
     /// // expandedEnv["APP_HOME"] = "C:\\ProgramData\\Servy\\logs\\bin"
