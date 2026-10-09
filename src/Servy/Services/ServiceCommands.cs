@@ -115,10 +115,7 @@ namespace Servy.Services
                 return false;
             }
 
-            // 1. Obtain the canonical DTO from the ViewModel
-            // This removes the sentinel-vs-default divergence (e.g., -1 vs DefaultRotationSize)
-
-            // 2. Apply install-specific overrides and masking
+            // 1. Apply install-specific overrides and masking
             // Ensure Description is not null for OS service registration
             dto.Description = dto.Description ?? string.Empty;
 
@@ -129,7 +126,7 @@ namespace Servy.Services
                 dto.Password = null;
             }
 
-            // 3. Validate the DTO
+            // 2. Validate the DTO
             // We pass confirmPassword directly to the validator as it is a UI-only field
             if (!await _serviceConfigurationValidator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: confirmPassword, cancellationToken: cancellationToken))
             {
@@ -149,7 +146,7 @@ namespace Servy.Services
 
                 _cursorService.SetWaitCursor();
 
-                // 4. Map Install Options strictly from the validated DTO
+                // 3. Map Install Options strictly from the validated DTO
                 // Conversion logic (like MB to Bytes) is handled here just before the service call
                 var effectiveSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB;
                 var rotationSizeValue = effectiveSize > 0 ? AppConfig.ToBytes(effectiveSize) : 0;
