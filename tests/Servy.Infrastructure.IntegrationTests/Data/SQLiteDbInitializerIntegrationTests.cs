@@ -316,6 +316,60 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void ApplyVersion2_NeitherRotationColumnExists_SkipsRenameAndLogsMissingSource()
+        {
+            // Arrange: a Services table with neither the old nor the new column, so RenameColumnIfExists
+            // reaches its "source column not found" arm. The log line is the arm's only observable output.
+            var logDirectory = Path.Combine(Path.GetTempPath(), $"servy_v2skip_log_{Guid.NewGuid():N}");
+            var logFileName = $"V2Skip_{Guid.NewGuid():N}.log";
+            var logFilePath = Path.Combine(logDirectory, logFileName);
+
+            Directory.CreateDirectory(logDirectory);
+
+            try
+            {
+                using (var conn = CreateConnection())
+                {
+                    SeedSchemaInfo(conn, 1);
+                    conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} (Id INTEGER PRIMARY KEY, Name TEXT);");
+
+                    try
+                    {
+                        Logger.Initialize(logFileName, LogLevel.Info, logDirectory: logDirectory);
+
+                        // Act: invoke the migration directly, as the sibling test does, to bypass V4's rebuild
+                        using (var tx = conn.BeginTransaction())
+                        {
+                            TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "ApplyVersion2", conn, tx);
+                            tx.Commit();
+                        }
+                    }
+                    finally
+                    {
+                        // Flush and release the handle, then hand the process-wide logger back to its default state
+                        Logger.Shutdown();
+                        Logger.Initialize((string?)null, logDirectory: string.Empty);
+                    }
+
+                    // Assert: no rename was attempted and no column appeared
+                    var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
+                    Assert.DoesNotContain("EnableRotation", columns);
+                    Assert.DoesNotContain("EnableSizeRotation", columns);
+                }
+
+                // Assert: the skip names the missing source column
+                Assert.True(File.Exists(logFilePath), $"Expected the redirected logger to write {logFilePath}.");
+                Assert.Contains(
+                    "Migration to Version 2 skipped: Source column 'EnableRotation' was not found in the 'Services' table layout.",
+                    File.ReadAllText(logFilePath));
+            }
+            finally
+            {
+                try { Directory.Delete(logDirectory, recursive: true); } catch { /* best-effort cleanup */ }
+            }
+        }
+
+        [Fact]
         public void Initialize_Version1DatabaseWithLegacyEnableRotation_RenamesColumnAndKeepsValue()
         {
             // Arrange: a database already cleanly tracking schema Version 1 that still carries the
