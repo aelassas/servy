@@ -575,6 +575,28 @@ namespace Servy.Service.UnitTests.ProcessManagement
         }
 
         /// <summary>
+        /// Verifies that an orphan cleanup whose tree kill reports failure warns that the child may still be running.
+        /// </summary>
+        [Fact]
+        public void Start_WaitThrowsAndOrphanKillFails_WarnsThatTheChildMayStillBeRunning()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) => throw new InvalidOperationException("wait failed"));
+            wrapper.Setup(p => p.Kill(It.IsAny<bool>())).Returns(false);
+
+            // Act
+            var ex = Assert.Throws<InvalidOperationException>(
+                () => ProcessLauncher.Start(SyncOptions(null, null), FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            Assert.Equal("wait failed", ex.Message);
+            _logger.Verify(
+                l => l.Warn(It.Is<string>(m => m.Contains("could not be terminated")), It.IsAny<Exception?>()),
+                Times.Once);
+            wrapper.Verify(p => p.Dispose(), Times.Once);
+        }
+
+        /// <summary>
         /// Verifies that a synchronous launch which never observes an exit kills the whole process tree
         /// rather than the launched process alone.
         /// </summary>
@@ -601,6 +623,34 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Assert
             wrapper.Verify(p => p.Kill(true), Times.AtLeastOnce);
             wrapper.Verify(p => p.Kill(false), Times.Never);
+        }
+
+        /// <summary>
+        /// Verifies that a synchronous timeout whose tree kill reports failure logs an error before throwing.
+        /// </summary>
+        /// <remarks>
+        /// The orphan cleanup in the finally block also sees the failed kill, but it logs a warning, so the
+        /// error-level assertion pins the timeout terminator alone.
+        /// </remarks>
+        [Fact]
+        public void Start_SynchronousTimeoutAndTreeKillFails_LogsAnErrorBeforeThrowingTimeout()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) => { });
+            wrapper.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
+            wrapper.Setup(p => p.Kill(It.IsAny<bool>())).Returns(false);
+            var options = SyncOptions(null, null);
+            options.TimeoutMs = 1;
+            options.WaitChunkMs = 1;
+
+            // Act
+            Assert.Throws<TimeoutException>(
+                () => ProcessLauncher.Start(options, FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.Contains("the process tree could not be terminated")), It.IsAny<Exception?>()),
+                Times.Once);
         }
 
         #endregion
