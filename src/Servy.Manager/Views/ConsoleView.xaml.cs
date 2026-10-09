@@ -36,7 +36,7 @@ namespace Servy.Manager.Views
         private const double ScrollTolerance = 0.001;
 
         /// <summary>Defines the pixel threshold from the bottom that forces an immediate resumption of tailing.</summary>
-        private const double ResumeAtBottomThresholdPx = 10;
+        private const double ResumeAtBottomThresholdPx = 3;
 
         /// <summary>Defines the pixel window from the bottom where auto-scrolling remains active.</summary>
         private const double AutoFollowBandPx = 50;
