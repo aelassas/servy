@@ -444,6 +444,8 @@ namespace Servy.Manager
 
                 // Refresh the AppSettings section so ConfigurationManager reads the updated value in memory
                 ConfigurationManager.RefreshSection("appSettings");
+
+                Logger.Info($"Saved HiddenColumns setting: {HiddenColumns}");
             }
             catch (Exception ex)
             {
