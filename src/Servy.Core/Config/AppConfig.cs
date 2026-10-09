@@ -1555,12 +1555,6 @@ namespace Servy.Core.Config
         public const int DbSqlLogMaxLength = 60;
 
         /// <summary>
-        /// Max DTOs per chunk when re-querying generated IDs after a batch upsert.
-        /// Kept under SQLite's default SQLITE_MAX_VARIABLE_NUMBER (999) parameter limit.
-        /// </summary>
-        public const int DbBatchIdSyncChunkSize = 900;
-
-        /// <summary>
         /// Interval at which the CPU metrics cache is pruned of dead/recycled process entries.
         /// </summary>
         public static readonly TimeSpan ProcessHelperPruneInterval = TimeSpan.FromMinutes(5);

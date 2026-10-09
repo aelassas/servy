@@ -1349,7 +1349,7 @@ function Install-ServyService {
         })]
         [ValidateScript({
             if ([string]::IsNullOrEmpty($_) -or $_ -match $script:EnvVarValidationPattern) { $true }
-            else { throw "Invalid -EnvVars format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\\`"'." }
+            else { throw "Invalid -EnvVars format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\`"'." }
         })]
         [string] $EnvVars,
 
@@ -1390,7 +1390,7 @@ function Install-ServyService {
         })]
         [ValidateScript({
             if ([string]::IsNullOrEmpty($_) -or $_ -match $script:EnvVarValidationPattern) { $true }
-            else { throw "Invalid -PreLaunchEnv format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\\`"'." }
+            else { throw "Invalid -PreLaunchEnv format. Expected KEY=VALUE pairs separated by ';' (for example 'A=1; B=2'). Escape a literal ';', '=', '\' or '`"' inside a value as '\;', '\=', '\\' or '\`"'." }
         })]
         [string] $PreLaunchEnv,
 
