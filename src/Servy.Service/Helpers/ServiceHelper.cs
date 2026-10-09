@@ -682,7 +682,7 @@ namespace Servy.Service.Helpers
         /// This method performs a series of integrity checks on:
         /// <list type="bullet">
         /// <item><description>Required fields (Service Name and Main Executable Path).</description></item>
-        /// <item><description>The existence and validity of primary, failure, pre-launch, and post-launch executable paths.</description></item>
+        /// <item><description>The existence and validity of primary, failure, pre-launch, post-launch, pre-stop, and post-stop executable paths.</description></item>
         /// <item><description>The validity of associated working directories for all configured processes.</description></item>
         /// </list>
         /// Any validation failure is logged as an error to the provided <paramref name="logger"/>.
