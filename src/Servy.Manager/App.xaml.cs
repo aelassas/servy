@@ -446,7 +446,7 @@ namespace Servy.Manager
                 jsonObject["HiddenColumns"] = HiddenColumns;
 
                 File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
-                Logger.Info($"Saved HiddenColumns setting to {AppSettingsFileName}: {HiddenColumns}");
+                Logger.Info($"Saved HiddenColumns setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(HiddenColumns) ? "<empty>" : HiddenColumns)}");
             }
             catch (Exception ex)
             {
