@@ -8,7 +8,7 @@ Builds the Servy CLI application in Release or Debug mode and signs the output.
 This script prepares the Servy CLI application for publishing by:
 1. Running publish-res-release.ps1 or publish-res-debug.ps1 depending on the
    specified build configuration, to generate required resource binaries
-   (Servy.Service.CLI.Net48.exe and Servy.Restarter.Net48.exe).
+   (Servy.Host.Net48.exe, Servy.Service.CLI.Net48.exe and Servy.Restarter.Net48.exe).
 2. Cleaning and rebuilding the Servy.CLI.csproj project using MSBuild.
 3. Signing the resulting Servy.CLI.exe executable using the SignPath script.
 
