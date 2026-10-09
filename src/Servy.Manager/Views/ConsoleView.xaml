@@ -109,6 +109,8 @@
                  ItemsSource="{Binding VisibleLines}"
                  Background="Black"
                  BorderThickness="0"
+                 Padding="0"
+                 Margin="0"
                  SelectionMode="Extended"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
