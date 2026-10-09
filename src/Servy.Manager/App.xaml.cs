@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -6,7 +7,6 @@ using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
-using Servy.Infrastructure.Data;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -39,6 +39,11 @@ namespace Servy.Manager
         /// </summary>
         public const string ResourcesNamespace = "Servy.Manager.Resources";
 
+        /// <summary>
+        /// The name of the JSON configuration file specific to the Servy Manager application.
+        /// </summary>
+        private const string AppSettingsFileName = "appsettings.manager.json";
+
         #endregion
 
         #region Static Properties
@@ -55,6 +60,8 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
+
+        private string _hiddenColumns = string.Empty;
 
         #endregion
 
@@ -147,6 +154,20 @@ namespace Servy.Manager
         /// <inheritdoc />
         public int MaxBulkOperationParallelism { get; private set; }
 
+        /// <inheritdoc />
+        public string HiddenColumns
+        {
+            get => _hiddenColumns;
+            private set
+            {
+                if (_hiddenColumns != value)
+                {
+                    _hiddenColumns = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -174,7 +195,7 @@ namespace Servy.Manager
             var options = new BootstrapperOptions
             {
                 LogFileName = "Servy.Manager.log",
-                AppSettingsFileName = "appsettings.manager.json",
+                AppSettingsFileName = AppSettingsFileName,
                 ResourcesNamespace = ResourcesNamespace,
                 SecurityWarningTitle = Strings.Msg_SecurityWarningTitle,
                 SecurityWarningMessage = Strings.Msg_SecurityWarningMessage,
@@ -247,7 +268,7 @@ namespace Servy.Manager
                     );
 
                     // 3. Inject Dependencies into the View
-                    var main = new MainWindow(viewModel, messageBoxService, processKiller);
+                    var main = new MainWindow(viewModel, messageBoxService, processKiller, this);
                     main.Show();
 
                     return Task.FromResult<Window>(main);
@@ -323,6 +344,8 @@ namespace Servy.Manager
                         // Perform diagnostic ACL check on target executable directory
                         PathSecurityGuard.WarnIfDirectoryAclNotHardened(DesktopAppPublishPath);
                     }
+
+                    HiddenColumns = config["HiddenColumns"] ?? string.Empty;
                 }
             };
 
@@ -395,5 +418,33 @@ namespace Servy.Manager
 
         #endregion
 
+        #region HiddenColumns Persistence
+
+        /// <summary>
+        /// Updates the hidden columns string and persists it to the configuration file.
+        /// </summary>
+        public void SaveHiddenColumns(string hiddenColumns)
+        {
+            HiddenColumns = hiddenColumns ?? string.Empty;
+
+            try
+            {
+                string configPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName);
+                if (!File.Exists(configPath)) return;
+
+                string json = File.ReadAllText(configPath);
+                var jsonObject = JObject.Parse(json);
+
+                jsonObject["HiddenColumns"] = HiddenColumns;
+
+                File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save HiddenColumns setting to {AppSettingsFileName}: {ex.Message}");
+            }
+        }
+
+        #endregion
     }
 }

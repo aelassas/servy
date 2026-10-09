@@ -48,6 +48,7 @@ namespace Servy.Manager.Views
 
         private readonly IMessageBoxService _messageBoxService;
         private readonly IProcessKiller _processKiller;
+        private readonly IAppConfiguration _appConfig;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
@@ -55,10 +56,12 @@ namespace Servy.Manager.Views
         /// <param name="mainViewModel">The primary DataContext for the application.</param>
         /// <param name="messageBoxService">Service for displaying UI dialogs.</param>
         /// <param name="processKiller">Service for terminating child processes on application exit.</param>
+        /// <param name="appConfig">Application configuration settings.</param>
         public MainWindow(
             MainViewModel mainViewModel,
             IMessageBoxService messageBoxService,
-            IProcessKiller processKiller
+            IProcessKiller processKiller,
+            IAppConfiguration appConfig
             )
         {
             InitializeComponent();
@@ -66,6 +69,7 @@ namespace Servy.Manager.Views
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             DataContext = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
         }
 
         /// <summary>
@@ -86,11 +90,43 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task Window_LoadedAsync(object sender, RoutedEventArgs e)
         {
+            // Restore column visibilities based on the configured HiddenColumns
+            RestoreColumnVisibilities();
+
             // Trigger the global search command to populate the dashboard
             // the moment the shell is ready for interaction.
             if (DataContext is MainViewModel vm)
             {
                 await vm.SearchCommand.ExecuteAsync(null);
+            }
+        }
+
+        /// <summary>
+        /// Restores column visibilities based on the configured HiddenColumns string.
+        /// </summary>
+        private void RestoreColumnVisibilities()
+        {
+            if (string.IsNullOrWhiteSpace(_appConfig.HiddenColumns)) return;
+
+            var hiddenSet = new HashSet<string>(
+                _appConfig.HiddenColumns.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(s => s.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var column in ServicesDataGrid.Columns)
+            {
+                string id = System.Windows.Automation.AutomationProperties.GetAutomationId(column);
+
+                // Fallback to Header text if AutomationId is not set
+                if (string.IsNullOrEmpty(id) && column.Header is string headerText)
+                {
+                    id = headerText;
+                }
+
+                if (!string.IsNullOrEmpty(id) && hiddenSet.Contains(id))
+                {
+                    column.Visibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -456,6 +492,31 @@ namespace Servy.Manager.Views
             if (sender is MenuItem menuItem && menuItem.Tag is DataGridColumn column)
             {
                 column.Visibility = menuItem.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+
+                // Save the updated column visibility state to configuration
+                SaveColumnVisibilities();
+            }
+        }
+
+        /// <summary>
+        /// Serializes collapsed column identifiers to a comma-separated string and saves them.
+        /// </summary>
+        private void SaveColumnVisibilities()
+        {
+            var hiddenColumns = ServicesDataGrid.Columns
+                .Where(c => c.Visibility == Visibility.Collapsed)
+                .Select(c =>
+                {
+                    string id = System.Windows.Automation.AutomationProperties.GetAutomationId(c);
+                    return !string.IsNullOrEmpty(id) ? id : c.Header as string;
+                })
+                .Where(id => !string.IsNullOrEmpty(id));
+
+            string csv = string.Join(",", hiddenColumns);
+
+            if (Application.Current is App app)
+            {
+                app.SaveHiddenColumns(csv);
             }
         }
 
