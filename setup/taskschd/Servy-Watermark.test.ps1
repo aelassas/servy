@@ -138,6 +138,8 @@ try {
     $global:WatermarkTestEvents = @(
         [PSCustomObject]@{ Message = "[Svc2] Error 2"; TimeCreated = $base.AddMinutes(-1) },
         [PSCustomObject]@{ Message = "ServyToast: Notification feedback loop"; TimeCreated = $base.AddMinutes(-2) },
+        [PSCustomObject]@{ Message = "ServyFailureEmail: Notification feedback loop"; TimeCreated = $base.AddMinutes(-3) },
+        [PSCustomObject]@{ Message = "Servy Notification Error: Notification feedback loop"; TimeCreated = $base.AddMinutes(-4) },
         [PSCustomObject]@{ Message = "[Svc1] Error 1"; TimeCreated = $base.AddMinutes(-5) }
     )
     # Forcefully overwrite the internal function definition inside the module's function drive
