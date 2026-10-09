@@ -1101,7 +1101,7 @@ function Install-ServyService {
             Environment variables for the service process. Format: Name=Value;Name=Value. Optional.
 
         .PARAMETER AllowOverriddenRuntimeVars
-            Switch to allow runtime environment variables to override the configured values. Optional.
+            Switch to allow the service's environment variables to override protected runtime variables (e.g., JAVA_HOME, JAVA_OPTS, CATALINA_OPTS). Optional.
 
         .PARAMETER Deps
             Windows service dependencies (by service name, not display name). Optional.
