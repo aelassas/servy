@@ -6,7 +6,6 @@ using Servy.Core.NamedPipes;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
-using Servy.Infrastructure.Data;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -18,6 +17,7 @@ using Servy.UI.Validation;
 using Servy.UI.Views;
 using System;
 using System.ComponentModel;
+using System.Configuration;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -57,6 +57,8 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
+
+        private string _hiddenColumns = string.Empty;
 
         #endregion
 
@@ -148,6 +150,20 @@ namespace Servy.Manager
 
         /// <inheritdoc />
         public int MaxBulkOperationParallelism { get; private set; }
+
+        /// <inheritdoc />
+        public string HiddenColumns
+        {
+            get => _hiddenColumns;
+            private set
+            {
+                if (_hiddenColumns != value)
+                {
+                    _hiddenColumns = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         #endregion
 
@@ -249,7 +265,7 @@ namespace Servy.Manager
                     );
 
                     // 3. Inject Dependencies into the View
-                    var main = new MainWindow(viewModel, messageBoxService, processKiller);
+                    var main = new MainWindow(viewModel, messageBoxService, processKiller, this);
                     main.Show();
 
                     return Task.FromResult<Window>(main);
@@ -325,6 +341,8 @@ namespace Servy.Manager
                         // Perform diagnostic ACL check on target executable directory
                         PathSecurityGuard.WarnIfDirectoryAclNotHardened(DesktopAppPublishPath);
                     }
+
+                    HiddenColumns = config["HiddenColumns"] ?? string.Empty;
                 }
             };
 
@@ -397,5 +415,42 @@ namespace Servy.Manager
 
         #endregion
 
+        #region HiddenColumns Persistence
+
+        /// <summary>
+        /// Updates the hidden columns string and persists it to AppSettings in the application configuration file.
+        /// </summary>
+        public void SaveHiddenColumns(string hiddenColumns)
+        {
+            HiddenColumns = hiddenColumns ?? string.Empty;
+
+            try
+            {
+                // Open the app.config / exe.config file associated with the executable
+                Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+                // Update or add the key under <appSettings>
+                if (config.AppSettings.Settings["HiddenColumns"] != null)
+                {
+                    config.AppSettings.Settings["HiddenColumns"].Value = HiddenColumns;
+                }
+                else
+                {
+                    config.AppSettings.Settings.Add("HiddenColumns", HiddenColumns);
+                }
+
+                // Save the configuration file changes
+                config.Save(ConfigurationSaveMode.Modified);
+
+                // Refresh the AppSettings section so ConfigurationManager reads the updated value in memory
+                ConfigurationManager.RefreshSection("appSettings");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save HiddenColumns setting to AppSettings: {ex.Message}");
+            }
+        }
+
+        #endregion
     }
 }

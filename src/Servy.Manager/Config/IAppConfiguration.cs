@@ -67,5 +67,10 @@ namespace Servy.Manager.Config
         /// throttled by a hardware-aware ceiling: <c>Math.Max(1, Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism))</c>.
         /// </remarks>
         int MaxBulkOperationParallelism { get; }
+
+        /// <summary>
+        /// Gets the comma-separated list of column names that are hidden in the services table.
+        /// </summary>
+        string HiddenColumns { get; }
     }
 }
