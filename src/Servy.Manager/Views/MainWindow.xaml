@@ -286,11 +286,11 @@
               </DataGridTemplateColumn>
 
               <DataGridTemplateColumn x:Name="ColDescription"
-                                      Header="{x:Static resx:Strings.Column_Description}"
-                                      Width="*"
-                                      MinWidth="160"
-                                      CanUserReorder="False"
-                                      SortMemberPath="Description">
+                        Header="{x:Static resx:Strings.Column_Description}"
+                        Width="120"
+                        MinWidth="120"
+                        CanUserReorder="False"
+                        SortMemberPath="Description">
                 <DataGridTemplateColumn.HeaderStyle>
                   <Style TargetType="DataGridColumnHeader">
                     <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
@@ -300,14 +300,13 @@
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <TextBlock Text="{Binding Description}"
-                               ToolTip="{Binding Description}"
-                               VerticalAlignment="Center"
-                               Margin="5,0,5,0"
-                               TextWrapping="NoWrap"
-                               TextTrimming="CharacterEllipsis"
-                               MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
-                               AutomationProperties.Name="{Binding Description}"
-                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DescriptionColumnCell_HelpText}" />
+                 ToolTip="{Binding Description}"
+                 VerticalAlignment="Center"
+                 Margin="5,0,5,0"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis"
+                 AutomationProperties.Name="{Binding Description}"
+                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DescriptionColumnCell_HelpText}" />
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
