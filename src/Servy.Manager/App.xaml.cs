@@ -225,7 +225,7 @@ namespace Servy.Manager
                     var fileDialogService = new FileDialogService();
                     var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
                     var messageBoxService = new MessageBoxService(uiDispatcher);
-                    var helpService = new HelpService(messageBoxService, _bootstrapper.AppLifetimeToken);
+                    var helpService = new HelpService(messageBoxService, _bootstrapper!.AppLifetimeToken);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules, UiAppConfig.Caption);
                     var eventLogService = new EventLogService(new EventLogReader());
@@ -422,6 +422,7 @@ namespace Servy.Manager
 
         /// <summary>
         /// Updates the hidden columns string and persists it to the configuration file.
+        /// Creates the configuration file if it does not exist.
         /// </summary>
         public void SaveHiddenColumns(string hiddenColumns)
         {
@@ -430,14 +431,22 @@ namespace Servy.Manager
             try
             {
                 string configPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName);
-                if (!File.Exists(configPath)) return;
 
-                string json = File.ReadAllText(configPath);
-                var jsonObject = JObject.Parse(json);
+                JObject jsonObject;
+                if (File.Exists(configPath))
+                {
+                    string json = File.ReadAllText(configPath);
+                    jsonObject = JObject.Parse(json);
+                }
+                else
+                {
+                    jsonObject = new JObject();
+                }
 
                 jsonObject["HiddenColumns"] = HiddenColumns;
 
                 File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
+                Logger.Info($"Saved HiddenColumns setting to {AppSettingsFileName}: {HiddenColumns}");
             }
             catch (Exception ex)
             {
