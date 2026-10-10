@@ -1080,7 +1080,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             var files = Assert.Single(rules, r => r.InheritanceFlags == InheritanceFlags.ObjectInherit);
             Assert.Equal(PropagationFlags.InheritOnly, files.PropagationFlags);
-            var expected = ServyExePermissionsHardener.GetWritableFolderFileRights(ServiceLogsFolder);
+            var expected = ServyExePermissionsHardener.GetWritableFolderFileRights();
             Assert.True(Has((int)files.FileSystemRights, expected));
             if ((expected & FileSystemRights.Delete) == 0)
                 Assert.False(Has((int)files.FileSystemRights, FileSystemRights.Delete), $"the files in {path} are not deletable");
