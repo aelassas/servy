@@ -80,7 +80,7 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Empty(result.Missing);
             Assert.Equal(8, result.Hardened.Count);
 
-            // 1. Nothing on the vault root; List and Create Files on each writable folder, Modify on the files created in it
+            // 1. Nothing on the vault root; List and Create Files on each writable folder, Read, Write and Delete on the files created in it
             Assert.Empty(ExplicitRules(_vault, TargetSid, AccessControlType.Allow));
             Assert.Empty(ExplicitRules(_vault, TargetSid, AccessControlType.Deny));
             foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
