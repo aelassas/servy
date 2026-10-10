@@ -2,7 +2,7 @@
 
 > Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
 
-Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
+Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption (DPAPI, HKDF, AES-256 + HMAC-SHA256), and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
@@ -29,7 +29,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 - Health checks and automatic service recovery
 - Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
 - Export/Import service configurations for easy backups and automation
-- Service Event Notification alerts on service failures via Windows notifications and email
+- Service Event Notification alerts on service failures via Windows notifications and email, and via Slack, Microsoft Teams, Discord, Telegram, WhatsApp and more through a Heartbeat URL provider such as healthchecks.io
 - Modern build (default, self-contained): Windows 10 (1809+), Windows 11 and Windows Server 2016+, on x64 and ARM64
 - Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, Windows 8.x and Windows Server 2008 R2+, on x64 only
 
