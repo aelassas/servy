@@ -431,28 +431,28 @@ namespace Servy.Manager
 
         #endregion
 
-        #region ServicesHiddenColumns Persistence
+        #region Hidden Columns Persistence
 
         /// <summary>
-        /// Updates the hidden columns string and persists it to AppSettings in the application configuration file.
+        /// Writes a key-value setting into AppSettings in the application configuration file.
         /// </summary>
-        public void SaveServicesHiddenColumns(string servicesHiddenColumns)
+        /// <param name="key">The AppSettings key to update or create.</param>
+        /// <param name="value">The string value to store.</param>
+        private static void PersistAppSetting(string key, string value)
         {
-            ServicesHiddenColumns = servicesHiddenColumns ?? string.Empty;
-
             try
             {
                 // Open the app.config / exe.config file associated with the executable
                 Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
                 // Update or add the key under <appSettings>
-                if (config.AppSettings.Settings["ServicesHiddenColumns"] != null)
+                if (config.AppSettings.Settings[key] != null)
                 {
-                    config.AppSettings.Settings["ServicesHiddenColumns"].Value = ServicesHiddenColumns;
+                    config.AppSettings.Settings[key].Value = value;
                 }
                 else
                 {
-                    config.AppSettings.Settings.Add("ServicesHiddenColumns", ServicesHiddenColumns);
+                    config.AppSettings.Settings.Add(key, value);
                 }
 
                 // Save the configuration file changes
@@ -461,49 +461,30 @@ namespace Servy.Manager
                 // Refresh the AppSettings section so ConfigurationManager reads the updated value in memory
                 ConfigurationManager.RefreshSection("appSettings");
 
-                Logger.Info($"Saved ServicesHiddenColumns setting: {(string.IsNullOrWhiteSpace(ServicesHiddenColumns) ? "<empty>" : ServicesHiddenColumns)}");
+                Logger.Info($"Saved {key} setting to AppSettings: {(string.IsNullOrWhiteSpace(value) ? "<empty>" : value)}");
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to save ServicesHiddenColumns setting to AppSettings: {ex.Message}");
+                Logger.Warn($"Failed to save {key} setting to AppSettings: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Updates the logs hidden columns string and persists it to the configuration file.
-        /// Creates the configuration file if it does not exist.
+        /// Updates the services hidden columns string and persists it to AppSettings in the application configuration file.
+        /// </summary>
+        public void SaveServicesHiddenColumns(string servicesHiddenColumns)
+        {
+            ServicesHiddenColumns = servicesHiddenColumns ?? string.Empty;
+            PersistAppSetting("ServicesHiddenColumns", ServicesHiddenColumns);
+        }
+
+        /// <summary>
+        /// Updates the logs hidden columns string and persists it to AppSettings in the application configuration file.
         /// </summary>
         public void SaveLogsHiddenColumns(string logsHiddenColumns)
         {
             LogsHiddenColumns = logsHiddenColumns ?? string.Empty;
-
-            try
-            {
-                // Open the app.config / exe.config file associated with the executable
-                Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
-                // Update or add the key under <appSettings>
-                if (config.AppSettings.Settings["LogsHiddenColumns"] != null)
-                {
-                    config.AppSettings.Settings["LogsHiddenColumns"].Value = LogsHiddenColumns;
-                }
-                else
-                {
-                    config.AppSettings.Settings.Add("LogsHiddenColumns", LogsHiddenColumns);
-                }
-
-                // Save the configuration file changes
-                config.Save(ConfigurationSaveMode.Modified);
-
-                // Refresh the AppSettings section so ConfigurationManager reads the updated value in memory
-                ConfigurationManager.RefreshSection("appSettings");
-
-                Logger.Info($"Saved LogsHiddenColumns setting: {(string.IsNullOrWhiteSpace(LogsHiddenColumns) ? "<empty>" : LogsHiddenColumns)}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Failed to save LogsHiddenColumns setting to AppSettings: {ex.Message}");
-            }
+            PersistAppSetting("LogsHiddenColumns", LogsHiddenColumns);
         }
 
         #endregion
