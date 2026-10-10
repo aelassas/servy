@@ -509,6 +509,63 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(refreshThatReportsRunning, refreshes);
         }
 
+        [Fact]
+        public async Task StartServicesAsync_PreLaunchRetriesConfigured_ExtendsStartDeadlineByRetryAllowance()
+        {
+            // Arrange
+            // The retry allowance is what keeps this service inside its deadline: without it the wait budget is
+            // only the floor plus the pre-launch window, which the elapsed source below already exceeds.
+            const int preLaunchSeconds = 10;
+            const int retries = 3;
+            int withoutRetries = ServiceHelper.CalculateStartTimeout(null, preLaunchSeconds, 0);
+            int withRetries = ServiceHelper.CalculateStartTimeout(null, preLaunchSeconds, retries);
+            Assert.True(withoutRetries < withRetries);
+
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Stopped;
+            int refreshes = 0;
+
+            // Refresh 1 is the unconditional one on entry; refresh 2 opens the first start-wait iteration, which
+            // must still see Stopped so that the deadline check below it is actually evaluated.
+            const int refreshThatReportsRunning = 3;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (++refreshes >= refreshThatReportsRunning)
+                    currentStatus = ServiceControllerStatus.Running;
+            });
+
+            var serviceDto = new ServiceDto
+            {
+                Name = "RetryService",
+                StartTimeout = null,
+                PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe",
+                PreLaunchTimeoutSeconds = preLaunchSeconds,
+                PreLaunchRetryAttempts = retries
+            };
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync("RetryService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("RetryService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // Sits above the no-retry budget and below the budget with the retry allowance.
+                ElapsedSourceFactory = () => () => TimeSpan.FromSeconds((withoutRetries + withRetries) / 2.0)
+            };
+
+            // Act
+            await serviceHelper.StartServicesAsync(new[] { "RetryService" }, CancellationToken.None);
+
+            // Assert - no AggregateException: the deadline the loop measured against included the retry allowance.
+            scMock.Verify(x => x.Start(), Times.Once);
+            Assert.Equal(refreshThatReportsRunning, refreshes);
+        }
+
         #endregion
 
         #region StopServicesAsync Tests
@@ -944,6 +1001,111 @@ namespace Servy.Core.UnitTests.Helpers
             var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions));
             Assert.Equal("Timed out waiting for service 'StuckService' to stop.", inner.Message);
             Assert.Null(inner.InnerException);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_PreviousStopTimeoutRecorded_ExtendsStopDeadlineByPreviousStopDuration()
+        {
+            // Arrange
+            // The recorded previous stop duration is what keeps this service inside its deadline: without it the wait budget is only the default floor plus the SCM buffer, which the elapsed source below already exceeds.
+            int withoutInput = ServiceHelper.CalculateStopTimeout(null, null, 0);
+            int withInput = ServiceHelper.CalculateStopTimeout(null, 120, 0);
+            Assert.True(withoutInput < withInput);
+
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Running;
+            int refreshes = 0;
+
+            // Refresh 1 is the unconditional one on entry; refresh 2 opens the first stop-wait iteration, which
+            // must still see Running so that the deadline check below it is actually evaluated.
+            const int refreshThatReportsStopped = 3;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (++refreshes >= refreshThatReportsStopped)
+                    currentStatus = ServiceControllerStatus.Stopped;
+            });
+
+            var serviceDto = new ServiceDto
+            {
+                Name = "PreviousStopService",
+                StopTimeout = null,
+                PreviousStopTimeout = 120
+            };
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PreviousStopService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PreviousStopService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // Sits above the budget without the input and below the budget with it.
+                ElapsedSourceFactory = () => () => TimeSpan.FromSeconds((withoutInput + withInput) / 2.0)
+            };
+
+            // Act
+            await serviceHelper.StopServicesAsync(new[] { "PreviousStopService" }, CancellationToken.None);
+
+            // Assert - no AggregateException: the deadline the loop measured against included the input.
+            scMock.Verify(x => x.Stop(), Times.Once);
+            Assert.Equal(refreshThatReportsStopped, refreshes);
+        }
+
+        [Fact]
+        public async Task StopServicesAsync_PreStopConfigured_ExtendsStopDeadlineByResolvedPreStopWindow()
+        {
+            // Arrange
+            // The configured pre-stop window is what keeps this service inside its deadline: without it the wait budget is only the default floor plus the SCM buffer, which the elapsed source below already exceeds.
+            int withoutInput = ServiceHelper.CalculateStopTimeout(null, null, 0);
+            int withInput = ServiceHelper.CalculateStopTimeout(null, null, 60);
+            Assert.True(withoutInput < withInput);
+
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Running;
+            int refreshes = 0;
+
+            // Refresh 1 is the unconditional one on entry; refresh 2 opens the first stop-wait iteration, which
+            // must still see Running so that the deadline check below it is actually evaluated.
+            const int refreshThatReportsStopped = 3;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (++refreshes >= refreshThatReportsStopped)
+                    currentStatus = ServiceControllerStatus.Stopped;
+            });
+
+            var serviceDto = new ServiceDto
+            {
+                Name = "PreStopService",
+                StopTimeout = null,
+                PreStopExecutablePath = @"C:\Apps\pre-stop.exe",
+                PreStopTimeoutSeconds = 60
+            };
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PreStopService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PreStopService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // Sits above the budget without the input and below the budget with it.
+                ElapsedSourceFactory = () => () => TimeSpan.FromSeconds((withoutInput + withInput) / 2.0)
+            };
+
+            // Act
+            await serviceHelper.StopServicesAsync(new[] { "PreStopService" }, CancellationToken.None);
+
+            // Assert - no AggregateException: the deadline the loop measured against included the input.
+            scMock.Verify(x => x.Stop(), Times.Once);
+            Assert.Equal(refreshThatReportsStopped, refreshes);
         }
 
         #endregion
