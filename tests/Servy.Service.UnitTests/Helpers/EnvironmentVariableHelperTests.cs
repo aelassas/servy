@@ -800,6 +800,26 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void ExpandEnvironmentVariables_EveryOverridableRuntimeVariable_AllowedWhenPolicyEnabled()
+        {
+            // Arrange
+            // One distinct value per Tier 2 name, taken from the accessor so a newly added or moved name is covered
+            // without editing this test. The values contain no '%', so expansion leaves them unchanged.
+            var userVars = EnvironmentVariableHelper.OverridableProtectedVariableNames
+                .Select(name => new EnvironmentVariable { Name = name, Value = "overridden-" + name })
+                .ToList();
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(userVars, allowOverriddenRuntimeVars: true);
+
+            // Assert
+            var notOverridden = EnvironmentVariableHelper.OverridableProtectedVariableNames
+                .Where(name => !expanded.TryGetValue(name, out var value) || value != "overridden-" + name)
+                .ToList();
+            Assert.Empty(notOverridden);
+        }
+
+        [Fact]
         public void ExpandEnvironmentVariables_OverridableRuntimeVariables_BlockedWhenPolicyDisabled()
         {
             // Arrange
