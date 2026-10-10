@@ -60,8 +60,8 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
-
         private string _hiddenColumns = string.Empty;
+        private string _logsHiddenColumns = string.Empty;
 
         #endregion
 
@@ -163,6 +163,20 @@ namespace Servy.Manager
                 if (_hiddenColumns != value)
                 {
                     _hiddenColumns = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public string LogsHiddenColumns
+        {
+            get => _logsHiddenColumns;
+            private set
+            {
+                if (_logsHiddenColumns != value)
+                {
+                    _logsHiddenColumns = value;
                     OnPropertyChanged();
                 }
             }
@@ -346,6 +360,7 @@ namespace Servy.Manager
                     }
 
                     HiddenColumns = config["HiddenColumns"] ?? string.Empty;
+                    LogsHiddenColumns = config["LogsHiddenColumns"] ?? string.Empty;
                 }
             };
 
@@ -451,6 +466,40 @@ namespace Servy.Manager
             catch (Exception ex)
             {
                 Logger.Warn($"Failed to save HiddenColumns setting to {AppSettingsFileName}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Updates the logs hidden columns string and persists it to the configuration file.
+        /// Creates the configuration file if it does not exist.
+        /// </summary>
+        public void SaveLogsHiddenColumns(string logsHiddenColumns)
+        {
+            LogsHiddenColumns = logsHiddenColumns ?? string.Empty;
+
+            try
+            {
+                string configPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName);
+
+                JObject jsonObject;
+                if (File.Exists(configPath))
+                {
+                    string json = File.ReadAllText(configPath);
+                    jsonObject = JObject.Parse(json);
+                }
+                else
+                {
+                    jsonObject = new JObject();
+                }
+
+                jsonObject["LogsHiddenColumns"] = LogsHiddenColumns;
+
+                File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
+                Logger.Info($"Saved LogsHiddenColumns setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(LogsHiddenColumns) ? "<empty>" : LogsHiddenColumns)}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save LogsHiddenColumns setting to {AppSettingsFileName}: {ex.Message}");
             }
         }
 
