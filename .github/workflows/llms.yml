@@ -1,20 +1,28 @@
 # ==========================================================================================
 # GitHub Actions Workflow - LLM Full Documentation Concatenation
 # ------------------------------------------------------------------------------------------
-# Triggered on wiki updates (gollum) and on-demand execution.
+# Triggered on wiki updates (gollum), on pushes to main that change llms.txt or this
+# workflow, and on-demand execution.
 # - generate-llms-full:
 #     1. Checks out the Servy Wiki repository.
 #     2. Concatenates all Markdown documentation (.md) into a single, structured
-#        llms-full.txt file for full-context LLM processing.
+#        llms-full.txt file for full-context LLM processing, in _Sidebar.md reading order,
+#        with relative wiki links rewritten to absolute URLs.
 #     3. Commits and pushes llms-full.txt to the root of the main repository.
-#     4. Commits and pushes llms-full.txt to the servy-win.github.io repository in
-#        the public/ directory.
+#     4. Commits and pushes llms.txt and llms-full.txt to the servy-win.github.io
+#        repository in the public/ directory.
 # ==========================================================================================
 
 name: llms
 
 on:
   gollum:
+  push:
+    branches:
+      - main
+    paths:
+      - llms.txt
+      - .github/workflows/llms.yml
   workflow_dispatch:
 
 permissions:
@@ -44,6 +52,8 @@ jobs:
 
       - name: Generate llms-full.txt
         shell: bash
+        env:
+          WIKI_URL: ${{ github.server_url }}/${{ github.repository }}/wiki
         run: |
           # 1. Ensure the wiki directory exists and contains markdown files
           if [ ! -d ".wiki" ] || [ -z "$(find .wiki -maxdepth 2 -type f -name '*.md' -print -quit)" ]; then
@@ -52,6 +62,7 @@ jobs:
           fi
 
           OUTPUT_FILE="llms-full.txt"
+          ORDER_FILE="$RUNNER_TEMP/llms-order.tsv"
 
           # 2. Add header information to the concatenated file
           {
@@ -64,29 +75,52 @@ jobs:
             echo ""
           } > "$OUTPUT_FILE"
 
-          # 3. Concatenate every wiki page except _Sidebar.md and _Footer.md, in sorted path order
-          # (Home.md is not placed first; it sorts like any other page)
+          # 3. Build the reading order as "<path><TAB><title>" lines: the pages _Sidebar.md links
+          #    to, in sidebar order and with the sidebar label as title (Home first), then every
+          #    page the sidebar does not list, in sorted path order, titled from its file name.
+          #    _Sidebar.md and _Footer.md themselves are skipped.
+          : > "$ORDER_FILE"
+          if [ -f .wiki/_Sidebar.md ]; then
+            while IFS=$'\t' read -r page title; do
+              if [ ! -f ".wiki/$page.md" ]; then
+                echo "::warning::_Sidebar.md links to a wiki page that does not exist: $page"
+              elif ! cut -f1 "$ORDER_FILE" | grep -qxF ".wiki/$page.md"; then
+                printf '%s\t%s\n' ".wiki/$page.md" "$title" >> "$ORDER_FILE"
+              fi
+            done < <(grep -oE '\[[^]]+\]\(\./[^)#]+' .wiki/_Sidebar.md | sed -E 's/^\[([^]]+)\]\(\.\/(.*)$/\2\t\1/')
+          fi
           find .wiki -maxdepth 2 -type f -name '*.md' | sort | while read -r file; do
-            # Extract clean title from filename
             filename=$(basename "$file" .md)
-            
-            # Skip the GitHub Wiki sidebar and footer files
             if [[ "$filename" == "_Sidebar" || "$filename" == "_Footer" ]]; then
               continue
             fi
+            if ! cut -f1 "$ORDER_FILE" | grep -qxF "$file"; then
+              printf '%s\t%s\n' "$file" "${filename//-/ }" >> "$ORDER_FILE"
+            fi
+          done
+
+          # 4. Concatenate the pages. Relative links only resolve inside the wiki, so "](./Page"
+          #    and same-page "](#anchor" links are rewritten to absolute wiki URLs.
+          while IFS=$'\t' read -r file title; do
+            filename=$(basename "$file" .md)
+            page_url="$WIKI_URL/$filename"
+            # Escape '&' (page names such as Logging-&-Log-Rotation) for the sed replacement
+            page_url_sed=${page_url//&/\\&}
 
             echo "Appending: $filename"
-            
+
             {
-              echo "# Document: $filename"
+              echo "# Document: $title"
               echo ""
-              cat "$file"
+              echo "> Source: $page_url"
+              echo ""
+              sed -E -e "s|\]\(\./|](${WIKI_URL}/|g" -e "s|\]\(#|](${page_url_sed}#|g" "$file"
               echo ""
               echo ""
               echo "---"
               echo ""
             } >> "$OUTPUT_FILE"
-          done
+          done < "$ORDER_FILE"
 
           echo "Successfully generated $OUTPUT_FILE ($(du -h "$OUTPUT_FILE" | cut -f1))"
 
@@ -99,15 +133,18 @@ jobs:
         shell: bash
         run: |
           # 1. Compare the body (everything after the 7-line generated header, which carries a
-          #    timestamp) with the committed copy, then copy the generated file to the repo root
-          if ! diff -q <(tail -n +8 llms-full.txt) <(tail -n +8 main-repo/llms-full.txt) >/dev/null 2>&1; then
+          #    timestamp) with the committed copy, then copy the generated file to the repo root.
+          #    .gitattributes checks text files out with CRLF while the generated file has LF, so
+          #    line endings are ignored in the comparison.
+          if ! diff -q --strip-trailing-cr <(tail -n +8 llms-full.txt) <(tail -n +8 main-repo/llms-full.txt) >/dev/null 2>&1; then
             CHANGED=1
           else
             CHANGED=0
           fi
           cp llms-full.txt main-repo/llms-full.txt
 
-          # 2. Commit and push if the body changed
+          # 2. Commit and push if the body changed, rebasing first in case main moved since the
+          #    checkout
           cd main-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
@@ -115,6 +152,7 @@ jobs:
           if [ "$CHANGED" = 1 ]; then
             git add llms-full.txt
             git commit -m "docs: sync llms-full.txt from wiki updates"
+            git pull --rebase
             git push
             echo "Successfully updated and pushed llms-full.txt to main repository"
           else
@@ -128,31 +166,35 @@ jobs:
           token: ${{ secrets.GH_PAT_SERVY_WIN }}
           path: web-repo
 
-      - name: Deploy llms-full.txt to Website Repository
+      - name: Deploy llms.txt and llms-full.txt to Website Repository
         shell: bash
         run: |
           # 1. Ensure target directory exists
           mkdir -p web-repo/public
 
-          # 2. Compare the body (everything after the 7-line generated header, which carries a
-          #    timestamp) with the committed copy, then copy the generated file to public/
-          if ! diff -q <(tail -n +8 llms-full.txt) <(tail -n +8 web-repo/public/llms-full.txt) >/dev/null 2>&1; then
+          # 2. Compare the body of llms-full.txt (everything after the 7-line generated header,
+          #    which carries a timestamp) and the whole of llms.txt with the committed copies,
+          #    ignoring line endings, then copy both files to public/ with LF line endings
+          CHANGED=0
+          if ! diff -q --strip-trailing-cr <(tail -n +8 llms-full.txt) <(tail -n +8 web-repo/public/llms-full.txt) >/dev/null 2>&1; then
             CHANGED=1
-          else
-            CHANGED=0
+            cp llms-full.txt web-repo/public/llms-full.txt
           fi
-          cp llms-full.txt web-repo/public/llms-full.txt
+          if ! diff -q --strip-trailing-cr main-repo/llms.txt web-repo/public/llms.txt >/dev/null 2>&1; then
+            CHANGED=1
+            tr -d '\r' < main-repo/llms.txt > web-repo/public/llms.txt
+          fi
 
-          # 3. Commit and push if the body changed
+          # 3. Commit and push if either file changed
           cd web-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
 
           if [ "$CHANGED" = 1 ]; then
-            git add public/llms-full.txt
-            git commit -m "docs: sync llms-full.txt from wiki updates"
+            git add public/llms.txt public/llms-full.txt
+            git commit -m "docs: sync llms.txt and llms-full.txt from servy"
             git push
-            echo "Successfully updated and pushed llms-full.txt to servy-win.github.io"
+            echo "Successfully updated and pushed llms.txt and llms-full.txt to servy-win.github.io"
           else
-            echo "No changes detected in llms-full.txt. Skipping commit."
+            echo "No changes detected in llms.txt or llms-full.txt. Skipping commit."
           fi
