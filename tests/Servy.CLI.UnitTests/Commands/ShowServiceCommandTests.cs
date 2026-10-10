@@ -107,7 +107,10 @@ namespace Servy.CLI.UnitTests.Commands
             PreStopLogAsError = AppConfig.DefaultPreStopLogAsError,
 
             EnableConsoleUI = AppConfig.DefaultEnableConsoleUI,
-            EnableDebugLogs = AppConfig.DefaultEnableDebugLogs
+            EnableDebugLogs = AppConfig.DefaultEnableDebugLogs,
+
+            // Stored by every install from a non-nullable bool, so the Environment section is never empty.
+            AllowOverriddenRuntimeVars = AppConfig.DefaultAllowOverriddenRuntimeVars
         };
 
         /// <summary>
@@ -423,7 +426,6 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_PreStop, lines);
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_PostStop, lines);
             Assert.DoesNotContain(CliStrings.Msg_Show_Group_FailureProgram, lines);
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Environment, lines);
         }
 
         [Fact]
@@ -918,7 +920,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             // MinimalDto leaves the environment-variable columns unset; a mask there would wrongly
-            // imply a value exists.
+            // imply a value exists. The Environment section itself is present, because an install
+            // always stores the AllowOverriddenRuntimeVars flag.
             GivenService(MinimalDto());
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { ServiceName = ServiceName };
@@ -927,7 +930,8 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.DoesNotContain(CliStrings.Msg_Show_Group_Environment, result.Message);
+            Assert.Null(SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Environment, CliStrings.Msg_Show_Label_EnvironmentVariables));
+            Assert.Equal(CliStrings.Msg_Show_No, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Environment, CliStrings.Msg_Show_Label_AllowOverriddenRuntimeVars));
             Assert.Null(SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_Password));
         }
 
