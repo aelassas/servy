@@ -348,7 +348,9 @@ namespace Servy.Service.ProcessManagement
             catch (Exception ex)
             {
                 string pathValue = options.ExecutablePath;
-                logger.Error($"Failed during synchronous execution or log flushing for '{pathValue}'.", ex);
+                logger.Error(processStarted
+                    ? $"Failed while monitoring or flushing the output of '{pathValue}'."
+                    : $"Failed to start '{pathValue}'.", ex);
                 throw;
             }
             finally

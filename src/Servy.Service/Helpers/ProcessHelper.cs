@@ -33,9 +33,9 @@ namespace Servy.Service.Helpers
         /// <param name="logger">The logger instance for logging messages.</param>
         /// <param name="contextPrefix">An optional prefix for logging (e.g., "Pre-Launch", "Post-Stop").</param>
         /// <returns>A tuple containing the expanded environment dictionary and the expanded arguments string.</returns>
-        public static (Dictionary<string, string> env, string expandedArgs) ExpandAndAudit(
+        public static (Dictionary<string, string?> env, string expandedArgs) ExpandAndAudit(
             List<EnvironmentVariable> vars, bool allowOverriddenRuntimeVars,
-            string rawArgs, IServyLogger logger, string contextPrefix = "")
+            string rawArgs, IServyLogger? logger, string contextPrefix = "")
         {
             string prefix = string.IsNullOrWhiteSpace(contextPrefix) ? string.Empty : $"[{contextPrefix}] ";
 

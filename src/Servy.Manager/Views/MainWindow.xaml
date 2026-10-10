@@ -300,13 +300,13 @@
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <TextBlock Text="{Binding Description}"
-                 ToolTip="{Binding Description}"
-                 VerticalAlignment="Center"
-                 Margin="5,0,5,0"
-                 TextWrapping="NoWrap"
-                 TextTrimming="CharacterEllipsis"
-                 AutomationProperties.Name="{Binding Description}"
-                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DescriptionColumnCell_HelpText}" />
+                               ToolTip="{Binding Description}"
+                               VerticalAlignment="Center"
+                               Margin="5,0,5,0"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               AutomationProperties.Name="{Binding Description}"
+                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DescriptionColumnCell_HelpText}" />
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>

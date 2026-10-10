@@ -409,7 +409,7 @@ namespace Servy.Services
                     UseShellExecute = true
                 };
 
-                _processHelper.Start(psi);
+                _processHelper.Start(psi)?.Dispose();
             }
             catch (OperationCanceledException)
             {
