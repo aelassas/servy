@@ -798,6 +798,51 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Equal(99, count); // Proves InternalInitialize was bypassed
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-5)]
+        public void Initialize_NonPositiveRotationSize_FallsBackToTheDefault(int sizeMB)
+        {
+            // Arrange
+            // (the fixture has already reset the static logger)
+
+            // Act
+            Logger.Initialize(_testFileName, logRotationSizeMB: sizeMB);
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultRotationSizeMB, TestReflection.GetFieldStatic<int>(typeof(Logger), "_logRotationSizeMB"));
+        }
+
+        [Theory]
+        [InlineData(-1, AppConfig.LoggerDefaultMaxBackupLogFiles)]
+        [InlineData(0, 0)] // 0 means unlimited backups and must be kept, not replaced by the default
+        public void Initialize_BackupCount_NegativeFallsBackToTheDefaultAndZeroIsKept(int requested, int expected)
+        {
+            // Arrange
+            // (the fixture has already reset the static logger)
+
+            // Act
+            Logger.Initialize(_testFileName, maxBackupLogFiles: requested);
+
+            // Assert
+            Assert.Equal(expected, TestReflection.GetFieldStatic<int>(typeof(Logger), "_maxBackupLogFiles"));
+        }
+
+        [Fact]
+        public void Setters_RejectNonPositiveSizeAndNegativeBackupCount_AndKeepTheCurrentValues()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName, logRotationSizeMB: 20, maxBackupLogFiles: 5);
+
+            // Act
+            Logger.SetLogRotationSize(0);
+            Logger.SetMaxBackupLogFiles(-1);
+
+            // Assert
+            Assert.Equal(20, TestReflection.GetFieldStatic<int>(typeof(Logger), "_logRotationSizeMB"));
+            Assert.Equal(5, TestReflection.GetFieldStatic<int>(typeof(Logger), "_maxBackupLogFiles"));
+        }
+
         [Fact]
         public void SetUseLocalTimeForRotation_UpdatesTimestampTimezoneFormat()
         {
