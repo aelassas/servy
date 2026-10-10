@@ -58,10 +58,7 @@ namespace Servy.Core.UnitTests.Services
             _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
 
-            _windowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(_handles.Scm(123));
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny)).Returns(true);
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(true);
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>())).Returns(true);
+            ServiceManagerInstallArrange.ScmAvailable(_windowsServiceApi, _handles);
 
             _serviceManager = new ServiceManager(
                 _ => new Mock<IServiceControllerWrapper>().Object,
@@ -80,7 +77,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_NewServiceUnderCustomAccount_HardensForThatAccount(string username, string expectedAccount)
         {
             // Arrange
-            var serviceHandle = ArrangeServiceCreated();
+            var serviceHandle = ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var options = CreateOptions(username);
 
             // Act
@@ -103,7 +100,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_NewServiceUnderLocalSystem_DoesNotHarden(string username)
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var options = CreateOptions(username);
 
             // Act
@@ -118,7 +115,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceReconfiguredUnderCustomAccount_HardensForThatAccount()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             var options = CreateOptions(@".\svc-account");
 
             // Act
@@ -136,7 +133,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceReconfiguredUnderLocalSystem_DoesNotHarden()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             var options = CreateOptions(null);
 
             // Act
@@ -171,7 +168,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_HardeningReportsFailure_InstallStillSucceedsAndLogsAWarning()
         {
             // Arrange
-            var serviceHandle = ArrangeServiceCreated();
+            var serviceHandle = ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             _hardener.Setup(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
             var options = CreateOptions(@".\svc-account");
 
@@ -191,7 +188,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_HardeningThrows_InstallStillSucceedsIsNotRolledBackAndLogsAnError()
         {
             // Arrange
-            var serviceHandle = ArrangeServiceCreated();
+            var serviceHandle = ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             _hardener.Setup(h => h.HardenServiceAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("script host missing"));
             var options = CreateOptions(@".\svc-account");
@@ -211,7 +208,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_WithoutHardener_InstallsUnderCustomAccountWithoutAHardeningError()
         {
             // Arrange: the five-argument constructor leaves the hardener null
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var manager = new ServiceManager(
                 _ => new Mock<IServiceControllerWrapper>().Object,
                 new Mock<IServiceControllerProvider>().Object,
@@ -237,7 +234,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceMovedToAnotherAccount_RevokesThePreviousAccount()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             var options = CreateOptions(@".\svc-account");
 
@@ -255,7 +252,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceMovedToLocalSystem_RevokesThePreviousAccount()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             var options = CreateOptions(null);
 
@@ -271,7 +268,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceKeepsItsAccount_RevokesNothing()
         {
             // Arrange: the same account, written with another case
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\SVC-ACCOUNT");
             var options = CreateOptions(@".\svc-account");
 
@@ -287,7 +284,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_PreviousRecordRanAsLocalSystem_RevokesNothing()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(null);
             var options = CreateOptions(@".\svc-account");
 
@@ -303,7 +300,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_NewServiceWithoutPreviousRecord_RevokesNothing()
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var options = CreateOptions(@".\svc-account");
 
             // Act
@@ -327,7 +324,7 @@ namespace Servy.Core.UnitTests.Services
             _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceDto)null);
             _serviceRepository.Setup(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var options = CreateOptions(@".\new-account");
 
             // Act
@@ -353,7 +350,7 @@ namespace Servy.Core.UnitTests.Services
             _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceDto)null);
             _serviceRepository.Setup(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var options = CreateOptions(@".\svc-account");
 
             // Act
@@ -406,7 +403,7 @@ namespace Servy.Core.UnitTests.Services
             // must run after the UpsertAsync that rewrites this service's own row. Revoking first would read the
             // stale row, see the former account still in use and revoke nothing. The mocked hardener never reads
             // the repository, so only an explicit order assertion can pin it.
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             var order = new List<string>();
             _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -428,7 +425,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceMovedToAnotherAccount_RevokesThePreviousAccountsServiceControlRights()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             var options = CreateOptions(@".\svc-account");
 
@@ -449,7 +446,7 @@ namespace Servy.Core.UnitTests.Services
             // (.\alice -> alice) is still revoked by SID - and granting first would have that revocation take back
             // the grant just written, leaving the service's own account with no control over its service. Both calls
             // log and swallow, so only an explicit order assertion can pin the sequence.
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             var order = new List<string>();
             _windowsServiceApi.Setup(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()))
@@ -470,7 +467,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceMovedToLocalSystem_RevokesThePreviousAccountsServiceControlRights()
         {
             // Arrange: Local System gets no grant of its own, so the former account's is the only one left to remove
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             var options = CreateOptions(null);
 
@@ -486,7 +483,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceKeepsItsAccount_RevokesNoServiceControlRights()
         {
             // Arrange: the same account, written with another case
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\SVC-ACCOUNT");
             var options = CreateOptions(@".\svc-account");
 
@@ -502,7 +499,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceWithoutPreviousRecord_RevokesNoServiceControlRights()
         {
             // Arrange: no former record, so there is no former account to take anything back from
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             var options = CreateOptions(@".\svc-account");
 
             // Act
@@ -517,7 +514,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_RevokingTheServiceControlRightsThrows_InstallStillSucceedsAndLogsAnError()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(@".\old-account");
             _windowsServiceApi.Setup(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()))
                 .Throws(new InvalidOperationException("revocation failed"));
@@ -776,42 +773,6 @@ namespace Servy.Core.UnitTests.Services
         }
 
         #endregion
-
-        /// <summary>
-        /// Arranges CreateService to create the service, so the "new service" success path runs.
-        /// </summary>
-        /// <returns>The handle of the created service.</returns>
-        private SafeServiceHandle ArrangeServiceCreated()
-        {
-            var serviceHandle = _handles.Service(456);
-            _windowsServiceApi.Setup(x => x.CreateService(
-                    It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
-                    It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(serviceHandle);
-            return serviceHandle;
-        }
-
-        /// <summary>
-        /// Arranges CreateService to fail while the service is listed as installed, so the
-        /// "already exists, configuration updated" success path runs.
-        /// </summary>
-        private void ArrangeServiceAlreadyExists()
-        {
-            _windowsServiceApi.Setup(x => x.CreateService(
-                    It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
-                    It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(_handles.Service(0));
-            _windowsServiceApi.Setup(x => x.GetServices())
-                .Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = ServiceName } });
-            _windowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), ServiceName, It.IsAny<uint>()))
-                .Returns(() => _handles.Service(789));
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig(
-                    It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(true);
-        }
 
         private static InstallServiceOptions CreateOptions(string username)
         {
