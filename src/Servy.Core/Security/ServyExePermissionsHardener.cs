@@ -668,12 +668,15 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Removes every explicit entry the target holds on one vault item. A missing item is ignored, and a link is
-        /// refused the way the hardening refuses it, because the ACL write would land outside the vault.
+        /// Removes every explicit entry the target holds on one vault item, and hands the item to <c>BUILTIN\Administrators</c>
+        /// when the target owns it (a log it created), because an owner keeps an implicit right to rewrite the DACL and
+        /// could grant itself access again (#7442). A missing item is ignored, and a link is refused the way the hardening
+        /// refuses it, because the ACL write would land outside the vault.
         /// </summary>
         /// <param name="relativePath">The item, relative to <see cref="VaultDirectory"/>; empty for the vault itself.</param>
         /// <param name="targetSid">The account whose entries are removed.</param>
-        /// <param name="result">Receives the item as revoked when it held an entry, or as failed.</param>
+        /// <param name="result">Receives the item as revoked when it held an entry or was owned by the target, or as
+        /// failed.</param>
         private void RevokeEntries(string relativePath, SecurityIdentifier targetSid, ExePermissionsHardeningResult result)
         {
             var isVault = relativePath.Length == 0;
@@ -708,19 +711,25 @@ namespace Servy.Core.Security
                 if (isDirectory)
                 {
                     var directory = new DirectoryInfo(path);
-                    var acl = directory.GetAccessControl(AccessControlSections.Access);
-                    if (!HoldsExplicitEntry(acl, targetSid))
+                    var acl = directory.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+                    var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
+                    if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
                         return;
                     acl.PurgeAccessRules(targetSid);
+                    if (ownedByTarget)
+                        acl.SetOwner(AdministratorsSid);
                     directory.SetAccessControl(acl);
                 }
                 else
                 {
                     var file = new FileInfo(path);
-                    var acl = file.GetAccessControl(AccessControlSections.Access);
-                    if (!HoldsExplicitEntry(acl, targetSid))
+                    var acl = file.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+                    var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
+                    if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
                         return;
                     acl.PurgeAccessRules(targetSid);
+                    if (ownedByTarget)
+                        acl.SetOwner(AdministratorsSid);
                     file.SetAccessControl(acl);
                 }
 
