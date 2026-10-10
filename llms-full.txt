@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-10T11:18:09Z
+> Generated on: 2026-10-10T11:19:51Z
 
 ---
 
@@ -4101,6 +4101,7 @@ Servy covers the basics of running an executable as a service, plus the operatio
 | **Process and environment settings** | Supports a working directory, startup parameters, environment variables with expansion, process priority, CPU affinity, and service dependencies. |
 | **Service accounts and permissions** | Runs services as Local System, a local or domain user, or a Group Managed Service Account (gMSA). |
 | **Deployment and management** | Provides a desktop app, a CLI (`servy-cli`), a PowerShell module, and service import and export. It supports current Windows versions as well as Windows 7 SP1 and Windows Server 2008 R2 through the .NET Framework 4.8 build. |
+
 
 
 ---
