@@ -436,13 +436,12 @@ namespace Servy.Manager
         #region Hidden Columns Persistence
 
         /// <summary>
-        /// Updates the services hidden columns string and persists it to the configuration file.
-        /// Creates the configuration file if it does not exist.
+        /// Writes a key-value setting into <c>appsettings.manager.json</c>, creating the file if needed.
         /// </summary>
-        public void SaveServicesHiddenColumns(string servicesHiddenColumns)
+        /// <param name="key">The JSON property name to set.</param>
+        /// <param name="value">The string value to store.</param>
+        private static void PersistSetting(string key, string value)
         {
-            ServicesHiddenColumns = servicesHiddenColumns ?? string.Empty;
-
             try
             {
                 string configPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName);
@@ -458,49 +457,33 @@ namespace Servy.Manager
                     jsonObject = new JObject();
                 }
 
-                jsonObject["ServicesHiddenColumns"] = ServicesHiddenColumns;
+                jsonObject[key] = value;
 
                 File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
-                Logger.Info($"Saved ServicesHiddenColumns setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(ServicesHiddenColumns) ? "<empty>" : ServicesHiddenColumns)}");
+                Logger.Info($"Saved {key} setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(value) ? "<empty>" : value)}");
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to save ServicesHiddenColumns setting to {AppSettingsFileName}: {ex.Message}");
+                Logger.Warn($"Failed to save {key} setting to {AppSettingsFileName}: {ex.Message}");
             }
         }
 
         /// <summary>
+        /// Updates the services hidden columns string and persists it to the configuration file.
+        /// </summary>
+        public void SaveServicesHiddenColumns(string servicesHiddenColumns)
+        {
+            ServicesHiddenColumns = servicesHiddenColumns ?? string.Empty;
+            PersistSetting("ServicesHiddenColumns", ServicesHiddenColumns);
+        }
+
+        /// <summary>
         /// Updates the logs hidden columns string and persists it to the configuration file.
-        /// Creates the configuration file if it does not exist.
         /// </summary>
         public void SaveLogsHiddenColumns(string logsHiddenColumns)
         {
             LogsHiddenColumns = logsHiddenColumns ?? string.Empty;
-
-            try
-            {
-                string configPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName);
-
-                JObject jsonObject;
-                if (File.Exists(configPath))
-                {
-                    string json = File.ReadAllText(configPath);
-                    jsonObject = JObject.Parse(json);
-                }
-                else
-                {
-                    jsonObject = new JObject();
-                }
-
-                jsonObject["LogsHiddenColumns"] = LogsHiddenColumns;
-
-                File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
-                Logger.Info($"Saved LogsHiddenColumns setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(LogsHiddenColumns) ? "<empty>" : LogsHiddenColumns)}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Failed to save LogsHiddenColumns setting to {AppSettingsFileName}: {ex.Message}");
-            }
+            PersistSetting("LogsHiddenColumns", LogsHiddenColumns);
         }
 
         #endregion

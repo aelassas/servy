@@ -1,7 +1,6 @@
 using Servy.Manager.ViewModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
-using System.Windows.Automation;
 using System.Windows.Controls;
 
 namespace Servy.Manager.Views
