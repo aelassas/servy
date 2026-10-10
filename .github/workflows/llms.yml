@@ -1,0 +1,110 @@
+# ==========================================================================================
+# GitHub Actions Workflow - LLM Full Documentation Concatenation
+# ------------------------------------------------------------------------------------------
+# Triggered on wiki updates (gollum) and on-demand execution.
+# - generate-llms-full:
+#     1. Checks out the Servy Wiki repository.
+#     2. Concatenates all Markdown documentation (.md) into a single, structured
+#        llms-full.txt file for full-context LLM processing.
+#     3. Commits and pushes llms-full.txt to the servy-win.github.io repository in
+#        the public/ directory.
+# ==========================================================================================
+
+name: llms
+
+on:
+  gollum:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-llms-full:
+    name: Generate and Deploy llms-full.txt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Wiki
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: .wiki
+
+      - name: Generate llms-full.txt
+        shell: bash
+        run: |
+          # 1. Ensure the wiki directory exists and contains markdown files
+          if [ ! -d ".wiki" ] || [ -z "$(find .wiki -maxdepth 2 -type f -name '*.md' -print -quit)" ]; then
+            echo "::error::Wiki repository appears empty or inaccessible."
+            exit 1
+          fi
+
+          OUTPUT_FILE="llms-full.txt"
+
+          # 2. Add header information to the concatenated file
+          {
+            echo "# Servy - Full Documentation Context"
+            echo ""
+            echo "> Auto-generated full documentation context compiled from the Servy Wiki."
+            echo "> Generated on: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo ""
+            echo "---"
+            echo ""
+          } > "$OUTPUT_FILE"
+
+          # 3. Concatenate Home.md / _Sidebar.md / _Footer.md first if present, followed by all other pages
+          # Sort files deterministically to ensure reproducible builds
+          find .wiki -maxdepth 2 -type f -name '*.md' | sort | while read -r file; do
+            # Extract clean title from filename
+            filename=$(basename "$file" .md)
+            
+            # Skip hidden GitHub Wiki sidebar/footer files if desired, or include with headers
+            if [[ "$filename" == "_Sidebar" || "$filename" == "_Footer" ]]; then
+              continue
+            fi
+
+            echo "Appending: $filename"
+            
+            {
+              echo "# Document: $filename"
+              echo ""
+              cat "$file"
+              echo ""
+              echo ""
+              echo "---"
+              echo ""
+            } >> "$OUTPUT_FILE"
+          done
+
+          echo "Successfully generated $OUTPUT_FILE ($(du -h "$OUTPUT_FILE" | cut -f1))"
+
+      - name: Checkout Web Repository (servy-win.github.io)
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: servy-win/servy-win.github.io
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: web-repo
+
+      - name: Deploy llms-full.txt to Website Repository
+        shell: bash
+        run: |
+          # 1. Ensure target directory exists
+          mkdir -p web-repo/public
+
+          # 2. Copy generated file to public/ directory
+          cp llms-full.txt web-repo/public/llms-full.txt
+
+          # 3. Commit and push if changes exist
+          cd web-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git status --porcelain | grep -q "public/llms-full.txt"; then
+            git add public/llms-full.txt
+            git commit -m "docs: sync llms-full.txt from wiki updates"
+            git push
+            echo "Successfully updated and pushed llms-full.txt to servy-win.github.io"
+          else
+            echo "No changes detected in llms-full.txt. Skipping commit."
+          fi
