@@ -250,9 +250,9 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Asserts the 25 structural defaults HydrateDefaults populates. ApplyDefaultsAndResetIdentity
+        /// Asserts the 26 structural defaults HydrateDefaults populates. ApplyDefaultsAndResetIdentity
         /// delegates to HydrateDefaults for all of them, so both tests share one list and default
-        /// number 26 is added in a single place.
+        /// number 27 is added in a single place.
         /// </summary>
         private static void AssertAllStructuralDefaults(ServiceDto dto)
         {
