@@ -567,10 +567,10 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Returns the rights the target gets on the files inside one of the <see cref="GetWritableFolders"/> folders.
+        /// The rights are the same for every writable folder.
         /// </summary>
-        /// <param name="relativePath">The writable folder, relative to <see cref="VaultDirectory"/>.</param>
         /// <returns>Read, Write and Delete: the logger rewrites, rotates and deletes its files.</returns>
-        internal static FileSystemRights GetWritableFolderFileRights(string relativePath)
+        internal static FileSystemRights GetWritableFolderFileRights()
             => FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete;
 
         /// <summary>
@@ -791,7 +791,7 @@ namespace Servy.Core.Security
                 // The files in it: read, write and delete (log rotation)
                 acl.AddAccessRule(new FileSystemAccessRule(
                     targetSid,
-                    GetWritableFolderFileRights(relativePath),
+                    GetWritableFolderFileRights(),
                     InheritanceFlags.ObjectInherit,
                     PropagationFlags.InheritOnly,
                     AccessControlType.Allow));

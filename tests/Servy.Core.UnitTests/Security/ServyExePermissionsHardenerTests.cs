@@ -507,7 +507,7 @@ namespace Servy.Core.UnitTests.Security
         public void GetWritableFolderFileRights_ServiceLogs_AreReadWriteDelete()
         {
             // Act
-            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights(ServiceLogsFolder);
+            var rights = ServyExePermissionsHardener.GetWritableFolderFileRights();
 
             // Assert: the logger rotates its files, so Delete is needed here
             Assert.Equal(FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete, rights);
