@@ -58,13 +58,13 @@ jobs:
             echo ""
           } > "$OUTPUT_FILE"
 
-          # 3. Concatenate Home.md / _Sidebar.md / _Footer.md first if present, followed by all other pages
-          # Sort files deterministically to ensure reproducible builds
+          # 3. Concatenate every wiki page except _Sidebar.md and _Footer.md, in sorted path order
+          # (Home.md is not placed first; it sorts like any other page)
           find .wiki -maxdepth 2 -type f -name '*.md' | sort | while read -r file; do
             # Extract clean title from filename
             filename=$(basename "$file" .md)
             
-            # Skip hidden GitHub Wiki sidebar/footer files if desired, or include with headers
+            # Skip the GitHub Wiki sidebar and footer files
             if [[ "$filename" == "_Sidebar" || "$filename" == "_Footer" ]]; then
               continue
             fi
