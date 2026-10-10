@@ -663,8 +663,9 @@ namespace Servy.UnitTests.Services
         public async Task OpenManager_ProcessStartThrowsException_DisplaysLaunchFailedError()
         {
             // Arrange
-            // Create a real temp .exe so the File.Exists gate passes
-            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            // Create a real temp .exe under the directory OpenManagerAsync's containment guard compares against,
+            // so the File.Exists gate and the guard both pass.
+            string tempTrackingFile = Path.Combine(AppFoldersHelper.GetAppDirectory(), $"{Guid.NewGuid():N}.exe");
             File.WriteAllText(tempTrackingFile, string.Empty);
 
             ProcessStartInfo? captured = null;
