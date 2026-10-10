@@ -47,10 +47,10 @@ namespace Servy.Core.UnitTests.Services
 
         public void Dispose() => _handles.Dispose();
 
-        private ServiceManager CreateManager(INamedPipesService? pipes, ServiceControllerStatus status = ServiceControllerStatus.Stopped)
+        private ServiceManager CreateManager(INamedPipesService? pipes)
         {
             var controller = new Mock<IServiceControllerWrapper>();
-            controller.Setup(c => c.Status).Returns(status);
+            controller.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
             return new ServiceManager(
                 _ => controller.Object,
                 new Mock<IServiceControllerProvider>().Object,
