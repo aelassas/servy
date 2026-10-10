@@ -90,7 +90,7 @@ namespace Servy.Manager.Views
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task Window_LoadedAsync(object sender, RoutedEventArgs e)
         {
-            // Restore column visibilities based on the configured HiddenColumns
+            // Restore column visibilities based on the configured ServicesHiddenColumns
             RestoreColumnVisibilities();
 
             // Trigger the global search command to populate the dashboard
@@ -102,14 +102,14 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Restores column visibilities based on the configured HiddenColumns string.
+        /// Restores column visibilities based on the configured ServicesHiddenColumns string.
         /// </summary>
         private void RestoreColumnVisibilities()
         {
-            if (string.IsNullOrWhiteSpace(_appConfig.HiddenColumns)) return;
+            if (string.IsNullOrWhiteSpace(_appConfig.ServicesHiddenColumns)) return;
 
             var hiddenSet = new HashSet<string>(
-                _appConfig.HiddenColumns.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                _appConfig.ServicesHiddenColumns.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                         .Select(s => s.Trim()),
                 StringComparer.OrdinalIgnoreCase);
 
@@ -510,7 +510,7 @@ namespace Servy.Manager.Views
 
             if (Application.Current is App app)
             {
-                app.SaveHiddenColumns(csv);
+                app.SaveServicesHiddenColumns(csv);
             }
         }
 
