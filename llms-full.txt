@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-10T13:15:37Z
+> Generated on: 2026-10-10T13:16:37Z
 
 ---
 
@@ -4085,7 +4085,6 @@ Applications written in Node.js, Python, Java, Go, PHP, Ruby, Rust, or similar e
 A Windows service wrapper registers an ordinary executable with the Windows Service Control Manager (SCM) and runs it as a service. The application then starts at boot, runs without a logged-in user, and is restarted on failure, without any change to its source code.
 
 See [examples and recipes](./Examples-&-Recipes) for real-world usage and configurations across different environments.
-
 
 ## Core Problems Servy Solves
 
