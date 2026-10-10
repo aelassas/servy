@@ -15,8 +15,8 @@ namespace Servy.Core.IntegrationTests.Security
     /// Runs <see cref="ServyExePermissionsHardener"/> against a real, temporary vault and reads the resulting ACLs back.
     /// The target account is <c>NT AUTHORITY\LocalService</c>, which runs the service <c>svc-one</c>;
     /// <c>NT AUTHORITY\NetworkService</c> plays another service account, which runs <c>svc-two</c>. Rewriting owners and DACLs needs an elevated process, as the product does, so every test that
-    /// hardens a vault or creates a link is skipped when the run is not elevated (CI runners are). The account-resolution
-    /// and LocalService membership probes only read the system, and run either way.
+    /// hardens a vault or creates a symbolic link or junction is skipped when the run is not elevated (CI runners are). The account-resolution
+    /// and LocalService membership probes only read the system, and so do the hard-link count probe and its test (creating a hard link needs no elevation), and run either way.
     /// </summary>
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ServyExePermissionsHardenerIntegrationTests : TempDirectoryTestBase
@@ -1020,8 +1020,6 @@ namespace Servy.Core.IntegrationTests.Security
         [Fact]
         public void GetHardLinkCount_CountsTheLinks()
         {
-            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
-
             // Arrange
             var probe = new SeamProbe(_vault);
             var file = Path.Combine(TempDirectory, "links.bin");
