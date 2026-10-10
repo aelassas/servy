@@ -1,8 +1,8 @@
 # Servy
 
-Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
+> Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
 
-Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See Security.md and Architecture.md for details.
+Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
@@ -31,6 +31,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 - Export/Import service configurations for easy backups and automation
 - Service Event Notification alerts on service failures via Windows notifications and email
 - Modern build (default, self-contained): Windows 10 (1809+), Windows 11 and Windows Server 2016+, on x64 and ARM64
+- Legacy build (`net48`, requires .NET Framework 4.8): Windows 7 SP1, Windows 8.x and Windows Server 2008 R2+, on x64 only
 
 ## Who is it for?
 - Developers: Run development servers, scripts, or custom tools as services without extra setup.
@@ -53,8 +54,9 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 - **Install Service:** `Install-ServyService -Name "MyService" -Path "C:\App\app.exe" -StartupType Automatic`
 - **Start Service:** `Start-ServyService -Name "MyService"`
 - **Stop Service:** `Stop-ServyService -Name "MyService"`
-- **Get Service Status:** `Get-ServyService -Name "MyService"`
-- **Remove Service:** `Remove-ServyService -Name "MyService"`
+- **Restart Service:** `Restart-ServyService -Name "MyService"`
+- **Get Service Status:** `Get-ServyServiceStatus -Name "MyService"`
+- **Uninstall Service:** `Uninstall-ServyService -Name "MyService"`
 
 ## Official Website & Downloads
 
@@ -65,7 +67,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 ## Core Documentation & Suite
 
 - [Wiki Index](https://github.com/aelassas/servy/wiki): Complete GitHub wiki homepage
-- [Overview](https://github.com/aelassas/servy/wiki/Overview): Architecture and capabilities introduction
+- [Overview](https://github.com/aelassas/servy/wiki/Overview): Quick example and a tour of the Desktop App and Manager settings
 - [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide): Installing Servy via WinGet, Scoop, Chocolatey, and binaries
 - [Quick Start / Usage](https://github.com/aelassas/servy/wiki/Usage): Core workflows and usage patterns
 - [Servy Desktop App](https://github.com/aelassas/servy/wiki/Servy-Desktop-App): Managing services via the GUI
@@ -80,7 +82,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 - [Health Monitoring & Recovery](https://github.com/aelassas/servy/wiki/Health-Monitoring-%26-Recovery): Crash recovery rules, heartbeat checks, and auto-restart policies
 - [Environment Variables](https://github.com/aelassas/servy/wiki/Environment-Variables): Per-service custom environment blocks
 - [Service Dependencies](https://github.com/aelassas/servy/wiki/Service-Dependencies): Startup ordering and dependency trees
-- [Export / Import Services](https://github.com/aelassas/servy/wiki/Export-%2F-Import-Services): Exporting and deploying service configurations
+- [Export / Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services): Exporting and deploying service configurations
 
 ## Lifecycle Hooks & Execution
 
@@ -92,18 +94,18 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 - [Servy Automation & CI/CD](https://github.com/aelassas/servy/wiki/Servy-Automation-%26-CI-CD): Automated service deployments in pipelines
 - [Embedding in Custom Installers](https://github.com/aelassas/servy/wiki/Embedding-in-Custom-Installers): Bundling Servy with WiX, Inno Setup, or custom installers
-- [Integration with Monitoring Tools](https://github.com/aelassas/servy/wiki/Integration-with-Monitoring-Tools): Forwarding metrics and logs to external APMs
+- [Integration with Monitoring Tools](https://github.com/aelassas/servy/wiki/Integration-with-Monitoring-Tools): Monitoring integrations, CI/CD pipelines, and Heartbeat URL out-of-band pings
 - [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications): Real-time alerts on crashes, failures, or state changes
-- [Backup / Restore & VM Cloning](https://github.com/aelassas/servy/wiki/Backup-%2F-Restore-%26-VM-Cloning): Preserving configurations across server migrations
+- [Backup / Restore & VM Cloning](https://github.com/aelassas/servy/wiki/Backup-Restore-%26-VM-Cloning): Preserving configurations across server migrations
 
 ## Reference & Troubleshooting
 
 - [Examples & Recipes](https://github.com/aelassas/servy/wiki/Examples-%26-Recipes): Production configurations for Python, Node.js, Java, Go, and .NET apps
-- [Security](https://github.com/aelassas/servy/wiki/Security): Service accounts, Active Directory, gMSA, and privilege management
-- [Architecture](https://github.com/aelassas/servy/wiki/Architecture): Internal service wrapper design, watcher threads, and IPC
+- [Security](https://github.com/aelassas/servy/wiki/Security): Encryption at rest (DPAPI, HKDF, AES-256 with HMAC-SHA256), ACL hardening, supply chain, and the Servy trust boundary
+- [Architecture](https://github.com/aelassas/servy/wiki/Architecture): Technology stack, project structure, architecture layers, and the named-pipe IPC with the Servy service
 - [Comparison with Alternatives](https://github.com/aelassas/servy/wiki/Comparison-with-Alternatives): Detailed comparison vs. NSSM and WinSW
 - [Building from Source](https://github.com/aelassas/servy/wiki/Building-from-Source): Compiling Servy from the C# source repository
-- [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting): Diagnostic commands, event logs, and exit codes
+- [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting): Common failures and their fixes: services that won't start, access denied, missing logs, failing health checks
 - [FAQ](https://github.com/aelassas/servy/wiki/FAQ): Frequently asked questions
 
 ## Source Code & Community
@@ -112,5 +114,5 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 - [Latest Release](https://github.com/aelassas/servy/releases/latest): Release packages and installers
 - [Changelog](https://github.com/aelassas/servy/blob/main/CHANGELOG.md): Version history and notes
 - [Roadmap](https://github.com/aelassas/servy/blob/main/ROADMAP.md): Feature planning
-- [License](https://github.com/aelassas/servy/blob/main/LICENSE): MIT License
+- [License](https://github.com/aelassas/servy/blob/main/LICENSE.txt): MIT License
 - [Sponsor Servy](https://github.com/sponsors/aelassas): Support ongoing development
