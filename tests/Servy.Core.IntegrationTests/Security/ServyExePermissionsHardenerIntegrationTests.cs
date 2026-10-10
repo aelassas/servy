@@ -794,6 +794,42 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
+        public void RevokeIfUnused_LogFolderAndFileOwnedByTheAccount_AreReownedByAdministrators()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange - a log the service account created is owned by it; an elevated process creates items owned by
+            //           BUILTIN\Administrators, so hand the log folder and a log the current user's own SID, which any
+            //           token may set as owner, and revoke that account (#7442)
+            CreateVault();
+            var folder = Path.Combine(_vault, ServiceLogsFolder);
+            Directory.CreateDirectory(folder);
+            var log = Path.Combine(folder, "Servy.Service.log");
+            File.WriteAllText(log, "one");
+            using var identity = WindowsIdentity.GetCurrent();
+            var folderAcl = new DirectoryInfo(folder).GetAccessControl();
+            folderAcl.SetOwner(identity.User!);
+            new DirectoryInfo(folder).SetAccessControl(folderAcl);
+            var logAcl = new FileInfo(log).GetAccessControl();
+            logAcl.SetOwner(identity.User!);
+            new FileInfo(log).SetAccessControl(logAcl);
+            Assert.Equal(identity.User, new DirectoryInfo(folder).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+            Assert.Equal(identity.User, new FileInfo(log).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+
+            // Act
+            var result = _sut.RevokeIfUnused(identity.Name, ServiceName, new List<ServiceDto>(), CancellationToken.None);
+
+            // Assert - neither item is left to the account, so it holds no implicit right to rewrite their DACLs
+            Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
+            Assert.Empty(result.Failed);
+            Assert.Contains(ServiceLogsFolder, result.Revoked);
+            Assert.Contains(Path.Combine(ServiceLogsFolder, "Servy.Service.log"), result.Revoked);
+            Assert.Equal(AdministratorsSid, new DirectoryInfo(folder).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+            Assert.Equal(AdministratorsSid, new FileInfo(log).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+            Assert.True(File.Exists(log));
+        }
+
+        [Fact]
         public void RevokeIfUnused_FileIsASymbolicLink_IsNotTouchedAndFails()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
