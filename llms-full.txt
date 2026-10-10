@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-10T14:00:31Z
+> Generated on: 2026-10-10T14:18:15Z
 
 ---
 
@@ -7088,7 +7088,7 @@ In short, Servy solves the pain points that legacy wrappers leave unresolved and
 
 ## Conclusion
 
-While NSSM and WinSW served the community well for years, they belong to a different era of system administration. For teams that require security, real-time monitoring, process safety, and deep integration with modern CI/CD pipelines, Servy is the clear successor. It's free, open-source, and fully supported on Windows 10 (1809+), Windows 11 and Windows Server 2016+, with dedicated builds available for legacy releases like Windows 7 SP1+ and Windows Server 2008 R2+.
+While NSSM and WinSW served the community for years, they belong to a different era of system administration. For teams that require security, real-time monitoring, process safety, and deep integration with modern CI/CD pipelines, Servy is the clear successor. It's free, open-source, and fully supported on Windows 10 (1809+), Windows 11 and Windows Server 2016+, with dedicated builds available for legacy releases like Windows 7 SP1+ and Windows Server 2008 R2+.
 
 
 ---
