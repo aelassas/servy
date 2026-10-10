@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-10T13:58:06Z
+> Generated on: 2026-10-10T14:00:31Z
 
 ---
 
@@ -7023,27 +7023,27 @@ For more information about using Servy, see the main [README](https://github.com
 1. [The Servy Advantage](https://github.com/aelassas/servy/wiki/Comparison-with-Alternatives#the-servy-advantage)
 1. [Conclusion](https://github.com/aelassas/servy/wiki/Comparison-with-Alternatives#conclusion)
 
-### Introduction
+## Introduction
 
 If you have worked in the Windows ecosystem for a while, you know the situation: you have a high-performance Node.js, Python, Java, or Go application that needs to run as a background service. Most developers turn to NSSM or WinSW to get the job done.
 
 These tools have stood the test of time, but their age shows. They lack security, modern monitoring, robust process handling, and flexible automation.
 
-### The Contenders
+## The Contenders
 
-* **NSSM (Non-Sucking Service Manager):** The "classic." It's incredibly lightweight but hasn't seen a stable update in over a decade. It is not secure for production environments, lacks modern observability, and often struggles with complex process trees.
+* **NSSM (Non-Sucking Service Manager):** The "classic." It's incredibly lightweight but hasn't seen a stable update in over a decade. It is not secure for production environments: it keeps the arguments and environment variables of every service in plaintext under `HKLM\SYSTEM\CurrentControlSet\Services\<ServiceName>\Parameters`, where any local user can read them. It also lacks modern observability.
 * **WinSW (Windows Service Wrapper):** A staple for Jenkins users. It's powerful and XML-driven, but it's currently in maintenance limbo and lacks a graphical interface for quick troubleshooting.
 * **Servy:** A secure, actively maintained, open-source alternative. It features a lightweight Desktop UI alongside a robust CLI and PowerShell module for seamless CI/CD automation.
 
-### Why the Wrapper Matters
+## Why the Wrapper Matters
 
 A service wrapper is not just a starter script. In production, it is the heartbeat of your application. If your wrapper cannot handle graceful signal propagation or proper process cleanup, you risk leaked resources and orphaned processes that manual reboots cannot always fix.
 
-### The Comparison: Feature Breakdown
+## The Comparison: Feature Breakdown
 
 The table below shows a feature comparison between Servy, NSSM, and WinSW.
 
-Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security.md](https://github.com/aelassas/servy/wiki/Security) and [Architecture.md](https://github.com/aelassas/servy/wiki/Architecture) for details.
+Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption (DPAPI, HKDF, AES-256 + HMAC-SHA256), and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
 **Legend:** ✅ Full Support &nbsp;·&nbsp; ⚪ Partial / Basic Support &nbsp;·&nbsp; ❌ Not Supported
 
@@ -7051,44 +7051,44 @@ Servy provides enterprise-grade per-service isolation between custom accounts, D
 | --- | --- | --- | --- |
 | GUI Management | ✅ Real-time monitoring and config | ⚪ Basic installer GUI | ❌ No GUI |
 | CLI / Automation | ✅ PowerShell, CLI and CI/CD support | ✅ CLI | ✅ CLI only |
-| Per-Service Security Isolation | ✅ 100% IPC proxy boundary | ❌ Shared trust boundary | ❌ Shared trust boundary |
-| Encrypted Credentials & Configs | ✅ DPAPI, HKDF & AES-256 HMAC | ❌ Plaintext in registry | ⚪ Basic DPAPI in XML |
-| Automated Directory & Binary Hardening | ✅ Zero-touch ACL & DACL rules | ❌ Inherits OS defaults | ❌ Manual ACLs required |
+| Per-Service Security Isolation | ✅ Per-service named-pipe boundary (v10.2+) | ❌ Shared trust boundary | ❌ Shared trust boundary |
+| Encrypted Credentials & Arguments | ✅ DPAPI, HKDF, AES-256 + HMAC-SHA256 | ❌ Arguments and environment variables in plaintext registry, readable by any local user | ❌ Plaintext password and environment variables in XML |
+| Automated Directory & Binary Hardening | ✅ Automatic least-privilege ACLs | ❌ Inherits OS defaults | ❌ Manual ACLs required |
 | Isolated Per-Service Log Folders | ✅ Isolated subfolders per service | ❌ Shared log paths | ❌ Shared log paths |
 | Supply Chain Verification | ✅ Signed, SBOM & VirusTotal scanned | ❌ Unsigned / No SBOM | ⚪ Signed binaries |
 | Pre/Post Launch Hooks | ✅ Advanced with retries and timeouts | ❌ No support | ⚪ Basic |
-| Pre/Post Stop Hooks | ✅ Advanced pulsed cleanup | ❌ No support | ❌ No support |
+| Pre/Post Stop Hooks | ✅ Advanced pulsed cleanup | ❌ No support | ⚪ Basic |
 | Performance Tracking | ✅ Real-time CPU and RAM graphs | ❌ No support | ❌ No support |
-| CPU Affinity | ✅ Advanced | ❌ No support | ❌ No support |
-| Service Accounts | ✅ System, Domain, AD, and gMSA support | ⚪ Limited | ⚪ Limited |
+| CPU Affinity | ✅ Advanced | ⚪ Basic | ❌ No support |
+| Service Accounts | ✅ Local System, local, domain, and gMSA accounts | ⚪ Limited | ⚪ Limited |
 | Logging and Rotation | ✅ Advanced size and date rotation | ⚪ Basic | ⚪ Basic |
 | Live Console Preview | ✅ Real-time stdout and stderr streaming | ❌ No support | ❌ No support |
 | Dependencies Preview | ✅ Advanced with statuses | ❌ No support | ❌ No support |
 | Process Tree Safety | ✅ Graceful Stop, Ctrl+C, Force Kill | ⚪ Basic | ⚪ Basic |
-| Zombie Prevention | ✅ Recursive tree cleanup | ❌ No support | ❌ No support |
-| Health and Recovery | ✅ Built-in monitoring and auto-restart | ❌ No support | ⚪ Limited |
+| Zombie Prevention | ✅ Recursive tree cleanup | ⚪ Basic | ❌ No support |
+| Health and Recovery | ✅ Built-in monitoring and auto-restart | ⚪ Restart on exit | ⚪ Limited |
 | Heartbeat Ping URL | ✅ Out-of-band pings with `/start` & `/fail` flags | ❌ No support | ❌ No support |
-| Notifications | ✅ Windows OS alerts, Email and WhatsApp | ❌ No support | ❌ No support |
+| Notifications | ✅ Windows OS alerts and Email, plus Slack, Teams, WhatsApp and more via Heartbeat URL providers | ❌ No support | ❌ No support |
 | Config Portability | ✅ Export and Import (XML/JSON) | ❌ No support | ❌ No support |
 | Actively Maintained | ✅ Yes | ❌ No (Inactive) | ❌ No (Inactive) |
 
-### The Servy Advantage
+## The Servy Advantage
 
 Servy was designed to address the limitations of legacy wrappers and provide a robust, reliable solution for modern services. Beyond basic service management, it supports scenarios that NSSM and WinSW cannot handle efficiently:
 
 1. **Observability and Diagnostics:** Servy provides live CPU and RAM graphs, while streaming standard output and error logs in real time. NSSM and WinSW require external monitoring tools to achieve this level of visibility.
 2. **Advanced Lifecycle Hooks:** Pre-launch, post-launch, pre-stop, and post-stop hooks with retry logic, timeouts, and failure handling allow complex orchestration. Legacy wrappers either lack hooks or offer only minimal functionality.
 3. **Process Tree Management:** Servy safely propagates stop signals and kills descendant processes recursively, preventing orphaned processes from consuming system resources. This ensures clean teardowns even in nested process trees.
-4. **Self-Healing and Notifications:** Built-in health checks and automatic recovery (including service auto-restart) maintain uptime. Servy triggers real-time alerts via Windows notifications, WhatsApp, or email when failures occur, which NSSM and WinSW do not natively support.
-5. **Flexible Accounts and Security:** Servy provides enterprise-grade per-service isolation between custom accounts, DPAPI, HKDF & AES-256 HMAC authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. Legacy wrappers are limited in account support and security features.
+4. **Self-Healing and Notifications:** Built-in health checks and automatic recovery (including service auto-restart) maintain uptime. Servy triggers real-time alerts via Windows notifications or email when failures occur, which NSSM and WinSW do not support. Point the Heartbeat URL at a provider such as [healthchecks.io](https://healthchecks.io/) to route alerts to Slack, Microsoft Teams, Discord, Telegram, WhatsApp, Signal, Google Chat and more (see [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)).
+5. **Flexible Accounts and Security:** Servy runs services under Local System, local, domain, or gMSA accounts, and each account reaches only its own configuration and logs. Secrets are encrypted at rest, and the vault ACLs are hardened automatically. Legacy wrappers are limited in account support and security features.
 6. **Portable Configurations:** Servy supports exporting and importing configurations in XML and JSON formats, enabling easy replication, migration, and backup of service setups.
 7. **Cross-Version Compatibility:** Servy provides builds for modern and legacy Windows systems, allowing organizations with mixed environments to standardize on a single wrapper.
 
 In short, Servy solves the pain points that legacy wrappers leave unresolved and empowers teams with visibility, reliability, and control.
 
-### Conclusion
+## Conclusion
 
-While NSSM and WinSW served us well for years, they belong to a different era of system administration. For teams that require security, real-time monitoring, process safety, and deep integration with modern CI/CD pipelines, Servy is the clear successor. It's free, open-source, and fully supported on Windows 10+ and Windows Server 2016+, with dedicated builds available for legacy releases like Windows 7 SP1+ and Windows Server 2008 R2+.
+While NSSM and WinSW served the community well for years, they belong to a different era of system administration. For teams that require security, real-time monitoring, process safety, and deep integration with modern CI/CD pipelines, Servy is the clear successor. It's free, open-source, and fully supported on Windows 10 (1809+), Windows 11 and Windows Server 2016+, with dedicated builds available for legacy releases like Windows 7 SP1+ and Windows Server 2008 R2+.
 
 
 ---
