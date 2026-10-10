@@ -23,7 +23,9 @@ namespace Servy.Core.Native
 
         /// <summary>
         /// Compares the current file identity against another to determine if the underlying
-        /// file object on disk has been replaced (rotated) or truncated.
+        /// file object on disk has been replaced (rotated). A file truncated in place keeps its
+        /// file index and volume serial number, so it is reported as the same file object; callers
+        /// detect truncation from size and timestamp signals instead.
         /// </summary>
         /// <param name="other">The previously known file identity to compare against.</param>
         /// <returns>
