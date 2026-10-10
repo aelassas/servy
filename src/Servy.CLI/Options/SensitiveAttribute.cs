@@ -2,7 +2,7 @@ namespace Servy.CLI.Options
 {
     /// <summary>
     /// Marks a command-line option whose value is sensitive (a password, environment
-    /// variables, or arbitrary process parameters).
+    /// variables, arbitrary process parameters, or a heartbeat URL).
     /// </summary>
     /// <remarks>
     /// The attribute has no runtime effect. No production code reads it; it is a

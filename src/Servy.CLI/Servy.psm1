@@ -109,6 +109,7 @@ $script:ServyPreLaunchEnvironmentVariablesEnvVar = 'SERVY_PRE_LAUNCH_ENVIRONMENT
 $script:ServyPostLaunchParametersEnvVar = 'SERVY_POST_LAUNCH_PARAMETERS'
 $script:ServyPreStopParametersEnvVar = 'SERVY_PRE_STOP_PARAMETERS'
 $script:ServyPostStopParametersEnvVar = 'SERVY_POST_STOP_PARAMETERS'
+$script:ServyHeartbeatUrlEnvVar = 'SERVY_HEARTBEAT_URL'
 
 $script:ServyPollIntervalMs = 50
 $script:ServyDrainTimeoutMs = 5000
@@ -281,7 +282,8 @@ function Format-SecureLogMessage {
     # WARNING: This list must be kept in sync with the CLI sensitive options.
     # Any CLI option whose LongName ends in 'params', 'env' or 'envvars', or contains
     # 'password', MUST be decorated with the [Sensitive] attribute in Options/*.cs and
-    # listed here.
+    # listed here. 'heartbeatUrl' matches none of those patterns but is a capability URL,
+    # so it is marked [Sensitive] and listed here as well.
     # Both halves are enforced by tests: the attribute by
     # Servy.CLI.UnitTests SensitiveOptionsTests.SensitiveProperties_MustHaveSensitiveAttribute,
     # and this array by Servy.CLI.IntegrationTests
@@ -295,7 +297,8 @@ function Format-SecureLogMessage {
         "preLaunchEnv",
         "postLaunchParams",
         "preStopParams",
-        "postStopParams"
+        "postStopParams",
+        "heartbeatUrl"
     )
 
     # Construct the regex pattern dynamically
@@ -1081,6 +1084,7 @@ function Install-ServyService {
 
         .PARAMETER HeartbeatUrl
             Optional absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
+            Passed to the CLI through the SERVY_HEARTBEAT_URL environment variable, never on the command line.
 
         .PARAMETER HeartbeatUrlTimeoutSeconds
             Maximum time in seconds to wait for a response from the heartbeat URL. Optional. Must be between 2 and 30 seconds
@@ -1501,7 +1505,6 @@ function Install-ServyService {
         "--maxFailedChecks"            = "MaxFailedChecks"
         "--recoveryAction"             = "RecoveryAction"
         "--maxRestartAttempts"         = "MaxRestartAttempts"
-        "--heartbeatUrl"               = "HeartbeatUrl"
         "--heartbeatUrlTimeoutSeconds" = "HeartbeatUrlTimeoutSeconds"
         "--failureProgramPath"         = "FailureProgramPath"
         "--failureProgramStartupDir"   = "FailureProgramStartupDir"
@@ -1563,6 +1566,7 @@ function Install-ServyService {
     Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PostLaunchParams' -EnvVarName $script:ServyPostLaunchParametersEnvVar -BoundParams $PSBoundParameters
     Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PreStopParams' -EnvVarName $script:ServyPreStopParametersEnvVar -BoundParams $PSBoundParameters
     Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PostStopParams' -EnvVarName $script:ServyPostStopParametersEnvVar -BoundParams $PSBoundParameters
+    Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'HeartbeatUrl' -EnvVarName $script:ServyHeartbeatUrlEnvVar -BoundParams $PSBoundParameters
 
     # Passwords require specific unmanaged memory extraction directly from the SecureString struct.
     # If a CLI parameter wasn't provided, it cleanly falls back to extracting the active environment variable.

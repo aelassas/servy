@@ -32,7 +32,8 @@ namespace Servy.CLI.UnitTests.Commands
             AppConfig.PreLaunchEnvironmentVariablesEnvVarName,
             AppConfig.PostLaunchParametersEnvVarName,
             AppConfig.PreStopParametersEnvVarName,
-            AppConfig.PostStopParametersEnvVarName
+            AppConfig.PostStopParametersEnvVarName,
+            AppConfig.HeartbeatUrlEnvVarName
         };
 
         private readonly Dictionary<string, string?> _savedEnvVars = new Dictionary<string, string?>();
@@ -427,6 +428,7 @@ namespace Servy.CLI.UnitTests.Commands
         [InlineData(AppConfig.PostLaunchParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PostLaunchParameters))]
         [InlineData(AppConfig.PreStopParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PreStopParameters))]
         [InlineData(AppConfig.PostStopParametersEnvVarName, nameof(CLI.Options.InstallServiceOptions.PostStopParameters))]
+        [InlineData(AppConfig.HeartbeatUrlEnvVarName, nameof(CLI.Options.InstallServiceOptions.HeartbeatUrl))]
         public async Task Execute_SecureEnvVarSet_OverridesCommandLineOption(string envVarName, string propertyName)
         {
             // Arrange
