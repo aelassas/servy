@@ -42,10 +42,7 @@ namespace Servy.Core.UnitTests.Services
             _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
 
-            _windowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(_handles.Scm(123));
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny)).Returns(true);
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(true);
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>())).Returns(true);
+            ServiceManagerInstallArrange.ScmAvailable(_windowsServiceApi, _handles);
         }
 
         public void Dispose() => _handles.Dispose();
@@ -62,34 +59,6 @@ namespace Servy.Core.UnitTests.Services
                 _serviceRepository.Object,
                 _hardener.Object,
                 pipes);
-        }
-
-        private SafeServiceHandle ArrangeServiceCreated()
-        {
-            var serviceHandle = _handles.Service(456);
-            _windowsServiceApi.Setup(x => x.CreateService(
-                    It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
-                    It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(serviceHandle);
-            return serviceHandle;
-        }
-
-        private void ArrangeServiceAlreadyExists()
-        {
-            _windowsServiceApi.Setup(x => x.CreateService(
-                    It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(),
-                    It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IntPtr>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(_handles.Service(0));
-            _windowsServiceApi.Setup(x => x.GetServices())
-                .Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = ServiceName } });
-            _windowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), ServiceName, It.IsAny<uint>()))
-                .Returns(() => _handles.Service(789));
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig(
-                    It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(true);
         }
 
         private SafeServiceHandle ArrangeUninstall(string? account)
@@ -155,7 +124,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange: the shape a Servy v9.5 save persisted (#5186) - the marker is in the STORED description and
             // the sensitive columns are blank, so the read decrypts cleanly and DecryptionFailed stays false.
             // Reading the text instead of the flag refused every install and update of such a row for good (#7348).
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto
                 {
@@ -183,7 +152,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_NewService_DependsOnTheHostService(string? dependencies, string expected)
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             ServiceDto? saved = null;
             _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Callback<ServiceDto, bool, bool, CancellationToken>((dto, _, _, _) => saved = dto).ReturnsAsync(1);
@@ -205,7 +174,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingService_KeepsDependingOnTheHostService()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
 
             // Act
             var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(null, "Tcpip"), TestContext.Current.CancellationToken);
@@ -244,7 +213,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_NewServiceUnderCustomAccount_GrantsPipeAccessAfterTheRowIsSaved(string account)
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             var order = new List<string>();
             _serviceRepository.Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Callback(() => order.Add("save")).ReturnsAsync(1);
@@ -263,7 +232,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceUnderCustomAccount_GrantsPipeAccess()
         {
             // Arrange
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
 
             // Act
             var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(@".\svc-account"), TestContext.Current.CancellationToken);
@@ -279,7 +248,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_NewServiceUnderLocalSystem_DoesNotTouchThePipe(string? account)
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
 
             // Act
             var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(account), TestContext.Current.CancellationToken);
@@ -293,7 +262,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_HostNotRunning_InstallSucceedsAndSaysWhenTheAccessApplies()
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             _pipes.Setup(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
@@ -308,7 +277,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_RefreshThrows_InstallStillSucceedsAndIsNotRolledBack()
         {
             // Arrange
-            var serviceHandle = ArrangeServiceCreated();
+            var serviceHandle = ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             _pipes.Setup(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("pipe broke"));
 
             // Act
@@ -324,7 +293,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_RefreshCancelled_InstallStillSucceedsAndIsNotRolledBack()
         {
             // Arrange
-            var serviceHandle = ArrangeServiceCreated();
+            var serviceHandle = ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
             _pipes.Setup(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
 
             // Act
@@ -340,7 +309,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_WithoutPipeService_InstallsWithoutAPipeRefreshError()
         {
             // Arrange
-            ArrangeServiceCreated();
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
 
             // Act
             var (result, log) = await LogCapture.RunAsync(() => CreateManager(null).InstallServiceAsync(CreateOptions(@".\svc-account"), TestContext.Current.CancellationToken));
@@ -443,7 +412,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_MovedToAnotherAccount_RefreshesForTheNewAndTheFormerAccount()
         {
             // Arrange: the service ran under .\old-account and is reinstalled under .\new-account
-            ArrangeServiceAlreadyExists();
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\old-account" });
 
