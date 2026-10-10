@@ -27,6 +27,7 @@ namespace Servy.Manager.Config
         public string DesktopAppPublishPath => Core.Config.AppConfig.DefaultDesktopAppPublishPath;
 
         public string HiddenColumns => string.Empty;
+        public string LogsHiddenColumns => string.Empty;
 
         public event PropertyChangedEventHandler PropertyChanged
         {

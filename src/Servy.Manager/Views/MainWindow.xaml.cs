@@ -119,10 +119,8 @@ namespace Servy.Manager.Views
 
             foreach (var column in ServicesDataGrid.Columns)
             {
-                string id = System.Windows.Automation.AutomationProperties.GetAutomationId(column);
-
-                // Fallback to Header text if AutomationId is not set
-                if (string.IsNullOrEmpty(id) && column.Header is string headerText)
+                string id = null;
+                if (column.Header is string headerText)
                 {
                     id = headerText;
                 }
@@ -509,11 +507,7 @@ namespace Servy.Manager.Views
         {
             var hiddenColumns = ServicesDataGrid.Columns
                 .Where(c => c.Visibility == Visibility.Collapsed)
-                .Select(c =>
-                {
-                    string id = System.Windows.Automation.AutomationProperties.GetAutomationId(c);
-                    return !string.IsNullOrEmpty(id) ? id : c.Header as string;
-                })
+                .Select(c => c.Header as string)
                 .Where(id => !string.IsNullOrEmpty(id));
 
             string csv = string.Join(",", hiddenColumns);

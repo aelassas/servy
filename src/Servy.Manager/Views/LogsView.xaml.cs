@@ -1,6 +1,10 @@
 using Servy.Manager.ViewModels;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 
 namespace Servy.Manager.Views
@@ -25,6 +29,97 @@ namespace Servy.Manager.Views
             InitializeComponent();
             DataContextChanged += LogsView_DataContextChanged;
             Unloaded += (s, e) => (DataContext as LogsViewModel)?.CancelSearch();
+        }
+
+
+        /// <summary>
+        /// Handles the <see cref="FrameworkElement.Loaded"/> event for the LogsView.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event data that contains information about the event.</param>
+        private void LogsView_Loaded(object sender, RoutedEventArgs e)
+        {
+            RestoreColumnVisibilities();
+        }
+
+        /// <summary>
+        /// Restores column visibilities based on the configured LogsHiddenColumns string.
+        /// </summary>
+        private void RestoreColumnVisibilities()
+        {
+            var app = Application.Current as App;
+            if (app == null || string.IsNullOrWhiteSpace(app.LogsHiddenColumns)) return;
+
+            var hiddenSet = new HashSet<string>(
+                app.LogsHiddenColumns.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(s => s.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var column in LogsDataGrid.Columns)
+            {
+                string id = null;
+                if (column.Header is string headerText)
+                {
+                    id = headerText;
+                }
+
+                if (!string.IsNullOrEmpty(id) && hiddenSet.Contains(id))
+                {
+                    column.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles context menu opening to sync checkbox state with actual column visibility.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event data that contains information about the event.</param>
+        private void ColumnHeaderContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu contextMenu)
+            {
+                foreach (var item in contextMenu.Items)
+                {
+                    if (item is MenuItem menuItem && menuItem.Tag is DataGridColumn column)
+                    {
+                        menuItem.IsChecked = column.Visibility == Visibility.Visible;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles menu item click to toggle column visibility and persist the change.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event data that contains information about the event.</param>
+        private void ToggleColumnVisibility_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is DataGridColumn column)
+            {
+                column.Visibility = menuItem.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+
+                SaveColumnVisibilities();
+            }
+        }
+
+        /// <summary>
+        /// Serializes collapsed column identifiers to a comma-separated string and saves them.
+        /// </summary>
+        private void SaveColumnVisibilities()
+        {
+            var hiddenColumns = LogsDataGrid.Columns
+                .Where(c => c.Visibility == Visibility.Collapsed)
+                .Select(c => c.Header as string)
+                .Where(id => !string.IsNullOrEmpty(id));
+
+            string csv = string.Join(",", hiddenColumns);
+
+            if (Application.Current is App app)
+            {
+                app.SaveLogsHiddenColumns(csv);
+            }
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -57,8 +58,8 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
-
         private string _hiddenColumns = string.Empty;
+        private string _logsHiddenColumns = string.Empty;
 
         #endregion
 
@@ -160,6 +161,20 @@ namespace Servy.Manager
                 if (_hiddenColumns != value)
                 {
                     _hiddenColumns = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public string LogsHiddenColumns
+        {
+            get => _logsHiddenColumns;
+            private set
+            {
+                if (_logsHiddenColumns != value)
+                {
+                    _logsHiddenColumns = value;
                     OnPropertyChanged();
                 }
             }
@@ -343,6 +358,7 @@ namespace Servy.Manager
                     }
 
                     HiddenColumns = config["HiddenColumns"] ?? string.Empty;
+                    LogsHiddenColumns = config["LogsHiddenColumns"] ?? string.Empty;
                 }
             };
 
@@ -450,6 +466,43 @@ namespace Servy.Manager
             catch (Exception ex)
             {
                 Logger.Warn($"Failed to save HiddenColumns setting to AppSettings: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Updates the logs hidden columns string and persists it to the configuration file.
+        /// Creates the configuration file if it does not exist.
+        /// </summary>
+        public void SaveLogsHiddenColumns(string logsHiddenColumns)
+        {
+            LogsHiddenColumns = logsHiddenColumns ?? string.Empty;
+
+            try
+            {
+                // Open the app.config / exe.config file associated with the executable
+                Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+                // Update or add the key under <appSettings>
+                if (config.AppSettings.Settings["LogsHiddenColumns"] != null)
+                {
+                    config.AppSettings.Settings["LogsHiddenColumns"].Value = LogsHiddenColumns;
+                }
+                else
+                {
+                    config.AppSettings.Settings.Add("LogsHiddenColumns", LogsHiddenColumns);
+                }
+
+                // Save the configuration file changes
+                config.Save(ConfigurationSaveMode.Modified);
+
+                // Refresh the AppSettings section so ConfigurationManager reads the updated value in memory
+                ConfigurationManager.RefreshSection("appSettings");
+
+                Logger.Info($"Saved LogsHiddenColumns setting: {(string.IsNullOrWhiteSpace(LogsHiddenColumns) ? "<empty>" : LogsHiddenColumns)}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save LogsHiddenColumns setting to AppSettings: {ex.Message}");
             }
         }
 
