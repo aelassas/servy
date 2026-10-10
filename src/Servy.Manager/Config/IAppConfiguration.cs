@@ -71,7 +71,7 @@ namespace Servy.Manager.Config
         /// <summary>
         /// Gets the comma-separated list of column names that are hidden in the services table.
         /// </summary>
-        string HiddenColumns { get; }
+        string ServicesHiddenColumns { get; }
 
         /// <summary>
         /// Gets the comma-separated list of column names that are hidden in the logs table.

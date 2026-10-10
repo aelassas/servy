@@ -58,7 +58,7 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
-        private string _hiddenColumns = string.Empty;
+        private string _servicesHiddenColumns = string.Empty;
         private string _logsHiddenColumns = string.Empty;
 
         #endregion
@@ -153,14 +153,14 @@ namespace Servy.Manager
         public int MaxBulkOperationParallelism { get; private set; }
 
         /// <inheritdoc />
-        public string HiddenColumns
+        public string ServicesHiddenColumns
         {
-            get => _hiddenColumns;
+            get => _servicesHiddenColumns;
             private set
             {
-                if (_hiddenColumns != value)
+                if (_servicesHiddenColumns != value)
                 {
-                    _hiddenColumns = value;
+                    _servicesHiddenColumns = value;
                     OnPropertyChanged();
                 }
             }
@@ -357,7 +357,7 @@ namespace Servy.Manager
                         PathSecurityGuard.WarnIfDirectoryAclNotHardened(DesktopAppPublishPath);
                     }
 
-                    HiddenColumns = config["HiddenColumns"] ?? string.Empty;
+                    ServicesHiddenColumns = config["ServicesHiddenColumns"] ?? string.Empty;
                     LogsHiddenColumns = config["LogsHiddenColumns"] ?? string.Empty;
                 }
             };
@@ -431,14 +431,14 @@ namespace Servy.Manager
 
         #endregion
 
-        #region HiddenColumns Persistence
+        #region ServicesHiddenColumns Persistence
 
         /// <summary>
         /// Updates the hidden columns string and persists it to AppSettings in the application configuration file.
         /// </summary>
-        public void SaveHiddenColumns(string hiddenColumns)
+        public void SaveServicesHiddenColumns(string servicesHiddenColumns)
         {
-            HiddenColumns = hiddenColumns ?? string.Empty;
+            ServicesHiddenColumns = servicesHiddenColumns ?? string.Empty;
 
             try
             {
@@ -446,13 +446,13 @@ namespace Servy.Manager
                 Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
                 // Update or add the key under <appSettings>
-                if (config.AppSettings.Settings["HiddenColumns"] != null)
+                if (config.AppSettings.Settings["ServicesHiddenColumns"] != null)
                 {
-                    config.AppSettings.Settings["HiddenColumns"].Value = HiddenColumns;
+                    config.AppSettings.Settings["ServicesHiddenColumns"].Value = ServicesHiddenColumns;
                 }
                 else
                 {
-                    config.AppSettings.Settings.Add("HiddenColumns", HiddenColumns);
+                    config.AppSettings.Settings.Add("ServicesHiddenColumns", ServicesHiddenColumns);
                 }
 
                 // Save the configuration file changes
@@ -461,11 +461,11 @@ namespace Servy.Manager
                 // Refresh the AppSettings section so ConfigurationManager reads the updated value in memory
                 ConfigurationManager.RefreshSection("appSettings");
 
-                Logger.Info($"Saved HiddenColumns setting: {(string.IsNullOrWhiteSpace(HiddenColumns) ? "<empty>" : HiddenColumns)}");
+                Logger.Info($"Saved ServicesHiddenColumns setting: {(string.IsNullOrWhiteSpace(ServicesHiddenColumns) ? "<empty>" : ServicesHiddenColumns)}");
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to save HiddenColumns setting to AppSettings: {ex.Message}");
+                Logger.Warn($"Failed to save ServicesHiddenColumns setting to AppSettings: {ex.Message}");
             }
         }
 
