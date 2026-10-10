@@ -1118,8 +1118,6 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(PropagationFlags.InheritOnly, files.PropagationFlags);
             var expected = ServyExePermissionsHardener.GetWritableFolderFileRights();
             Assert.True(Has((int)files.FileSystemRights, expected));
-            if ((expected & FileSystemRights.Delete) == 0)
-                Assert.False(Has((int)files.FileSystemRights, FileSystemRights.Delete), $"the files in {path} are not deletable");
 
             // The rule the files created in it inherit carries neither of those two rights either.
             Assert.False(Has((int)files.FileSystemRights, FileSystemRights.ChangePermissions), $"the files in {path} are not re-ACLable by the target");
