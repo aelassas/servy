@@ -98,15 +98,21 @@ jobs:
       - name: Deploy llms-full.txt to Main Repository Root
         shell: bash
         run: |
-          # 1. Copy generated file to root directory of main repo
+          # 1. Compare the body (everything after the 7-line generated header, which carries a
+          #    timestamp) with the committed copy, then copy the generated file to the repo root
+          if ! diff -q <(tail -n +8 llms-full.txt) <(tail -n +8 main-repo/llms-full.txt) >/dev/null 2>&1; then
+            CHANGED=1
+          else
+            CHANGED=0
+          fi
           cp llms-full.txt main-repo/llms-full.txt
 
-          # 2. Commit and push if changes exist
+          # 2. Commit and push if the body changed
           cd main-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
 
-          if git status --porcelain | grep -q "llms-full.txt"; then
+          if [ "$CHANGED" = 1 ]; then
             git add llms-full.txt
             git commit -m "docs: sync llms-full.txt from wiki updates"
             git push
@@ -128,15 +134,21 @@ jobs:
           # 1. Ensure target directory exists
           mkdir -p web-repo/public
 
-          # 2. Copy generated file to public/ directory
+          # 2. Compare the body (everything after the 7-line generated header, which carries a
+          #    timestamp) with the committed copy, then copy the generated file to public/
+          if ! diff -q <(tail -n +8 llms-full.txt) <(tail -n +8 web-repo/public/llms-full.txt) >/dev/null 2>&1; then
+            CHANGED=1
+          else
+            CHANGED=0
+          fi
           cp llms-full.txt web-repo/public/llms-full.txt
 
-          # 3. Commit and push if changes exist
+          # 3. Commit and push if the body changed
           cd web-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
 
-          if git status --porcelain | grep -q "public/llms-full.txt"; then
+          if [ "$CHANGED" = 1 ]; then
             git add public/llms-full.txt
             git commit -m "docs: sync llms-full.txt from wiki updates"
             git push
