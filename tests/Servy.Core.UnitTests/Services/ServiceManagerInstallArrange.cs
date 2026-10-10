@@ -7,12 +7,13 @@ namespace Servy.Core.UnitTests.Services
 {
     /// <summary>
     /// Arranges a mocked <see cref="IWindowsServiceApi"/> for the <c>ServiceManager.InstallServiceAsync</c> paths
-    /// ("service created" and "already exists, configuration updated") so the test classes that exercise them
-    /// share one copy of the arrangement instead of one copy per class.
+    /// ("service created" and "already exists, configuration updated") and the <c>UninstallServiceAsync</c> path
+    /// of a stopped service, so the test classes that exercise them share one copy of the arrangement instead
+    /// of one copy per class.
     /// </summary>
     /// <remarks>
     /// Shared next to <see cref="FakeServiceHandles"/>: a change to what <c>InstallServiceAsync</c> calls on the
-    /// Service Control Manager is made here once, and every consumer sees it.
+    /// Service Control Manager, in either direction, is made here once, and every consumer sees it.
     /// </remarks>
     internal static class ServiceManagerInstallArrange
     {
@@ -72,6 +73,31 @@ namespace Servy.Core.UnitTests.Services
                     It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
                     It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(true);
+        }
+
+        /// <summary>
+        /// Arranges an installed, already stopped service so an uninstall reaches the delete.
+        /// </summary>
+        /// <param name="api">The mocked Windows service API to arrange.</param>
+        /// <param name="win32Errors">The mocked Win32 error provider; reports the service as not active.</param>
+        /// <param name="handles">The factory that owns the fake native handles handed out.</param>
+        /// <param name="serviceName">The name the service is opened by.</param>
+        /// <param name="deleteSucceeds">Whether <c>DeleteService</c> reports success.</param>
+        /// <returns>The handle of the opened service.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when a fake handle cannot be constructed.</exception>
+        internal static SafeServiceHandle ServiceInstalledAndStopped(
+            Mock<IWindowsServiceApi> api, Mock<IWin32ErrorProvider> win32Errors, FakeServiceHandles handles,
+            string serviceName, bool deleteSucceeds = true)
+        {
+            var serviceHandle = handles.Service(456);
+            api.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), serviceName, It.IsAny<uint>())).Returns(serviceHandle);
+            api.Setup(x => x.ControlService(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_STATUS>.IsAny)).Returns(false);
+            win32Errors.Setup(x => x.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_NOT_ACTIVE);
+            api.Setup(x => x.ChangeServiceConfig(
+                    serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), null, null, IntPtr.Zero, null, null, null, null))
+                .Returns(true);
+            api.Setup(x => x.DeleteService(serviceHandle)).Returns(deleteSucceeds);
+            return serviceHandle;
         }
     }
 }

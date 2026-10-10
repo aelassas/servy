@@ -63,14 +63,7 @@ namespace Servy.Core.UnitTests.Services
 
         private SafeServiceHandle ArrangeUninstall(string? account)
         {
-            var serviceHandle = _handles.Service(456);
-            _windowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), ServiceName, It.IsAny<uint>())).Returns(serviceHandle);
-            _windowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_STATUS>.IsAny)).Returns(false);
-            _win32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_NOT_ACTIVE);
-            _windowsServiceApi.Setup(x => x.ChangeServiceConfig(
-                    serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), null, null, IntPtr.Zero, null, null, null, null))
-                .Returns(true);
-            _windowsServiceApi.Setup(x => x.DeleteService(serviceHandle)).Returns(true);
+            var serviceHandle = ServiceManagerInstallArrange.ServiceInstalledAndStopped(_windowsServiceApi, _win32ErrorProvider, _handles, ServiceName);
             _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto { Name = ServiceName, RunAsLocalSystem = account == null, UserAccount = account });
             return serviceHandle;
