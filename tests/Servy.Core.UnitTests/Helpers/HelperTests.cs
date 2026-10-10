@@ -244,17 +244,17 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("V3.4.5", "3.4.5")]
         [InlineData("2.0", "2.0")]
         [InlineData("v1.10", "1.10")]
-        // --- NEW TEST CASES ---
+        // Suffixes and date-based tags
         [InlineData("v1.2.3-rc.1", "1.2.3")]   // SemVer pre-release suffix
         [InlineData("v1.2.3+build.42", "1.2.3")] // SemVer build metadata
         [InlineData("8.3-stable", "8.3")]      // Common non-standard suffix
         [InlineData("v2026.5.25", "2026.5.25")] // Date-based tags
         [InlineData("2026.05.25", "2026.5.25")] // Leading zeros in segments
-                                                // --- EDGE CASES ---
+        // Edge cases
         [InlineData("1.2.3.4", "1.2.3.4")]     // 4-part versioning
-        [InlineData("", null)]                  // New null contract
+        [InlineData("", null)]                  // Empty input returns null
         [InlineData("    ", null)]              // Whitespace handling
-        [InlineData("invalid", null)]          // New null contract
+        [InlineData("invalid", null)]          // Non-numeric input returns null
         [InlineData("1.x.0", null)]            // Invalid structure
         public void ParseVersion_ReturnsExpectedVersion(string version, string? expectedVersionString)
         {
