@@ -531,17 +531,23 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 0, DateTime.UtcNow, "[service] Message");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>())).Returns(new[] { evt });
+            string capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) =>
+                {
+                    capturedQuery = xpathQuery;
+                })
+                .Returns(Array.Empty<ServyEventLogEntry>());
 
             var service = CreateService(mockReader);
 
             // Act
-            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
+            await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
             // Assert
-            Assert.Single(results);
-            Assert.Equal(EventLogLevel.Information, results.First().Level);
+            Assert.NotNull(capturedQuery);
+            Assert.DoesNotContain("Level=", capturedQuery);
         }
 
         [Fact]
