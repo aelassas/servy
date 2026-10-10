@@ -27,7 +27,8 @@ namespace Servy.Core.IntegrationTests.Config
             { "ServyPreLaunchEnvironmentVariablesEnvVar", AppConfig.PreLaunchEnvironmentVariablesEnvVarName },
             { "ServyPostLaunchParametersEnvVar", AppConfig.PostLaunchParametersEnvVarName },
             { "ServyPreStopParametersEnvVar", AppConfig.PreStopParametersEnvVarName },
-            { "ServyPostStopParametersEnvVar", AppConfig.PostStopParametersEnvVarName }
+            { "ServyPostStopParametersEnvVar", AppConfig.PostStopParametersEnvVarName },
+            { "ServyHeartbeatUrlEnvVar", AppConfig.HeartbeatUrlEnvVarName }
         };
 
         public static TheoryData<string, string> EnvVarMappings()

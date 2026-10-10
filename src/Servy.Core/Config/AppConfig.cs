@@ -1685,6 +1685,17 @@ namespace Servy.Core.Config
         public const string PostStopParametersEnvVarName = "SERVY_POST_STOP_PARAMETERS";
 
         /// <summary>
+        /// Specifies the name of the environment variable used to securely pass the heartbeat URL from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyHeartbeatUrlEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// A heartbeat URL is usually a capability URL (for example <c>https://hc-ping.com/&lt;uuid&gt;</c>) whose path
+        /// alone lets anyone send a fake "service is alive" ping, which is why the service masks it in its logs.
+        /// Using an environment variable keeps it out of command-line history and system process lists.
+        /// </remarks>
+        public const string HeartbeatUrlEnvVarName = "SERVY_HEARTBEAT_URL";
+
+        /// <summary>
         /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
         /// </summary>
         /// <remarks>

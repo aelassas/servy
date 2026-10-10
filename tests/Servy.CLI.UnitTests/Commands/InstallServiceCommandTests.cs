@@ -202,6 +202,39 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
         }
 
+        [Fact]
+        public async Task Execute_HeartbeatUrlEnvVarSet_OverridesCommandLineOption()
+        {
+            // Arrange
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "TestService",
+                ProcessPath = "C:\\path\\to\\app.exe",
+                HeartbeatUrl = "from-command-line"
+            };
+
+            var savedHeartbeatUrl = Environment.GetEnvironmentVariable(AppConfig.HeartbeatUrlEnvVarName);
+            Environment.SetEnvironmentVariable(AppConfig.HeartbeatUrlEnvVarName, "from-environment");
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            try
+            {
+                // Act
+                var result = await _command.ExecuteAsync(options, CancellationToken.None);
+
+                // Assert
+                Assert.True(result.IsSuccess);
+                Assert.Equal("from-environment", options.HeartbeatUrl);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(AppConfig.HeartbeatUrlEnvVarName, savedHeartbeatUrl);
+            }
+        }
+
         public void Dispose()
         {
             // Clean up the dummy file

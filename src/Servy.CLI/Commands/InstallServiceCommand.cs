@@ -67,6 +67,7 @@ namespace Servy.CLI.Commands
                 opts.PostLaunchParameters = GetSecureValue(opts.PostLaunchParameters, AppConfig.PostLaunchParametersEnvVarName);
                 opts.PreStopParameters = GetSecureValue(opts.PreStopParameters, AppConfig.PreStopParametersEnvVarName);
                 opts.PostStopParameters = GetSecureValue(opts.PostStopParameters, AppConfig.PostStopParametersEnvVarName);
+                opts.HeartbeatUrl = GetSecureValue(opts.HeartbeatUrl, AppConfig.HeartbeatUrlEnvVarName);
 
                 // Validate options
                 var validation = _validator.Validate(opts);
