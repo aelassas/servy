@@ -94,9 +94,9 @@ namespace Servy.Core.UnitTests.Config
             var logger = new Mock<IServyLogger>();
             var config = BuildConfig(new Dictionary<string, string?>
             {
-                { "Security:AESIVFilePath", @"D:\\old\\iv.dat" },
-                { "ConnectionStrings:DefaultConnection", @"Data Source=D:\\old\\Servy.db" },
-                { "Security:AESKeyFilePath", @"D:\\old\\key.dat" },
+                { "Security:AESIVFilePath", @"D:\old\iv.dat" },
+                { "ConnectionStrings:DefaultConnection", @"Data Source=D:\old\Servy.db" },
+                { "Security:AESKeyFilePath", @"D:\old\key.dat" },
             });
 
             // Act
@@ -116,7 +116,7 @@ namespace Servy.Core.UnitTests.Config
         {
             // Arrange
             var logger = new Mock<IServyLogger>();
-            var config = BuildConfig(new Dictionary<string, string?> { { "Security:AESKeyFilePath", @"D:\\old\\key.dat" } });
+            var config = BuildConfig(new Dictionary<string, string?> { { "Security:AESKeyFilePath", @"D:\old\key.dat" } });
 
             // Act
             var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.restarter.json", logger.Object);
