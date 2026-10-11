@@ -19,13 +19,6 @@ namespace Servy.Manager.Models
     /// </summary>
     public class LogLine
     {
-        private static long _nextId;
-
-        /// <summary>
-        /// Gets the unique identifier for the log line.
-        /// </summary>
-        public long Id { get; }
-
         /// <summary>
         /// Gets or sets the raw text content of the log line.
         /// </summary>
@@ -55,7 +48,6 @@ namespace Servy.Manager.Models
         /// <param name="timestamp"> A timestamp that will be normalized to UTC.</param>
         public LogLine(string text, LogType type, DateTime? timestamp = null)
         {
-            Id = Interlocked.Increment(ref _nextId);
             Text = text;
             Type = type;
 

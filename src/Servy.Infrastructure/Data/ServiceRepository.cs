@@ -641,14 +641,7 @@ namespace Servy.Infrastructure.Data
             // Scrub every sensitive field via the SensitiveFields delegate table
             foreach (var field in SensitiveFields)
             {
-                try
-                {
-                    field.Set(dto, null);
-                }
-                catch (Exception internalEx)
-                {
-                    Logger.Warn($"Could not safely sanitize corrupted field '{field.Name}' for service '{dto.Name}': {internalEx.Message}");
-                }
+                field.Set(dto, null);
             }
         }
 
