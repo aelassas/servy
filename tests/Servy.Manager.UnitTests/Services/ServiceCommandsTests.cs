@@ -925,6 +925,10 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 Assert.True(result, "InstallServiceAsync returned false. The Directory.Exists validation likely failed.");
                 _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == service.Name), It.IsAny<CancellationToken>()), Times.Once);
+
+                // The success tail: the UI model is flipped and the user is told
+                Assert.True(service.IsInstalled);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
             }
             finally
             {
