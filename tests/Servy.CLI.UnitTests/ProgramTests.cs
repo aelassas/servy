@@ -1,7 +1,10 @@
+using Servy.CLI.Runtime;
+using Servy.CLI.UnitTests.Runtime;
 using Servy.Core.Config;
 using Servy.Testing;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -48,9 +51,9 @@ namespace Servy.CLI.UnitTests
             // The early-return guard above is the exact complement of the first two guards of
             // IsRealConsole, so the body only ever runs in a state that short-circuits the
             // method. Pin that precondition explicitly rather than leaving it implicit in
-            // the guard expression: this test covers the short-circuit only, and the Win32
-            // half of the method (GetConsoleWindow and the Console.WindowHeight probe)
-            // stays out of reach without a redirection seam on Program.
+            // the guard expression: this test covers the short-circuit on the real host only.
+            // The Win32 half of the method (GetConsoleWindow and the Console.WindowHeight probe)
+            // is driven through the IConsoleEnvironment seam by the IsRealConsole_* tests below.
             bool shortCircuitStateHolds = !Environment.UserInteractive
                 || Console.IsOutputRedirected
                 || Console.IsErrorRedirected;
@@ -192,10 +195,12 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // This is the only test that reaches the single PrintAndReturnAsync line the nine MapResult verb
-            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath and the
-            // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory enter the other
-            // eight lambdas too, but they throw in the bootstrap before they get there.
+            // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep, this is one of only two
+            // tests that reach the single PrintAndReturnAsync line the nine MapResult verb
+            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath, the
+            // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory and the RunAsync tests
+            // that make a bootstrap step throw enter the other eight lambdas too, but they throw in the
+            // bootstrap before they get there.
             Assert.Equal((int)CliExitCode.Success, result.Result);
             Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
         }
@@ -253,6 +258,316 @@ namespace Servy.CLI.UnitTests
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
             Assert.DoesNotContain("Service status for", result.StdOut);
+        }
+
+        #endregion
+
+        #region Runtime Seam: Bootstrap Branches
+
+        [Fact]
+        public async Task RunAsync_VulnerableSqliteVersion_ReturnsIncompatibleEnvironmentBeforeAnyBootstrap()
+        {
+            // Arrange
+            var runtime = new FakeCliRuntime { SqliteVersionSafe = false, SqliteVersion = "3.40.0" };
+            string[] args = { "show" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            // The CLI-specific sentinel 2, not a generic error, and nothing past the version check ran.
+            Assert.Equal((int)CliExitCode.IncompatibleEnvironment, result.Result);
+            Assert.Contains("[CRITICAL] Vulnerable SQLite version detected: 3.40.0", result.StdErr);
+            Assert.Contains($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.", result.StdErr);
+            Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe) }, runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_BootstrapCancelled_ReportsTheCancellationAndReturnsError()
+        {
+            // Arrange
+            // A cancelled bootstrap (Ctrl+C during the database or binaries step) surfaces as OperationCanceledException,
+            // which Main reports with its own message instead of the generic "unexpected error" one.
+            var runtime = new FakeCliRuntime { EnsureDatabaseThrows = new OperationCanceledException() };
+            string[] args = { "show", "--quiet" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains("Operation cancelled by user.", result.StdErr);
+            Assert.DoesNotContain("An unexpected error occurred", result.StdErr);
+        }
+
+        [Theory]
+        [InlineData("install -n NonExistentServiceForTestingOnly -p C:\\NonExistent\\app.exe --quiet")]
+        [InlineData("start -n NonExistentServiceForTestingOnly --quiet")]
+        [InlineData("restart -n NonExistentServiceForTestingOnly --quiet")]
+        [InlineData("import -c xml -p C:\\NonExistent\\in.xml --quiet")]
+        public async Task RunAsync_VerbNeedingTheBinaries_EnsuresTheDatabaseThenTheBinariesBeforeItsHandler(string commandLine)
+        {
+            // Arrange
+            // These four verbs are the MapResult lambdas mapped with requireBinaries: true. The binaries step throws,
+            // so the handler is never reached and the stderr text can only come from that step.
+            var runtime = new FakeCliRuntime { EnsureServiceBinariesThrows = new InvalidOperationException("binaries step reached") };
+            string[] args = commandLine.Split(' ');
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains("An unexpected error occurred: binaries step reached", result.StdErr);
+            Assert.Equal(
+                new[] { nameof(ICliRuntime.IsSqliteVersionSafe), nameof(ICliRuntime.EnsureDatabase), nameof(ICliRuntime.EnsureServiceBinariesAsync) },
+                runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_InteractiveConsole_RunsTheBootstrapBehindTheLoadingAnimation()
+        {
+            // Arrange
+            var runtime = new FakeCliRuntime { RealConsole = true, EnsureDatabaseThrows = new InvalidOperationException("database step reached") };
+            string[] args = { "show" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            // The database step runs inside the animation, not before or after it.
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains("An unexpected error occurred: database step reached", result.StdErr);
+            Assert.Equal(
+                new[]
+                {
+                    nameof(ICliRuntime.IsSqliteVersionSafe),
+                    nameof(ICliRuntime.IsRealConsole),
+                    nameof(ICliRuntime.RunWithLoadingAnimationAsync),
+                    nameof(ICliRuntime.EnsureDatabase),
+                },
+                runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_NoRealConsole_RunsTheBootstrapWithoutTheLoadingAnimation()
+        {
+            // Arrange
+            var runtime = new FakeCliRuntime { RealConsole = false, EnsureDatabaseThrows = new InvalidOperationException("database step reached") };
+            string[] args = { "show" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Equal(
+                new[] { nameof(ICliRuntime.IsSqliteVersionSafe), nameof(ICliRuntime.IsRealConsole), nameof(ICliRuntime.EnsureDatabase) },
+                runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_QuietFlag_SkipsTheConsoleProbeAndTheLoadingAnimation()
+        {
+            // Arrange
+            // --quiet short-circuits before the console is probed, even on a real console.
+            var runtime = new FakeCliRuntime { RealConsole = true, EnsureDatabaseThrows = new InvalidOperationException("database step reached") };
+            string[] args = { "show", "--quiet" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe), nameof(ICliRuntime.EnsureDatabase) }, runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep()
+        {
+            // Arrange
+            // status is the one verb mapped with requireDatabase: false and requireBinaries: false.
+            var runtime = new FakeCliRuntime { RealConsole = true };
+            string[] args = { "status", "-n", "NonExistentServiceForTestingOnly" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
+            Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe) }, runtime.Calls);
+        }
+
+        #endregion
+
+        #region Console Probe, Cancellation and Cleanup Seams
+
+        /// <summary>
+        /// A settable <see cref="IConsoleEnvironment"/> for the <see cref="Program.IsRealConsole(IConsoleEnvironment)"/> checks.
+        /// </summary>
+        private sealed class FakeConsoleEnvironment : IConsoleEnvironment
+        {
+            public bool UserInteractive { get; set; } = true;
+            public bool IsOutputRedirected { get; set; }
+            public bool IsErrorRedirected { get; set; }
+            public IntPtr ConsoleWindow { get; set; } = new IntPtr(42);
+            public int WindowHeight { get; set; } = 30;
+            public bool WindowHeightThrows { get; set; }
+            public int ProbesAfterRedirection { get; private set; }
+
+            public IntPtr GetConsoleWindow()
+            {
+                ProbesAfterRedirection++;
+                return ConsoleWindow;
+            }
+
+            public int GetWindowHeight()
+            {
+                ProbesAfterRedirection++;
+                if (WindowHeightThrows) throw new IOException("The handle is invalid.");
+                return WindowHeight;
+            }
+        }
+
+        [Fact]
+        public void IsRealConsole_InteractiveConsoleWithAWindowAndABuffer_ReturnsTrue()
+        {
+            // Arrange
+            var console = new FakeConsoleEnvironment();
+
+            // Act
+            bool isReal = Program.IsRealConsole(console);
+
+            // Assert
+            Assert.True(isReal);
+        }
+
+        [Theory]
+        [InlineData(false, false, false)]
+        [InlineData(true, true, false)]
+        [InlineData(true, false, true)]
+        public void IsRealConsole_Session0OrRedirectedOutput_ReturnsFalseWithoutTouchingTheWin32Console(bool userInteractive, bool outputRedirected, bool errorRedirected)
+        {
+            // Arrange
+            var console = new FakeConsoleEnvironment
+            {
+                UserInteractive = userInteractive,
+                IsOutputRedirected = outputRedirected,
+                IsErrorRedirected = errorRedirected,
+            };
+
+            // Act
+            bool isReal = Program.IsRealConsole(console);
+
+            // Assert
+            Assert.False(isReal);
+            Assert.Equal(0, console.ProbesAfterRedirection);
+        }
+
+        [Fact]
+        public void IsRealConsole_NoConsoleWindow_ReturnsFalseWithoutReadingTheBuffer()
+        {
+            // Arrange
+            var console = new FakeConsoleEnvironment { ConsoleWindow = IntPtr.Zero, WindowHeightThrows = true };
+
+            // Act
+            bool isReal = Program.IsRealConsole(console);
+
+            // Assert
+            Assert.False(isReal);
+            Assert.Equal(1, console.ProbesAfterRedirection);
+        }
+
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(0, true)]
+        public void IsRealConsole_EmptyOrUnreachableBuffer_ReturnsFalse(int windowHeight, bool windowHeightThrows)
+        {
+            // Arrange
+            var console = new FakeConsoleEnvironment { WindowHeight = windowHeight, WindowHeightThrows = windowHeightThrows };
+
+            // Act
+            bool isReal = Program.IsRealConsole(console);
+
+            // Assert
+            Assert.False(isReal);
+        }
+
+        [Fact]
+        public void ConsoleEnvironment_ReportsTheProcessSessionAndRedirectionState()
+        {
+            // Arrange
+            var console = new ConsoleEnvironment();
+
+            // Act
+            bool userInteractive = console.UserInteractive;
+            bool outputRedirected = console.IsOutputRedirected;
+            bool errorRedirected = console.IsErrorRedirected;
+
+            // Assert
+            Assert.Equal(Environment.UserInteractive, userInteractive);
+            Assert.Equal(Console.IsOutputRedirected, outputRedirected);
+            Assert.Equal(Console.IsErrorRedirected, errorRedirected);
+        }
+
+        [Fact]
+        public void HandleCancelKeyPress_FirstPress_MarksItHandledCancelsAndWritesTheNotice()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            using (var error = new StringWriter())
+            {
+                bool markedHandled = false;
+
+                // Act
+                bool started = Program.HandleCancelKeyPress(cts, () => markedHandled = true, error);
+
+                // Assert
+                // Marking the press handled is what keeps the process alive while the command cancels.
+                Assert.True(started);
+                Assert.True(markedHandled);
+                Assert.True(cts.IsCancellationRequested);
+                Assert.Contains(Program.CancellingMessage, error.ToString());
+            }
+        }
+
+        [Fact]
+        public void HandleCancelKeyPress_SecondPress_LeavesItUnhandledSoTheProcessTerminates()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            using (var error = new StringWriter())
+            {
+                cts.Cancel();
+                bool markedHandled = false;
+
+                // Act
+                bool started = Program.HandleCancelKeyPress(cts, () => markedHandled = true, error);
+
+                // Assert
+                Assert.False(started);
+                Assert.False(markedHandled);
+                Assert.Equal(string.Empty, error.ToString());
+            }
+        }
+
+        [Fact]
+        public void TryRun_ActionThrows_SwallowsTheExceptionSoTheTeardownContinues()
+        {
+            // Arrange
+            bool secondCleanupRan = false;
+
+            // Act
+            var ex = Record.Exception(() =>
+            {
+                Program.TryRun(() => throw new ObjectDisposedException("dbContext"), "dbContext");
+                Program.TryRun(() => secondCleanupRan = true, "secureData");
+            });
+
+            // Assert
+            Assert.Null(ex);
+            Assert.True(secondCleanupRan);
         }
 
         #endregion

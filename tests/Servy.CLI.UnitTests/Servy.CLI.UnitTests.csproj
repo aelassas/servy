@@ -132,6 +132,8 @@
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Options\SensitiveOptionsTests.cs" />
     <Compile Include="ProgramTests.cs" />
+    <Compile Include="Runtime\FakeCliRuntime.cs" />
+    <Compile Include="Runtime\ServiceBinariesBootstrapperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Commands\RestartServiceCommandTests.cs" />
     <Compile Include="Commands\ServiceStatusCommandTests.cs" />
