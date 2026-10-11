@@ -141,18 +141,17 @@ jobs:
           else
             CHANGED=0
           fi
-          cp llms-full.txt main-repo/llms-full.txt
 
-          # 2. Commit and push if the body changed, rebasing first in case main moved since the
-          #    checkout
+          # 2. Sync remote changes first before committing to avoid rebase content conflicts on llms-full.txt
           cd main-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
 
           if [ "$CHANGED" = 1 ]; then
+            git pull --rebase
+            cp ../llms-full.txt llms-full.txt
             git add llms-full.txt
             git commit -m "docs: sync llms-full.txt from wiki updates"
-            git pull --rebase
             git push
             echo "Successfully updated and pushed llms-full.txt to main repository"
           else
@@ -178,19 +177,20 @@ jobs:
           CHANGED=0
           if ! diff -q --strip-trailing-cr <(tail -n +8 llms-full.txt) <(tail -n +8 web-repo/public/llms-full.txt) >/dev/null 2>&1; then
             CHANGED=1
-            cp llms-full.txt web-repo/public/llms-full.txt
           fi
           if ! diff -q --strip-trailing-cr main-repo/llms.txt web-repo/public/llms.txt >/dev/null 2>&1; then
             CHANGED=1
-            tr -d '\r' < main-repo/llms.txt > web-repo/public/llms.txt
           fi
 
-          # 3. Commit and push if either file changed
+          # 3. Commit and push if either file changed, pulling remote updates first to prevent rebase conflicts
           cd web-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
 
           if [ "$CHANGED" = 1 ]; then
+            git pull --rebase
+            cp ../llms-full.txt public/llms-full.txt
+            tr -d '\r' < ../main-repo/llms.txt > public/llms.txt
             git add public/llms.txt public/llms-full.txt
             git commit -m "docs: sync llms.txt and llms-full.txt from servy"
             git push
