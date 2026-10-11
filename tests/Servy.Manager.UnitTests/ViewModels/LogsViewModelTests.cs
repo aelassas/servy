@@ -362,6 +362,39 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SearchCommand_PassesLevelDatesAndKeywordToTheEventLogService()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    // Arrange
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServyEventLogEntry>());
+
+                    using (var vm = CreateViewModel())
+                    {
+                        var from = new DateTime(2026, 1, 2, 3, 4, 5);
+                        var to = new DateTime(2026, 1, 9, 3, 4, 5);
+                        vm.FromDate = from;
+                        vm.ToDate = to;
+                        vm.SelectedLevel = EventLogLevel.Error;
+                        vm.Keyword = "ServyAgent";
+
+                        // Act
+                        await vm.SearchCommand.ExecuteAsync(null);
+
+                        // Assert
+                        _eventLogServiceMock.Verify(
+                            s => s.SearchAsync(EventLogLevel.Error, from, to, "ServyAgent", It.IsAny<CancellationToken>()),
+                            Times.Once);
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task Search_PrivateMethodInvokedTwice_CancelsPreviousCts()
         {
             await Helper.RunOnSTA(async () =>
