@@ -31,6 +31,10 @@ namespace Servy.Manager.UnitTests.Config
 
             // Assert - Paths
             Assert.Equal(AppConfig.DefaultDesktopAppPublishPath, config.DesktopAppPublishPath);
+
+            // Assert - Column visibility: nothing is hidden at design time
+            Assert.Equal(string.Empty, config.ServicesHiddenColumns);
+            Assert.Equal(string.Empty, config.LogsHiddenColumns);
         }
 
         [Fact]
