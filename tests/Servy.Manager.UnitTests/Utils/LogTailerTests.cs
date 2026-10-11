@@ -1129,7 +1129,7 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
                 // Act
-                // ROTATION OPERAND ISOLATION: Set lastPosition within the valid file length boundary (0 <= 30 bytes)
+                // ROTATION OPERAND ISOLATION: Pass the file's own length as lastPosition, so it is within the valid boundary (30 <= 30 bytes)
                 // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE.
                 // Pass a stale timestamp to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as TRUE.
                 var fileInfo = new FileInfo(_tempFilePath);
