@@ -892,6 +892,43 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task StartServiceAsync_ShowMessageBoxFalse_SuccessShowsNoDialog()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "BulkStart" };
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = service.Name });
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
+
+            // Act
+            var result = await sut.StartServiceAsync(service, showMessageBox: false, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(ServiceStatus.Running, service.Status);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task StartServiceAsync_ShowMessageBoxFalse_FailureShowsNoDialogButReturnsFalse()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "BulkStartFails" };
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = service.Name });
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Failure("boom"));
+
+            // Act
+            var result = await sut.StartServiceAsync(service, showMessageBox: false, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task InstallServiceAsync_ShouldCallServiceManager()
         {
             // Arrange
