@@ -305,6 +305,7 @@ namespace Servy.Manager.UnitTests.Mappers
 
         [Theory]
         [InlineData(null, "LocalSystem")]
+        [InlineData("", "LocalSystem")]
         [InlineData("MyCustomUser", "MyCustomUser")]
         [InlineData(@"nt authority\localservice", "LocalService")]
         [InlineData(@"builtin\networkservice", "NetworkService")]
