@@ -584,6 +584,35 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task CheckHealth_HealthyProcessAndCounterUnreadable_WarnsAndDoesNotReachTheCriticalHandler()
+        {
+            // Arrange: the stability check runs on a healthy tick, and its read of the counter fails
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 2);
+            store.ReadFailure = new TimeoutException("The Servy host did not answer.");
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert: the failure ends in the evaluation's own handler, not in the health check loop's
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Error during conditional reset evaluation") && s.Contains("The Servy host did not answer.")),
+                It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Critical error in health check loop")), It.IsAny<Exception>()), Times.Never);
+            Assert.Empty(store.Writes);
+        }
+
+        [Fact]
         public async Task CheckHealth_RestartAttemptsWrittenBeforeBoot_AnchorsCounterAndKeepsIt()
         {
             // Arrange: a year ago is before any plausible boot time, so the reboot-detection arm is taken
