@@ -469,6 +469,29 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(2, totalCount);
         }
 
+        [Fact]
+        public async Task ExecuteAsync_WithActiveTransaction_RollbackRevertsTheWrite()
+        {
+            // Arrange
+            long before = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
+
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var affected = await _executor.ExecuteAsync(
+                    "INSERT INTO TestServices (ServiceName, Status) VALUES ('TxAsync', 1);",
+                    transaction: tx,
+                    cancellationToken: CancellationToken.None);
+
+                Assert.Equal(1, affected);
+                tx.Rollback();
+            }
+
+            // Assert
+            long after = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
+            Assert.Equal(before, after);
+        }
+
         #endregion
 
         #region Targeted Requirements Branch Coverage Tests
