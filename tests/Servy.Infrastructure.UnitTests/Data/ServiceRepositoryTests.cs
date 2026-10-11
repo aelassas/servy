@@ -1085,6 +1085,31 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public async Task SearchAsync_Keyword_ReturnsOnlyRowsWhoseNameOrDescriptionContainsIt()
+        {
+            // Arrange
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ServiceDto>
+                {
+                    new ServiceDto { Name = "Alpha", Description = "web frontend" },
+                    new ServiceDto { Name = "Beta", Description = "Nightly BACKUP job" },
+                    new ServiceDto { Name = "Gamma", Description = null },
+                });
+            var repo = CreateRepository();
+
+            // Act
+            var byPaddedName = (await repo.SearchAsync("  ALPHA ", false, TestContext.Current.CancellationToken)).Select(s => s.Name).ToList();
+            var byDescription = (await repo.SearchAsync("backup", false, TestContext.Current.CancellationToken)).Select(s => s.Name).ToList();
+            var noMatch = (await repo.SearchAsync("zzz", false, TestContext.Current.CancellationToken)).ToList();
+
+            // Assert
+            Assert.Equal(new[] { "Alpha" }, byPaddedName);
+            Assert.Equal(new[] { "Beta" }, byDescription);
+            Assert.Empty(noMatch);
+        }
+
+        [Fact]
         public async Task SearchAsync_NullKeyword_ShortCircuitsToGetAll()
         {
             // Arrange
