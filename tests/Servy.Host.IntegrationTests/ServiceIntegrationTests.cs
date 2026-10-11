@@ -627,11 +627,22 @@ namespace Servy.Host.IntegrationTests
         private sealed class AccountSandbox : IDisposable
         {
             private readonly string _pipeName;
-            private readonly string _directory;
+            private string _directory = string.Empty;
             private readonly string _taskPrefix = "ServyPipeTest_" + Guid.NewGuid().ToString("N").Substring(0, 8);
             private readonly List<string> _tasks = new List<string>();
             private int _run;
 
+            /// <summary>
+            /// Whether this instance created <see cref="_directory"/>, so <see cref="Dispose"/> never deletes a folder the
+            /// run did not create (the constructor refuses a pre-existing one).
+            /// </summary>
+            private bool _directoryCreated;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AccountSandbox"/> class. When it throws part way, it removes what
+            /// it had created so far, because the caller's <c>using</c> never receives the instance and cannot dispose it.
+            /// </summary>
+            /// <param name="pipeName">The name of the pipe the scheduled tasks connect to.</param>
             public AccountSandbox(string pipeName)
             {
                 _pipeName = pipeName;
@@ -639,10 +650,39 @@ namespace Servy.Host.IntegrationTests
                 // net.exe asks for confirmation, and so fails without a console, for a password longer than 14 characters
                 LocalUserPassword = "Aa1!" + Guid.NewGuid().ToString("N").Substring(0, 10);
 
+                try
+                {
+                    Initialize();
+                }
+                catch
+                {
+                    // A constructor that throws is never disposed by the caller's "using": undo what it did so far
+                    Dispose();
+                    throw;
+                }
+            }
+
+            /// <summary>
+            /// Gets the local name of the built-in <c>Performance Log Users</c> group (SID <c>S-1-5-32-559</c>), which is
+            /// translated on a localized Windows.
+            /// </summary>
+            /// <returns>The group name without the <c>BUILTIN</c> prefix.</returns>
+            private static string ResolvePerformanceLogUsersGroup()
+            {
+                var account = (NTAccount)new SecurityIdentifier("S-1-5-32-559").Translate(typeof(NTAccount));
+                var name = account.Value;
+                return name.Substring(name.LastIndexOf('\\') + 1);
+            }
+
+            /// <summary>
+            /// Creates the local user, adds it to the group, and creates the protected script and result folders.
+            /// </summary>
+            private void Initialize()
+            {
                 // A plain local user. Performance Log Users holds "Log on as a batch job" by default, which a scheduled
                 // task needs, and grants nothing on the pipe.
                 Run("net.exe", $"user {LocalUser} {LocalUserPassword} /add");
-                Run("net.exe", $"localgroup \"Performance Log Users\" {LocalUser} /add");
+                Run("net.exe", $"localgroup \"{ResolvePerformanceLogUsersGroup()}\" {LocalUser} /add");
 
                 // The scripts run as SYSTEM, Network Service, Local Service and the local user, so no one else may be able to
                 // replace them: a uniquely named folder directly under the drive root (there is no shared parent to squat),
@@ -664,6 +704,7 @@ namespace Servy.Host.IntegrationTests
                 var scripts = ProtectedSecurity(system, admins);
                 foreach (var sid in runAs) scripts.AddAccessRule(Rule(sid, FileSystemRights.ReadAndExecute));
                 new DirectoryInfo(_directory).Create(scripts);
+                _directoryCreated = true;
 
                 var results = ProtectedSecurity(system, admins);
                 foreach (var sid in runAs) results.AddAccessRule(Rule(sid, FileSystemRights.Modify));
@@ -772,7 +813,10 @@ namespace Servy.Host.IntegrationTests
                 foreach (var task in _tasks)
                     TryRun("schtasks.exe", $"/Delete /F /TN {task}");
                 TryRun("net.exe", $"user {LocalUser} /delete");
-                try { Directory.Delete(_directory, recursive: true); } catch { /* best effort */ }
+                if (_directoryCreated)
+                {
+                    try { Directory.Delete(_directory, recursive: true); } catch { /* best effort */ }
+                }
             }
 
             private static void Run(string file, string arguments)
