@@ -329,7 +329,7 @@ namespace Servy.Core.Helpers
             inputPath = inputPath.Trim();
 
             // 1. Expand variables against the process environment, brought up to date first with the System variables
-            //    added, changed or removed in the registry since the process started (#7393)
+            //    added or changed in the registry since the process started (#7393); one removed is dropped only in an application
             var expandedPath = SystemEnvironmentHelper.ExpandSystemEnvironmentVariables(inputPath);
 
             // 2. Ensure the path is absolute before checking the filesystem
