@@ -4,6 +4,7 @@ using Servy.CLI.Commands;
 using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Runtime;
 using Servy.CLI.Validation;
 using Servy.Core.Config;
 using Servy.Core.Data;
@@ -15,9 +16,6 @@ using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using static Servy.CLI.Helpers.Helper;
 
 namespace Servy.CLI
@@ -51,10 +49,9 @@ namespace Servy.CLI
     public static class Program
     {
         /// <summary>
-        /// The base namespace where embedded resource files are located.
-        /// Used for locating and extracting files such as the service executable.
+        /// The message written to standard error when the first Ctrl+C or Ctrl+Break starts a graceful cancellation.
         /// </summary>
-        private const string ResourcesNamespace = "Servy.CLI.Resources";
+        internal const string CancellingMessage = "Cancelling... press Ctrl+C again to force exit.";
 
         /// <summary>
         /// Parses command-line arguments, invokes the appropriate command handlers,
@@ -62,7 +59,19 @@ namespace Servy.CLI
         /// </summary>
         /// <param name="args">An array of command-line arguments.</param>
         /// <returns>Returns 0 on success; non-zero on error.</returns>
-        public static async Task<int> Main(string[] args)
+        public static Task<int> Main(string[] args) => RunAsync(args, new CliRuntime());
+
+        /// <summary>
+        /// Parses command-line arguments, invokes the appropriate command handlers,
+        /// and returns an exit code indicating the success or failure of the operation.
+        /// </summary>
+        /// <param name="args">An array of command-line arguments.</param>
+        /// <param name="runtime">
+        /// The machine-touching bootstrap steps: the SQLite version check, the database, the embedded binaries and the
+        /// console probes. <see cref="Main"/> passes <see cref="CliRuntime"/>; tests pass a fake.
+        /// </param>
+        /// <returns>Returns 0 on success; non-zero on error.</returns>
+        internal static async Task<int> RunAsync(string[] args, ICliRuntime runtime)
         {
             // Record the System variables as they are at start, so one changed later is picked up (#7393)
             SystemEnvironmentHelper.InitializeForApplication();
@@ -70,16 +79,7 @@ namespace Servy.CLI
             using (var cts = new CancellationTokenSource())
             {
                 // Hook Ctrl+C and Ctrl+Break
-                Console.CancelKeyPress += (s, e) =>
-                {
-                    if (!cts.IsCancellationRequested)
-                    {
-                        e.Cancel = true;          // first press: graceful cancellation
-                        cts.Cancel();
-                        Console.Error.WriteLine("Cancelling... press Ctrl+C again to force exit.");
-                    }
-                    // second press: leave e.Cancel = false -> process terminates
-                };
+                Console.CancelKeyPress += (s, e) => HandleCancelKeyPress(cts, () => e.Cancel = true, Console.Error);
 
                 IAppDbContext? dbContext = null;
                 ProtectedKeyProvider? protectedKeyProvider = null;
@@ -125,7 +125,7 @@ namespace Servy.CLI
                     LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
                     CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json");
 
-                    if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                    if (!runtime.IsSqliteVersionSafe(out var detectedVersion))
                     {
                         Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
                                      $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
@@ -140,8 +140,9 @@ namespace Servy.CLI
                     }
 
                     // Initialize database shared dependencies
-                    dbContext = new AppDbContext(connectionString);
-                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var appDbContext = new AppDbContext(connectionString);
+                    dbContext = appDbContext;
+                    var dapperExecutor = new DapperExecutor(appDbContext);
                     protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                     secureData = new SecureData(protectedKeyProvider);
                     var xmlSerializer = new XmlServiceSerializer();
@@ -160,7 +161,6 @@ namespace Servy.CLI
                         );
 
                     var processHelper = new ProcessHelper();
-                    var processKiller = new ProcessKiller();
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var installValidator = new ServiceInstallValidator(serviceValidationRules);
 
@@ -183,132 +183,26 @@ namespace Servy.CLI
                         processHelper
                         );
 
-                    void EnsureDatabase()
-                    {
-                        // Ensure db and security folders exist
-                        AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
-
-                        // Ensure event source exists
-                        Core.Helpers.Helper.EnsureEventSourceExists();
-
-                        // Initialize the database
-                        DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-                    }
-
-                    async Task EnsureServiceBinariesAsync()
-                    {
-                        var asm = Assembly.GetExecutingAssembly();
-
-                        var sh = new ServiceHelper(serviceRepository);
-                        var resourceHelper = new ResourceHelper(processKiller);
-
-                        var hostInstaller = new ServyHostInstaller(new WindowsServiceApi(), new Win32ErrorProvider(), new ServiceControllerProvider(controllerFactory));
-
-                        // Replacing the service wrapper or the host needs every running Servy service and the host stopped.
-                        // They are stopped once for all the files and the host reinstall, and started once at the end.
-                        var pause = new ServyServicesPause(sh, hostInstaller);
-                        try
-                        {
-                            if (resourceHelper.IsExtractionNeeded(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe")
-                                || resourceHelper.IsExtractionNeeded(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe"))
-                            {
-                                await pause.PauseAsync(cts.Token);
-                            }
-
-                            // Copy service executable from embedded resources
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", cancellationToken: cts.Token))
-                            {
-                                throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyServiceCLIExe}'. " +
-                                    "CLI cannot start safely - see file log for details.");
-                            }
-
-                            // Copy the restarter next to the service wrapper, which launches it from its own folder.
-                            // No running service holds it open, so there is nothing to stop before overwriting it.
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "exe", cancellationToken: cts.Token))
-                            {
-                                throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyRestarterExe}'. " +
-                                    "CLI cannot start safely - see file log for details.");
-                            }
-
-                            // Copy the Servy host service
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "exe", cancellationToken: cts.Token))
-                            {
-                                throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
-                                    "CLI cannot start safely - see file log for details.");
-                            }
-
-                            // Copy Sysinternals from embedded resources
-                            var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
-                                ? AppConfig.HandleExeARM64FileName
-                                : AppConfig.HandleExeX64FileName;
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, handleExeFileName, "exe", cancellationToken: cts.Token))
-                            {
-                                Logger.Warn($"Failed copying embedded resource: {handleExeFileName}; process-tree handle features may be degraded.");
-                            }
-
-    #if DEBUG
-                            // Copy debug symbols from embedded resources (only in debug builds)
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", cancellationToken: cts.Token))
-                            {
-                                Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
-                            }
-
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", cancellationToken: cts.Token))
-                            {
-                                Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyRestarterFileName}.pdb");
-                            }
-
-                            if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", cancellationToken: cts.Token))
-                            {
-                                Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
-                            }
-    #else
-                            // A file newly extracted into the vault carries no grant for the service accounts, so grant them
-                            // their access to it again. Debug builds extract next to the executable instead.
-                            if (resourceHelper.HasCopiedResources)
-                            {
-                                await new ServyExePermissionsHardener().HardenServiceAccountsAsync(serviceRepository, cts.Token);
-                            }
-    #endif
-                            // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
-                            var hostResult = await hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe), sh, cts.Token);
-                            if (hostResult.IsSuccess)
-                            {
-                                // Services installed by an earlier version do not depend on the host yet
-                                var installed = await serviceRepository.GetAllAsync(decrypt: false, cts.Token);
-                                await hostInstaller.EnsureServicesDependOnHostAsync(installed.Select(s => s.Name), cts.Token);
-                            }
-                            else
-                            {
-                                Logger.Warn($"{hostResult.ErrorMessage} Servy services cannot start until the '{AppConfig.ServyHostServiceName}' service runs.");
-                            }
-                        }
-                        finally
-                        {
-                            await pause.ResumeAsync();
-                        }
-                    }
-
                     // Helper to defer targeted runtime initialization until AFTER successful argument parsing
                     async Task<int> ExecuteWithRuntimeAsync(Func<Task<CommandResult>> commandAction, bool isQuiet, bool requireDatabase = true, bool requireBinaries = false)
                     {
                         async Task BootstrapAsync()
                         {
-                            if (requireDatabase) EnsureDatabase();
-                            if (requireBinaries) await EnsureServiceBinariesAsync();
+                            if (requireDatabase) runtime.EnsureDatabase(connectionString, aesKeyFilePath, aesIVFilePath, appDbContext);
+                            if (requireBinaries) await runtime.EnsureServiceBinariesAsync(serviceRepository, controllerFactory, cts.Token);
                         }
 
                         if (!requireDatabase && !requireBinaries)
                         {
                             // Fast path: no initialization overhead needed
                         }
-                        else if (isQuiet || !IsRealConsole())
+                        else if (isQuiet || !runtime.IsRealConsole())
                         {
                             await BootstrapAsync();
                         }
                         else
                         {
-                            await ConsoleHelper.RunWithLoadingAnimation(BootstrapAsync);
+                            await runtime.RunWithLoadingAnimationAsync(BootstrapAsync);
                         }
 
                         return await PrintAndReturnAsync(commandAction());
@@ -374,26 +268,38 @@ namespace Servy.CLI
         }
 
         /// <summary>
+        /// Handles a Ctrl+C or Ctrl+Break press: the first press starts a graceful cancellation, a later press is left
+        /// unhandled so the process terminates.
+        /// </summary>
+        /// <param name="cts">The source whose token cancels the running command.</param>
+        /// <param name="markHandled">Marks the key press as handled, so the process keeps running while the command cancels.</param>
+        /// <param name="error">The writer the cancellation notice is written to.</param>
+        /// <returns><see langword="true"/> when this press started the graceful cancellation; otherwise <see langword="false"/>.</returns>
+        internal static bool HandleCancelKeyPress(CancellationTokenSource cts, Action markHandled, TextWriter error)
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                markHandled();          // first press: graceful cancellation
+                cts.Cancel();
+                error.WriteLine(CancellingMessage);
+                return true;
+            }
+
+            // second press: leave e.Cancel = false -> process terminates
+            return false;
+        }
+
+        /// <summary>
         /// Attempts to execute a cleanup action, suppressing any exceptions to ensure
         /// the teardown process proceeds.
         /// </summary>
         /// <param name="action">The delegate containing the cleanup logic to execute.</param>
         /// <param name="name">The descriptive name of the component for logging purposes.</param>
-        private static void TryRun(Action action, string name)
+        internal static void TryRun(Action action, string name)
         {
             try { action(); }
             catch (Exception ex) { Logger.Warn($"{name} cleanup failed.", ex); }
         }
-
-        /// <summary>
-        /// Retrieves the window handle used by the console associated with the calling process.
-        /// </summary>
-        /// <returns>
-        /// A handle to the window used by the console, or <see cref="IntPtr.Zero"/> if there is no such associated window.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetConsoleWindow();
 
         /// <summary>
         /// Performs a multi-layered check to determine if the current process is running in a real,
@@ -421,22 +327,32 @@ namespace Servy.CLI
         /// </item>
         /// </list>
         /// </remarks>
-        public static bool IsRealConsole()
+        public static bool IsRealConsole() => IsRealConsole(new ConsoleEnvironment());
+
+        /// <summary>
+        /// Performs the checks of <see cref="IsRealConsole()"/> against the given console and session properties.
+        /// </summary>
+        /// <param name="console">The console and session properties to probe.</param>
+        /// <returns>
+        /// <c>true</c> if a physical or emulated terminal is attached that supports interactive
+        /// features (like cursor manipulation); otherwise <c>false</c>.
+        /// </returns>
+        internal static bool IsRealConsole(IConsoleEnvironment console)
         {
             // 1. Session 0 check (detects Services/SYSTEM account)
-            if (!Environment.UserInteractive) return false;
+            if (!console.UserInteractive) return false;
 
             // 2. Standard redirection check (detects '>' or '|')
-            if (Console.IsOutputRedirected || Console.IsErrorRedirected) return false;
+            if (console.IsOutputRedirected || console.IsErrorRedirected) return false;
 
             // 3. Win32 check: Is there actually a window handle?
-            if (GetConsoleWindow() == IntPtr.Zero) return false;
+            if (console.GetConsoleWindow() == IntPtr.Zero) return false;
 
             try
             {
                 // 4. Property check: Accessing buffer properties on a redirected
                 // handle will throw an IOException (Invalid Descriptor).
-                return Console.WindowHeight > 0;
+                return console.GetWindowHeight() > 0;
             }
             catch
             {
