@@ -522,7 +522,6 @@ namespace Servy.Core.Logging
             /// </summary>
             internal static string SanitizePrefixSegment(string segment)
             {
-                if (string.IsNullOrWhiteSpace(segment)) return string.Empty;
                 return segment.Replace('[', '(').Replace(']', ')').Trim();
             }
 
@@ -535,7 +534,7 @@ namespace Servy.Core.Logging
             {
                 // Prefix is now pre-wrapped safely in its own bracket sets (e.g., "[A]" or "[A] [B]")
                 // so Format simply appends it directly without performing outer re-wrapping logic.
-                return string.IsNullOrWhiteSpace(Prefix) ? message : $"{Prefix} {message}";
+                return $"{Prefix} {message}";
             }
         }
 
