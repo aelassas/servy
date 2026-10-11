@@ -1180,6 +1180,28 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(testDir, log, StringComparison.Ordinal);
         }
 
+        [Fact]
+        public void WarnIfDirectoryAclNotHardened_UsersWriteDenied_LogsNothing()
+        {
+            // Arrange
+            // A Deny ACE for a broad principal narrows access, so it must not be reported as a grant.
+            // WriteData alone is denied on purpose: the current user is normally a member of
+            // BUILTIN\Users, and WriteData keeps the recursive cleanup of the temporary directory working.
+            string testDir = Path.Combine(TempDirectory, "acl_deny_write_dir");
+            Directory.CreateDirectory(testDir);
+            SetAccessRuleForSid(
+                testDir,
+                new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+                FileSystemRights.WriteData,
+                AccessControlType.Deny);
+
+            // Act
+            string log = CaptureAclCheckLog(() => PathSecurityGuard.WarnIfDirectoryAclNotHardened(testDir));
+
+            // Assert
+            Assert.DoesNotContain("ACL", log, StringComparison.Ordinal);
+        }
+
         /// <summary>
         /// Points the static logger at a file of its own, runs <paramref name="act"/> and returns what
         /// was written. <see cref="PathSecurityGuard.WarnIfDirectoryAclNotHardened"/> is diagnostic only,
@@ -1211,11 +1233,11 @@ namespace Servy.Core.UnitTests.Validation
             SetAccessRuleForSid(directoryPath, new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), rights);
         }
 
-        private static void SetAccessRuleForSid(string directoryPath, SecurityIdentifier sid, FileSystemRights rights)
+        private static void SetAccessRuleForSid(string directoryPath, SecurityIdentifier sid, FileSystemRights rights, AccessControlType type = AccessControlType.Allow)
         {
             var security = new DirectorySecurity();
             security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-            security.AddAccessRule(new FileSystemAccessRule(sid, rights, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(sid, rights, type));
             security.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User, FileSystemRights.FullControl, AccessControlType.Allow));
             new DirectoryInfo(directoryPath).SetAccessControl(security);
         }
