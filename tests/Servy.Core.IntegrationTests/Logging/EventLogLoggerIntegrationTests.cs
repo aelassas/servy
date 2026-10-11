@@ -406,6 +406,29 @@ namespace Servy.Core.IntegrationTests.Logging
         }
 
         [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void LeveledMethods_NullOrEmptyMessage_DoNotReachTheSinks(string? message)
+        {
+            // Arrange
+            string source = GenerateSourceName();
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Debug, "Test"))
+            {
+                // Act
+                // Debug level so the threshold check passes for all four calls; only the empty-message
+                // guards in DebugCore and WriteLeveled can stop them.
+                logger.Debug(message!);
+                logger.Info(message!);
+                logger.Warn(message!);
+                logger.Error(message!);
+
+                // Assert
+                // Format runs only after those guards, so an empty list proves each call returned first.
+                Assert.Empty(logger.Formatted);
+            }
+        }
+
+        [Theory]
         [InlineData(LogLevel.Debug, LogLevel.Info, true)]
         [InlineData(LogLevel.Info, LogLevel.Info, true)]
         [InlineData(LogLevel.Warn, LogLevel.Info, false)]
