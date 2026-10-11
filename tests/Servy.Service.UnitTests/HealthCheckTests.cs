@@ -578,6 +578,113 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task CheckHealth_HealthyProcessAndCounterUnreadable_WarnsAndDoesNotReachTheCriticalHandler()
+        {
+            // Arrange: the stability check runs on a healthy tick, and its read of the counter fails
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 2);
+            store.ReadFailure = new TimeoutException("The Servy host did not answer.");
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert: the failure ends in the evaluation's own handler, not in the health check loop's
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Error during conditional reset evaluation") && s.Contains("The Servy host did not answer.")),
+                It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Critical error in health check loop")), It.IsAny<Exception>()), Times.Never);
+            Assert.Empty(store.Writes);
+        }
+
+        [Fact]
+        public async Task CheckHealth_RestartAttemptsReadCancelled_CountsZeroAndStillRecovers()
+        {
+            // Arrange: a cancelled read means the service is shutting down, which is reported as 0 used attempts, not as unreadable
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 1);
+            store.ReadFailure = new OperationCanceledException();
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetMaxFailedChecks(1);
+            service.SetMaxRestartAttempts(3);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert: the abort path taken for an unreadable counter was not taken
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Aborting recovery")), It.IsAny<Exception>()), Times.Never);
+
+            _ctx.Helper.Verify(h => h.RestartProcess(
+                It.IsAny<IProcessWrapper>(),
+                It.IsAny<StartProcessCallback>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            // 0 attempts were used, so this recovery is the first and is stored as such
+            Assert.Equal(new[] { 1 }, store.Writes);
+        }
+
+        [Fact]
+        public async Task CheckHealth_RestartAttemptsSaveCancelled_SwallowsItSilentlyAndStillRecovers()
+        {
+            // Arrange: a cancelled write means the service is stopping, which is not a failure worth an error line
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 1);
+            store.WriteFailure = new OperationCanceledException();
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetMaxFailedChecks(1);
+            service.SetMaxRestartAttempts(3);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert: unlike the generic arm, nothing is logged for the save
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Failed to save the restart attempts counter")), It.IsAny<Exception>()), Times.Never);
+
+            _ctx.Helper.Verify(h => h.RestartProcess(
+                It.IsAny<IProcessWrapper>(),
+                It.IsAny<StartProcessCallback>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            // The write never landed, so the stored counter is unchanged
+            Assert.Equal(1, store.Attempts);
+        }
+
+        [Fact]
         public async Task CheckHealth_RestartAttemptsWrittenBeforeBoot_AnchorsCounterAndKeepsIt()
         {
             // Arrange: a year ago is before any plausible boot time, so the reboot-detection arm is taken
