@@ -95,7 +95,7 @@ namespace Servy.Manager.UnitTests.Mappers
             var result = await ServiceMapper.ToModelAsync(domainService, true, false,
                 _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert - ToModelAsync normalises; unlike ToModel, which deliberately leaves them null (#2697).
+            // Assert - ToModelAsync normalises null sources to string.Empty, the same representation ToModel gives the console paths (#2697).
             // Assert.Equal rather than Assert.Empty: Assert.Empty throws on null, which reads as a crash
             // instead of a clear "the coalesce was removed" failure.
             Assert.NotNull(result);
