@@ -1,4 +1,5 @@
 using Servy.Core.Helpers;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Servy.CLI.Runtime
@@ -6,6 +7,7 @@ namespace Servy.CLI.Runtime
     /// <summary>
     /// Extracts the binaries embedded in an assembly through <see cref="ResourceHelper"/>.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal sealed class EmbeddedResourceExtractor : IEmbeddedResourceExtractor
     {
         /// <summary>

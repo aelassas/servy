@@ -7,6 +7,7 @@ namespace Servy.CLI.Runtime
     /// Reads the console and session properties of the current process from <see cref="Environment"/>,
     /// <see cref="Console"/> and the Win32 console API.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal sealed class ConsoleEnvironment : IConsoleEnvironment
     {
         /// <summary>

@@ -5,6 +5,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -13,6 +14,7 @@ namespace Servy.CLI.Runtime
     /// <summary>
     /// The production <see cref="ICliRuntime"/>: runs each bootstrap step against the real machine.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal sealed class CliRuntime : ICliRuntime
     {
         /// <summary>
