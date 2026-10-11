@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
@@ -331,6 +332,29 @@ namespace Servy.Service.UnitTests
             // ... and the stop sequence is not held up by the hook
             preStop.Verify(p => p.WaitForExit(It.IsAny<int>()), Times.Never);
             preStop.VerifyGet(p => p.ExitCode, Times.Never);
+        }
+
+        [Fact]
+        public void StartPreStopProcess_ChildOutlivesOneWaitChunk_PulsesTheScm()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = CreatePreStopOptions();
+
+            var preStop = new Mock<IProcessWrapper>();
+            preStop.Setup(p => p.Start()).Returns(true);
+            preStop.SetupSequence(p => p.WaitForExit(It.IsAny<int>())).Returns(false).Returns(true);
+            preStop.Setup(p => p.ExitCode).Returns(0);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(preStop.Object);
+
+            // Act
+            var result = service.InvokeStartPreStopProcess(options);
+
+            // Assert: a slow hook keeps the service from timing out of SERVICE_STOP_PENDING
+            Assert.True(result);
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, AppConfig.DefaultScmAdditionalTimeMs, null), Times.Once);
         }
 
         [Theory]
