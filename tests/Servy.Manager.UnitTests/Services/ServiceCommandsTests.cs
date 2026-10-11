@@ -763,6 +763,24 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
+        public async Task StopServiceAsync_ServiceIsDisabled_StillStopsWithoutDisabledError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "DisabledButRunning" };
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = service.Name });
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
+
+            // Act
+            var result = await sut.StopServiceAsync(service, showMessageBox: true, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceDisabledError, It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task StopServiceAsync_ShouldCallServiceManager()
         {
             // Arrange
@@ -806,6 +824,24 @@ namespace Servy.Manager.UnitTests.Services
             // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
             Assert.Equal(ServiceStatus.Running, service.Status);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task RestartServiceAsync_ServiceIsDisabled_AbortsWithDisabledError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "DisabledService" };
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = service.Name });
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
+
+            // Act
+            var result = await sut.RestartServiceAsync(service, showMessageBox: true, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceDisabledError, UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
