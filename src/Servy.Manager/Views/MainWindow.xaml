@@ -287,8 +287,8 @@
 
               <DataGridTemplateColumn x:Name="ColDescription"
                         Header="{x:Static resx:Strings.Column_Description}"
-                        Width="120"
-                        MinWidth="120"
+                        Width="145"
+                        MinWidth="100"
                         CanUserReorder="False"
                         SortMemberPath="Description">
                 <DataGridTemplateColumn.HeaderStyle>
