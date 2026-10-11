@@ -8,7 +8,8 @@ namespace Servy.Core.Helpers
 {
     /// <summary>
     /// Keeps the process environment in step with the System environment variables in the registry, so a System
-    /// variable added, changed or removed in Windows after the process started is seen without a restart (#7393).
+    /// variable added or changed in Windows after the process started is seen without a restart, and one removed
+    /// is dropped too in an application (#7393); a service never drops a variable, see <see cref="InitializeForService"/>.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -44,6 +45,8 @@ namespace Servy.Core.Helpers
         /// Declares that this process is the Servy service wrapper, whose environment was built by the Service Control
         /// Manager at boot: from now on every System variable takes its current registry value, unless the user's own
         /// environment defines the same name (<c>Path</c> is composed of both, the System part first, as Windows does).
+        /// A System variable removed from the registry is not removed from the process: no baseline is recorded, so the
+        /// value inherited from the Service Control Manager stays.
         /// </summary>
         public static void InitializeForService() => Default.UseRegistryAsSource();
 
@@ -56,8 +59,8 @@ namespace Servy.Core.Helpers
         public static void InitializeForApplication() => Default.CaptureBaseline();
 
         /// <summary>
-        /// Applies the System variables added, changed or removed in the registry since the process started to the
-        /// process environment, under the rules set by <see cref="InitializeForService"/> or
+        /// Applies the System variables added or changed in the registry since the process started to the process
+        /// environment (and, for an application only, removes the ones deleted from it), under the rules set by <see cref="InitializeForService"/> or
         /// <see cref="InitializeForApplication"/>. Without either call, the first refresh records the baseline, so only
         /// variables missing from the process are added.
         /// </summary>
