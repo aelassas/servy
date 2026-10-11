@@ -80,8 +80,13 @@ namespace Servy.Core.Helpers
         /// </list>
         /// </para>
         /// </remarks>
-        /// <exception cref="ArgumentException">Thrown if any of the provided paths or connection strings are null or whitespace.</exception>
-        /// <exception cref="InvalidOperationException">Thrown if the connection string format is invalid or directory names cannot be parsed.</exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown if any of the provided paths or connection strings are null or whitespace, or if
+        /// <paramref name="aesKeyFilePath"/>, <paramref name="aesIVFilePath"/> or <paramref name="rootVaultPath"/> is not an absolute path.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the connection string format is invalid, its database path is empty or not absolute, or directory names cannot be parsed.
+        /// </exception>
         public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath, string rootVaultPath = null)
         {
             // Reject null/blank paths before any filesystem or ACL work
