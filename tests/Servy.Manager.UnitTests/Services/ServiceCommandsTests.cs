@@ -145,7 +145,7 @@ namespace Servy.Manager.UnitTests.Services
                 _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out jsonParsedDto)).Returns(true);
 
                 // Act
-                await sut.ImportJsonConfigAsync(CancellationToken.None);
+                await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
 
                 // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(refused.Message, UiAppConfig.Caption), Times.Once);
