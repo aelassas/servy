@@ -44,9 +44,9 @@ namespace Servy.CLI.UnitTests
             // The skip guard above is the exact complement of the first two guards of
             // IsRealConsole, so the body only ever runs in a state that short-circuits the
             // method. Pin that precondition explicitly rather than leaving it implicit in
-            // the skip expression: this test covers the short-circuit only, and the Win32
-            // half of the method (GetConsoleWindow and the Console.WindowHeight probe)
-            // stays out of reach without a redirection seam on Program.
+            // the skip expression: this test covers the short-circuit on the real host only.
+            // The Win32 half of the method (GetConsoleWindow and the Console.WindowHeight probe)
+            // is driven through the IConsoleEnvironment seam by the IsRealConsole_* tests below.
             bool shortCircuitStateHolds = !Environment.UserInteractive
                 || Console.IsOutputRedirected
                 || Console.IsErrorRedirected;
@@ -188,10 +188,12 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // This is the only test that reaches the single PrintAndReturnAsync line the nine MapResult verb
-            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath and the
-            // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory enter the other
-            // eight lambdas too, but they throw in the bootstrap before they get there.
+            // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep, this is one of only two
+            // tests that reach the single PrintAndReturnAsync line the nine MapResult verb
+            // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath, the
+            // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory and the RunAsync tests
+            // that make a bootstrap step throw enter the other eight lambdas too, but they throw in the
+            // bootstrap before they get there.
             Assert.Equal((int)CliExitCode.Success, result.Result);
             Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
         }
