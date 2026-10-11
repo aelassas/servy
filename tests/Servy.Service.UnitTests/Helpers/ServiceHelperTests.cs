@@ -951,7 +951,7 @@ namespace Servy.Service.UnitTests.Helpers
                 // Assert
                 Assert.Null(exception);
                 mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("RequestAdditionalTime failed")), thrown), Times.Once);
-                mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                mockLog.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 
@@ -968,7 +968,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Assert
                 Assert.Null(exception);
-                mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                mockLog.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
                 mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
@@ -983,7 +983,7 @@ namespace Servy.Service.UnitTests.Helpers
             _helper.RequestAdditionalTime(null, 5000, mockLog.Object);
 
             // Assert
-            mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            mockLog.Verify(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
