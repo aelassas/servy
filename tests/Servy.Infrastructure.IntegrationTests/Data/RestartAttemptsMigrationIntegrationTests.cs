@@ -229,5 +229,68 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             Assert.True(LegacyRecoveryImporter.DeleteFolder(Path.Combine(TempDirectory, "absent")));
         }
+
+        [Fact]
+        public void DeleteFolder_FolderIsALink_DeletesTheLinkAndLeavesTheTargetContent()
+        {
+            // Arrange
+            var target = Path.Combine(TempDirectory, "target");
+            var link = Path.Combine(TempDirectory, "link");
+            Directory.CreateDirectory(target);
+            var keep = Path.Combine(target, "keep.dat");
+            File.WriteAllText(keep, "7");
+
+            // .NET Framework has no Directory.CreateSymbolicLink; a directory junction is the same reparse point
+            // and needs no privilege. When the runner cannot create one there is nothing to assert.
+            try
+            {
+                using (var mklink = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c mklink /J \"" + link + "\" \"" + target + "\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }))
+                {
+                    mklink.WaitForExit();
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is System.ComponentModel.Win32Exception)
+            {
+                return;
+            }
+
+            if (!Directory.Exists(link))
+                return;
+
+            // Act
+            var result = LegacyRecoveryImporter.DeleteFolder(link);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(Directory.Exists(link));
+            Assert.True(File.Exists(keep), "the link target's content must survive");
+        }
+
+        [Fact]
+        public void DeleteFolder_FileInsideIsHeldOpen_ReturnsFalseAndKeepsTheFolder()
+        {
+            // Arrange
+            var folder = Path.Combine(TempDirectory, "recovery-locked");
+            Directory.CreateDirectory(folder);
+            var file = Path.Combine(folder, "held.dat");
+            File.WriteAllText(file, "1");
+
+            // Act
+            bool result;
+            using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                result = LegacyRecoveryImporter.DeleteFolder(folder);
+            }
+
+            // Assert
+            Assert.False(result);
+            Assert.True(File.Exists(file));
+        }
     }
 }
