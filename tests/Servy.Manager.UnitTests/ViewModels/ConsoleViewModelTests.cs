@@ -635,6 +635,36 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task ApplyFilterWithDebounceAsync_DispatcherThrows_LogsTheFailureAndDoesNotPropagate()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    _uiDispatcherMock
+                        .Setup(d => d.InvokeAsync(It.IsAny<Action>(), It.IsAny<DispatcherPriority>()))
+                        .Throws(new InvalidOperationException("dispatcher unavailable"));
+
+                    // Act
+                    var thrown = new List<Exception>();
+                    var log = await LogCapture.RunAsync(async () =>
+                    {
+                        var ex = await Record.ExceptionAsync(
+                            () => (Task)TestReflection.InvokeNonPublic(vm, "ApplyFilterWithDebounceAsync")!);
+                        if (ex != null) thrown.Add(ex);
+                    });
+
+                    // Assert
+                    Assert.Empty(thrown);
+                    Assert.Contains("Failed to apply console filter.", log);
+                }
+            });
+        }
+
+        [Fact]
         public void ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
         {
             // Arrange, Act & Assert
@@ -817,6 +847,30 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     Assert.Empty(vm.RawLines);
+                }
+            });
+        }
+
+        [Fact]
+        public void StartLiveTail_UnsupportedLogType_ThrowsAndTracksNoTailer()
+        {
+            // Arrange, Act & Assert
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    int sessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
+
+                    // Act
+                    var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                        TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", (LogType)99, 0L, DateTime.UtcNow, sessionId, TestContext.Current.CancellationToken));
+
+                    // Assert
+                    Assert.Equal("type", ex.ParamName);
+                    Assert.Null(TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer"));
+                    Assert.Null(TestReflection.GetField<LogTailer>(vm, "_activeStderrTailer"));
                 }
             });
         }
