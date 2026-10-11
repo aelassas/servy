@@ -213,6 +213,22 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.Null(result);
         }
 
+        [Fact]
+        public void ToModel_ConsoleServiceWithNullPaths_CoalescesToEmptyNotNull()
+        {
+            // Arrange
+            var item = new ConsoleService { Name = "C", Pid = 1234, StdoutPath = null, StderrPath = null };
+
+            // Act
+            var result = ServiceMapper.ToModel(item);
+
+            // Assert: Assert.Equal rather than Assert.Empty, which throws on null and reads as a crash
+            // instead of a clear "the coalesce was removed" failure.
+            Assert.NotNull(result);
+            Assert.Equal(string.Empty, result.StdoutPath);
+            Assert.Equal(string.Empty, result.StderrPath);
+        }
+
         public static IEnumerable<object[]> GetToModelSubtypeData()
         {
             yield return new object[] { new ConsoleService { Name = "C", Pid = 1234, StdoutPath = "out.txt", StderrPath = "err.txt" }, "C", 1234, true, "out.txt", "err.txt" };
