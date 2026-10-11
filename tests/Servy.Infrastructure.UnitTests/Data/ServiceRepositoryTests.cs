@@ -729,8 +729,9 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         [Theory]
         [InlineData(null)]
+        [InlineData("")]
         [InlineData("   ")]
-        public async Task GetRestartAttemptsAsync_BlankName_ReturnsNull(string name)
+        public async Task GetRestartAttemptsAsync_BlankName_ReturnsNullWithoutQuerying(string name)
         {
             // Arrange
             var repo = CreateRepository();
@@ -740,6 +741,12 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.Null(result);
+            _mockDapper.Verify(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
