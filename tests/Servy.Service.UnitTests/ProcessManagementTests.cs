@@ -494,20 +494,16 @@ namespace Servy.Service.UnitTests
                 // Act
                 service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
-                // Assert: the found arm reports the count it will charge the stop budget for
+                // Assert: the found arm reports the count and lists each descendant in a single multi-line log entry
                 _ctx.Logger.Verify(l => l.Info(
-                    $"Pre-stop scan found 1 active descendants for PID {ScannedParentPid}:", It.IsAny<Exception>()), Times.Once);
-
-                // ... and each descendant is listed
-                _ctx.Logger.Verify(l => l.Info(
-                    It.Is<string>(msg => msg.StartsWith("  - ")), It.IsAny<Exception>()), Times.Once);
+                    It.Is<string>(s => s.Contains($"Pre-stop scan found 1 active descendants for PID {ScannedParentPid}:") && s.Contains("  - ")), It.IsAny<Exception>()), Times.Once);
 
                 // ... and its handle is released right after logging, which is what the loop promises
                 Assert.Equal(1, child.DisposeCount);
 
                 // ... and the empty arm did not also run
                 _ctx.Logger.Verify(l => l.Info(
-                    It.Is<string>(msg => msg.Contains("found no active descendants")), It.IsAny<Exception>()), Times.Never);
+                    It.Is<string>(s => s.Contains("found no active descendants")), It.IsAny<Exception>()), Times.Never);
             }
         }
 
