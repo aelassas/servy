@@ -8,6 +8,7 @@ using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Servy.Service.UnitTests
 {
@@ -544,9 +545,9 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Info(
                 $"Pre-stop scan found no active descendants for PID {ScannedParentPid}.", It.IsAny<Exception>()), Times.Once);
 
-            // ... and nothing was listed, so the found arm stayed out of it
+            // ... and the found arm stayed out of it (its header is "Pre-stop scan found N active descendants for PID ...:")
             _ctx.Logger.Verify(l => l.Info(
-                It.Is<string>(s => s.StartsWith("  - ")), It.IsAny<Exception>()), Times.Never);
+                It.Is<string>(s => Regex.IsMatch(s, @"found \d+ active descendants")), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]
