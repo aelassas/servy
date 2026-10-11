@@ -30,6 +30,20 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task RunAsync_ActionThrowsOperationCanceledException_DoesNotLogAnError()
+        {
+            // Arrange - the first catch arm is the only thing that keeps a superseded operation silent.
+            Func<Task> action = () => throw new OperationCanceledException();
+
+            // Act
+            var log = await LogCapture.RunAsync(() => UiTaskRunner.RunAsync(action, Context));
+
+            // Assert
+            Assert.DoesNotContain("Async UI handler failed", log);
+            Assert.DoesNotContain(Context, log);
+        }
+
+        [Fact]
         public async Task RunAsync_ActionThrowsException_CompletesWithoutThrowing()
         {
             // Arrange - any other failure is logged by the second arm and must not propagate.
