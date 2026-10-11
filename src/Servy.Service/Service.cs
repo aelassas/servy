@@ -2758,12 +2758,15 @@ namespace Servy.Service
 
                     if (childCount > 0)
                     {
-                        _logger?.Info($"Pre-stop scan found {childCount} active descendants for PID {parentPid}:");
-                        foreach (var child in initialChildren)
+                        var formattedChildren = initialChildren.Select(child =>
                         {
-                            _logger?.Info($"  - {child.Format()}");
-                            child.Dispose(); // Dispose immediately after logging to avoid handle leaks
-                        }
+                            var formatted = $"  - {child.Format()}";
+                            child.Dispose(); // Dispose immediately after formatting to avoid handle leaks
+                            return formatted;
+                        });
+
+                        var childrenList = string.Join(Environment.NewLine, formattedChildren);
+                        _logger?.Info($"Pre-stop scan found {childCount} active descendants for PID {parentPid}:{Environment.NewLine}{childrenList}");
                     }
                     else
                     {
