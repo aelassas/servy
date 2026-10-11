@@ -662,6 +662,23 @@ namespace Servy.Infrastructure.UnitTests.Data
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => repo.UpdateRestartAttemptsAsync("svc", -1, DateTime.UtcNow, TestContext.Current.CancellationToken));
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UpdateRestartAttemptsAsync_BlankName_ReturnsZeroWithoutWriting(string? name)
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateRestartAttemptsAsync(name, 3, DateTime.UtcNow, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(0, result);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [Fact]
         public async Task UpdateRestartAttemptsAsync_WritesTheCounterAndItsUtcTicks()
         {
