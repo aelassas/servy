@@ -220,7 +220,7 @@ namespace Servy.CLI
                         ShowServiceOptions
                         >(args)
                         .MapResult(
-                             async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
+                            async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
                             async (UninstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => uninstallCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
                             async (StartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => startCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
                             async (StopServiceOptions opts) => await ExecuteWithRuntimeAsync(() => stopCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
