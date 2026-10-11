@@ -1,7 +1,6 @@
 using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Servy.CLI.Commands;
-using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Runtime;
@@ -15,7 +14,6 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using static Servy.CLI.Helpers.Helper;
 
 namespace Servy.CLI
@@ -79,7 +77,8 @@ namespace Servy.CLI
             using (var cts = new CancellationTokenSource())
             {
                 // Hook Ctrl+C and Ctrl+Break
-                Console.CancelKeyPress += (s, e) => HandleCancelKeyPress(cts, () => e.Cancel = true, Console.Error);
+                ConsoleCancelEventHandler onCancel = (s, e) => HandleCancelKeyPress(cts, () => e.Cancel = true, Console.Error);
+                Console.CancelKeyPress += onCancel;
 
                 IAppDbContext? dbContext = null;
                 ProtectedKeyProvider? protectedKeyProvider = null;
@@ -259,6 +258,7 @@ namespace Servy.CLI
                 }
                 finally
                 {
+                    Console.CancelKeyPress -= onCancel;
                     TryRun(() => secureData?.Dispose(), nameof(secureData));
                     TryRun(() => protectedKeyProvider?.Dispose(), nameof(protectedKeyProvider));
                     TryRun(() => dbContext?.Dispose(), nameof(dbContext));
