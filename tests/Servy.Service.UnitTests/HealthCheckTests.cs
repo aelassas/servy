@@ -685,6 +685,38 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task CheckHealth_ChildExitedAndNoStartOptions_StopsWithoutRecovery()
+        {
+            // Arrange: _options is still null, as on a service that never finished OnStart
+            var service = _ctx.Build();
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(1);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetFailedChecks(0);
+
+            bool stopped = false;
+            service.OnStoppedForTest += () => stopped = true;
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert: shouldStop, not needsRecovery
+            Assert.True(stopped);
+            Assert.Equal(0, service.GetFailedChecks());
+            _ctx.Helper.Verify(h => h.RestartProcess(
+                It.IsAny<IProcessWrapper>(),
+                It.IsAny<StartProcessCallback>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<List<EnvironmentVariable>>(), It.IsAny<bool>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task CheckHealth_RestartAttemptsWrittenBeforeBoot_AnchorsCounterAndKeepsIt()
         {
             // Arrange: a year ago is before any plausible boot time, so the reboot-detection arm is taken
