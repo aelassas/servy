@@ -1129,6 +1129,67 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Start(), ignoreFailure ? Times.Once() : Times.Never());
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_PreLaunchSynchronousLaunchThrows_LogsPerIgnoreFailureWithTheException(bool ignoreFailure)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchIgnoreFailure = ignoreFailure,
+                PreLaunchRetryAttempts = 0
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            // The launch itself fails, which is the arm the exit-code tests above cannot reach.
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Throws(new InvalidOperationException("the hook executable could not be launched"));
+
+            // Act
+            _service.StartForTest();
+
+            // Assert: the severity follows PreLaunchIgnoreFailure, and the exception travels with the line
+            const string attemptFailed = "Pre-launch process attempt 1 failed.";
+            scopedLogger.Verify(l => l.Warn(attemptFailed, It.IsNotNull<Exception>()),
+                ignoreFailure ? Times.Once() : Times.Never());
+            scopedLogger.Verify(l => l.Error(attemptFailed, It.IsNotNull<Exception>()),
+                ignoreFailure ? Times.Never() : Times.Once());
+            _mockProcess.Verify(p => p.Start(), ignoreFailure ? Times.Once() : Times.Never());
+        }
+
+        [Fact]
+        public void StartPreLaunchProcess_ChildOutlivesOneWaitChunk_PulsesTheScm()
+        {
+            // Arrange: retries are off, so the back-off pulse cannot satisfy the assertion; only the launch heartbeat can
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchRetryAttempts = 0
+            };
+
+            var preLaunch = new Mock<IProcessWrapper>();
+            preLaunch.Setup(p => p.Start()).Returns(true);
+            preLaunch.SetupSequence(p => p.WaitForExit(It.IsAny<int>())).Returns(false).Returns(true);
+            preLaunch.Setup(p => p.ExitCode).Returns(0);
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(preLaunch.Object);
+
+            // Act
+            var result = (bool)TestReflection.InvokeNonPublic(_service, "StartPreLaunchProcess", options)!;
+
+            // Assert
+            Assert.True(result);
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, AppConfig.DefaultScmAdditionalTimeMs, null), Times.Once);
+        }
+
         [Fact]
         public void OnStart_PreLaunchSynchronousTornDownDuringBackOff_AbortsWithoutASecondAttempt()
         {
