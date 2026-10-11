@@ -1202,7 +1202,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Theory]
         [InlineData("https://hc-ping.com/12345678-abcd", "https://hc-ping.com/12345... [MASKED]")]
         [InlineData("http://internal-webhook/secretkeyhere", "http://internal-webhook/secre... [MASKED]")]
-        [InlineData("https://api.test.org/abcdef", "https://api.test.org/abcde... [MASKED]")] // "/abcdef" length is 7 -> hits Math.Min(5, 6)
+        [InlineData("https://api.test.org/abcdef", "https://api.test.org/abcde... [MASKED]")] // "/abcdef" length is 7 -> first 5 characters after the slash are kept
         public void MaskUrl_WhenLocalPathLengthIsGreaterThanSix_ShouldPreserveHostAndFivePathCharacters(string inputUrl, string expectedUrl)
         {
             // Act
