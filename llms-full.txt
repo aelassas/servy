@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-11T08:08:53Z
+> Generated on: 2026-10-11T08:09:37Z
 
 ---
 
@@ -7043,7 +7043,7 @@ A service wrapper is not just a starter script. In production, it is the heartbe
 
 The table below shows a feature comparison between Servy, NSSM, and WinSW.
 
-Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption (DPAPI, HKDF, AES-256 + HMAC-SHA256), and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
+Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated vault ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
 **Legend:** ✅ Full Support &nbsp;·&nbsp; ⚪ Partial / Basic Support &nbsp;·&nbsp; ❌ Not Supported
 
