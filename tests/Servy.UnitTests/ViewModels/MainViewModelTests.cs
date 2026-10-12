@@ -720,6 +720,23 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task OpenRuntimeVariablesLink_Calls_ServiceCommands_OpenRuntimeVariablesLinkAsync()
+        {
+            // Arrange
+            _serviceCommandsMock
+                .Setup(m => m.OpenRuntimeVariablesLinkAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _viewModel.OpenRuntimeVariablesLinkCommand.ExecuteAsync(null);
+
+            // Assert
+            _serviceCommandsMock.Verify(
+                m => m.OpenRuntimeVariablesLinkAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task ShowRecoveryActionHelpAsync_Calls_MessageBoxService()
         {
             await _viewModel.ShowRecoveryActionHelpCommand.ExecuteAsync(null);
