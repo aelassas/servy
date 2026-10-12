@@ -5,7 +5,7 @@ namespace Servy.Core.Config
 {
     /// <summary>
     /// Provides the core data-layer settings (connection string and AES key/IV file paths) that every
-    /// Servy process (Desktop, Manager, Service, Restarter, CLI) needs before it can open its
+    /// Servy process (Desktop, Manager, Service, Host, Restarter, CLI) needs before it can open its
     /// <see cref="Servy.Core.Data.IAppDbContext"/> or construct its <see cref="Servy.Core.Security.ProtectedKeyProvider"/>.
     /// </summary>
     /// <remarks>
