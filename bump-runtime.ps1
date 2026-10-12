@@ -7,6 +7,7 @@
 .DESCRIPTION
     This script recursively updates `netX.Y` target framework versions
     inside:
+    - Directory.Build.props
     - PowerShell scripts (*.ps1)
     - Inno Setup files (*.iss)
     - .csproj project files
@@ -95,14 +96,18 @@ $script:totalReplacements = 0
 
 # 1. Bulk file updates (PowerShell, Inno, Projects)
 $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex }
+    Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex -and $_.Name -notlike "*.test.ps1" }
 Update-FilesContent -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
-# 2. Explicitly-targeted files that must contain the version pattern (publish.yml TFM env)
+# 2. Shared SDK settings: the TFM is declared once in Directory.Build.props (no csproj carries its own)
+$propsFile = Join-Path $baseDir "Directory.Build.props"
+Update-FilesContent -Files @($propsFile) -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
+
+# 3. Explicitly-targeted files that must contain the version pattern (publish.yml TFM env)
 $workflowFiles = @($(Join-Path $baseDir ".github\workflows\publish.yml"))
 Update-FilesContent -Files $workflowFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
 
-# 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
+# 4. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
 $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
 $globalJsonReplacement = "`${1}$Version.$SdkPatch"

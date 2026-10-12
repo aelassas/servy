@@ -96,24 +96,34 @@ try {
 
     $mirrors = @(
         @{
-            Name    = 'Directory.Build.props <Version>'
-            Path    = $propsPath
-            Pattern = "<Version>$([regex]::Escape($expectedFull))</Version>"
+            Name     = 'Directory.Build.props <Version>'
+            Path     = $propsPath
+            Pattern  = "<Version>$([regex]::Escape($expectedFull))</Version>"
+            Expected = $expectedFull
         },
         @{
-            Name    = 'Directory.Build.props <FileVersion>'
-            Path    = $propsPath
-            Pattern = "<FileVersion>$([regex]::Escape($expectedFile))</FileVersion>"
+            Name     = 'Directory.Build.props <FileVersion>'
+            Path     = $propsPath
+            Pattern  = "<FileVersion>$([regex]::Escape($expectedFile))</FileVersion>"
+            Expected = $expectedFile
         },
         @{
-            Name    = 'Directory.Build.props <AssemblyVersion>'
-            Path    = $propsPath
-            Pattern = "<AssemblyVersion>$([regex]::Escape($expectedFile))</AssemblyVersion>"
+            Name     = 'Directory.Build.props <AssemblyVersion>'
+            Path     = $propsPath
+            Pattern  = "<AssemblyVersion>$([regex]::Escape($expectedFile))</AssemblyVersion>"
+            Expected = $expectedFile
         },
         @{
-            Name    = 'Servy.psd1'
-            Path    = Join-Path (Join-Path (Join-Path $repoRoot 'src') 'Servy.CLI') 'Servy.psd1'
-            Pattern = "ModuleVersion\s*=\s*'$([regex]::Escape($expectedFull))'"
+            Name     = 'Directory.Build.props <TargetFramework>'
+            Path     = $propsPath
+            Pattern  = "<TargetFramework>$([regex]::Escape($cfg.Tfm))</TargetFramework>"
+            Expected = $cfg.Tfm
+        },
+        @{
+            Name     = 'Servy.psd1'
+            Path     = Join-Path (Join-Path (Join-Path $repoRoot 'src') 'Servy.CLI') 'Servy.psd1'
+            Pattern  = "ModuleVersion\s*=\s*'$([regex]::Escape($expectedFull))'"
+            Expected = $expectedFull
         }
     )
 
@@ -124,11 +134,11 @@ try {
         }
 
         if ((Get-Content $mirror.Path -Raw) -notmatch $mirror.Pattern) {
-            Write-Host "FAIL: $($mirror.Name) does not carry version $expectedFull, but build-config.ps1 Version is '$($cfg.Version)'; bump-version.ps1 keeps the two in step." -ForegroundColor Red
+            Write-Host "FAIL: $($mirror.Name) does not carry $($mirror.Expected), but build-config.ps1 Version/Tfm is '$($cfg.Version)'/'$($cfg.Tfm)'; bump scripts keep them in step." -ForegroundColor Red
             exit 1
         }
 
-        Write-Host "  [OK] $($mirror.Name) agrees on $expectedFull" -ForegroundColor Gray
+        Write-Host "  [OK] $($mirror.Name) agrees on $($mirror.Expected)" -ForegroundColor Gray
     }
 
     # Tfm has the same single-source contract as Version, kept the other way round: every
