@@ -149,6 +149,7 @@ namespace Servy.Service
         /// loading <c>appsettings.service.json</c>. The wrapper opens no database and sets up no
         /// cryptography; it reads its configuration through the Servy host named pipe.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         public Service() : this(
             new Helpers.ServiceHelper(new CommandLineProvider(), new ProcessHelper()),
             new EventLogLogger(AppConfig.EventSource),
