@@ -248,12 +248,18 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct PROCESS_BASIC_INFORMATION
         {
-            public IntPtr Reserved1;       // ExitStatus
+            /// <summary>Exit status of the process (NTSTATUS), padded to pointer size.</summary>
+            public IntPtr Reserved1;
+            /// <summary>Address of the process environment block (PEB).</summary>
             public IntPtr PebBaseAddress;
-            public IntPtr Reserved2_0;     // AffinityMask
-            public IntPtr Reserved2_1;     // BasePriority
+            /// <summary>Affinity mask of the process.</summary>
+            public IntPtr Reserved2_0;
+            /// <summary>Base priority of the process, padded to pointer size.</summary>
+            public IntPtr Reserved2_1;
+            /// <summary>Identifier of the process.</summary>
             public IntPtr UniqueProcessId;
-            public IntPtr InheritedFromUniqueProcessId; // Reserved3
+            /// <summary>Identifier of the process that created this process.</summary>
+            public IntPtr InheritedFromUniqueProcessId;
         }
 
         /// <summary>Defines common process access rights.</summary>
@@ -269,13 +275,16 @@ namespace Servy.Core.Native
         /// <summary>Information classes for NtQueryInformationProcess.</summary>
         public enum ProcessInfoClass
         {
+            /// <summary>Retrieves a <see cref="PROCESS_BASIC_INFORMATION"/> structure.</summary>
             ProcessBasicInformation = 0,
         }
 
         /// <summary>Represents console control signal types.</summary>
         public enum CtrlEvents : uint
         {
+            /// <summary>Generates a CTRL+C signal.</summary>
             CTRL_C_EVENT = 0,
+            /// <summary>Generates a CTRL+BREAK signal.</summary>
             CTRL_BREAK_EVENT = 1,
         }
 
@@ -675,7 +684,9 @@ namespace Servy.Core.Native
         /// <summary>LSA Policy database access rights.</summary>
         public static class POLICY_ACCESS
         {
+            /// <summary>Access right to translate names to SIDs and the reverse; required to enumerate or add account rights.</summary>
             public const uint POLICY_LOOKUP_NAMES = 0x00000800;
+            /// <summary>Access right to create an LSA account object; required to add rights to an account that has none yet.</summary>
             public const uint POLICY_CREATE_ACCOUNT = 0x00000010;
         }
 
