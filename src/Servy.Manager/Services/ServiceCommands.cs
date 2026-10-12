@@ -187,7 +187,7 @@ namespace Servy.Manager.Services
                 service,
                 d => d.StartAsync(cancellationToken),
                 ServiceStatus.Running,
-                Core.Resources.Strings.Msg_ServiceStarted,
+                string.Format(Core.Resources.Strings.Msg_ServiceStarted, service?.Name),
                 checkDisabled: true,
                 showMessageBox: showMessageBox,
                 cancellationToken: cancellationToken);
@@ -197,7 +197,7 @@ namespace Servy.Manager.Services
             ExecuteServiceCommandAsync(service,
                 d => d.StopAsync(cancellationToken),
                 ServiceStatus.Stopped,
-                Core.Resources.Strings.Msg_ServiceStopped,
+                string.Format(Core.Resources.Strings.Msg_ServiceStopped, service?.Name),
                 checkDisabled: false,
                 showMessageBox: showMessageBox,
                 cancellationToken: cancellationToken);
@@ -207,7 +207,7 @@ namespace Servy.Manager.Services
             ExecuteServiceCommandAsync(service,
                 d => d.RestartAsync(cancellationToken),
                 ServiceStatus.Running,
-                Core.Resources.Strings.Msg_ServiceRestarted,
+                string.Format(Core.Resources.Strings.Msg_ServiceRestarted, service?.Name),
                 checkDisabled: true,
                 showMessageBox: showMessageBox,
                 cancellationToken: cancellationToken);
@@ -315,7 +315,7 @@ namespace Servy.Manager.Services
 
                     if (exists)
                     {
-                        var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption);
+                        var result = await _messageBoxService.ShowConfirmAsync(string.Format(Strings.Msg_ServiceAlreadyExists, service.Name), UiAppConfig.Caption);
                         if (!result)
                         {
                             return false;
@@ -350,7 +350,7 @@ namespace Servy.Manager.Services
                     }
 
                     service.IsInstalled = true;
-                    await _messageBoxService.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption);
+                    await _messageBoxService.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceInstalled, service.Name), UiAppConfig.Caption);
                     return true;
                 }
                 catch (OperationCanceledException)
@@ -377,7 +377,7 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(string.Format(Strings.Msg_UninstallServiceConfirm, service.Name), UiAppConfig.Caption);
                     if (!confirm) return false;
 
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
@@ -424,7 +424,7 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(string.Format(Strings.Msg_RemoveServiceConfirm, service.Name), UiAppConfig.Caption);
                     if (!confirm) return false;
 
                     // 1. Confirm the row still exists before attempting the delete
@@ -848,7 +848,7 @@ namespace Servy.Manager.Services
                 var existing = await _serviceRepository.GetByNameAsync(dto.Name, decrypt: false, cancellationToken);
                 if (existing != null)
                 {
-                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(string.Format(Strings.Msg_ImportServiceConfirmation, dto.Name), UiAppConfig.Caption);
                     if (!confirm) return;
                 }
 

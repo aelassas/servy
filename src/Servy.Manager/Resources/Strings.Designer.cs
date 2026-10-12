@@ -2257,7 +2257,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
+        ///   Looks up a localized string similar to A service &apos;{0}&apos; with this name already exists. Would you like to replace it?
         ///
         ///You need to click Install after importing and restart the service for changes to take effect.
         ///If the service is disabled and marked for deletion, the installation will fail until you restart the computer..
@@ -2323,7 +2323,9 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered..
+        ///   Looks up a localized string similar to Are you sure you want to remove the service &apos;{0}&apos;?
+        ///
+        ///All service configuration will be permanently lost and cannot be recovered..
         /// </summary>
         public static string Msg_RemoveServiceConfirm {
             get {
@@ -2350,7 +2352,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
+        ///   Looks up a localized string similar to A service &apos;{0}&apos; with this name already exists. Would you like to replace it?
         ///
         ///If the service is disabled and marked for deletion, the installation will fail until you restart the computer..
         /// </summary>
@@ -2388,7 +2390,9 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered..
+        ///   Looks up a localized string similar to Are you sure you want to uninstall the service &apos;{0}&apos;?
+        ///
+        ///All service configuration will be permanently lost and cannot be recovered..
         /// </summary>
         public static string Msg_UninstallServiceConfirm {
             get {

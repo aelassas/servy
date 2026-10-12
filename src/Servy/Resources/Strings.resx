@@ -436,7 +436,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <data name="Msg_ServiceRemoved" xml:space="preserve">
-    <value>Service was removed successfully.</value>
+    <value>Service '{0}' was removed successfully.</value>
   </data>
   <data name="Msg_AdminRightsRequired" xml:space="preserve">
     <value>Administrator privileges are required.</value>

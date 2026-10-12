@@ -360,7 +360,7 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
-                _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(true);
+                _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ImportServiceConfirmation, dto.Name), UiAppConfig.Caption)).ReturnsAsync(true);
                 _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
                 // Act
@@ -369,7 +369,7 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ImportServiceConfirmation, dto.Name), UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>()), Times.Once);
                 _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Once);
                 Assert.True(_refreshCalled);
@@ -400,7 +400,7 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
-                _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption)).ReturnsAsync(false);
+                _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ImportServiceConfirmation, dto.Name), UiAppConfig.Caption)).ReturnsAsync(false);
 
                 // Act
                 await sut.ImportXmlConfigAsync(CancellationToken.None);
@@ -408,7 +408,7 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>()), Times.Once);
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ImportServiceConfirmation, dto.Name), UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
             }
@@ -741,7 +741,7 @@ namespace Servy.Manager.UnitTests.Services
             Assert.Equal(ServiceStatus.Running, service.Status);
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync("Service was started successfully.", UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceStarted, service.Name), UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -799,7 +799,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
             Assert.Equal(ServiceStatus.Stopped, service.Status);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceStopped, service.Name), UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -823,7 +823,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
             Assert.Equal(ServiceStatus.Running, service.Status);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceRestarted, service.Name), UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -971,7 +971,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 // The success tail: the UI model is flipped and the user is told
                 Assert.True(service.IsInstalled);
-                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceInstalled, service.Name), UiAppConfig.Caption), Times.Once);
             }
             finally
             {
@@ -1006,7 +1006,7 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "AlreadyHereService" };
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(true);
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(false);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ServiceAlreadyExists, service.Name), UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
             var result = await sut.InstallServiceAsync(service, CancellationToken.None);
@@ -1107,7 +1107,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "GhostService" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_UninstallServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
 
             // Act
@@ -1124,7 +1124,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "UnstoppableService" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_UninstallServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = service.Name });
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(service.Name, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Service is marked for deletion hook lockout"));
 
@@ -1239,7 +1239,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "GhostRepoRecord" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_RemoveServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
 
             // Act
@@ -1256,7 +1256,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "LockedRowService" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_RemoveServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = service.Name });
             _serviceRepositoryMock.Setup(r => r.DeleteAsync(service.Name, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
@@ -1682,7 +1682,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "CancelledUninstall" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_UninstallServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
@@ -1699,7 +1699,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange - same seam as the cancellation test above, so the pair tells the two arms apart
             var sut = CreateServiceCommands();
             var service = new Service { Name = "CrashingUninstallService" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_UninstallServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("DB unavailable"));
 
@@ -1717,7 +1717,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "CancelledRemove" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_RemoveServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
@@ -1734,7 +1734,7 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange - same seam as the cancellation test above, so the pair tells the two arms apart
             var sut = CreateServiceCommands();
             var service = new Service { Name = "CrashingRemoveService" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_RemoveServiceConfirm, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("DB unavailable"));
 

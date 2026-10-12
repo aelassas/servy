@@ -970,7 +970,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service was installed successfully..
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was installed successfully..
         /// </summary>
         public static string Msg_ServiceInstalled {
             get {
@@ -1060,7 +1060,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service was restarted successfully..
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was restarted successfully..
         /// </summary>
         public static string Msg_ServiceRestarted {
             get {
@@ -1069,7 +1069,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service was started successfully..
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was started successfully..
         /// </summary>
         public static string Msg_ServiceStarted {
             get {
@@ -1078,7 +1078,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service was stopped successfully..
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was stopped successfully..
         /// </summary>
         public static string Msg_ServiceStopped {
             get {

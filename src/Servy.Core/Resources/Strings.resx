@@ -93,19 +93,19 @@
     <value>The provided heartbeat monitoring URL must be a well-formed absolute HTTP or HTTPS URL.</value>
   </data>
   <data name="Msg_ServiceInstalled" xml:space="preserve">
-    <value>Service was installed successfully.</value>
+    <value>Service '{0}' was installed successfully.</value>
   </data>
   <data name="Msg_UnexpectedError" xml:space="preserve">
     <value>An unexpected error occurred.</value>
   </data>
   <data name="Msg_ServiceStarted" xml:space="preserve">
-    <value>Service was started successfully.</value>
+    <value>Service '{0}' was started successfully.</value>
   </data>
   <data name="Msg_ServiceStopped" xml:space="preserve">
-    <value>Service was stopped successfully.</value>
+    <value>Service '{0}' was stopped successfully.</value>
   </data>
   <data name="Msg_ServiceRestarted" xml:space="preserve">
-    <value>Service was restarted successfully.</value>
+    <value>Service '{0}' was restarted successfully.</value>
   </data>
 
   <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">

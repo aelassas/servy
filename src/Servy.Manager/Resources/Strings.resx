@@ -334,13 +334,15 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <!-- Messages -->
-
-
   <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
-    <value>Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered.</value>
+    <value>Are you sure you want to uninstall the service '{0}'?
+
+All service configuration will be permanently lost and cannot be recovered.</value>
   </data>
   <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
-    <value>Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered.</value>
+    <value>Are you sure you want to remove the service '{0}'?
+
+All service configuration will be permanently lost and cannot be recovered.</value>
   </data>
   <data name="Msg_DesktopAppNotFound" xml:space="preserve">
     <value>Servy Desktop App not found.</value>
@@ -378,12 +380,12 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
-    <value>A service with this name already exists. Would you like to replace it?
+    <value>A service '{0}' with this name already exists. Would you like to replace it?
 
 If the service is disabled and marked for deletion, the installation will fail until you restart the computer.</value>
   </data>
   <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
-    <value>A service with this name already exists. Would you like to replace it?
+    <value>A service '{0}' with this name already exists. Would you like to replace it?
 
 You need to click Install after importing and restart the service for changes to take effect.
 If the service is disabled and marked for deletion, the installation will fail until you restart the computer.</value>
