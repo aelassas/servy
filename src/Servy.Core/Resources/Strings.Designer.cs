@@ -403,33 +403,6 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to deserialize service configuration from JSON content..
-        /// </summary>
-        public static string Msg_ImportJsonDeserializationFailed {
-            get {
-                return ResourceManager.GetString("Msg_ImportJsonDeserializationFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Failed to import service from JSON: {0}.
-        /// </summary>
-        public static string Msg_ImportJsonFailed {
-            get {
-                return ResourceManager.GetString("Msg_ImportJsonFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to JSON content cannot be null or empty..
-        /// </summary>
-        public static string Msg_ImportJsonNullOrEmpty {
-            get {
-                return ResourceManager.GetString("Msg_ImportJsonNullOrEmpty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to {0} payload exceeds the maximum allowed size of {1} MB..
         /// </summary>
         public static string Msg_ImportPayloadTooLarge {
@@ -444,33 +417,6 @@ namespace Servy.Core.Resources {
         public static string Msg_ImportStructureError {
             get {
                 return ResourceManager.GetString("Msg_ImportStructureError", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Failed to deserialize service configuration from XML content..
-        /// </summary>
-        public static string Msg_ImportXmlDeserializationFailed {
-            get {
-                return ResourceManager.GetString("Msg_ImportXmlDeserializationFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Failed to import service from XML: {0}.
-        /// </summary>
-        public static string Msg_ImportXmlFailed {
-            get {
-                return ResourceManager.GetString("Msg_ImportXmlFailed", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to XML content cannot be null or empty..
-        /// </summary>
-        public static string Msg_ImportXmlNullOrEmpty {
-            get {
-                return ResourceManager.GetString("Msg_ImportXmlNullOrEmpty", resourceCulture);
             }
         }
         
