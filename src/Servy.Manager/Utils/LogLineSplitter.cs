@@ -63,7 +63,7 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Gets the number of bytes currently held back as the unterminated trailing fragment.
         /// </summary>
-        /// <returns>The pending byte count, <c>0</c> when the last byte fed completed a line.</returns>
+        /// <value>The pending byte count, <c>0</c> when the last byte fed completed a line.</value>
         internal int PendingByteCount
         {
             get { return _pending.Count; }
