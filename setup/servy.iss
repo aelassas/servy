@@ -65,7 +65,8 @@ Compression=lzma/ultra
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 
-ArchitecturesAllowed=x64compatible
+; Allow launch on both x64 and ARM64 systems (runs via x64 emulation on ARM64)
+ArchitecturesAllowed=x64compatible arm64
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern dynamic
 
@@ -317,6 +318,21 @@ var
   v: Integer;
 begin
   Result := True;
+
+  // Inform ARM64 users that this installer uses x64 emulation (#7481)
+  if IsArm64 then
+  begin
+    v := MsgBox(
+      'This version of Servy (servy-' + ExpandConstant('{#MyAppVersion}') + '-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device. Do you want to continue?',
+      mbInformation,
+      MB_YESNO
+    );
+    if v <> IDYES then
+    begin
+      Result := False;
+      Exit;
+    end;
+  end;
 
   if not IsDotNet48Installed then
   begin
