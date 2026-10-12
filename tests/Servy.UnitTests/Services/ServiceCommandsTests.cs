@@ -1059,6 +1059,58 @@ namespace Servy.UnitTests.Services
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
+        [Fact]
+        public async Task ExportXmlConfig_ValidModel_WritesXmlAndDisplaysXmlSuccess()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var dto = new ServiceDto { Name = "XmlExportService", ExecutablePath = @"C:\Windows\System32\cmd.exe" };
+            using (var target = new TempFile(".xml"))
+            {
+                _dialogServiceMock.Setup(d => d.SaveXml(Resources.Strings.SaveFileDialog_XmlTitle)).Returns(target.Path);
+                _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+                _serviceConfigurationValidatorMock
+                    .Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(true);
+
+                // Act
+                await sut.ExportXmlConfigAsync("password", cancellationToken: CancellationToken.None);
+
+                // Assert
+                var written = File.ReadAllText(target.Path);
+                Assert.Contains("<Name>XmlExportService</Name>", written);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportXml_Success, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportJson_Success, It.IsAny<string>()), Times.Never);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task ExportJsonConfig_ValidModel_WritesJsonAndDisplaysJsonSuccess()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var dto = new ServiceDto { Name = "JsonExportService", ExecutablePath = @"C:\Windows\System32\cmd.exe" };
+            using (var target = new TempFile(".json"))
+            {
+                _dialogServiceMock.Setup(d => d.SaveJson(Resources.Strings.SaveFileDialog_JsonTitle)).Returns(target.Path);
+                _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+                _serviceConfigurationValidatorMock
+                    .Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(true);
+
+                // Act
+                await sut.ExportJsonConfigAsync("password", cancellationToken: CancellationToken.None);
+
+                // Assert
+                var written = File.ReadAllText(target.Path);
+                Assert.Contains("\"Name\": \"JsonExportService\"", written);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportJson_Success, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportXml_Success, It.IsAny<string>()), Times.Never);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            }
+        }
+
         #endregion
 
         #region ImportConfigAsync Security Gates and Catch Block Tests
