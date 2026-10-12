@@ -69,7 +69,8 @@ LZMANumFastBytes=273
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 
-ArchitecturesAllowed={#ArchAllowed}
+; Allow setup to start on all 64-bit platforms so InitializeSetup can show an explicit error instead of Inno's generic Windows version message (#7481)
+ArchitecturesAllowed=x64compatible arm64
 ArchitecturesInstallIn64BitMode={#ArchAllowed}
 WizardStyle=modern dynamic
 
@@ -318,6 +319,24 @@ var
   v: Integer;
 begin
   Result := True;
+
+  // Check for architecture mismatch to provide a clear error message (#7481)
+  #if Arch == "arm64"
+    if not IsArm64 then
+    begin
+      MsgBox('This installer is built for ARM64 systems. Please download and run the x64 installer (servy-' + ExpandConstant('{#MyAppVersion}') + '-x64-installer.exe).', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  #else
+    if IsArm64 then
+    begin
+      MsgBox('This installer is built for x64 systems. Please download and run the ARM64 installer (servy-' + ExpandConstant('{#MyAppVersion}') + '-arm64-installer.exe).', mbError, MB_OK);
+      Result := False;
+      Exit;
+    end;
+  #endif
+
   sInstalledVersion := GetInstalledVersion();
 
   if IsUpgrade() and (sInstalledVersion <> '') then
