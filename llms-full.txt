@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-12T16:35:45Z
+> Generated on: 2026-10-12T22:35:56Z
 
 ---
 
@@ -6910,7 +6910,7 @@ Out-of-process utility component dedicated to orchestrating service restarts. A 
 **Key Responsibilities:**
 * **Out-of-Process Execution:** Takes the target service name and optional log directory override via command-line arguments (`args[0]` and `args[1]`), decoupling the restart sequence from the stopping host process.
 * **SCM Lifecycle Orchestration:** Drives the SCM through Servy.Core's `IServiceControllerWrapper` (the `ServiceControllerWrapper` adapter over `System.ServiceProcess.ServiceController`), behind the `IServiceRestarter` interface, to issue stop commands, wait for complete service teardown, and execute a fresh start.
-* **Bootstrapping & Mitigation Controls:** Initializes an isolated event-log source, loads `appsettings.restarter.json` (configuring properties like `RestartTimeoutSeconds`), applies the SQLite CVE-2025-6965 mitigation check, and sets up dedicated service-scoped logging.
+* **Bootstrapping:** Initializes an isolated event-log source, loads `appsettings.restarter.json` (configuring properties like `RestartTimeoutSeconds`), and sets up dedicated service-scoped logging. It then asks the Service Control Manager for the service's executable and refuses a service that does not run a Servy wrapper (`Servy.Service.exe` or `Servy.Service.CLI.exe`).
 * **Exit Code Signaling:** Returns a non-zero exit code to report failure back to `ServiceHelper` if the service fails to transition within the configured timeout threshold.
 * **Bounded Lifespan:** Operates under a strict execution window - the host process force-kills the restarter if the orchestration exceeds 240 seconds.
 
