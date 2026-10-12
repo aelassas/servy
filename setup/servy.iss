@@ -323,7 +323,7 @@ begin
   if IsArm64 then
   begin
     v := MsgBox(
-      'This version of Servy (servy-' + ExpandConstant('{#MyAppVersion}') + '-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device. Do you want to continue?',
+      'This version of Servy (servy-' + ExpandConstant('{#MyAppVersion}') + '-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device.' + #13#10#13#10 + 'Do you want to continue?',
       mbInformation,
       MB_YESNO
     );
