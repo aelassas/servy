@@ -38,9 +38,9 @@ namespace Servy.Core.Validation
         /// <list type="bullet">
         /// <item>
         /// <description>
-        /// <b>Vital Requirements:</b> Checks for a null DTO, missing mandatory fields (Name, ExecutablePath)
-        /// and the service-name format. Each of these returns immediately, so the result carries that
-        /// error alone and no later stage runs.
+        /// <b>Vital Requirements:</b> Checks for a null DTO, missing mandatory fields (Name, ExecutablePath),
+        /// the service-name format and the name reserved for the Servy host service. Each of these returns
+        /// immediately, so the result carries that error alone and no later stage runs.
         /// </description>
         /// </item>
         /// <item>
