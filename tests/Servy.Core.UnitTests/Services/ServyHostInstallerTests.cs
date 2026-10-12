@@ -383,6 +383,77 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureInstalledAndRunningAsync_ScmCannotBeOpenedForTheReconfiguration_FailsAndTouchesNothing()
+        {
+            // Arrange: ReadRegistration opens the SCM once and finds the host registered; the second open fails
+            RegisteredAs($"\"{_hostExe}\"");
+            _api.SetupSequence(a => a.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(_handles.Scm(1))
+                .Returns(_handles.Scm(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to open Service Control Manager", result.ErrorMessage);
+            AssertNothingTouched();
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_HostServiceCannotBeOpenedForTheReconfiguration_FailsWithoutCreatingIt()
+        {
+            // Arrange: the SERVICE_QUERY_CONFIG open succeeds (registered as the host); the HostAccess open is refused for a reason other than "does not exist"
+            RegisteredAs($"\"{_hostExe}\"");
+            _api.Setup(a => a.OpenService(It.IsAny<SafeScmHandle>(), "Servy", HostAccess)).Returns(() => _handles.Service(0));
+            _errors.Setup(e => e.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to open the 'Servy' service", result.ErrorMessage);
+            AssertNothingTouched();
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_SetDescriptionFails_LogsAWarningAndStillSucceeds()
+        {
+            // Arrange: a new install whose description cannot be set
+            NotRegistered();
+            var created = _handles.Service(2);
+            _api.Setup(a => a.CreateService(It.IsAny<SafeScmHandle>(), "Servy", "Servy", HostAccess, (uint)SERVICE_WIN32_OWN_PROCESS, (uint)SERVICE_AUTO_START,
+                SERVICE_ERROR_NORMAL, $"\"{_hostExe}\"", null, IntPtr.Zero, null, null, null)).Returns(created);
+            _api.Setup(a => a.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny)).Returns(false);
+            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
+
+            // Act
+            var (result, log) = await LogCapture.RunAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Contains("Could not set the description", log);
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_ClearingTheDelayedStartFails_LogsAWarningAndStillSucceeds()
+        {
+            // Arrange: an existing install whose delayed start flag cannot be cleared
+            RegisteredAs($"\"{_hostExe}\"");
+            _api.Setup(a => a.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(false);
+            HostStatuses(ServiceControllerStatus.Running);
+
+            // Act
+            var (result, log) = await LogCapture.RunAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.True(result.IsSuccess, result.ErrorMessage);
+            Assert.Contains("Could not clear the delayed start", log);
+        }
+
+        [Fact]
         public async Task EnsureInstalledAndRunningAsync_ReconfigureRefused_FailsWithoutStarting()
         {
             // Arrange
@@ -636,6 +707,17 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.Null(ex);
             _host.Verify(h => h.Stop(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StopAsync_StopFailsForAnInstalledService_Propagates()
+        {
+            // Arrange: the status reads fine, so the service is installed; Stop itself is refused
+            HostStatuses(ServiceControllerStatus.Running);
+            _host.Setup(h => h.Stop()).Throws(new InvalidOperationException("cannot stop"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => Create().StopAsync(TestContext.Current.CancellationToken));
         }
 
         [Fact]
