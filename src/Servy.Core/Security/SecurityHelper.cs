@@ -221,7 +221,7 @@ namespace Servy.Core.Security
                 // otherwise a user could never run a service under a custom account, as CreateSecureDirectory
                 // is invoked during service start, desktop app and manager startup, and CLI operations.
                 if (rule.AccessControlType == AccessControlType.Allow &&
-                    BroadUnprivilegedSids.Contains(rule.IdentityReference as SecurityIdentifier))
+                    rule.IdentityReference is SecurityIdentifier ruleSid && IsBroadUnprivilegedSid(ruleSid))
                 {
                     security.RemoveAccessRule(rule);
                 }

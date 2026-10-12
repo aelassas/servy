@@ -430,7 +430,7 @@ namespace Servy.Core.Validation
 
                 foreach (FileSystemAccessRule rule in rules)
                 {
-                    if (SecurityHelper.BroadUnprivilegedSids.Contains(rule.IdentityReference as SecurityIdentifier))
+                    if (rule.IdentityReference is SecurityIdentifier ruleSid && SecurityHelper.IsBroadUnprivilegedSid(ruleSid))
                     {
                         if (rule.AccessControlType == AccessControlType.Allow)
                         {
