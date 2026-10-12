@@ -162,8 +162,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="..\..\packages\xunit.analyzers.2.1.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
-    <Analyzer Include="..\..\packages\xunit.analyzers.2.1.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
+    <Analyzer Include="..\..\packages\xunit.analyzers.2.2.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
+    <Analyzer Include="..\..\packages\xunit.analyzers.2.2.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
