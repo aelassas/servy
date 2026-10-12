@@ -37,7 +37,7 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 
-# Import newly extracted common functions first to make Assert-ServyVersion available
+# Import the common functions first so Assert-ServyVersion is available
 . (Join-Path $scriptDir "publish-common.ps1")
 
 # Load central defaults
