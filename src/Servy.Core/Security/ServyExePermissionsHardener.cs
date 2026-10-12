@@ -282,7 +282,7 @@ namespace Servy.Core.Security
             if (targetSid == null)
                 return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "the account could not be resolved on this machine or domain");
 
-            if (IsBroadGroup(targetSid))
+            if (SecurityHelper.IsBroadUnprivilegedSid(targetSid))
                 return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "it is a broad group (Everyone, Users or Authenticated Users)");
 
             if (targetSid.Equals(AdministratorsSid) || targetSid.Equals(LocalSystemSid))
@@ -464,7 +464,7 @@ namespace Servy.Core.Security
             if (targetSid == null)
                 return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "the account could not be resolved on this machine or domain");
 
-            if (IsBroadGroup(targetSid))
+            if (SecurityHelper.IsBroadUnprivilegedSid(targetSid))
                 return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "it is a broad group (Everyone, Users or Authenticated Users) that the hardening exists to remove");
 
             if (targetSid.Equals(AdministratorsSid) || targetSid.Equals(LocalSystemSid))
@@ -882,7 +882,7 @@ namespace Servy.Core.Security
                 foreach (FileSystemAccessRule rule in acl.GetAccessRules(true, false, typeof(SecurityIdentifier)))
                 {
                     var sid = (SecurityIdentifier)rule.IdentityReference;
-                    if (sid.Equals(targetSid) || (rule.AccessControlType == AccessControlType.Allow && IsBroadGroup(sid)))
+                    if (sid.Equals(targetSid) || (rule.AccessControlType == AccessControlType.Allow && SecurityHelper.IsBroadUnprivilegedSid(sid)))
                         acl.RemoveAccessRuleSpecific(rule);
                 }
 
@@ -1065,14 +1065,6 @@ namespace Servy.Core.Security
                 return -1;
             }
         }
-
-        /// <summary>
-        /// Determines whether a SID is Everyone, Users or Authenticated Users.
-        /// </summary>
-        /// <param name="sid">The SID to test.</param>
-        /// <returns><see langword="true"/> for one of the broad groups.</returns>
-        private static bool IsBroadGroup(SecurityIdentifier sid)
-            => SecurityHelper.BroadUnprivilegedSids.Any(broad => broad.Equals(sid));
     }
 
     /// <summary>
