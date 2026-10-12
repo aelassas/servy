@@ -91,6 +91,53 @@ namespace Servy.Manager.UnitTests.Services
             foreach (var sut in _created) sut.Dispose();
         }
 
+        #region Constructor Tests
+
+        /// <summary>
+        /// Verifies that passing null for any one of the twelve constructor dependencies throws an
+        /// <see cref="ArgumentNullException"/> whose <see cref="ArgumentException.ParamName"/> names that dependency.
+        /// </summary>
+        /// <param name="nullIndex">Zero-based position of the constructor argument passed as null.</param>
+        /// <param name="expectedParamName">The parameter name the guard must report.</param>
+        [Theory]
+        [InlineData(0, "serviceManager")]
+        [InlineData(1, "serviceRepository")]
+        [InlineData(2, "messageBoxService")]
+        [InlineData(3, "fileDialogService")]
+        [InlineData(4, "removeServiceCallback")]
+        [InlineData(5, "refreshCallback")]
+        [InlineData(6, "serviceConfigurationValidator")]
+        [InlineData(7, "xmlServiceValidator")]
+        [InlineData(8, "jsonServiceValidator")]
+        [InlineData(9, "appConfig")]
+        [InlineData(10, "processHelper")]
+        [InlineData(11, "dispatcher")]
+        public void Constructor_NullDependency_ThrowsArgumentNullExceptionNamingIt(int nullIndex, string expectedParamName)
+        {
+            // Arrange
+            ServiceCommands Build() => new ServiceCommands(
+                nullIndex == 0 ? null! : _serviceManagerMock.Object,
+                nullIndex == 1 ? null! : _serviceRepositoryMock.Object,
+                nullIndex == 2 ? null! : _messageBoxServiceMock.Object,
+                nullIndex == 3 ? null! : _fileDialogServiceMock.Object,
+                nullIndex == 4 ? null! : (Action<string>)(_ => { }),
+                nullIndex == 5 ? null! : (Func<Task>)(() => Task.CompletedTask),
+                nullIndex == 6 ? null! : _serviceConfigurationValidatorMock.Object,
+                nullIndex == 7 ? null! : _xmlServiceValidatorMock.Object,
+                nullIndex == 8 ? null! : _jsonServiceValidatorMock.Object,
+                nullIndex == 9 ? null! : _appConfigMock.Object,
+                nullIndex == 10 ? null! : _processHelperMock.Object,
+                nullIndex == 11 ? null! : _uiDispatcherMock.Object);
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(Build);
+
+            // Assert
+            Assert.Equal(expectedParamName, ex.ParamName);
+        }
+
+        #endregion
+
         #region Import/Export & Config Tests
 
         [Fact]
