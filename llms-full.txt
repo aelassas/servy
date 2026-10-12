@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-12T10:36:06Z
+> Generated on: 2026-10-12T16:35:45Z
 
 ---
 
@@ -3070,6 +3070,8 @@ Servy supports optional service dependencies, allowing a service to start only a
 Enter each service this service depends on by its service name (not the display name) on a new line or separate them with semicolons (`;`).
 
 This ensures that your service starts in the correct order and avoids errors if required services are not yet running.
+
+Servy always adds its own `Servy` host service to the list, so you never need to enter it; it appears in the dependency tree of every service Servy installs (see [Architecture](https://github.com/aelassas/servy/wiki/Architecture#servyhost-servy-service)).
 
 ## GUI
 
