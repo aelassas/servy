@@ -1363,7 +1363,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ExportXml_Success, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.ExportXml_Success, service.Name), UiAppConfig.Caption), Times.Once);
             }
         }
 
@@ -1390,7 +1390,7 @@ namespace Servy.Manager.UnitTests.Services
 
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ExportJson_Success, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.ExportJson_Success, service.Name), UiAppConfig.Caption), Times.Once);
             }
         }
 

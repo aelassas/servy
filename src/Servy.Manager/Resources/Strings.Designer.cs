@@ -1807,7 +1807,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JSON configuration exported successfully..
+        ///   Looks up a localized string similar to JSON configuration for service &apos;{0}&apos; exported successfully..
         /// </summary>
         public static string ExportJson_Success {
             get {
@@ -1816,7 +1816,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to XML configuration exported successfully..
+        ///   Looks up a localized string similar to XML configuration for service &apos;{0}&apos; exported successfully..
         /// </summary>
         public static string ExportXml_Success {
             get {

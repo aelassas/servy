@@ -469,7 +469,7 @@ namespace Servy.Manager.Services
                 getFilePath: () => _fileDialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
                 exportAction: ServiceExporter.ExportXml,
                 formatName: "XML",
-                successMessage: Strings.ExportXml_Success,
+                successMessage: string.Format(Strings.ExportXml_Success, service?.Name),
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
@@ -479,7 +479,7 @@ namespace Servy.Manager.Services
                 getFilePath: () => _fileDialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
                 exportAction: ServiceExporter.ExportJson,
                 formatName: "JSON",
-                successMessage: Strings.ExportJson_Success,
+                successMessage: string.Format(Strings.ExportJson_Success, service?.Name),
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
