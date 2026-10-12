@@ -37,7 +37,7 @@ namespace Servy.Core.Config
 
     /// <summary>
     /// Single source of truth for the connection string and AES key/IV file paths shared by every
-    /// Servy composition root (UI, Manager, Service, Restarter, CLI).
+    /// Servy composition root (UI, Manager, Service, Host, Restarter, CLI).
     /// </summary>
     /// <remarks>
     /// These settings are read-only: they are always the <see cref="AppConfig"/> defaults under
