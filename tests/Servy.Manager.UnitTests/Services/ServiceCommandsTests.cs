@@ -788,7 +788,7 @@ namespace Servy.Manager.UnitTests.Services
             Assert.Equal(ServiceStatus.Running, service.Status);
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceStarted, service.Name), UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync($"Service '{service.Name}' was started successfully.", UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
