@@ -327,10 +327,10 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Export JSON configuration</value>
   </data>
   <data name="ExportXml_Success" xml:space="preserve">
-    <value>XML configuration exported successfully.</value>
+    <value>XML configuration for service '{0}' exported successfully.</value>
   </data>
   <data name="ExportJson_Success" xml:space="preserve">
-    <value>JSON configuration exported successfully.</value>
+    <value>JSON configuration for service '{0}' exported successfully.</value>
   </data>
 
   <!-- Messages -->
