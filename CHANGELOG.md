@@ -1,5 +1,55 @@
 # Changelog
 
+## [Servy 10.4](https://github.com/aelassas/servy/releases/tag/v10.4)
+
+**Date:** 2026-10-12 | **Tag:** [`v10.4`](https://github.com/aelassas/servy/tree/v10.4)
+
+Servy v10.4 introduces enhancements in **Servy Manager**, including the ability to show or hide columns in the Services and Logs grids by right-clicking on a column header, with preferences automatically persisted across sessions. Additionally, the **Description** column in the Services grid can now be resized and supports horizontal scrolling for better readability.
+
+This release also includes bug fixes, security patches, and documentation updates. The full changelog is listed below.
+
+### Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* feat(manager): persist services table column visibility state (right-click on a column header to show/hide columns) (#7412)
+* feat(manager): persist logs table column visibility state (right-click on a column header to show/hide columns) (#7412)
+* feat(manager): allow description column resizing and horizontal scrolling (#7412)
+* fix(core): ServiceDto.cs - AllowOverriddenRuntimeVars is the only optional property with no ShouldSerialize hook, though the block comment names only Name and ExecutablePath as exceptions (#7413)
+* fix(core): AppConfig.cs - DbBatchIdSyncChunkSize lost its last reader when #7376 removed UpsertBatchAsync and its ID-sync loop (#7416)
+* fix(core): ServyExePermissionsHardener.cs - GetWritableFolderFileRights ignores its relativePath parameter (#7437)
+* fix(core): ServyExePermissionsHardener.cs - the revocation purges a former service account's ACEs but leaves it the owner of the log files it created, so its implicit WRITE_DAC lets it re-grant itself access (#7442)
+* fix(core): EventLogLogger.cs - ScopedEventLogLogger's whitespace guards in SanitizePrefixSegment (525) and Format (538) are unreachable (#7450)
+* fix(infra): ServiceRepository.cs - the try/catch around field.Set(dto, null) in HandleCorruptServiceDecryption cannot catch anything, every target is an auto-property (#7460)
+* fix(service): consolidate active descendant process logging into a single message
+* fix(service): ProcessLauncher.cs - Start's catch-all logs 'Failed during synchronous execution or log flushing' for a FireAndForget or never-started launch, where Win32Exception from process.Start() is the real cause (#7421)
+* fix(desktop): ServiceCommands.cs (Servy) - OpenRuntimeVariablesLinkAsync discards the Process that IProcessHelper.Start returns, while OpenManagerAsync and HelpService.OpenExternalUrl dispose theirs (#7422)
+* fix(manager): decrease bottom scroll threshold for resume in console tab
+* fix(manager): MainWindow.xaml (Manager) - the Description column and its cell TextBlock are the only two elements whose attribute continuation lines are not aligned under the element name, a residual of #6076 (#7424)
+* fix(manager): LogLine.cs - the static _nextId counter and the public Id it feeds are written on every line and read by nothing (#7456)
+* fix(cli): Program.cs (Servy.CLI) - RunAsync never unsubscribes its Console.CancelKeyPress handler, which keeps cancelling a CancellationTokenSource the using block has disposed (#7472)
+* fix(psm1): Servy.psm1 - the -EnvVars and -PreLaunchEnv format errors tell the user to escape a double quote as \\" while the parser and the CLI help use \" (#7417)
+* fix(psm1): Servy.psm1 - Install-ServyService passes HeartbeatUrl on the servy-cli command line and Format-SecureLogMessage does not mask it, although the service masks the same URL in every log line (#7428)
+* fix(bump-runtime.ps1): the TargetFramework now lives only in Directory.Build.props, which no bump step targets, so a runtime bump reports success and leaves every project on the old TFM (#7480)
+* ci(loc.yml): actions/checkout is the only action in .github/ pinned to a mutable tag (v4), in a job that holds contents: write (#7478)
+* chore(deps): update dependencies
+
+</details>
+
+### Downloads
+* [servy-10.4-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-arm64-installer.exe) - 115.51 MB
+* [servy-10.4-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-arm64-portable.7z) - 116.93 MB
+* [servy-10.4-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-net48-sbom.xml) - 0.03 MB
+* [servy-10.4-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-net48-x64-installer.exe) - 4.45 MB
+* [servy-10.4-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-net48-x64-portable.7z) - 2.17 MB
+* [servy-10.4-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-sbom.xml) - 0.04 MB
+* [servy-10.4-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-x64-installer.exe) - 122.25 MB
+* [servy-10.4-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.4/servy-10.4-x64-portable.7z) - 120.70 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.4.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.4.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.3...v10.4
+
 ## [Servy 10.3](https://github.com/aelassas/servy/releases/tag/v10.3)
 
 **Date:** 2026-10-09 | **Tag:** [`v10.3`](https://github.com/aelassas/servy/tree/v10.3)
