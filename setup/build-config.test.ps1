@@ -183,7 +183,7 @@ try {
     Write-Host "  [OK] $($tfmConsumers.Count) scripts take -Tfm and none carries its own copy of $($cfg.Tfm)" -ForegroundColor Gray
 
     # The set of shipped executables is enumerated independently in three places, in three
-    # different orders: build.yml's $projects array, publish.yml's five build-and-sign step
+    # different orders: build.yml's $projects array, publish.yml's six build-and-sign step
     # groups (which stay as separate steps per #1037) and generate-sbom.ps1's $projects table.
     # Nothing ties them together, so adding a sixth executable to one and forgetting another is
     # silent - a binary that is built but never SBOM'd, or published but never ARM64-verified.
