@@ -190,12 +190,10 @@ begin
   // 1. Check 64-bit HKLM
   if not RegQueryStringValue(HKLM64, sUnInstPath, ValueName, sValue) then
   begin
-    // 2. Check HKCU
-    if not RegQueryStringValue(HKCU, sUnInstPath, ValueName, sValue) then
-    begin
-      // 3. Check 32-bit HKLM (HKLM32 automatically redirects SOFTWARE to WOW6432Node)
-      RegQueryStringValue(HKLM32, sUnInstPath, ValueName, sValue);
-    end;
+    // 2. Check 32-bit HKLM (HKLM32 automatically redirects SOFTWARE to WOW6432Node).
+    // HKCU is deliberately omitted: this setup runs elevated, so it writes to HKLM.
+    // Probing HKCU could allow non-elevated user processes to spoof an uninstall path (#7484).
+    RegQueryStringValue(HKLM32, sUnInstPath, ValueName, sValue);
   end;
 
   Result := sValue;
@@ -254,7 +252,7 @@ end;
 
 function UnInstallOldVersion(): Integer;
 var
-  sUnInstallString: String;
+  sUnInstallString, sExePath: String;
   iResultCode: Integer;
 begin
   Result := 0;
@@ -263,11 +261,19 @@ begin
 
   if sUnInstallString <> '' then
   begin
-    sUnInstallString := RemoveQuotes(sUnInstallString);
-    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, iResultCode) and (iResultCode = 0) then
-      Result := 3
+    sExePath := RemoveQuotes(sUnInstallString);
+    if FileExists(sExePath) then
+    begin
+      if Exec(sExePath, '/SILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, iResultCode) and (iResultCode = 0) then
+        Result := 3
+      else
+        Result := 2;
+    end
     else
+    begin
+      Log('Uninstall string executable does not exist: ' + sExePath);
       Result := 2;
+    end;
   end
   else
     Result := 1;
