@@ -33,7 +33,7 @@ param (
 $scriptDir = $PSScriptRoot
 $repoRoot  = (Resolve-Path -LiteralPath (Join-Path $scriptDir '..')).Path
 
-# Resolve OutputFile relative to the caller's current working directory before switching context
+# Resolve OutputFile relative to the caller's current working directory because every other path here is anchored on the script location
 $resolvedOutputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputFile)
 
 # Append the .0 patch component the CycloneDX schema requires

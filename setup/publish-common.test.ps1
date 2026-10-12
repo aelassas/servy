@@ -1,14 +1,16 @@
 ﻿#requires -Version 5.0
 <#
 .SYNOPSIS
-    Sanity tests for publish-common.ps1's two shared-data sites.
+    Sanity tests for publish-common.ps1's shared retry policy, Task Scheduler exclusion list and target framework moniker.
 
 .DESCRIPTION
     Invoke-BuildInstaller in publish-common.ps1 drives ISCC.exe through Invoke-WithRetry,
     the single retry policy that lives in common-helpers.ps1 beside Assert-LastExitCode.
     These tests pin the three things a second, hand-rolled copy of that loop would be free
     to drift on: where the surviving policy lives, how many attempts it makes, and the
-    failure message the caller finally sees.
+    failure message the caller finally sees. They also pin that the Task Scheduler
+    exclusion list is declared once and enforced by both of its consumers, and that the
+    target framework moniker is supplied by the caller rather than resolved a second time.
 #>
 
 $ErrorActionPreference = "Stop"
