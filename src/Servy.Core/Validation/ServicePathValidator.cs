@@ -21,6 +21,7 @@ namespace Servy.Core.Validation
         /// exists and is valid. <c>isFile</c> is <c>true</c> to validate the path as a file and <c>false</c> to validate
         /// it as a directory; it is taken from <see cref="ServicePathAttribute.IsFile"/>.</param>
         /// <returns>A <see cref="ServicePathViolation"/> detailing the failure, or <c>null</c> if valid.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when a property decorated with <see cref="ServicePathAttribute"/> is not a <see cref="string"/>.</exception>
         public static ServicePathViolation FindFirstViolation<T>(T target, Func<string, bool, bool> validatePath)
           => FindAllViolations(target, validatePath).FirstOrDefault();
 
@@ -34,6 +35,10 @@ namespace Servy.Core.Validation
         /// exists and is valid. <c>isFile</c> is <c>true</c> to validate the path as a file and <c>false</c> to validate
         /// it as a directory; it is taken from <see cref="ServicePathAttribute.IsFile"/>.</param>
         /// <returns>A collection of <see cref="ServicePathViolation"/> detailing all failures.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown, when the returned sequence is enumerated rather than when this method is called, if a property decorated with
+        /// <see cref="ServicePathAttribute"/> is not a <see cref="string"/>.
+        /// </exception>
         public static IEnumerable<ServicePathViolation> FindAllViolations<T>(T target, Func<string, bool, bool> validatePath)
         {
             if (target == null) yield break;
