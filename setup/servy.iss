@@ -331,9 +331,12 @@ begin
   #else
     if IsArm64 then
     begin
-      MsgBox('This installer is built for x64 systems. Please download and run the ARM64 installer (servy-' + ExpandConstant('{#MyAppVersion}') + '-arm64-installer.exe).', mbError, MB_OK);
-      Result := False;
-      Exit;
+      // Soft warning for running x64 installer under ARM64 emulation
+      if MsgBox('You are running the x64 installer on an ARM64 system. An ARM64-native version (servy-' + ExpandConstant('{#MyAppVersion}') + '-arm64-installer.exe) is available for optimal performance.' + #13#10#13#10 + 'Do you want to continue with the x64 installation anyway?', mbConfirmation, MB_YESNO) = IDNO then
+      begin
+        Result := False;
+        Exit;
+      end;
     end;
   #endif
 
