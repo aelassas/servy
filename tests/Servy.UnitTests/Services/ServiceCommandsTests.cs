@@ -281,7 +281,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceInstalled, dto.Name), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -295,7 +295,7 @@ namespace Servy.UnitTests.Services
 
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.IsServiceInstalled("ExistingService", It.IsAny<CancellationToken>())).Returns(true);
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(false);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Resources.Strings.Msg_ServiceAlreadyExists, dto.Name), UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
             var result = await sut.InstallServiceAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
@@ -314,7 +314,7 @@ namespace Servy.UnitTests.Services
 
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.IsServiceInstalled("ExistingServiceToOverwrite", It.IsAny<CancellationToken>())).Returns(true);
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Resources.Strings.Msg_ServiceAlreadyExists, dto.Name), UiAppConfig.Caption)).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
@@ -323,7 +323,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == "ExistingServiceToOverwrite"), It.IsAny<CancellationToken>()), Times.Once);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceInstalled, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceInstalled, dto.Name), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -914,7 +914,7 @@ namespace Servy.UnitTests.Services
             Assert.True(result);
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync("Service was started successfully.", UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceStarted, serviceName), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -934,7 +934,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceStopped, serviceName), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -958,7 +958,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.True(result);
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceDisabledError, UiAppConfig.Caption), Times.Never);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceStopped, serviceName), UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -1334,7 +1334,7 @@ namespace Servy.UnitTests.Services
 
             // Verify that the success info dialog box line was executed with the expected arguments
             _messageBoxServiceMock.Verify(m =>
-                m.ShowInfoAsync(Resources.Strings.Msg_ServiceRemoved, UiAppConfig.Caption),
+                m.ShowInfoAsync(string.Format(Resources.Strings.Msg_ServiceRemoved, serviceName), UiAppConfig.Caption),
                 Times.Once);
         }
 
@@ -1358,7 +1358,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             Assert.True(result);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceRestarted, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceRestarted, serviceName), UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]

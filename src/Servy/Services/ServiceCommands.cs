@@ -134,7 +134,7 @@ namespace Servy.Services
             {
                 if (_serviceManager.IsServiceInstalled(dto.Name, cancellationToken))
                 {
-                    var confirmExists = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
+                    var confirmExists = await _messageBoxService.ShowConfirmAsync(string.Format(Strings.Msg_ServiceAlreadyExists, dto.Name), Caption);
                     if (!confirmExists)
                     {
                         return false;
@@ -232,7 +232,7 @@ namespace Servy.Services
                     return false;
                 }
 
-                await _messageBoxService.ShowInfoAsync(Core.Resources.Strings.Msg_ServiceInstalled, Caption);
+                await _messageBoxService.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceInstalled, options.ServiceName), Caption);
                 return true;
             }
             catch (OperationCanceledException)
@@ -261,7 +261,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.UninstallServiceAsync(name, cancellationToken),
-                Strings.Msg_ServiceRemoved,
+                string.Format(Strings.Msg_ServiceRemoved, serviceName),
                 checkDisabled: false,
                 cancellationToken: cancellationToken);
 
@@ -270,7 +270,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true, cancellationToken: cancellationToken),
-                Core.Resources.Strings.Msg_ServiceStarted,
+                string.Format(Core.Resources.Strings.Msg_ServiceStarted, serviceName),
                 checkDisabled: true,
                 cancellationToken: cancellationToken);
 
@@ -279,7 +279,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true, cancellationToken: cancellationToken),
-                Core.Resources.Strings.Msg_ServiceStopped,
+                string.Format(Core.Resources.Strings.Msg_ServiceStopped, serviceName),
                 checkDisabled: false,
                 cancellationToken: cancellationToken);
 
@@ -288,7 +288,7 @@ namespace Servy.Services
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.RestartServiceAsync(name, logSuccessfulRestart: true, cancellationToken: cancellationToken),
-                Core.Resources.Strings.Msg_ServiceRestarted,
+                string.Format(Core.Resources.Strings.Msg_ServiceRestarted, serviceName),
                 checkDisabled: true,
                 cancellationToken: cancellationToken);
 

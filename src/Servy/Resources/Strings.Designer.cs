@@ -2484,7 +2484,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Service was removed successfully..
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was removed successfully..
         /// </summary>
         public static string Msg_ServiceRemoved {
             get {
