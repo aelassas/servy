@@ -305,6 +305,47 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
+        /// Each of the seven core dependencies is required, so a null one is rejected with its own parameter
+        /// name before any start-up call runs.
+        /// </summary>
+        /// <param name="nullIndex">The position of the dependency passed as <see langword="null"/>.</param>
+        /// <param name="expectedParamName">The parameter name the exception must report.</param>
+        [Theory]
+        [InlineData(0, "serviceHelper")]
+        [InlineData(1, "logger")]
+        [InlineData(2, "streamWriterFactory")]
+        [InlineData(3, "timerFactory")]
+        [InlineData(4, "processFactory")]
+        [InlineData(5, "pathValidator")]
+        [InlineData(6, "namedPipesService")]
+        public void Constructor_BootstrapOverload_NullDependency_ThrowsArgumentNullException(int nullIndex, string expectedParamName)
+        {
+            // Arrange
+            var serviceHelper = nullIndex == 0 ? null : _ctx.Helper.Object;
+            var logger = nullIndex == 1 ? null : _ctx.Logger.Object;
+            var streamWriterFactory = nullIndex == 2 ? null : _ctx.StreamWriterFactory.Object;
+            var timerFactory = nullIndex == 3 ? null : _ctx.TimerFactory.Object;
+            var processFactory = nullIndex == 4 ? null : _ctx.ProcessFactory.Object;
+            var pathValidator = nullIndex == 5 ? null : _ctx.PathValidator.Object;
+            var namedPipesService = nullIndex == 6 ? null : _ctx.NamedPipesService.Object;
+            var env = new FakeBootstrapEnvironment();
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => new Service(
+                serviceHelper!,
+                logger!,
+                streamWriterFactory!,
+                timerFactory!,
+                processFactory!,
+                pathValidator!,
+                namedPipesService!,
+                (IServiceBootstrapEnvironment)env));
+
+            // Assert
+            Assert.Equal(expectedParamName, ex.ParamName);
+        }
+
+        /// <summary>
         /// Builds a <see cref="TerminationRecordingService"/> wired to the shared mocks and the supplied
         /// bootstrap environment, and registers it for disposal.
         /// </summary>
