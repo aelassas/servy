@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-11T14:42:38Z
+> Generated on: 2026-10-12T10:36:06Z
 
 ---
 
@@ -2865,14 +2865,14 @@ This makes it possible to reference existing system variables, user-defined vari
 
 Servy uses a sophisticated expansion engine that allows variables to reference each other. The resolution follows this specific order:
 
-1. **System Environment:** All current system and process environment variables are loaded first. Since v10.2, the service first brings them up to date with the System variables in the registry (`HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`), so a System variable **added, changed or removed** in Windows is seen without restarting the machine - see the note below.
+1. **System Environment:** All current system and process environment variables are loaded first. Since v10.2, the service first brings them up to date with the System variables in the registry (`HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment`), so a System variable **added or changed** in Windows is seen without restarting the machine (a removed one is dropped by the apps only, not by the service) - see the note below.
 2. **Custom Overrides:** Variables defined in the **Environment Variables** field (or `--envVars`) are added next. If a custom variable has the same name as a system variable, the **custom value wins**.
 3. **Cross-Reference Expansion:** Finally, all variables are scanned for `%VAR%` placeholders. These placeholders are resolved using the final merged set of variables.
 
 > [!NOTE]
-> **New, changed and removed System variables (v10.2+).** Windows gives a process its environment when it starts, and a Windows service inherits the environment of the Service Control Manager, which is only built when the machine starts. Since v10.2, whenever Servy expands a `%VAR%` placeholder - in the paths, startup directories, parameters and environment variables above - it first reads the System variables from the registry and applies what changed. The read is read-only and needs no administrator rights, so it works for the service under any account and for the Desktop App, Servy Manager and the CLI alike.
+> **New and changed System variables (v10.2+).** Windows gives a process its environment when it starts, and a Windows service inherits the environment of the Service Control Manager, which is only built when the machine starts. Since v10.2, whenever Servy expands a `%VAR%` placeholder - in the paths, startup directories, parameters and environment variables above - it first reads the System variables from the registry and applies what changed. The read is read-only and needs no administrator rights, so it works for the service under any account and for the Desktop App, Servy Manager and the CLI alike.
 >
-> - **The service** (`Servy.Service.exe`): every System variable takes its current registry value, so an added, changed or removed variable reaches the service and its process the next time the service (or a hook) starts its process - restarting the service is enough, the machine does not need a restart. A variable also defined as a **User** variable of the service account keeps the User value, as in Windows, and `Path` is the System `Path` followed by the user's.
+> - **The service** (`Servy.Service.exe`): every System variable takes its current registry value, so an added or changed variable reaches the service and its process the next time the service (or a hook) starts its process - restarting the service is enough, the machine does not need a restart. A variable **removed** from the registry is not removed from the service: it keeps the value it inherited from the Service Control Manager, which is only rebuilt when the machine starts. A variable also defined as a **User** variable of the service account keeps the User value, as in Windows, and `Path` is the System `Path` followed by the user's.
 > - **The Desktop App, Servy Manager and the CLI**: the System variables are recorded when the app starts. A variable added later is picked up; a variable changed or removed later is picked up as long as the app still holds the value it started with. A value the app got from a **User** variable, or from the program or console that started it, is kept.
 > - Variables Windows sets per account (such as `USERNAME`, `USERPROFILE`, `APPDATA`) are never taken from the System key. User variables changed after start are not picked up; restart the app for those.
 
