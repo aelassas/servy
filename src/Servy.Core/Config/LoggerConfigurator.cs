@@ -6,7 +6,7 @@ namespace Servy.Core.Config
 {
     /// <summary>
     /// Centralizes the initialization and configuration of the Servy logging subsystem
-    /// to prevent configuration drift across the CLI, Restarter, Service, Manager and
+    /// to prevent configuration drift across the CLI, Restarter, Service, Host, Manager and
     /// Desktop entry points (the last two via <c>Servy.UI.AppBootstrapper</c>).
     /// </summary>
     public static class LoggerConfigurator
