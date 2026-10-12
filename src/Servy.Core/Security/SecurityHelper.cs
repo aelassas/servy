@@ -30,6 +30,14 @@ namespace Servy.Core.Security
         };
 
         /// <summary>
+        /// Determines whether a SID is Everyone, Users or Authenticated Users.
+        /// </summary>
+        /// <param name="sid">The SID to test.</param>
+        /// <returns><see langword="true"/> for one of the <see cref="BroadUnprivilegedSids"/>.</returns>
+        public static bool IsBroadUnprivilegedSid(SecurityIdentifier sid)
+            => BroadUnprivilegedSids.Any(broad => broad.Equals(sid));
+
+        /// <summary>
         /// Ensures a directory exists and applies a restrictive security descriptor to mitigate
         /// local privilege escalation (LPE) risks by limiting access to high-privileged accounts.
         /// </summary>

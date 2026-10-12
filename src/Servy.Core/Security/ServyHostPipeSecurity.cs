@@ -68,7 +68,7 @@ namespace Servy.Core.Security
 
             foreach (var sid in grantees ?? Enumerable.Empty<SecurityIdentifier>())
             {
-                if (sid == null || sid.Equals(LocalSystemSid) || sid.Equals(AdministratorsSid) || IsBroadGroup(sid))
+                if (sid == null || sid.Equals(LocalSystemSid) || sid.Equals(AdministratorsSid) || SecurityHelper.IsBroadUnprivilegedSid(sid))
                     continue;
 
                 security.AddAccessRule(new PipeAccessRule(sid, ClientRights, AccessControlType.Allow));
@@ -100,7 +100,7 @@ namespace Servy.Core.Security
                     continue;
                 }
 
-                if (IsBroadGroup(sid))
+                if (SecurityHelper.IsBroadUnprivilegedSid(sid))
                 {
                     Logger.Warn($"The account '{account}' is a broad group (Everyone, Users or Authenticated Users); it is not granted access to the Servy host named pipe.");
                     continue;
@@ -114,13 +114,5 @@ namespace Servy.Core.Security
 
             return result;
         }
-
-        /// <summary>
-        /// Determines whether a SID is Everyone, Users or Authenticated Users.
-        /// </summary>
-        /// <param name="sid">The SID to test.</param>
-        /// <returns><see langword="true"/> for one of the broad groups.</returns>
-        private static bool IsBroadGroup(SecurityIdentifier sid)
-            => SecurityHelper.BroadUnprivilegedSids.Any(broad => broad.Equals(sid));
     }
 }

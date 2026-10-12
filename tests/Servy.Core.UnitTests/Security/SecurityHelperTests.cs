@@ -24,6 +24,24 @@ namespace Servy.Core.UnitTests.Security
             Assert.Throws<ArgumentException>(() => SecurityHelper.CreateSecureDirectory(invalidPath));
         }
 
+        [Theory]
+        [InlineData(WellKnownSidType.BuiltinUsersSid, true)]
+        [InlineData(WellKnownSidType.AuthenticatedUserSid, true)]
+        [InlineData(WellKnownSidType.WorldSid, true)]
+        [InlineData(WellKnownSidType.BuiltinAdministratorsSid, false)]
+        [InlineData(WellKnownSidType.LocalSystemSid, false)]
+        public void IsBroadUnprivilegedSid_KnownSid_ReturnsWhetherItIsABroadGroup(WellKnownSidType sidType, bool expected)
+        {
+            // Arrange
+            var sid = new SecurityIdentifier(sidType, null);
+
+            // Act
+            var result = SecurityHelper.IsBroadUnprivilegedSid(sid);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         [Fact]
         public void CreateSecureDirectory_ExistingDirectory_UpgradesSecurity()
         {
