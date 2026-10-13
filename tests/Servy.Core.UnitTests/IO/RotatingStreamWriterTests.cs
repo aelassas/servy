@@ -1,7 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.IO;
-using Servy.Core.Logging;
 using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
 using System;
@@ -1864,39 +1863,23 @@ namespace Servy.Core.UnitTests.IO
             File.SetLastWriteTimeUtc(expired, DateTime.UtcNow.AddMinutes(-10));
             File.SetLastWriteTimeUtc(kept, DateTime.UtcNow);
 
-            string logName = "RetentionAlarmTestLog_" + Guid.NewGuid().ToString("N") + ".log";
-            string logPath = Path.Combine(AppConfig.LogsFolderPath, logName);
             string log;
             int failuresAfterPass;
 
-            try
+            using (var writer = new RotatingStreamWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1, false))
             {
-                using (var writer = new RotatingStreamWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1, false))
+                writer.Write(string.Empty); // trigger lazy init, as the sibling retention tests do
+
+                // maxRotations is 1, so the pass targets the oldest rotated file only. Holding it
+                // open with FileShare.None is what makes that single deletion fail.
+                using (new FileStream(expired, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
-                    writer.Write(string.Empty); // trigger lazy init, as the sibling retention tests do
+                    TestReflection.SetField(writer, "_consecutiveDeletionFailures", priorFailures);
 
-                    // maxRotations is 1, so the pass targets the oldest rotated file only. Holding it
-                    // open with FileShare.None is what makes that single deletion fail.
-                    using (new FileStream(expired, FileMode.Open, FileAccess.Read, FileShare.None))
-                    {
-                        TestReflection.SetField(writer, "_consecutiveDeletionFailures", priorFailures);
-                        Logger.Shutdown();
-                        Logger.Initialize(logName);
-
-                        // Act
-                        TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
-
-                        Logger.Shutdown();
-                        failuresAfterPass = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
-                    }
+                    // Act
+                    (_, log) = LogCapture.Run(() => TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations"));
+                    failuresAfterPass = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
                 }
-
-                log = File.Exists(logPath) ? File.ReadAllText(logPath) : string.Empty;
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(logPath)) File.Delete(logPath); } catch { /* best effort cleanup */ }
             }
 
             // Assert
@@ -1936,39 +1919,20 @@ namespace Servy.Core.UnitTests.IO
             Directory.CreateDirectory(logDir);
             string baseLog = Path.Combine(logDir, "enum.log");
 
-            string logName = "RetentionEnumTestLog_" + Guid.NewGuid().ToString("N") + ".log";
-            string logPath = Path.Combine(AppConfig.LogsFolderPath, logName);
-            string log;
-            int failuresAfterPass;
+            var writer = new RotatingStreamWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1, false);
+            writer.Write(string.Empty); // trigger lazy init, as the sibling retention tests do
+            writer.Dispose();           // release the handle so the directory can be removed
 
-            try
-            {
-                var writer = new RotatingStreamWriter(baseLog, true, 1000, false, DateRotationType.Daily, 1, false);
-                writer.Write(string.Empty); // trigger lazy init, as the sibling retention tests do
-                writer.Dispose();           // release the handle so the directory can be removed
+            // EnforceMaxRotations resolves the directory from _file and does not check _disposed, so with
+            // the directory gone Directory.GetFiles throws DirectoryNotFoundException on net10.0 and net48
+            // alike - no production seam needed.
+            Directory.Delete(logDir, true);
 
-                // EnforceMaxRotations resolves the directory from _file and does not check _disposed, so with
-                // the directory gone Directory.GetFiles throws DirectoryNotFoundException on net10.0 and net48
-                // alike - no production seam needed.
-                Directory.Delete(logDir, true);
+            TestReflection.SetField(writer, "_consecutiveDeletionFailures", priorFailures);
 
-                TestReflection.SetField(writer, "_consecutiveDeletionFailures", priorFailures);
-                Logger.Shutdown();
-                Logger.Initialize(logName);
-
-                // Act
-                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
-
-                Logger.Shutdown();
-                failuresAfterPass = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
-
-                log = File.Exists(logPath) ? File.ReadAllText(logPath) : string.Empty;
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(logPath)) File.Delete(logPath); } catch { /* best effort cleanup */ }
-            }
+            // Act
+            var (_, log) = LogCapture.Run(() => TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations"));
+            int failuresAfterPass = TestReflection.GetField<int>(writer, "_consecutiveDeletionFailures");
 
             // Assert
             Assert.Equal(priorFailures + 1, failuresAfterPass);

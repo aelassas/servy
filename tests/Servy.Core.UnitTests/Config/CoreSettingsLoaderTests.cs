@@ -2,6 +2,7 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -181,31 +182,16 @@ namespace Servy.Core.UnitTests.Config
             {
                 { "DefaultConnection", @"Data Source=D:\old\Servy.db" },
             };
-            var fileName = string.Format("CoreSettingsWarnTestLog_{0:N}.log", Guid.NewGuid());
-            var fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
 
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(fileName);
+            // Act
+            var (found, log) = LogCapture.Run(() => CoreSettingsLoader.WarnAboutIgnoredSettings(config, "Servy.CLI.exe.config"));
 
-                // Act
-                var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "Servy.CLI.exe.config");
-                Logger.Shutdown();
-
-                // Assert
-                Assert.Equal(new[] { "DefaultConnection" }, found);
-                var log = File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
-                Assert.Contains(
-                    "Servy.CLI.exe.config sets DefaultConnection, which Servy ignores since v10.2",
-                    log,
-                    StringComparison.Ordinal);
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
-            }
+            // Assert
+            Assert.Equal(new[] { "DefaultConnection" }, found);
+            Assert.Contains(
+                "Servy.CLI.exe.config sets DefaultConnection, which Servy ignores since v10.2",
+                log,
+                StringComparison.Ordinal);
         }
     }
 }
