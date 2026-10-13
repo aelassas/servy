@@ -1,6 +1,4 @@
 using Microsoft.Win32.SafeHandles;
-using Servy.Core.Config;
-using Servy.Core.Logging;
 using Servy.Core.Resources;
 using Servy.Core.UnitTests.Logging;
 using Servy.Core.Validation;
@@ -1194,29 +1192,15 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         /// <summary>
-        /// Points the static logger at a file of its own, runs <paramref name="act"/> and returns what
-        /// was written. <see cref="PathSecurityGuard.WarnIfDirectoryAclNotHardened"/> is diagnostic only,
-        /// so its log output is the only thing a test can observe.
+        /// Runs <paramref name="act"/> with the static logger redirected into a private temporary
+        /// directory and returns what it wrote. <see cref="PathSecurityGuard.WarnIfDirectoryAclNotHardened"/>
+        /// is diagnostic only, so its log output is the only thing a test can observe.
         /// </summary>
+        /// <param name="act">The call under test.</param>
+        /// <returns>The captured log text.</returns>
         private static string CaptureAclCheckLog(Action act)
         {
-            string fileName = $"AclCheckTestLog_{Guid.NewGuid():N}.log";
-            string fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
-
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(fileName);
-                act();
-                Logger.Shutdown();
-
-                return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
-            }
+            return LogCapture.Run(() => { act(); });
         }
 
         private static void SetBuiltinUsersAccessRule(string directoryPath, FileSystemRights rights)

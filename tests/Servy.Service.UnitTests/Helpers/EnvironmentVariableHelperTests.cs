@@ -1,7 +1,7 @@
 using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
-using Servy.Core.Logging;
 using Servy.Service.Helpers;
+using Servy.Testing;
 
 namespace Servy.Service.UnitTests.Helpers
 {
@@ -551,29 +551,15 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Points the static logger at a file of its own, runs <paramref name="act"/> and returns what was
-        /// written. The direct-cycle diagnosis has no return value, so its log output is the only thing a
-        /// test can observe.
+        /// Runs <paramref name="act"/> with the static logger redirected into a private temporary directory
+        /// and returns what it wrote. The direct-cycle diagnosis has no return value, so its log output
+        /// is the only thing a test can observe.
         /// </summary>
+        /// <param name="act">The call under test.</param>
+        /// <returns>The captured log text.</returns>
         private static string CaptureExpansionLog(Action act)
         {
-            string fileName = $"EnvVarExpansionTestLog_{Guid.NewGuid():N}.log";
-            string fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
-
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(fileName);
-                act();
-                Logger.Shutdown();
-
-                return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
-            }
+            return LogCapture.Run(() => { act(); });
         }
 
         private static int CountOccurrences(string haystack, string needle)

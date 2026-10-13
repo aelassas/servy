@@ -3,6 +3,7 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 using System.Reflection;
 
 namespace Servy.Core.UnitTests.Config
@@ -181,31 +182,16 @@ namespace Servy.Core.UnitTests.Config
                     { "ConnectionStrings:DefaultConnection", @"Data Source=D:\old\Servy.db" },
                 })
                 .Build();
-            string fileName = $"CoreSettingsWarnTestLog_{Guid.NewGuid():N}.log";
-            string fullPath = Path.Combine(AppConfig.LogsFolderPath, fileName);
 
-            try
-            {
-                Logger.Shutdown();
-                Logger.Initialize(fileName);
+            // Act
+            var (found, log) = LogCapture.Run(() => CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json"));
 
-                // Act
-                var found = CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json");
-                Logger.Shutdown();
-
-                // Assert
-                Assert.Equal(new[] { "ConnectionStrings:DefaultConnection" }, found);
-                var log = File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
-                Assert.Contains(
-                    "appsettings.cli.json sets ConnectionStrings:DefaultConnection, which Servy ignores since v10.2",
-                    log,
-                    StringComparison.Ordinal);
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(fullPath)) File.Delete(fullPath); } catch { }
-            }
+            // Assert
+            Assert.Equal(new[] { "ConnectionStrings:DefaultConnection" }, found);
+            Assert.Contains(
+                "appsettings.cli.json sets ConnectionStrings:DefaultConnection, which Servy ignores since v10.2",
+                log,
+                StringComparison.Ordinal);
         }
     }
 }
