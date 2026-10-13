@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-13T02:34:56Z
+> Generated on: 2026-10-13T21:04:28Z
 
 ---
 
@@ -15,7 +15,7 @@ Servy is a Windows tool that lets you run any executable as a Windows service, w
 
 The modern build supports **Windows 10 (1809+)**, **Windows 11**, and **Windows Server 2016+**. Legacy systems such as Windows 7 SP1 and Windows Server 2008 R2 are also supported via a dedicated **.NET Framework 4.8 build**. See the [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison) to choose the right version for your OS.
 
-Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security.md](https://github.com/aelassas/servy/wiki/Security) and [Architecture.md](https://github.com/aelassas/servy/wiki/Architecture) for details.
+Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
 > [!TIP]
 > Use the sidebar to browse installation guides, configuration options, and more.
