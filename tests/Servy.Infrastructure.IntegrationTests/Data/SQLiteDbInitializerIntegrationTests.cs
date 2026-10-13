@@ -226,6 +226,48 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void Initialize_Version3Database_WithIndexOnOrphanColumn_LogsTheFailedRestoreAndRollsBack()
+        {
+            // Arrange: a V3 table whose user index sits on a column ApplyVersion4 treats as an orphan,
+            // so the index cannot be re-created on the rebuilt table.
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 3);
+
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT NOT NULL", "OldOrphanData TEXT" };
+                var seedData = new Dictionary<string, string>
+                {
+                    { "Name", "'LegacyAgent'" },
+                    { "OldOrphanData", "'CriticalConfigToken_XYZ'" }
+                };
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+                conn.Execute($"CREATE INDEX idx_custom_orphan ON {SqlConstants.ServicesTableName}(OldOrphanData);");
+
+                // Act
+                SQLiteException? thrown = null;
+                var log = LogCapture.Run(() =>
+                {
+                    thrown = Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null));
+                });
+
+                // Assert: the original SQLite error surfaces and the whole migration is rolled back
+                Assert.Contains("OldOrphanData", thrown!.Message);
+                Assert.Equal(3, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
+                Assert.Contains("OldOrphanData", columns);
+
+                var objects = conn.Query<string>("SELECT name FROM sqlite_master;").ToList();
+                Assert.Contains("idx_custom_orphan", objects);
+                Assert.DoesNotContain("Services_v4", objects);
+                Assert.DoesNotContain($"{SqlConstants.ServicesTableName}_orphans_v4", objects);
+
+                // Assert: the failure arm names the index it could not restore
+                Assert.Contains("Failed to restore dependent index 'idx_custom_orphan'", log);
+            }
+        }
+
+        [Fact]
         public void Initialize_Version3Database_WithUserIndexAndTrigger_RestoresDependentsPostRebuild()
         {
             // Arrange: Seed V3 database and attach custom index and trigger to Services table
