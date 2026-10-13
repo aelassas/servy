@@ -428,6 +428,25 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task SearchAsync_WithKeywordInDifferentCase_StillMatches()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] Servy failed");
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Returns(new[] { fakeEvt });
+
+            var service = CreateService(mockReader);
+
+            // Act
+            var result = await service.SearchAsync(null, null, null, "SERVY FAILED", TestContext.Current.CancellationToken);
+
+            // Assert
+            var entry = Assert.Single(result);
+            Assert.Equal("[service] Servy failed", entry.Message);
+        }
+
+        [Fact]
         public async Task SearchAsync_MultipleEntries()
         {
             // Arrange
