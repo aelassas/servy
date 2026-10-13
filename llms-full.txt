@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-12T22:35:56Z
+> Generated on: 2026-10-13T02:34:56Z
 
 ---
 
@@ -6450,8 +6450,8 @@ To move Servy to a new PC, use [Servy-Dump.ps1 and Servy-Restore.ps1](https://gi
   * **Decryption Error:** This happens if the `.dat` files were moved from another computer, restored from an image, corrupted, or if the Windows `MachineGuid` was altered. Servy then refuses to save any service whose encrypted fields (`Password`, `Parameters`, `EnvironmentVariables`, `PreLaunchEnvironmentVariables` and the hook parameters `PreLaunchParameters`, `PostLaunchParameters`, `PreStopParameters`, `PostStopParameters`, `FailureProgramParameters`) cannot be decrypted, so they cannot be re-entered in place, and it never replaces an existing `aes_key.dat`. To recover:
     1. Do **not** delete or replace `aes_key.dat` or `aes_iv.dat`: a new key can never decrypt the existing database.
     2. Restore `%ProgramData%\Servy\security\aes_key.dat` and `aes_iv.dat` from a backup of **this** machine, then restart Servy.
-    3. Otherwise, copy `%ProgramData%\Servy\db\Servy.db` back to the original machine and export the service configurations to XML or JSON there. You can use [`Servy-Dump.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning.md) to perform the batch export.
-    4. Only then, on this machine, back up and delete `%ProgramData%\Servy\security` and `%ProgramData%\Servy\db`, and import the exported configurations (per *Critical Warning: Machine Migration*). Usernames and passwords are not exported and must be re-entered. You can use [`Servy-Restore.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning.md) to perform the batch import.
+    3. Otherwise, copy `%ProgramData%\Servy\db\Servy.db` back to the original machine and export the service configurations to XML or JSON there. You can use [`Servy-Dump.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) to perform the batch export.
+    4. Only then, on this machine, back up and delete `%ProgramData%\Servy\security` and `%ProgramData%\Servy\db`, and import the exported configurations (per *Critical Warning: Machine Migration*). Usernames and passwords are not exported and must be re-entered. You can use [`Servy-Restore.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) to perform the batch import.
 
 Servy v7.9+ automates the routine parts of Windows security - Access Control Lists (ACLs) and machine-bound key derivation - so a locked-down setup is the default rather than a manual checklist.
 
