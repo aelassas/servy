@@ -146,7 +146,7 @@ namespace Servy.Core.UnitTests.Services
                 AppConfig.EventLogName,
                 $"*[System[Provider[@Name='{AppConfig.EventSource}']]]",
                 true,
-                It.IsAny<int>()), Times.Once);
+                AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion), Times.Once);
         }
 
         [Fact]
