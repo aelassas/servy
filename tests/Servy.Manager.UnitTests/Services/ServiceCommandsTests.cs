@@ -1413,6 +1413,8 @@ namespace Servy.Manager.UnitTests.Services
                 await sut.ExportServiceToXmlAsync(service, TestContext.Current.CancellationToken);
 
                 // Assert
+                var written = File.ReadAllText(targetPath.Path);
+                Assert.Contains("<Name>XmlExportService</Name>", written);
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.ExportXml_Success, service.Name), UiAppConfig.Caption), Times.Once);
             }
@@ -1440,6 +1442,8 @@ namespace Servy.Manager.UnitTests.Services
                 await sut.ExportServiceToJsonAsync(service, TestContext.Current.CancellationToken);
 
                 // Assert
+                var written = File.ReadAllText(targetPath.Path);
+                Assert.Contains("\"Name\": \"JsonExportService\"", written);
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.ExportJson_Success, service.Name), UiAppConfig.Caption), Times.Once);
             }
