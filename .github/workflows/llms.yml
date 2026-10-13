@@ -28,11 +28,11 @@ on:
 permissions:
   contents: write
 
-# Serialise runs: a wiki save touching several pages fires several gollum events, and a second
-# run pushing from a stale checkout would be rejected as non-fast-forward. The newest run wins.
+# Serialise runs: a wiki save queueing behind an active run will wait
+# for it to finish rather than cancelling it.
 concurrency:
   group: llms
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   GIT_AUTHOR_NAME: "github-actions[bot]"
@@ -132,24 +132,25 @@ jobs:
       - name: Deploy llms-full.txt to Main Repository Root
         shell: bash
         run: |
-          # 1. Compare the body (everything after the 7-line generated header, which carries a
-          #    timestamp) with the committed copy, then copy the generated file to the repo root.
-          #    .gitattributes checks text files out with CRLF while the generated file has LF, so
-          #    line endings are ignored in the comparison.
-          if ! diff -q --strip-trailing-cr <(tail -n +8 llms-full.txt) <(tail -n +8 main-repo/llms-full.txt) >/dev/null 2>&1; then
+          cd main-repo
+          git config user.name "$GIT_AUTHOR_NAME"
+          git config user.email "$GIT_AUTHOR_EMAIL"
+
+          # 1. Pull latest changes first so local branch is up to date
+          git pull origin main --rebase
+
+          # 2. Compare generated body with the updated main-repo file
+          if ! diff -q --strip-trailing-cr <(tail -n +8 ../llms-full.txt) <(tail -n +8 llms-full.txt) >/dev/null 2>&1; then
             CHANGED=1
           else
             CHANGED=0
           fi
 
-          # 2. Sync remote changes first before committing to avoid rebase content conflicts on llms-full.txt
-          cd main-repo
-          git config user.name "$GIT_AUTHOR_NAME"
-          git config user.email "$GIT_AUTHOR_EMAIL"
+          # 3. Overwrite with the newly generated file
+          cp ../llms-full.txt llms-full.txt
 
+          # 4. Commit and push if changed
           if [ "$CHANGED" = 1 ]; then
-            git pull --rebase
-            cp ../llms-full.txt llms-full.txt
             git add llms-full.txt
             git commit -m "docs: sync llms-full.txt from wiki updates"
             git push
