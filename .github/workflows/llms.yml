@@ -169,27 +169,29 @@ jobs:
       - name: Deploy llms.txt and llms-full.txt to Website Repository
         shell: bash
         run: |
-          # 1. Ensure target directory exists
-          mkdir -p web-repo/public
-
-          # 2. Compare the body of llms-full.txt (everything after the 7-line generated header,
-          #    which carries a timestamp) and the whole of llms.txt with the committed copies,
-          #    ignoring line endings, then copy both files to public/ with LF line endings
-          CHANGED=0
-          if ! diff -q --strip-trailing-cr <(tail -n +8 llms-full.txt) <(tail -n +8 web-repo/public/llms-full.txt) >/dev/null 2>&1; then
-            CHANGED=1
-          fi
-          if ! diff -q --strip-trailing-cr main-repo/llms.txt web-repo/public/llms.txt >/dev/null 2>&1; then
-            CHANGED=1
-          fi
-
-          # 3. Commit and push if either file changed, pulling remote updates first to prevent rebase conflicts
           cd web-repo
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
 
+          # 1. Pull latest changes first so local branch is up to date
+          git pull --rebase
+
+          # 2. Ensure target directory exists
+          mkdir -p public
+
+          # 3. Compare the body of llms-full.txt (everything after the 7-line generated header,
+          #    which carries a timestamp) and the whole of llms.txt with the committed copies,
+          #    ignoring line endings
+          CHANGED=0
+          if ! diff -q --strip-trailing-cr <(tail -n +8 ../llms-full.txt) <(tail -n +8 public/llms-full.txt) >/dev/null 2>&1; then
+            CHANGED=1
+          fi
+          if ! diff -q --strip-trailing-cr ../main-repo/llms.txt public/llms.txt >/dev/null 2>&1; then
+            CHANGED=1
+          fi
+
+          # 4. Copy both files to public/ with LF line endings, then commit and push if changed
           if [ "$CHANGED" = 1 ]; then
-            git pull --rebase
             cp ../llms-full.txt public/llms-full.txt
             tr -d '\r' < ../main-repo/llms.txt > public/llms.txt
             git add public/llms.txt public/llms-full.txt
