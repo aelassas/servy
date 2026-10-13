@@ -1138,13 +1138,15 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "SaveMeService" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(false);
+            var prompt = string.Format(Strings.Msg_UninstallServiceConfirm, service.Name);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(prompt, UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
             var result = await sut.UninstallServiceAsync(service, CancellationToken.None);
 
             // Assert
             Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(prompt, UiAppConfig.Caption), Times.Once);
             _serviceRepositoryMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -1270,13 +1272,15 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "ProtectedRecord" };
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(false);
+            var prompt = string.Format(Strings.Msg_RemoveServiceConfirm, service.Name);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(prompt, UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
             var result = await sut.RemoveServiceAsync(service, CancellationToken.None);
 
             // Assert
             Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(prompt, UiAppConfig.Caption), Times.Once);
             _serviceRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
