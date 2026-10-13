@@ -2464,7 +2464,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
+        ///   Looks up a localized string similar to A service &apos;{0}&apos; with this name already exists. Would you like to replace it?
         ///
         ///If the service is disabled and marked for deletion, the installation will fail until you restart the computer..
         /// </summary>
