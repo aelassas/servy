@@ -193,7 +193,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_DetachesTheConsoleThroughTheSeam()
         {
             // Arrange
-            _ = ArrangeSuccessfulStart(out var service, handle: IntPtr.Zero, testMode: true);
+            _ = ArrangeSuccessfulStart(out var service, handle: IntPtr.Zero);
 
             // Act
             service.StartForTest();
@@ -207,7 +207,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_ZeroServiceHandle_LogsAndSetsTheServiceSpecificExitCode()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: IntPtr.Zero, testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: IntPtr.Zero);
 
             // Act
             TestReflection.InvokeNonPublic(service, "OnStart", new object?[] { Array.Empty<string>() });
@@ -222,7 +222,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_NonZeroServiceHandle_RegistersPreShutdownSupportThroughTheSeam()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234));
 
             // Act
             TestReflection.InvokeNonPublic(service, "OnStart", new object?[] { Array.Empty<string>() });
@@ -245,7 +245,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_PreShutdownRegistrationSucceeds_LogsTheNativeConfirmation()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234));
             var successLogged = ArrangeLogSignal(scopedLogger, l => l.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support natively enabled.", It.IsAny<Exception>()));
 
             // Act
@@ -260,7 +260,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_PreShutdownRegistrationFails_LogsTheSeamsWin32Error()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234));
             _scm.SetServiceStatusResult = false;
             _scm.LastWin32Error = 5;
             var failureLogged = ArrangeLogSignal(scopedLogger, l => l.Error("Failed to register PRESHUTDOWN support via native Win32. Error: 5", It.IsAny<Exception>()));
@@ -278,7 +278,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_TheNativeSeamReportsCancellation_LogsTheAbortedRegistration()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234));
             _scm.SetServiceStatusThrows = new OperationCanceledException();
             var abortLogged = ArrangeLogSignal(scopedLogger, l => l.Info("PRESHUTDOWN registration aborted due to service shutdown.", It.IsAny<Exception>()));
 
@@ -294,7 +294,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_TheNativeSeamThrows_LogsTheUnexpectedRegistrationError()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234));
             var failure = new InvalidOperationException("boom");
             _scm.SetServiceStatusThrows = failure;
             var errorLogged = ArrangeLogSignal(scopedLogger, l => l.Error("Unexpected error during PRESHUTDOWN registration.", failure));
@@ -311,7 +311,7 @@ namespace Servy.Service.UnitTests.Native
         public void OnStart_NotInTestMode_TearingDownDuringTheDelay_SkipsTheRegistration()
         {
             // Arrange
-            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234), testMode: false);
+            var scopedLogger = ArrangeSuccessfulStart(out var service, handle: new IntPtr(1234));
             var skipLogged = ArrangeLogSignal(scopedLogger, l => l.Info("Skipping PRESHUTDOWN registration: Service is already tearing down.", It.IsAny<Exception>()));
 
             // Act
@@ -352,12 +352,9 @@ namespace Servy.Service.UnitTests.Native
         /// </summary>
         /// <param name="service">Receives the service under test.</param>
         /// <param name="handle">The handle the overridden accessor returns.</param>
-        /// <param name="testMode">Unused by the arrangement; documents the caller's intent.</param>
         /// <returns>The scoped logger mock the service promotes to.</returns>
-        private Mock<IServyLogger> ArrangeSuccessfulStart(out HandleStubService service, IntPtr handle, bool testMode)
+        private Mock<IServyLogger> ArrangeSuccessfulStart(out HandleStubService service, IntPtr handle)
         {
-            _ = testMode;
-
             var options = new StartOptions
             {
                 ServiceName = "ScmSeamService",
