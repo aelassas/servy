@@ -152,7 +152,9 @@ function Show-Notification {
         $null = $toast.add_Failed({
             param($evtSender, $evtArgs)
             $failedRef.Value = $true
-            $failCode.Value  = [int]$evtArgs.ErrorCode
+            $ex = $evtArgs.ErrorCode
+            # ErrorCode is projected as System.Exception; its HResult carries the numeric code.
+            $failCode.Value  = if ($ex -is [System.Exception]) { [int]$ex.HResult } else { [int]$ex }
         })
 
         $notifier.Show($toast)
