@@ -429,6 +429,21 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
+        /// Handles the PreviewMouseRightButtonDown event for DataGrid rows.
+        /// Clears any existing row selection and selects the right-clicked row exclusively so context menu actions target the intended item.
+        /// </summary>
+        /// <param name="sender">The source of the event, expected to be a <see cref="DataGridRow"/>.</param>
+        /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing event data.</param>
+        private void DataGridRow_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DataGridRow row && row.DataContext is ServiceRowViewModel vm)
+            {
+                ServicesDataGrid.SelectedItems.Clear();
+                row.IsSelected = true;
+            }
+        }
+
+        /// <summary>
         /// Handles the <see cref="DataGridRow.MouseDoubleClick"/> event.
         /// Toggles the <see cref="ServiceRowViewModel.IsChecked"/> property when a row is double-clicked,
         /// which visually changes the row background through a style trigger.

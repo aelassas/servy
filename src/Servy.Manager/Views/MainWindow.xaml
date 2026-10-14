@@ -212,6 +212,84 @@
                 <Setter Property="IsSelected" Value="{Binding IsSelected}" />
 
                 <EventSetter Event="MouseDoubleClick" Handler="DataGridRow_MouseDoubleClick" />
+                <EventSetter Event="PreviewMouseRightButtonDown" Handler="DataGridRow_PreviewMouseRightButtonDown" />
+
+                <Setter Property="ContextMenu">
+                  <Setter.Value>
+                    <ContextMenu>
+                      <MenuItem Header="{x:Static resx:Strings.Button_Start}"
+                                Command="{Binding StartCommand}"
+                                IsEnabled="{Binding IsInstalled}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_StartServiceButton_Name}"
+                                AutomationProperties.AutomationId="RowContextStartMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_StartServiceButton_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_Stop}"
+                                Command="{Binding StopCommand}"
+                                IsEnabled="{Binding IsInstalled}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_StopServiceButton_Name}"
+                                AutomationProperties.AutomationId="RowContextStopMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_StopServiceButton_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_Restart}"
+                                Command="{Binding RestartCommand}"
+                                IsEnabled="{Binding IsInstalled}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_RestartServiceButton_Name}"
+                                AutomationProperties.AutomationId="RowContextRestartMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RestartServiceButton_HelpText}" />
+
+                      <Separator />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_Install}"
+                                Command="{Binding InstallCommand}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_RowInstallMenuItem_Name}"
+                                AutomationProperties.AutomationId="RowContextInstallMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowInstallMenuItem_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_Uninstall}"
+                                Command="{Binding UninstallCommand}"
+                                IsEnabled="{Binding IsInstalled}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_RowUninstallMenuItem_Name}"
+                                AutomationProperties.AutomationId="RowContextUninstallMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowUninstallMenuItem_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_Remove}"
+                                Command="{Binding RemoveCommand}"
+                                IsEnabled="{Binding IsInstalled, Converter={StaticResource InverseBooleanConverter}}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_RowRemoveMenuItem_Name}"
+                                AutomationProperties.AutomationId="RowContextRemoveMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowRemoveMenuItem_HelpText}" />
+
+                      <Separator />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_Config}"
+                                Command="{Binding ConfigureCommand}"
+                                IsEnabled="{Binding IsDesktopAppAvailable}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Automation_RowConfigMenuItem_Name}"
+                                AutomationProperties.AutomationId="RowContextConfigMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowConfigMenuItem_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}"
+                                Command="{Binding ExportXmlCommand}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Button_ExportXML}"
+                                AutomationProperties.AutomationId="RowContextExportXmlMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowExportXmlMenuItem_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_ExportJSON}"
+                                Command="{Binding ExportJsonCommand}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Button_ExportJSON}"
+                                AutomationProperties.AutomationId="RowContextExportJsonMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowExportJsonMenuItem_HelpText}" />
+
+                      <MenuItem Header="{x:Static resx:Strings.Button_CopyPid}"
+                                Command="{Binding CopyPidCommand}"
+                                IsEnabled="{Binding IsPidEnabled}"
+                                AutomationProperties.Name="{x:Static resx:Strings.Button_CopyPid}"
+                                AutomationProperties.AutomationId="RowContextCopyPidMenuItem"
+                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowCopyPidMenuItem_HelpText}" />
+                    </ContextMenu>
+                  </Setter.Value>
+                </Setter>
 
                 <Style.Triggers>
                   <Trigger Property="IsMouseOver" Value="True">
@@ -602,6 +680,8 @@
                                       AutomationProperties.AutomationId="RowRemoveMenuItem"
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowRemoveMenuItem_HelpText}" />
 
+                            <Separator />
+                            
                             <MenuItem Header="{x:Static resx:Strings.Button_Config}"
                                       Command="{Binding ConfigureCommand}"
                                       IsEnabled="{Binding IsDesktopAppAvailable}"
