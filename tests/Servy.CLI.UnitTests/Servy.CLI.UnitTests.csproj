@@ -130,6 +130,8 @@
     <Compile Include="ConsoleTestCollection.cs" />
     <Compile Include="Helpers\ConsoleHelperTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
+    <Compile Include="Helpers\ResultExtensionsTests.cs" />
+    <Compile Include="Models\CommandResultTests.cs" />
     <Compile Include="Options\SensitiveOptionsTests.cs" />
     <Compile Include="ProgramTests.cs" />
     <Compile Include="Runtime\FakeCliRuntime.cs" />
