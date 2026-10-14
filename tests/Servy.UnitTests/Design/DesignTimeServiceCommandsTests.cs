@@ -32,5 +32,21 @@ namespace Servy.UnitTests.Design
 
             Assert.Null(exception);
         }
+
+        [Fact]
+        public void OpenRuntimeVariablesLinkAsync_CompletesSynchronously()
+        {
+            // Arrange
+            var commands = new DesignTimeServiceCommands();
+            var ct = TestContext.Current.CancellationToken;
+
+            // Act
+            // Capture the task instead of awaiting it: awaiting an already-completed task asserts nothing,
+            // while synchronous completion is the property the designer depends on.
+            var task = commands.OpenRuntimeVariablesLinkAsync(cancellationToken: ct);
+
+            // Assert
+            Assert.Equal(TaskStatus.RanToCompletion, task.Status);
+        }
     }
 }
