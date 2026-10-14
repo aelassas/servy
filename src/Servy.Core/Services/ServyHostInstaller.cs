@@ -425,15 +425,7 @@ namespace Servy.Core.Services
             if (executable == null)
                 return false;
 
-            string fileName;
-            try
-            {
-                fileName = Path.GetFileName(executable);
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
+            var fileName = Path.GetFileName(executable);
 
             return HostExecutableNames.Contains(fileName, StringComparer.OrdinalIgnoreCase);
         }
