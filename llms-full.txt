@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-14T19:35:32Z
+> Generated on: 2026-10-14T21:35:15Z
 
 ---
 
@@ -6446,7 +6446,7 @@ To move Servy to a new PC, use [Servy-Dump.ps1 and Servy-Restore.ps1](https://gi
 ## Troubleshooting
 
   * **Access Denied on Startup:** This usually means the account running the service does not have permissions to the `%ProgramData%\Servy` folder. Refer to the Permissions Table above.
-  * **Service Cannot Load Its Configuration (v10.2+):** Check that the `Servy` service is installed and running (`sc.exe query Servy`), then read `%ProgramData%\Servy\logs\Servy.Host.log` and `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. Running the Desktop App, Servy Manager or any `servy-cli` command reinstalls and starts the `Servy` service if needed; reinstalling the service re-grants its account access to the named pipe.
+  * **Service Cannot Load Its Configuration (v10.2+):** Check that the `Servy` service is installed and running (`sc.exe query Servy`), then read `%ProgramData%\Servy\logs\Servy.Host.log` and `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. Running the Desktop App, Servy Manager or any `servy-cli` command reinstalls and starts the `Servy` service if needed; reinstalling the service re-grants its account access to the named pipe. The one exception is a service named `Servy` that does not run `Servy.Host.exe` or `Servy.Host.Net48.exe`, for example one installed under that name by an earlier version: Servy leaves it untouched and reports an error that names it, so the host service is not installed and the Servy services cannot load their configuration. Export that service, uninstall it, and import it under another name, then run any Servy command again. The same happens when the executable of the existing `Servy` service cannot be read.
   * **Decryption Error:** This happens if the `.dat` files were moved from another computer, restored from an image, corrupted, or if the Windows `MachineGuid` was altered. Servy then refuses to save any service whose encrypted fields (`Password`, `Parameters`, `EnvironmentVariables`, `PreLaunchEnvironmentVariables` and the hook parameters `PreLaunchParameters`, `PostLaunchParameters`, `PreStopParameters`, `PostStopParameters`, `FailureProgramParameters`) cannot be decrypted, so they cannot be re-entered in place, and it never replaces an existing `aes_key.dat`. To recover:
     1. Do **not** delete or replace `aes_key.dat` or `aes_iv.dat`: a new key can never decrypt the existing database.
     2. Restore `%ProgramData%\Servy\security\aes_key.dat` and `aes_iv.dat` from a backup of **this** machine, then restart Servy.
