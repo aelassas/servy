@@ -158,6 +158,9 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Column_Name" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="Column_DisplayName" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
   <data name="Column_Description" xml:space="preserve">
     <value>Description</value>
   </data>
@@ -579,6 +582,13 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
   <data name="Automation_NameColumnCell_HelpText" xml:space="preserve">
     <value>View the name of the service.</value>
+  </data>
+
+  <data name="Automation_DisplayNameColumnHeader_Name" xml:space="preserve">
+    <value>Display Name Column</value>
+  </data>
+  <data name="Automation_DisplayNameColumnCell_HelpText" xml:space="preserve">
+    <value>View the display name of the service.</value>
   </data>
 
   <data name="Automation_DescriptionColumnHeader_Name" xml:space="preserve">

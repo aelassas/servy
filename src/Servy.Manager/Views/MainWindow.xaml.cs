@@ -110,24 +110,42 @@ namespace Servy.Manager.Views
         /// </summary>
         private void RestoreColumnVisibilities()
         {
-            if (string.IsNullOrWhiteSpace(_appConfig.ServicesHiddenColumns)) return;
+            string displayNameHeader = Strings.Column_DisplayName;
+            string rawHidden = _appConfig.ServicesHiddenColumns ?? string.Empty;
 
             var hiddenSet = new HashSet<string>(
-                _appConfig.ServicesHiddenColumns.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                        .Select(s => s.Trim()),
+                rawHidden.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(s => s.Trim()),
                 StringComparer.OrdinalIgnoreCase);
 
+            bool needsMigration = !_appConfig.IsDisplayNameColumnMigrated;
+
+            // 1. Initial run / v10.5 migration check:
+            // Ensure Display Name starts hidden by adding it to hiddenSet before applying column visibilities.
+            if (needsMigration)
+            {
+                hiddenSet.Add(displayNameHeader);
+            }
+
+            // 2. Apply visibility across all columns in the DataGrid using the updated hiddenSet
             foreach (var column in ServicesDataGrid.Columns)
             {
-                string id = null;
-                if (column.Header is string headerText)
-                {
-                    id = headerText;
-                }
+                string id = column.Header as string;
 
-                if (!string.IsNullOrEmpty(id) && hiddenSet.Contains(id))
+                if (!string.IsNullOrEmpty(id))
                 {
-                    column.Visibility = Visibility.Collapsed;
+                    column.Visibility = hiddenSet.Contains(id) ? Visibility.Collapsed : Visibility.Visible;
+                }
+            }
+
+            // 3. Persist the complete grid state and set migration flag only after all column visibilities have been applied
+            if (needsMigration)
+            {
+                SaveColumnVisibilities();
+
+                if (Application.Current is App app)
+                {
+                    app.SaveIsDisplayNameColumnMigrated(true);
                 }
             }
         }

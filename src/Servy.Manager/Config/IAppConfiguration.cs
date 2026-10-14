@@ -77,5 +77,10 @@ namespace Servy.Manager.Config
         /// Gets the comma-separated list of column names that are hidden in the logs table.
         /// </summary>
         string LogsHiddenColumns { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the display name column visibility migration has been executed.
+        /// </summary>
+        bool IsDisplayNameColumnMigrated { get; }
     }
 }

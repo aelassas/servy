@@ -14,6 +14,11 @@ namespace Servy.Core.DTOs
         public string Name { get; set; }
 
         /// <summary>
+        /// Gets or sets the display name of the service.
+        /// </summary>
+        public string DisplayName { get; set; }
+
+        /// <summary>
         /// Gets or sets the current state of the service.
         /// Uses <see cref="ServiceStatus"/> enum.
         /// </summary>

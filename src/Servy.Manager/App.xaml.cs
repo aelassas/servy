@@ -60,6 +60,7 @@ namespace Servy.Manager
         private bool _isDesktopAppAvailable;
         private string _servicesHiddenColumns = string.Empty;
         private string _logsHiddenColumns = string.Empty;
+        private bool _isDisplayNameColumnMigrated;
 
         #endregion
 
@@ -175,6 +176,20 @@ namespace Servy.Manager
                 if (_logsHiddenColumns != value)
                 {
                     _logsHiddenColumns = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public bool IsDisplayNameColumnMigrated
+        {
+            get => _isDisplayNameColumnMigrated;
+            private set
+            {
+                if (_isDisplayNameColumnMigrated != value)
+                {
+                    _isDisplayNameColumnMigrated = value;
                     OnPropertyChanged();
                 }
             }
@@ -359,6 +374,7 @@ namespace Servy.Manager
 
                     ServicesHiddenColumns = config["ServicesHiddenColumns"] ?? string.Empty;
                     LogsHiddenColumns = config["LogsHiddenColumns"] ?? string.Empty;
+                    IsDisplayNameColumnMigrated = ConfigParser.ParseBool(config["IsDisplayNameColumnMigrated"], false, "IsDisplayNameColumnMigrated");
                 }
             };
 
@@ -485,6 +501,15 @@ namespace Servy.Manager
         {
             LogsHiddenColumns = logsHiddenColumns ?? string.Empty;
             PersistAppSetting("LogsHiddenColumns", LogsHiddenColumns);
+        }
+
+        /// <summary>
+        /// Updates the migration state for services grid columns and persists it to the configuration file.
+        /// </summary>
+        public void SaveIsDisplayNameColumnMigrated(bool isMigrated)
+        {
+            IsDisplayNameColumnMigrated = isMigrated;
+            PersistAppSetting("IsDisplayNameColumnMigrated", isMigrated.ToString().ToLowerInvariant());
         }
 
         #endregion

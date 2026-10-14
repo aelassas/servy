@@ -101,6 +101,11 @@ namespace Servy.Manager.ViewModels
         public string Name => Service.Name ?? string.Empty;
 
         /// <summary>
+        /// Gets the service display name, or an empty string when the model has none.
+        /// </summary>
+        public string DisplayName => Service.DisplayName ?? string.Empty;
+
+        /// <summary>
         /// Gets the description of the service, or an empty string when the model has none.
         /// </summary>
         public string Description => Service.Description ?? string.Empty;
