@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-13T21:04:28Z
+> Generated on: 2026-10-14T14:06:22Z
 
 ---
 
@@ -135,14 +135,14 @@ Here's a minimal example using the CLI to run a Node.js app as a Windows service
 
 ```powershell
 servy-cli install `
-  --name="MyService" `
+  --name="NodeApp" `
   --path="C:\Program Files\nodejs\node.exe" `
-  --startupDir="C:\MyServer" `
+  --startupDir="C:\apps\nodeapp" `
   --params="server.js" `
   --enableHealth
 ```
 
-This creates a service named `MyService` that runs your Node.js server in the background, starts automatically with Windows, and has [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery) enabled.
+This creates a service named `NodeApp` that runs your Node.js server in the background, starts automatically with Windows, and has [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery) enabled.
 
 Then start the service:
 
