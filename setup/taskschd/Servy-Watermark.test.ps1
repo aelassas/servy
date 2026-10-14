@@ -117,6 +117,25 @@ try {
     Write-Host "  [OK] Update-Watermark guards against stale-write regressions." -ForegroundColor Gray
 
     # ----------------------------------------------------
+    # Test 4b: Update-Watermark heals a corrupt watermark file
+    # ----------------------------------------------------
+    # Arrange
+    $corruptFile = Join-Path $tempDir "corrupt.txt"
+    Set-Content -Path $corruptFile -Value "not-a-timestamp" -Encoding UTF8
+    $healTime = [DateTime]::UtcNow.AddMinutes(-3)
+
+    # Act
+    Update-Watermark -TimestampFile $corruptFile -TimeCreated $healTime -ScriptDir $tempDir
+    $healed = Read-Watermark -TimestampFile $corruptFile
+
+    # Assert
+    if ($null -eq $healed -or [Math]::Abs(($healed - $healTime).TotalMilliseconds) -gt 1000) {
+        Write-Host "FAIL: Update-Watermark did not overwrite a corrupt watermark file (got '$healed')." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Update-Watermark heals a corrupt watermark file." -ForegroundColor Gray
+
+    # ----------------------------------------------------
     # Test 5: Write-FallbackError & Fallback Logging
     # ----------------------------------------------------
     $fallbackMsg = "Test fallback logging message"
