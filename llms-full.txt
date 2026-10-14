@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-14T14:10:43Z
+> Generated on: 2026-10-14T19:35:32Z
 
 ---
 
@@ -2197,7 +2197,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 | `SearchDebounceDelayMs` | `300` | Debounce window, in milliseconds, before the search box re-runs the filter in the Console tab. Bounded to `[100, 2000]`. |
 | `LogsWindowDays` | `3` | Number of days of Windows Event Log history shown in the Logs tab. Bounded to `[1, 30]`. |
 | `DesktopAppPublishPath` | `.\Servy.exe` | Path to the Servy desktop app launched from the Manager. Resolved relative to the Manager's base directory if not absolute. |
-| `ServicesHiddenColumns` | `""` | Comma-separated list of services-grid column headers hidden in the Manager's Services tab, for example `Description,Log On As`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (Description, Status, Startup Type, Log On As, PID, CPU, RAM). |
+| `ServicesHiddenColumns` | `""` | Comma-separated list of services-grid column headers hidden in the Manager's Services tab, for example `Description,Log On As`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (Display Name, Description, Status, Startup Type, Log On As, PID, CPU, RAM). The Display Name column is hidden by default: the first start of the Manager adds `Display Name` to this value. |
 | `LogsHiddenColumns` | `""` | Comma-separated list of logs-grid column headers hidden in the Manager's Logs tab, for example `Event ID,Level`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (`Time`, `Level`, `Event ID`). |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
