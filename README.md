@@ -53,14 +53,14 @@ Here's a minimal example using the CLI to run a Node.js server as a Windows serv
 
 ```powershell
 servy-cli install `
-  --name="MyService" `
+  --name="NodeApp" `
   --path="C:\Program Files\nodejs\node.exe" `
-  --startupDir="C:\MyServer" `
+  --startupDir="C:\apps\nodeapp" `
   --params="server.js" `
   --enableHealth
 ```
 
-This installs `MyService` to run a Node.js server in the background with auto-startup and [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery).
+This installs `NodeApp` to run a Node.js server in the background with auto-startup and [health monitoring](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery).
 
 See additional [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other runtimes.
 
