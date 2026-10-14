@@ -115,7 +115,7 @@ See [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
-Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting its development and maintenance.
+Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting it.
 
 Maintaining the project, publishing signed releases, and shipping security updates takes real time and resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
 
