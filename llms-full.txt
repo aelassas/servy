@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-14T21:35:15Z
+> Generated on: 2026-10-14T23:35:52Z
 
 ---
 
@@ -4919,7 +4919,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 
 | Code | Meaning |
 | --- | --- |
-| `0` | Success. All registered service configurations were successfully exported and archived. (Note: Also returned when no database exists or no services are registered, in which case **no archive is written**). |
+| `0` | Success. All registered service configurations were successfully exported and archived. (Note: Also returned when no database exists, when no services are registered, or when the confirmation prompt is declined or `-WhatIf` is used, in all of which cases **no archive is written**). |
 | `1` | Not running with Administrator privileges. |
 | `2` | The Servy PowerShell module (`Servy.psm1`) could not be located or imported. |
 | `3` | The destination archive already exists and `-Overwrite` was not specified. |
@@ -5015,7 +5015,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 
 | Code | Meaning |
 | --- | --- |
-| `0` | Success. Also returned when the archive contains no XML configuration files, in which case **nothing is imported**. |
+| `0` | Success. Also returned when the archive contains no XML configuration files, or when the confirmation prompt is declined or `-WhatIf` is used, in which cases **nothing is imported**. |
 | `1` | Not running with Administrator privileges. |
 | `2` | The Servy PowerShell module (`Servy.psm1`) could not be located or imported. |
 | `3` | The specified dump archive does not exist. |
