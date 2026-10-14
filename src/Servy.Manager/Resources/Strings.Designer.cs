@@ -484,6 +484,24 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to View the display name of the service..
+        /// </summary>
+        public static string Automation_DisplayNameColumnCell_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_DisplayNameColumnCell_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Name Column.
+        /// </summary>
+        public static string Automation_DisplayNameColumnHeader_Name {
+            get {
+                return ResourceManager.GetString("Automation_DisplayNameColumnHeader_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open the official Servy documentation..
         /// </summary>
         public static string Automation_DocMenuItem_HelpText {
@@ -1659,6 +1677,15 @@ namespace Servy.Manager.Resources {
         public static string Column_Description {
             get {
                 return ResourceManager.GetString("Column_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Name.
+        /// </summary>
+        public static string Column_DisplayName {
+            get {
+                return ResourceManager.GetString("Column_DisplayName", resourceCulture);
             }
         }
         

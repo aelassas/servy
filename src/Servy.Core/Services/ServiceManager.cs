@@ -1360,6 +1360,7 @@ namespace Servy.Core.Services
                         ServiceInfo info = new ServiceInfo
                         {
                             Name = service.ServiceName,
+                            DisplayName = service.DisplayName,
                             Status = MapStatus(service.Status),
                             StartupType = MapStartupType(service),
                             LogOnAs = string.Empty,

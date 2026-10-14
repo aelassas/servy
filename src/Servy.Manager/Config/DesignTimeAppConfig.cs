@@ -28,6 +28,7 @@ namespace Servy.Manager.Config
 
         public string ServicesHiddenColumns => string.Empty;
         public string LogsHiddenColumns => string.Empty;
+        public bool IsDisplayNameColumnMigrated => false;
 
         public event PropertyChangedEventHandler? PropertyChanged
         {

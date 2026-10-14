@@ -981,6 +981,7 @@ namespace Servy.Manager.ViewModels
                     update.StartupType = info.StartupType;
                     update.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? UiAppConfig.LocalSystem);
                     update.Description = info.Description;
+                    update.DisplayName = info.DisplayName;
                 }
                 else
                 {
@@ -1093,6 +1094,9 @@ namespace Servy.Manager.ViewModels
 
             if (info.Description != null && service.Description != info.Description)
                 service.Description = info.Description;
+
+            if (info.DisplayName != null && service.DisplayName != info.DisplayName)
+                service.DisplayName = info.DisplayName;
         }
 
         /// <summary>
@@ -1111,6 +1115,7 @@ namespace Servy.Manager.ViewModels
             public ServiceStartType? StartupType { get; set; }
             public string? LogOnAs { get; set; }
             public string? Description { get; set; }
+            public string? DisplayName { get; set; }
 
             public ServiceUpdateInfo(Service target)
             {

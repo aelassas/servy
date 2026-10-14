@@ -10,6 +10,7 @@ namespace Servy.Manager.Models
     public class Service : ViewModelBase
     {
         private string? _name;
+        private string? _displayName;
         private string? _description;
         private ServiceStatus? _status;
         private bool _isInstalled;
@@ -31,6 +32,15 @@ namespace Servy.Manager.Models
         {
             get => _name;
             set => Set(ref _name, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the service display name.
+        /// </summary>
+        public string? DisplayName
+        {
+            get => _displayName;
+            set => Set(ref _displayName, value);
         }
 
         /// <summary>

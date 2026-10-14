@@ -53,6 +53,7 @@ namespace Servy.Manager.Mappers
             return new Service
             {
                 Name = service.Name,
+                DisplayName = service.DisplayName ?? string.Empty,
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,

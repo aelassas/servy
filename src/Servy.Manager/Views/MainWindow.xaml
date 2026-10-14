@@ -163,6 +163,10 @@
                     Style="{StaticResource DataGridSelectionColorsStyle}">
             <DataGrid.Resources>
               <ContextMenu x:Key="ColumnHeaderContextMenu" Opened="ColumnHeaderContextMenu_Opened">
+                <MenuItem Header="{x:Static resx:Strings.Column_DisplayName}"
+                          IsCheckable="True"
+                          Click="ToggleColumnVisibility_Click"
+                          Tag="{x:Reference ColDisplayName}" />
                 <MenuItem Header="{x:Static resx:Strings.Column_Description}"
                           IsCheckable="True"
                           Click="ToggleColumnVisibility_Click"
@@ -281,6 +285,35 @@
                                MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
                                AutomationProperties.Name="{Binding Name}"
                                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_NameColumnCell_HelpText}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+
+              <DataGridTemplateColumn x:Name="ColDisplayName"
+                                      Header="{x:Static resx:Strings.Column_DisplayName}"
+                                      Width="120"
+                                      MinWidth="100"
+                                      Visibility="Collapsed"
+                                      CanUserReorder="False"
+                                      SortMemberPath="DisplayName">
+                <DataGridTemplateColumn.HeaderStyle>
+                  <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
+                    <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Strings.Automation_DisplayNameColumnHeader_Name}" />
+                  </Style>
+                </DataGridTemplateColumn.HeaderStyle>
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding DisplayName}"
+                               ToolTip="{Binding DisplayName}"
+                               VerticalAlignment="Center"
+                               Margin="5,0,0,0"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               HorizontalAlignment="Left"
+                               MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
+                               AutomationProperties.Name="{Binding DisplayName}"
+                               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_DisplayNameColumnCell_HelpText}" />
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
