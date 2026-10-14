@@ -115,7 +115,7 @@ See [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
-Servy is free and open source. If it has helped you, saved you time, or powered your production workflows, consider supporting its development and maintenance.
+Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting its development and maintenance.
 
 Maintaining the project, publishing signed releases, and shipping security updates takes real time and resources. You can help keep Servy active, independent, and free for everyone by becoming a sponsor on [GitHub Sponsors](https://github.com/sponsors/aelassas), making a contribution via [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas), or simply starring and sharing the repository.
 
@@ -138,16 +138,10 @@ Special thanks to [Christophe Rogiers](https://github.com/Christophe-Rogiers), w
 
 Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for providing a free code signing service, and to the [SignPath Foundation](https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for supplying a free code signing certificate.
 
-Thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source license](https://www.jetbrains.com/community/opensource/) for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
-
 Thanks to everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions have shaped the project and made it better with every release.
 
 <p>
   <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy">
     <img alt="SignPath Foundation" src="https://aelassas.github.io/content/signpath.png?v=2" width="54" height="51">
-  </a>
-  &nbsp;
-  <a href="https://www.jetbrains.com/community/opensource/">
-    <img alt="JetBrains Open Source" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="54" height="51">
   </a>
 </p>
