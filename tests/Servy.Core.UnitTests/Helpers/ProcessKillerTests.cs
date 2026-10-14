@@ -191,6 +191,12 @@ namespace Servy.Core.UnitTests.Helpers
             public int CurrentPid { get; set; } = 9999;
 
             /// <summary>
+            /// Gets or sets the start time <see cref="GetCurrentProcess"/> reports, so a test can place the current
+            /// process at a known point of the ancestor chain. When <see langword="null"/> the process starts "now".
+            /// </summary>
+            public DateTime? CurrentStartTime { get; set; }
+
+            /// <summary>
             /// Gets or sets the exception <see cref="BuildSnapshotAndChildMap"/> throws, so a test can
             /// drive the entry points' Win32Exception and catch-all arms.
             /// </summary>
@@ -211,7 +217,9 @@ namespace Servy.Core.UnitTests.Helpers
 
             public ISystemProcess GetCurrentProcess()
             {
-                return new FakeSystemProcess { Id = CurrentPid, ProcessName = "TestSelf" };
+                var current = new FakeSystemProcess { Id = CurrentPid, ProcessName = "TestSelf" };
+                if (CurrentStartTime.HasValue) current.StartTime = CurrentStartTime.Value;
+                return current;
             }
 
             public (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMap()
@@ -304,6 +312,75 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.True(result);
             Assert.True(target.Killed, "The matched target must be killed by the tree walk.");
             Assert.True(supervisor.Killed, "With killParents requested, the matched target's parent must be walked and killed too.");
+        }
+
+        [Fact]
+        public void KillProcessTreeAndParents_AncestorWalkHitsRecycledPid_DoesNotProtectGenuineParent()
+        {
+            // Arrange
+            // Chain above the current process: 9999 -> 600 (genuine ancestor) -> 500 (a PID recycled by a process
+            // that started after its "child") -> 400 (the target's genuine parent). 400 only reaches the protected
+            // set through the recycled 500, so it must stay killable.
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+            accessor.CurrentStartTime = now.AddMinutes(-10);
+
+            var target = new FakeSystemProcess { Id = 300, ProcessName = "myworker", ExecutablePath = @"C:\Apps\myworker.exe", StartTime = now.AddMinutes(-1) };
+            var supervisor = new FakeSystemProcess { Id = 400, ProcessName = "supervisor", ExecutablePath = @"C:\Apps\supervisor.exe", StartTime = now.AddMinutes(-5) };
+            var recycled = new FakeSystemProcess { Id = 500, ProcessName = "recycled", ExecutablePath = @"C:\Apps\recycled.exe", StartTime = now };
+            var ancestor = new FakeSystemProcess { Id = 600, ProcessName = "ancestor", ExecutablePath = @"C:\Apps\ancestor.exe", StartTime = now.AddMinutes(-20) };
+
+            accessor.Processes[300] = target;
+            accessor.Processes[400] = supervisor;
+            accessor.Processes[500] = recycled;
+            accessor.Processes[600] = ancestor;
+
+            accessor.Snapshot[9999] = new ProcessInfoNode { ParentId = 600, Name = "TestSelf.exe" };
+            accessor.Snapshot[600] = new ProcessInfoNode { ParentId = 500, Name = "ancestor.exe" };
+            accessor.Snapshot[500] = new ProcessInfoNode { ParentId = 400, Name = "recycled.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 1, Name = "supervisor.exe" };
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 400, Name = "myworker.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(target.Killed, "The matched target must be killed by the tree walk.");
+            Assert.True(supervisor.Killed, "A parent reachable only through a recycled PID must not be protected as an ancestor.");
+        }
+
+        [Fact]
+        public void KillProcessTreeAndParents_AncestorWalkWithGenuineChain_StillProtectsAncestors()
+        {
+            // Arrange
+            // Same shape, but every link started before its child: 400 really is an ancestor of the current process
+            // and must stay protected.
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+            accessor.CurrentStartTime = now.AddMinutes(-1);
+
+            var target = new FakeSystemProcess { Id = 300, ProcessName = "myworker", ExecutablePath = @"C:\Apps\myworker.exe", StartTime = now };
+            var supervisor = new FakeSystemProcess { Id = 400, ProcessName = "supervisor", ExecutablePath = @"C:\Apps\supervisor.exe", StartTime = now.AddMinutes(-5) };
+
+            accessor.Processes[300] = target;
+            accessor.Processes[400] = supervisor;
+
+            accessor.Snapshot[9999] = new ProcessInfoNode { ParentId = 400, Name = "TestSelf.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 1, Name = "supervisor.exe" };
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 400, Name = "myworker.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents("myworker", killParents: true);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(target.Killed, "The matched target must be killed by the tree walk.");
+            Assert.False(supervisor.Killed, "A genuine ancestor of the current process must stay protected.");
         }
 
         [Fact]

@@ -702,6 +702,13 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="snapshot">A pre-computed native map establishing hierarchical relationships across the system.</param>
         /// <returns>A hash set representing the structural lineage mapping backward toward the root operating system session.</returns>
+        /// <remarks>
+        /// The upward walk stops at a link whose parent started after its child by more than
+        /// <see cref="AppConfig.PidReuseToleranceSeconds"/>. A parent PID that cannot be the real parent (the original parent
+        /// exited and its PID was recycled, as with the boot-time session manager PID above <c>wininit.exe</c>) must not pull
+        /// an unrelated process tree into the protected set. A start time that cannot be read keeps the previous behaviour:
+        /// the parent is protected and the walk continues, so protection fails closed.
+        /// </remarks>
         private HashSet<int> GetAncestorPids(Dictionary<int, ProcessInfoNode> snapshot)
         {
             var ancestors = new HashSet<int>();
@@ -712,17 +719,49 @@ namespace Servy.Core.Helpers
                 ancestors.Add(currentPid);
                 int currentSearchPid = currentPid;
 
+                DateTime currentStart;
+                using (var current = _processAccessor.GetCurrentProcess()) currentStart = SafeStartTime(current);
+
                 // Walk up the tree using the snapshot to avoid handle access restrictions
                 while (snapshot.TryGetValue(currentSearchPid, out var node))
                 {
                     int parentId = node.ParentId;
                     if (parentId <= AppConfig.MaxReservedSystemPid) break;
-                    if (!ancestors.Add(parentId)) break; // Prevent infinite loops
+                    if (ancestors.Contains(parentId)) break; // Prevent infinite loops
+
+                    // PID-reuse guard: a parent that started after its child is a recycled PID, not an ancestor.
+                    DateTime parentStart = SafeParentStartTime(parentId);
+                    if (currentStart != DateTime.MinValue && parentStart != DateTime.MinValue
+                        && parentStart > currentStart.AddSeconds(AppConfig.PidReuseToleranceSeconds))
+                    {
+                        Logger.Debug($"GetAncestorPids: Stopping ancestor walk at PID {parentId}; it started after its child (recycled PID).");
+                        break;
+                    }
+
+                    ancestors.Add(parentId);
                     currentSearchPid = parentId;
+                    if (parentStart != DateTime.MinValue) currentStart = parentStart;
                 }
             }
             catch (Exception ex) { Logger.Warn($"Could not fully resolve ancestor tree: {ex.Message}"); }
             return ancestors;
+        }
+
+        /// <summary>
+        /// Reads the start time of a process by PID without letting a dead or inaccessible process abort the caller.
+        /// </summary>
+        /// <param name="pid">The numerical identifier of the process whose start time is requested.</param>
+        /// <returns>The start time, or <see cref="DateTime.MinValue"/> when the process is gone or its start time cannot be read.</returns>
+        private DateTime SafeParentStartTime(int pid)
+        {
+            try
+            {
+                using (var p = _processAccessor.GetProcessById(pid)) return SafeStartTime(p);
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
         }
 
         /// <summary>
