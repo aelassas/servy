@@ -151,6 +151,23 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.False(result.IsInstalled);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ToModelAsync_IsDesktopAppAvailable_FlowsFromTheArgument(bool isDesktopAppAvailable)
+        {
+            // Arrange
+            var domainService = new Core.Domain.Service(_mockServiceManager.Object) { Name = "Test" };
+
+            // Act
+            var result = await ServiceMapper.ToModelAsync(domainService, isDesktopAppAvailable, false,
+                _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(isDesktopAppAvailable, result.IsDesktopAppAvailable);
+        }
+
         [Fact]
         public async Task ToModelAsync_RunAsLocalSystem_MapsLocalSystemDisplayName()
         {
