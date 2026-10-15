@@ -4,7 +4,6 @@ using Servy.Core.Native;
 using Servy.Manager.Models;
 using System.IO;
 using System.Text;
-using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Manager.Utils
 {
