@@ -681,7 +681,7 @@
                                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RowRemoveMenuItem_HelpText}" />
 
                             <Separator />
-                            
+
                             <MenuItem Header="{x:Static resx:Strings.Button_Config}"
                                       Command="{Binding ConfigureCommand}"
                                       IsEnabled="{Binding IsDesktopAppAvailable}"
