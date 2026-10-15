@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" />
-    <PackageReference Include="System.Management" />
   </ItemGroup>
 
   <ItemGroup>
