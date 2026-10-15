@@ -5,6 +5,7 @@ using Servy.Manager.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -507,6 +508,73 @@ namespace Servy.Manager.Utils
 
                     finalPos = end;
                     if (end == 0) return lines;
+
+                    Encoding encoding = DetectEncoding(fs, out long firstDataOffset);
+
+                    // For non-UTF8 encodings (like UTF-16/32), raw byte scanning for '\n' is unsafe due to multi-byte/endian alignment.
+                    // Instead, perform a forward read through LogLineSplitter using the detected encoding.
+                    if (!Equals(encoding, Encoding.UTF8) && !(encoding is UTF8Encoding))
+                    {
+                        var splitter = new LogLineSplitter(encoding);
+                        byte[] readBuf = new byte[AppConfig.LogTailerTailReadBufferSize];
+
+                        fs.Seek(firstDataOffset, SeekOrigin.Begin);
+                        long bytesToRead = end - firstDataOffset;
+                        long currentPos = firstDataOffset;
+
+                        var historyQueue = new Queue<string>();
+
+                        while (bytesToRead > 0)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+
+                            int toRead = (int)Math.Min(bytesToRead, readBuf.Length);
+                            int read = fs.Read(readBuf, 0, toRead);
+                            if (read <= 0) break;
+
+                            bytesToRead -= read;
+                            long chunkStart = currentPos;
+                            currentPos += read;
+
+                            int index = 0;
+                            string parsedLine;
+                            while (splitter.TryReadLine(readBuf, read, ref index, out parsedLine))
+                            {
+                                historyQueue.Enqueue(parsedLine);
+                                if (maxLines > 0)
+                                {
+                                    while (historyQueue.Count > maxLines)
+                                    {
+                                        historyQueue.Dequeue();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Determine finalPos by accounting for any pending unterminated bytes
+                        finalPos = end - splitter.PendingByteCount;
+
+                        if (maxLines == 0)
+                        {
+                            return lines;
+                        }
+
+                        var tempLinesList = historyQueue.ToList();
+                        for (int i = 0; i < tempLinesList.Count; i++)
+                        {
+                            long offsetTicks = tempLinesList.Count - 1 - i;
+                            DateTime syntheticTime = lastWrite.AddTicks(-offsetTicks);
+
+                            LogLine logLine = new LogLine(tempLinesList[i], type, syntheticTime)
+                            {
+                                IsSyntheticTime = true
+                            };
+
+                            lines.Add(logLine);
+                        }
+
+                        return lines;
+                    }
 
                     // Pre-increment the line count if the file does not end with a trailing newline.
                     // This ensures the backward scanner accurately bounds the "last N lines" even when

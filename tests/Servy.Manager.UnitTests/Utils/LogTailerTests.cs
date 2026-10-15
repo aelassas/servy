@@ -183,6 +183,45 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task GetHistoryAsync_Utf16LeFile_ParsesHistoryLinesAndPositionsCorrectly()
+        {
+            // Arrange
+            string path = NewTempFilePath("utf16le_history");
+            Encoding utf16Le = EncodingWithByteOrderMark("utf-16le");
+
+            // Write 3 complete lines and 1 unterminated fragment in UTF-16 LE
+            byte[] fileBytes;
+            using (var ms = new MemoryStream())
+            {
+                byte[] bom = utf16Le.GetPreamble();
+                ms.Write(bom, 0, bom.Length);
+
+                byte[] content = utf16Le.GetBytes("Line 1\nLine 2\nLine 3\nUnterminatedFragment");
+                ms.Write(content, 0, content.Length);
+
+                fileBytes = ms.ToArray();
+            }
+
+            File.WriteAllBytes(path, fileBytes);
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, 10, CancellationToken.None);
+
+                // Assert
+                Assert.NotNull(result);
+
+                // Should retrieve only the complete lines
+                Assert.Equal(new[] { "Line 1", "Line 2", "Line 3" }, result.Lines.Select(l => l.Text));
+
+                // Position should point to the beginning of the unterminated fragment (after "Line 3\n")
+                long expectedFragmentPos = utf16Le.GetPreamble().Length + utf16Le.GetByteCount("Line 1\nLine 2\nLine 3\n");
+                Assert.Equal(expectedFragmentPos, result.Position);
+            }
+        }
+
+        [Fact]
         public async Task RunFromPosition_NullOrEmptyPath_ExitsEarlyWithoutLoopAllocation()
         {
             // Arrange
