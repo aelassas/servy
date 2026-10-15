@@ -77,10 +77,17 @@ namespace Servy.Infrastructure.Data
                 }
             }
 
-            foreach (var orphan in Directory.EnumerateFiles(folderPath, "*" + CounterFileSuffix))
+            try
             {
-                if (!matchedFiles.Contains(Path.GetFileName(orphan)))
-                    Logger.Info($"Legacy restart attempts file '{orphan}' belongs to no installed service and was not imported.");
+                foreach (var orphan in Directory.EnumerateFiles(folderPath, "*" + CounterFileSuffix))
+                {
+                    if (!matchedFiles.Contains(Path.GetFileName(orphan)))
+                        Logger.Info($"Legacy restart attempts file '{orphan}' belongs to no installed service and was not imported.");
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Logger.Warn($"Could not list the legacy recovery folder '{folderPath}' to report files that belong to no installed service.", ex);
             }
 
             if (imported > 0)

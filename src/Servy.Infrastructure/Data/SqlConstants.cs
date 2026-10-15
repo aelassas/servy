@@ -118,15 +118,6 @@ namespace Servy.Infrastructure.Data
             "@Name, " + string.Join(", ", StandardColumns.Select(c => $"@{c}")) + ", @PreviousStopTimeout";
 
         /// <summary>
-        /// SET clause for an UPDATE. Includes Name, and assigns PreviousStopTimeout through COALESCE
-        /// so a null incoming value preserves the stored one.
-        /// </summary>
-        public static readonly string UpdateSet =
-            "Name = @Name, " +
-            string.Join(", ", StandardColumns.Select(c => $"{c} = @{c}")) +
-            ", PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout)";
-
-        /// <summary>
         /// SET clause for the ON CONFLICT upsert. Excludes Name (the conflict target), and assigns
         /// PreviousStopTimeout through COALESCE so a null incoming value preserves the stored one.
         /// </summary>

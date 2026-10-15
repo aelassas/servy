@@ -155,6 +155,7 @@ namespace Servy.Restarter
                 try { Logger.Shutdown(); } catch { /* nothing left to log with */ }
             }
         }
+
         /// <summary>
         /// Determines whether a service's executable command line runs one of Servy's wrappers,
         /// <c>Servy.Service.exe</c> or <c>Servy.Service.CLI.exe</c>.
