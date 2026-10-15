@@ -242,7 +242,7 @@ namespace Servy.CLI.UnitTests.Validation
         public void MapEnum_FlagsEnum_CombinedValidValue_ReturnsCombinedInt()
         {
             // Arrange
-            // No production enum carries [Flags] today, so the bitmask arm of MapEnum is only
+            // No enum MapEnum is called with carries [Flags] today, so the bitmask arm of MapEnum is only
             // reachable with a [Flags] type declared here. MapEnum is a private generic method,
             // which TestReflection.InvokeNonPublicStatic cannot call (it would invoke the open
             // generic definition), so the generic method is closed explicitly first.
