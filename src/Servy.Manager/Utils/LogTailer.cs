@@ -512,14 +512,13 @@ namespace Servy.Manager.Utils
 
                     // For non-UTF8 encodings (like UTF-16/32), raw byte scanning for '\n' is unsafe due to multi-byte/endian alignment.
                     // Instead, perform a forward read through LogLineSplitter using the detected encoding.
-                    if (!Equals(encoding, Encoding.UTF8) && !(encoding is UTF8Encoding))
+                    if (!(encoding is UTF8Encoding))
                     {
                         var splitter = new LogLineSplitter(encoding);
                         byte[] readBuf = new byte[AppConfig.LogTailerTailReadBufferSize];
 
                         fs.Seek(firstDataOffset, SeekOrigin.Begin);
                         long bytesToRead = end - firstDataOffset;
-                        long currentPos = firstDataOffset;
 
                         var historyQueue = new Queue<string>();
 
@@ -532,8 +531,6 @@ namespace Servy.Manager.Utils
                             if (read <= 0) break;
 
                             bytesToRead -= read;
-                            long chunkStart = currentPos;
-                            currentPos += read;
 
                             int index = 0;
                             string parsedLine;
