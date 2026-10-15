@@ -267,6 +267,32 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task GetHistoryAsync_Utf16LeFile_MaxLinesZeroAcrossSeveralReadBuffers_ReturnsNoLinesAndPointsAtTheFragment()
+        {
+            // Arrange
+            string path = NewTempFilePath("utf16le_history_zero_many");
+            Encoding utf16Le = EncodingWithByteOrderMark("utf-16le");
+            byte[] bom = utf16Le.GetPreamble();
+            string completeLines = string.Join(string.Empty, Enumerable.Range(1, 600).Select(i => "History line " + i + "\n"));
+            byte[] content = utf16Le.GetBytes(completeLines + "UnterminatedFragment");
+            File.WriteAllBytes(path, bom.Concat(content).ToArray());
+
+            // The file must span several forward-read buffers, so the pending bytes are carried across reads.
+            Assert.True(bom.Length + content.Length > 3 * AppConfig.LogTailerTailReadBufferSize);
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, 0, CancellationToken.None);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Empty(result.Lines);
+                Assert.Equal(bom.Length + utf16Le.GetByteCount(completeLines), result.Position);
+            }
+        }
+
+        [Fact]
         public async Task RunFromPosition_NullOrEmptyPath_ExitsEarlyWithoutLoopAllocation()
         {
             // Arrange

@@ -539,13 +539,14 @@ namespace Servy.Manager.Utils
                             string parsedLine;
                             while (splitter.TryReadLine(readBuf, read, ref index, out parsedLine))
                             {
+                                // Nothing is wanted: keep feeding the splitter so its pending-byte count
+                                // still yields finalPos, but do not hold every line of the file in memory.
+                                if (maxLines == 0) continue;
+
                                 historyQueue.Enqueue(parsedLine);
-                                if (maxLines > 0)
+                                while (historyQueue.Count > maxLines)
                                 {
-                                    while (historyQueue.Count > maxLines)
-                                    {
-                                        historyQueue.Dequeue();
-                                    }
+                                    historyQueue.Dequeue();
                                 }
                             }
                         }
