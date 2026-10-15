@@ -1,5 +1,60 @@
 # Changelog
 
+## [Servy 10.5](https://github.com/aelassas/servy/releases/tag/v10.5)
+
+**Date:** 2026-10-15 | **Tag:** [`v10.5`](https://github.com/aelassas/servy/tree/v10.5)
+
+Servy v10.5 introduces a right-click context menu on service rows and an optional **Display Name** column in the **Servy Manager** Services grid. The column can be toggled by right-clicking any column header, and column visibility preferences persist automatically across sessions. Additionally, confirmation dialogs across Servy Manager and the Servy desktop app explicitly include the targeted service name for improved clarity (#7483).
+
+v10.5 adds explicit architecture checks for x64 and ARM64 installers. Running an installer on an incompatible architecture displays a clear error message, while running an x64 installer under ARM64 emulation prompts a soft warning to encourage using the native build (#7481).
+
+This release also includes security hardening for the installer elevation path, bug fixes, and documentation updates.
+
+The screenshots below illustrate the right-click context menu on service rows and the new **Display Name** column in the Services grid.
+
+<p align="left">
+  <img height="295" alt="Right-click context menu on service rows" src="https://github.com/user-attachments/assets/c709438b-72af-4e14-b822-f144676d6de1" />
+  <img height="295" alt="Display Name column" src="https://github.com/user-attachments/assets/3a3dd03d-fa61-4617-85d7-92714e1f96f7" />
+</p>
+
+### Full Changelog
+* feat(manager,desktop): include service name in message box actions (#7483)
+* feat(manager): add context menu to Services grid rows
+* feat(manager): support DisplayName column in Services grid
+* feat(setup): show a clear error when the installer architecture doesn't match the OS (#7481)
+* feat(setup): prompt ARM64 users when running x64 installer under emulation (#7481)
+* fix(core): remove unused import validation string resources in Servy.Core (#7485)
+* fix(core): eliminate duplicate SID fields and helper methods in Servy.Core.Security (#7490)
+* fix(core): standardize broad group SID checks across SecurityHelper and PathSecurityGuard (#7493)
+* fix(core): stop the ancestor process walk at a recycled PID in ProcessKiller (#7512)
+* fix(core): remove unreachable ArgumentException catch block in ServyHostInstaller (#7514)
+* fix(infra): add IOException error handling during orphan file import (#7516)
+* fix(infra): remove unused public UpdateSet clause constant in SqlConstants (#7517)
+* fix(host): remove unused FodyWeavers.xml configuration from Servy.Host (#7494)
+* fix(service): remove redundant System namespace import in IConsoleCtrlNative (#7498)
+* fix(service): remove unused using directives in Service and IStreamWriterFactory (#7499)
+* fix(restarter): remove unused Servy.Infrastructure dependency and trim targets (#7496)
+* fix(restarter): fix XML documentation formatting in Restarter Program (#7520)
+* fix(manager): resolve BOM alignment and character splitting for UTF-16 logs in LogTailer (#7519)
+* fix(notifications): resolve toast error code capture in failure notification handler (#7509)
+* fix(setup): restrict upgrade registry probes to HKLM to prevent elevation of privilege (#7484)
+* chore(dotnet): bump dotnet sdk version from 10.0.401 to 10.0.402
+* chore(deps): update dependencies
+
+### Downloads
+* [servy-10.5-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-arm64-installer.exe) - 115.25 MB
+* [servy-10.5-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-arm64-portable.7z) - 116.93 MB
+* [servy-10.5-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-net48-sbom.xml) - 0.03 MB
+* [servy-10.5-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-net48-x64-installer.exe) - 4.43 MB
+* [servy-10.5-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-net48-x64-portable.7z) - 2.17 MB
+* [servy-10.5-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-sbom.xml) - 0.04 MB
+* [servy-10.5-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-x64-installer.exe) - 122.28 MB
+* [servy-10.5-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.5/servy-10.5-x64-portable.7z) - 120.74 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.5.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.5.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.4...v10.5
+
 ## [Servy 10.4](https://github.com/aelassas/servy/releases/tag/v10.4)
 
 **Date:** 2026-10-12 | **Tag:** [`v10.4`](https://github.com/aelassas/servy/tree/v10.4)
