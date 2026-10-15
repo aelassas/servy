@@ -222,6 +222,51 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task GetHistoryAsync_Utf16LeFile_MoreLinesThanMaxLines_KeepsOnlyTheLastLines()
+        {
+            // Arrange
+            string path = NewTempFilePath("utf16le_history_trim");
+            Encoding utf16Le = EncodingWithByteOrderMark("utf-16le");
+            const string text = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n";
+            byte[] bom = utf16Le.GetPreamble();
+            byte[] content = utf16Le.GetBytes(text);
+            File.WriteAllBytes(path, bom.Concat(content).ToArray());
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, 2, CancellationToken.None);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(new[] { "Line 4", "Line 5" }, result.Lines.Select(l => l.Text));
+                Assert.Equal(bom.Length + content.Length, result.Position);
+            }
+        }
+
+        [Fact]
+        public async Task GetHistoryAsync_Utf16LeFile_MaxLinesZero_ReturnsNoLinesAndPointsAtTheFragment()
+        {
+            // Arrange
+            string path = NewTempFilePath("utf16le_history_zero");
+            Encoding utf16Le = EncodingWithByteOrderMark("utf-16le");
+            byte[] bom = utf16Le.GetPreamble();
+            byte[] content = utf16Le.GetBytes("Line 1\nLine 2\nUnterminatedFragment");
+            File.WriteAllBytes(path, bom.Concat(content).ToArray());
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, 0, CancellationToken.None);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.Empty(result.Lines);
+                Assert.Equal(bom.Length + utf16Le.GetByteCount("Line 1\nLine 2\n"), result.Position);
+            }
+        }
+
+        [Fact]
         public async Task RunFromPosition_NullOrEmptyPath_ExitsEarlyWithoutLoopAllocation()
         {
             // Arrange
