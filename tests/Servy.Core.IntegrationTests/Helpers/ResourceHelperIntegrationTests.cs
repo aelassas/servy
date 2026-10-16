@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,10 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+        private readonly bool _isElevated = SecurityHelper.IsAdministrator();
         private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly FakeAssembly _fakeAssembly;
@@ -241,10 +246,15 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
             // Create a file and anchor timestamp to hostExeTime + 5 minutes so it is within up-to-date window without triggering downgrade warning
             File.WriteAllText(targetPath, "old content");
             DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
             File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(5));
+
+            // Only Administrators and SYSTEM may write it, so its timestamps are trusted and nothing is compared (#7530)
+            SecureLikeTheVault(targetPath);
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
@@ -265,9 +275,14 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Anchor the existing extraction OLDER than the host executable, but by less than
             // AppConfig.ResourceStalenessThresholdMinutes: the threshold term is the only reason it is kept
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
             File.WriteAllText(targetPath, "existing content");
             DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
             File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(-(AppConfig.ResourceStalenessThresholdMinutes / 2)));
+
+            // Only Administrators and SYSTEM may write it, so its timestamps are trusted and nothing is compared (#7530)
+            SecureLikeTheVault(targetPath);
 
             // Let termination succeed and supply a stream, so a copy would visibly overwrite the
             // file if the threshold were dropped instead of failing earlier for another reason
@@ -609,6 +624,60 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateButWritableByOthersAndDifferentContent_ReturnsTrue()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: the timestamps say "keep", but a standard user may write the file, so they prove nothing (#7530)
+            var targetPath = Path.Combine(TempDirectory, "writable.exe");
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03 });
+            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+            SecureLikeTheVault(targetPath);
+
+            var security = new FileInfo(targetPath).GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.Write, AccessControlType.Allow));
+            new FileInfo(targetPath).SetAccessControl(security);
+
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.writable.exe" ? new MemoryStream(new byte[] { 0x01, 0x02, 0x04 }) : null;
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_fakeAssembly, "Servy.Resources", "writable", "exe");
+
+            // Assert
+            Assert.True(needed);
+        }
+
+        [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateButOwnedByAnotherPrincipalAndDifferentContent_ReturnsTrue()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: only Administrators and SYSTEM are granted anything, but the owner may rewrite the DACL (#7530)
+            var targetPath = Path.Combine(TempDirectory, "foreignowner.exe");
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03 });
+            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+            SecureLikeTheVault(targetPath);
+
+            SecurityIdentifier currentUser;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUser = identity.User;
+            }
+
+            var security = new FileInfo(targetPath).GetAccessControl();
+            security.SetOwner(currentUser);
+            new FileInfo(targetPath).SetAccessControl(security);
+
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.foreignowner.exe" ? new MemoryStream(new byte[] { 0x01, 0x02, 0x04 }) : null;
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_fakeAssembly, "Servy.Resources", "foreignowner", "exe");
+
+            // Assert
+            Assert.True(needed);
+        }
+
+        [Fact]
         public async Task CopyEmbeddedResource_StaleTimestampButIdenticalContent_WritesNothingAndKillsNothing()
         {
             // Arrange
@@ -768,11 +837,12 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenReplacingAFileWithAnExplicitAce_KeepsTheAceAndTheProtection()
+        public async Task CopyEmbeddedResource_WhenReplacingAFileWithAnExplicitAce_RebuildsTheDaclFromPolicy()
         {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
             // Arrange
-            // A stale existing extraction carrying one explicit entry the temp folder does not grant.
-            // The owner of a file may rewrite its own DACL, so this needs no elevation.
+            // A stale existing extraction carrying one explicit entry the vault policy does not grant
             string fileName = "aclapp";
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, fileName + "." + extension);
@@ -798,24 +868,41 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-
-            // The file really was replaced: WriteFileAtomicAsync moves a freshly staged temp file over
-            // the target with MOVEFILE_REPLACE_EXISTING, so the result carries the temp file's
-            // security descriptor and not the old file's.
             Assert.Equal(dummyResourceBytes, File.ReadAllBytes(targetPath));
 
+            // The old DACL is not restored: the replacement carries the vault policy only, so the foreign entry is gone
+            // and the service accounts get their access back from the vault hardening (#7530)
             var after = new FileInfo(targetPath).GetAccessControl();
-            var explicitRules = after.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                                     .Cast<FileSystemAccessRule>();
+            var rules = after.GetAccessRules(true, true, typeof(SecurityIdentifier))
+                             .Cast<FileSystemAccessRule>()
+                             .ToList();
 
-            // RestoreFileSecurity writes the captured ACL back, so the explicit entry survives
-            Assert.Contains(explicitRules, r => r.IdentityReference.Equals(networkService)
-                                                && r.AccessControlType == AccessControlType.Allow
-                                                && (r.FileSystemRights & FileSystemRights.ReadAndExecute) == FileSystemRights.ReadAndExecute);
-
-            // ... and GetExistingFileSecurity's SetAccessRuleProtection keeps the replacement from
-            // falling back to whatever the containing folder grants
             Assert.True(after.AreAccessRulesProtected);
+            Assert.DoesNotContain(rules, r => r.IdentityReference.Equals(networkService));
+            Assert.All(rules, r => Assert.True(r.IdentityReference.Equals(AdministratorsSid) || r.IdentityReference.Equals(LocalSystemSid), "Unexpected entry for " + r.IdentityReference.Value + "."));
+            Assert.Contains(rules, r => r.IdentityReference.Equals(AdministratorsSid) && r.FileSystemRights.HasFlag(FileSystemRights.FullControl));
+            Assert.Contains(rules, r => r.IdentityReference.Equals(LocalSystemSid) && r.FileSystemRights.HasFlag(FileSystemRights.FullControl));
+            Assert.Equal(AdministratorsSid, after.GetOwner(typeof(SecurityIdentifier)));
+        }
+
+        /// <summary>
+        /// Gives a file the vault's own security descriptor: owned by Administrators, inheritance broken, Full Control
+        /// for Administrators and SYSTEM only.
+        /// </summary>
+        /// <param name="path">The file to secure.</param>
+        private static void SecureLikeTheVault(string path)
+        {
+            var security = new FileInfo(path).GetAccessControl();
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            foreach (FileSystemAccessRule rule in security.GetAccessRules(true, false, typeof(SecurityIdentifier)))
+            {
+                security.RemoveAccessRuleSpecific(rule);
+            }
+
+            security.AddAccessRule(new FileSystemAccessRule(AdministratorsSid, FileSystemRights.FullControl, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(LocalSystemSid, FileSystemRights.FullControl, AccessControlType.Allow));
+            security.SetOwner(AdministratorsSid);
+            new FileInfo(path).SetAccessControl(security);
         }
 
         #endregion

@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,6 +21,16 @@ namespace Servy.Core.Helpers
     public class ResourceHelper
     {
         private const int BufferSize = 81920; // 80 KB buffer size for stream copying
+
+        /// <summary>
+        /// The rights that let a principal change a file's content, its timestamps or its ACL, or replace it.
+        /// </summary>
+        private const FileSystemRights WriteRights = FileSystemRights.WriteData | FileSystemRights.AppendData
+            | FileSystemRights.WriteAttributes | FileSystemRights.WriteExtendedAttributes | FileSystemRights.Delete
+            | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
+
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
         private readonly IServiceHelper _serviceHelper;
         private readonly IProcessKiller _processKiller;
@@ -79,6 +91,8 @@ namespace Servy.Core.Helpers
         /// Determines whether an embedded resource has to be (re)extracted: the file is missing, or it is older than the
         /// running executable by more than <see cref="AppConfig.ResourceStalenessThresholdMinutes"/> AND its content differs
         /// from the embedded resource. A file identical to the resource is never extracted again, whatever the timestamps say.
+        /// A file whose timestamps say "keep" is still compared with the embedded resource, and extracted again when it
+        /// differs, if a principal other than Administrators and SYSTEM owns it or may write to it (#7530).
         /// </summary>
         /// <param name="assembly">The assembly that embeds the resource.</param>
         /// <param name="resourceNamespace">The resource namespace.</param>
@@ -120,9 +134,6 @@ namespace Servy.Core.Helpers
                 if (!TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, subfolder, out targetPath, out var targetFileName, out resourceName))
                     return true;
 
-                // Capture pre-existing explicit ACLs BEFORE killing processes or staging files
-                FileSecurity existingAcl = GetExistingFileSecurity(targetPath);
-
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
                 // This prevents killing locking processes if the resource is missing.
                 Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -143,8 +154,9 @@ namespace Servy.Core.Helpers
                     // Plumb both parameters into the atomic writer loop context cleanly
                     await Helper.WriteFileAtomicAsync(targetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t), cancellationToken);
 
-                    // Restore pre-existing ACLs on the newly written file
-                    RestoreFileSecurity(targetPath, existingAcl);
+                    // Rebuild the DACL from policy rather than restoring the old one, which may carry entries that were
+                    // never Servy's (#7530); the service accounts get their access back from the vault hardening
+                    ApplyVaultFileSecurity(targetPath);
 
                     HasCopiedResources = true;
                 }
@@ -267,9 +279,6 @@ namespace Servy.Core.Helpers
 
                         try
                         {
-                            // Capture pre-existing explicit ACLs BEFORE process termination or stream write
-                            FileSecurity existingAcl = GetExistingFileSecurity(resourceItem.TargetPath);
-
                             // ROBUSTNESS: Validate the embedded resource stream is physically accessible
                             // BEFORE executing any destructive process termination logic.
                             Stream resourceStream = assembly.GetManifestResourceStream(resourceItem.ResourceName);
@@ -291,8 +300,8 @@ namespace Servy.Core.Helpers
 
                                 await Helper.WriteFileAtomicAsync(resourceItem.TargetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t), cancellationToken);
 
-                                // Restore pre-existing ACLs on the newly written file
-                                RestoreFileSecurity(resourceItem.TargetPath, existingAcl);
+                                // Rebuild the DACL from policy rather than restoring the old one (#7530)
+                                ApplyVaultFileSecurity(resourceItem.TargetPath);
 
                                 HasCopiedResources = true;
                                 Logger.Info($"Successfully copied embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TargetPath}'.");
@@ -406,53 +415,85 @@ namespace Servy.Core.Helpers
         #region Shared Internal Logic
 
         /// <summary>
-        /// Attempts to retrieve the existing Access Control List (ACL) for a file before replacement,
-        /// converting inherited rules into explicit Access Control Entries (ACEs).
+        /// Gives a newly written file the vault's own security descriptor instead of the one the replaced file had:
+        /// inheritance is broken, the DACL holds Full Control for <c>BUILTIN\Administrators</c> and <c>SYSTEM</c> only
+        /// (and for the current user when the process is not elevated, as <see cref="SecurityHelper.ApplySecurityRules"/>
+        /// does for the vault itself), and an elevated process makes <c>BUILTIN\Administrators</c> the owner (#7530).
         /// </summary>
-        /// <param name="filePath">The target file path.</param>
-        /// <returns>The <see cref="FileSecurity"/> of the target file if it exists; otherwise, <c>null</c>.</returns>
-        private FileSecurity GetExistingFileSecurity(string filePath)
+        /// <param name="filePath">The file that was just written.</param>
+        /// <remarks>
+        /// The service accounts lose the Read &amp; Execute grant the replaced file carried. In Release builds the caller
+        /// re-applies it right after the extraction pass, for every account found in the database, through
+        /// <see cref="ServyExePermissionsHardener.SecureVaultAsync"/>.
+        /// </remarks>
+        private static void ApplyVaultFileSecurity(string filePath)
         {
             try
             {
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {
-                    var fileInfo = new FileInfo(filePath);
-                    var security = fileInfo.GetAccessControl();
+                var fileInfo = new FileInfo(filePath);
+                var security = fileInfo.GetAccessControl();
 
-                    // Protect against re-inheriting parent directory permissions upon atomic file replacement
-                    security.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
-                    return security;
+                SecurityIdentifier currentUserSid;
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    currentUserSid = identity.User;
                 }
+
+                SecurityHelper.ApplySecurityRules(security, currentUserSid, breakInheritance: true);
+
+                if (SecurityHelper.IsAdministrator())
+                    security.SetOwner(AdministratorsSid);
+
+                fileInfo.SetAccessControl(security);
+                Logger.Debug($"Applied the vault's security descriptor to '{filePath}'.");
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to read existing ACL for file '{filePath}'. Pre-existing security settings may not be preserved upon replacement.", ex);
+                Logger.Warn($"Failed to apply the vault's security descriptor to '{filePath}'.", ex);
             }
-
-            return null;
         }
 
         /// <summary>
-        /// Reapplies a previously captured Access Control List (ACL) to a target file after replacement.
+        /// Determines whether a principal other than <c>BUILTIN\Administrators</c> and <c>SYSTEM</c> owns a file or is
+        /// granted a right that changes its content, its timestamps or its ACL, so that its timestamps cannot be trusted
+        /// to stand for its content (#7530).
         /// </summary>
-        /// <param name="filePath">The target file path.</param>
-        /// <param name="fileSecurity">The <see cref="FileSecurity"/> settings to apply.</param>
-        private void RestoreFileSecurity(string filePath, FileSecurity fileSecurity)
+        /// <param name="filePath">The existing file.</param>
+        /// <returns><see langword="true"/> when another principal owns the file or may write to it, or when its owner and
+        /// ACL cannot be read.</returns>
+        internal static bool IsWritableByOthers(string filePath)
         {
-            if (fileSecurity == null || string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                return;
-
             try
             {
-                File.SetAccessControl(filePath, fileSecurity);
-                Logger.Debug($"Successfully restored explicit pre-existing ACL settings on '{filePath}'.");
+                var security = new FileInfo(filePath).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+
+                if (!IsAdministrativePrincipal(security.GetOwner(typeof(SecurityIdentifier))))
+                    return true;
+
+                foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
+                {
+                    if (rule.AccessControlType == AccessControlType.Allow
+                        && (rule.FileSystemRights & WriteRights) != 0
+                        && !IsAdministrativePrincipal(rule.IdentityReference))
+                        return true;
+                }
+
+                return false;
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to restore pre-existing ACL settings on '{filePath}'.", ex);
+                Logger.Debug($"Could not read the owner and ACL of '{filePath}', so it is treated as writable by others: {ex.Message}");
+                return true;
             }
         }
+
+        /// <summary>
+        /// Determines whether a principal is <c>BUILTIN\Administrators</c> or <c>SYSTEM</c>.
+        /// </summary>
+        /// <param name="identity">The principal, as a security identifier.</param>
+        /// <returns><see langword="true"/> for either of the two.</returns>
+        private static bool IsAdministrativePrincipal(IdentityReference identity)
+            => identity != null && (AdministratorsSid.Equals(identity) || LocalSystemSid.Equals(identity));
 
         /// <summary>
         /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required: based on
@@ -540,6 +581,15 @@ namespace Servy.Core.Helpers
 
                     Logger.Debug($"Existing file '{targetPath}' is identical to the embedded resource '{resourceName}'. Skipping copy.");
                     return false;
+                }
+
+                // The timestamps only stand for the content while nobody else can write the file or set its times. A
+                // healthy vault file costs one owner and ACL read here and no comparison; only a file another principal
+                // owns or may write to is compared with the embedded resource, and replaced when it differs (#7530).
+                if (!shouldCopy && assembly != null && IsWritableByOthers(targetPath) && !IsSameAsEmbeddedResource(assembly, resourceName, targetPath))
+                {
+                    Logger.Warn($"Existing file '{targetPath}' is owned or writable by a principal other than Administrators and SYSTEM and differs from the embedded resource '{resourceName}'. It will be replaced.");
+                    return true;
                 }
 
                 return shouldCopy;
