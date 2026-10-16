@@ -1,4 +1,5 @@
 using Dapper;
+using Servy.Core.Security;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System;
@@ -6,6 +7,9 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
@@ -13,12 +17,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
     /// <summary>
     /// Runs the version 10 migration of <see cref="SQLiteDbInitializer"/> against a real SQLite database and a real legacy
     /// recovery folder: the restart attempts columns, the import of the per-service counter files the wrapper wrote in
-    /// <c>recovery\</c>, and the deletion of that folder once the import passed.
+    /// <c>recovery\</c>, which runs only with that migration and skips a file it cannot trust, and the deletion of that
+    /// folder once the import passed.
     /// </summary>
     [Collection(DatabaseTestCollection.Name)]
     public class RestartAttemptsMigrationIntegrationTests : TempDirectoryTestBase
     {
         private readonly string _recoveryFolder;
+        private readonly bool _isElevated = SecurityHelper.IsAdministrator();
 
         public RestartAttemptsMigrationIntegrationTests()
         {
@@ -38,6 +44,36 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         private static (int? Attempts, long? Ticks) ReadCounter(DbConnection conn, string name)
             => conn.QuerySingle<(int?, long?)>(
                 $"SELECT RestartAttempts, RestartAttemptsUpdatedAtTicks FROM {SqlConstants.ServicesTableName} WHERE Name = @name;", new { name });
+
+        /// <summary>
+        /// Takes a database <see cref="SQLiteDbInitializer.Initialize(DbConnection, string)"/> created back to version 9,
+        /// before the restart attempts columns, so the next initialization runs the version 10 migration and its import.
+        /// </summary>
+        /// <param name="conn">The open connection.</param>
+        private static void DowngradeToVersion9(DbConnection conn)
+        {
+            conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN RestartAttempts;");
+            conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN RestartAttemptsUpdatedAtTicks;");
+            conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN AllowOverriddenRuntimeVars;");
+            conn.Execute("UPDATE SchemaInfo SET Version = 9 WHERE Id = 1;");
+        }
+
+        /// <summary>Creates a second hard link to an existing file.</summary>
+        /// <param name="lpFileName">The new link.</param>
+        /// <param name="lpExistingFileName">The existing file.</param>
+        /// <param name="lpSecurityAttributes">Reserved; <see cref="IntPtr.Zero"/>.</param>
+        /// <returns><see langword="true"/> when the link was created.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+
+        /// <summary>Creates a symbolic link; .NET Framework has no <c>File.CreateSymbolicLink</c>.</summary>
+        /// <param name="lpSymlinkFileName">The new link.</param>
+        /// <param name="lpTargetFileName">The file it points to.</param>
+        /// <param name="dwFlags">0 for a file link.</param>
+        /// <returns><see langword="true"/> when the link was created.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, int dwFlags);
 
         private string WriteCounterFile(string serviceName, string content, DateTime lastWriteUtc)
         {
@@ -90,6 +126,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_LegacyRecoveryFolder_ImportsEachCounterWithItsTimeAndDeletesTheFolder()
         {
+            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
+
             using (var conn = CreateConnection())
             {
                 // Arrange
@@ -97,6 +135,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 AddService(conn, "Alpha");
                 AddService(conn, "Beta service.");
                 AddService(conn, "Gamma");
+                DowngradeToVersion9(conn);
                 var alphaTime = new DateTime(2026, 9, 30, 8, 0, 0, DateTimeKind.Utc);
                 var betaTime = new DateTime(2026, 10, 1, 9, 30, 0, DateTimeKind.Utc);
                 WriteCounterFile("Alpha", "3", alphaTime);
@@ -119,11 +158,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [InlineData("")]
         public void Initialize_CorruptCounterFile_ImportsZeroAsTheWrapperReadIt(string content)
         {
+            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
+
             using (var conn = CreateConnection())
             {
                 // Arrange
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 AddService(conn, "Corrupt");
+                DowngradeToVersion9(conn);
                 var time = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
                 WriteCounterFile("Corrupt", content, time);
 
@@ -143,6 +185,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 // Arrange
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                DowngradeToVersion9(conn);
                 WriteCounterFile("RemovedLongAgo", "7", DateTime.UtcNow);
 
                 // Act
@@ -155,33 +198,39 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void Initialize_CounterAlreadyWrittenThroughTheHost_IsNotOverwrittenByAStaleFile()
+        public void Import_CounterAlreadyWrittenThroughTheHost_IsNotOverwrittenByAStaleFile()
         {
             using (var conn = CreateConnection())
             {
-                // Arrange: the host already wrote the counter (a folder that survived an earlier, failed deletion)
+                // Arrange: the host already wrote the counter
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 AddService(conn, "Current");
                 conn.Execute($"UPDATE {SqlConstants.ServicesTableName} SET RestartAttempts = 1, RestartAttemptsUpdatedAtTicks = 42 WHERE Name = 'Current';");
                 WriteCounterFile("Current", "9", DateTime.UtcNow);
 
                 // Act
-                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+                bool result;
+                using (var transaction = conn.BeginTransaction())
+                {
+                    result = LegacyRecoveryImporter.Import(conn, transaction, _recoveryFolder);
+                    transaction.Commit();
+                }
 
-                // Assert
+                // Assert: the stale file is handled without being read, so the folder may go
+                Assert.True(result);
                 Assert.Equal((1, 42L), ReadCounter(conn, "Current"));
-                Assert.False(Directory.Exists(_recoveryFolder));
             }
         }
 
         [Fact]
-        public void Initialize_CounterFileLocked_KeepsTheFolderAndImportsItAtTheNextStart()
+        public void Initialize_CounterFileLocked_KeepsTheFolderAndDoesNotImportItAtALaterStart()
         {
             using (var conn = CreateConnection())
             {
                 // Arrange
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 AddService(conn, "Locked");
+                DowngradeToVersion9(conn);
                 var time = new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc);
                 var path = WriteCounterFile("Locked", "5", time);
 
@@ -196,12 +245,123 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.True(File.Exists(path));
                 Assert.Equal(11, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
 
-                // Act: the next start
+                // Act: the next start, with the file readable
                 SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
 
-                // Assert
-                Assert.Equal((5, time.Ticks), ReadCounter(conn, "Locked"));
-                Assert.False(Directory.Exists(_recoveryFolder));
+                // Assert: the import ran once, with the migration, so the folder is not scanned again
+                Assert.Equal((null, null), ReadCounter(conn, "Locked"));
+                Assert.True(File.Exists(path));
+            }
+        }
+
+        [Fact]
+        public void Initialize_DatabaseAlreadyMigrated_DoesNotScanTheLegacyRecoveryFolder()
+        {
+            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
+
+            using (var conn = CreateConnection())
+            {
+                // Arrange: a database already at the latest version, and a valid counter file whose row was never written
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Migrated");
+                var path = WriteCounterFile("Migrated", "4", new DateTime(2026, 9, 20, 0, 0, 0, DateTimeKind.Utc));
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+
+                // Assert: the scan is bypassed, so nothing is imported and nothing is deleted
+                Assert.Equal((null, null), ReadCounter(conn, "Migrated"));
+                Assert.True(File.Exists(path));
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileNotOwnedByAdministratorsOrSystem_IsSkippedAndKept()
+        {
+            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
+
+            using (var conn = CreateConnection())
+            {
+                // Arrange: one counter file the wrapper could have written, and one owned by the current user's own SID,
+                //          which any token may set as owner, as a file a service account planted would be
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Trusted");
+                AddService(conn, "Planted");
+                DowngradeToVersion9(conn);
+                var time = new DateTime(2026, 9, 25, 0, 0, 0, DateTimeKind.Utc);
+                WriteCounterFile("Trusted", "2", time);
+                var planted = WriteCounterFile("Planted", "8", time);
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    var acl = new FileInfo(planted).GetAccessControl();
+                    acl.SetOwner(identity.User);
+                    new FileInfo(planted).SetAccessControl(acl);
+                    Assert.Equal(identity.User, new FileInfo(planted).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                }
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+
+                // Assert: the trusted file is imported; the planted one is neither imported nor deleted
+                Assert.Equal((2, time.Ticks), ReadCounter(conn, "Trusted"));
+                Assert.Equal((null, null), ReadCounter(conn, "Planted"));
+                Assert.True(File.Exists(planted));
+                Assert.Equal("8", File.ReadAllText(planted));
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileWithASecondHardLink_IsSkippedAndKept()
+        {
+            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
+
+            using (var conn = CreateConnection())
+            {
+                // Arrange: the counter file is also reachable under a second name outside the folder
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Linked");
+                DowngradeToVersion9(conn);
+                var path = WriteCounterFile("Linked", "6", new DateTime(2026, 9, 26, 0, 0, 0, DateTimeKind.Utc));
+                var secondName = Path.Combine(TempDirectory, "elsewhere.dat");
+                Assert.True(CreateHardLink(secondName, path, IntPtr.Zero), $"CreateHardLink failed: {Marshal.GetLastWin32Error()}");
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+
+                // Assert: neither imported nor deleted, under either name
+                Assert.Equal((null, null), ReadCounter(conn, "Linked"));
+                Assert.True(File.Exists(path));
+                Assert.Equal("6", File.ReadAllText(secondName));
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileIsASymbolicLink_IsSkippedAndTheTargetKept()
+        {
+            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
+
+            using (var conn = CreateConnection())
+            {
+                // Arrange: the counter file's name is a link to a file outside the folder
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Symlinked");
+                DowngradeToVersion9(conn);
+                Directory.CreateDirectory(_recoveryFolder);
+                var target = Path.Combine(TempDirectory, "target.dat");
+                File.WriteAllText(target, "9");
+                var link = Path.Combine(_recoveryFolder, LegacyRecoveryImporter.GetCounterFileName("Symlinked"));
+
+                // When the runner cannot create a symbolic link there is nothing to assert
+                if (!CreateSymbolicLink(link, target, 0))
+                    return;
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+
+                // Assert: not imported through the link, and neither the link nor its target is deleted
+                Assert.Equal((null, null), ReadCounter(conn, "Symlinked"));
+                Assert.True(File.Exists(link));
+                Assert.Equal("9", File.ReadAllText(target));
             }
         }
 
@@ -213,6 +373,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Arrange
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 AddService(conn, "NoFolder");
+                DowngradeToVersion9(conn);
 
                 // Act
                 var ex = Record.Exception(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));

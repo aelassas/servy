@@ -63,12 +63,14 @@ namespace Servy.Infrastructure.Data
         /// <param name="connection">An open database connection to execute commands on.</param>
         /// <param name="legacyRecoveryFolderPath">
         /// The legacy folder whose per-service counter files are imported into <c>RestartAttempts</c>, and which is
-        /// deleted once every file in it was imported; <see langword="null"/> imports nothing.
+        /// deleted once every file in it was imported; <see langword="null"/> imports nothing. It is read only by the
+        /// start that migrates the database to version 10; later starts never scan it.
         /// </param>
         internal static void Initialize(DbConnection connection, string legacyRecoveryFolderPath)
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
+            bool importLegacyRecoveryFolder = false;
             bool deleteLegacyRecoveryFolder = false;
 
             // Register the collation sequence BEFORE any DDL or PRAGMA is sent to the SQLite engine.
@@ -224,6 +226,9 @@ namespace Servy.Infrastructure.Data
                             ApplyVersion10(connection, transaction);
                             UpdateSchemaVersion(connection, 10, transaction);
                             currentVersion = 10;
+
+                            // The counter files these columns replace are imported by this migration only (step 7)
+                            importLegacyRecoveryFolder = true;
                         }
 
                         // Version 11 Migration to add AllowOverriddenRuntimeVars
@@ -256,10 +261,11 @@ namespace Servy.Infrastructure.Data
                         // Ensures that any columns added to SqlConstants but missed in migrations are applied.
                         ReconcileSchema(connection, currentVersion, transaction);
 
-                        // 7. Import the legacy recovery folder. Not version-gated: it runs on every start while the
-                        // folder exists, and only fills rows whose counter was never written, so a folder that could
-                        // not be deleted is never imported over newer counters.
-                        deleteLegacyRecoveryFolder = LegacyRecoveryImporter.Import(connection, transaction, legacyRecoveryFolderPath);
+                        // 7. Import the legacy recovery folder, once: only in the start that runs the version 10
+                        // migration, which is committed with it. Later starts never scan the folder again, so a file
+                        // that was skipped or could not be read does not keep it, or its leftover grants, alive.
+                        if (importLegacyRecoveryFolder)
+                            deleteLegacyRecoveryFolder = LegacyRecoveryImporter.Import(connection, transaction, legacyRecoveryFolderPath);
 
                         transaction.Commit();
                     }
