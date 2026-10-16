@@ -103,6 +103,26 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
+        public async Task RunAsync_HelpFlagProvided_DoesNotCreateTheAesKeyFile()
+        {
+            // Arrange
+            // ProtectedKeyProvider resolves the fixture's relative key path against the current directory. Building
+            // SecureData while composing the commands created that file before any EnsureAdministrator check, so an
+            // unelevated --help made the key and granted the caller Full Control on it (#7531).
+            var keyPath = Path.GetFullPath(AesKeyFileName);
+            if (File.Exists(keyPath)) File.Delete(keyPath);
+            var runtime = new FakeCliRuntime();
+            string[] args = { "--help" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.False(File.Exists(keyPath), $"--help created the AES key file at '{keyPath}'.");
+        }
+
+        [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange
