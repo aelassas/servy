@@ -94,10 +94,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Arrange: a version 9 database, i.e. without the version 10 and 11 columns
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
                 AddService(conn, "existing");
-                conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN RestartAttempts;");
-                conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN RestartAttemptsUpdatedAtTicks;");
-                conn.Execute($"ALTER TABLE {SqlConstants.ServicesTableName} DROP COLUMN AllowOverriddenRuntimeVars;");
-                conn.Execute("UPDATE SchemaInfo SET Version = 9 WHERE Id = 1;");
+                DowngradeToVersion9(conn);
 
                 // Act
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
