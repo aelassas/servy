@@ -717,6 +717,135 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public async Task LoadDependencyTreeAsync_SupersededLoadFinishing_DoesNotClearIsBusyOfTheNewerLoad()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange - each SCM walk is held open by its own gate. The first walk fails once released so that
+                        // its error dialog marks the exact moment its continuation (catch + finally) runs on the dispatcher.
+                        var firstGate = new ManualResetEventSlim(false);
+                        var secondGate = new ManualResetEventSlim(false);
+                        var calls = 0;
+                        var firstLoadHandled = false;
+
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServyCore", It.IsAny<CancellationToken>()))
+                                           .Returns(() =>
+                                           {
+                                               if (Interlocked.Increment(ref calls) == 1)
+                                               {
+                                                   firstGate.Wait(TimeSpan.FromSeconds(5));
+                                                   throw new InvalidOperationException("first walk failed");
+                                               }
+
+                                               secondGate.Wait(TimeSpan.FromSeconds(5));
+                                               return new ServiceDependencyNode("ServyCore", "Friendly Core");
+                                           });
+                        _mockMessageBoxService.Setup(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()))
+                                              .Returns(() =>
+                                              {
+                                                  Volatile.Write(ref firstLoadHandled, true);
+                                                  return Task.CompletedTask;
+                                              });
+
+                        viewModel = CreateViewModel();
+                        viewModel.SelectedService = new DependencyService { Name = "ServyCore" }; // 1st load, blocked in its gate
+                        await Helper.WaitUntilAsync(
+                            () => Volatile.Read(ref calls) == 1,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        var secondLoad = viewModel.LoadDependencyTreeAsync(null); // 2nd load supersedes the 1st
+                        await Helper.WaitUntilAsync(
+                            () => Volatile.Read(ref calls) == 2,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // Act - the superseded (first) walk finishes while the second is still running
+                        firstGate.Set();
+                        await Helper.WaitUntilAsync(
+                            () => Volatile.Read(ref firstLoadHandled),
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // Assert
+                        Assert.True(viewModel.IsBusy, "A superseded load cleared IsBusy while the newer load was still running.");
+
+                        secondGate.Set();
+                        await secondLoad;
+                        Assert.False(viewModel.IsBusy);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task Dispose_WhileALoadIsInFlight_CancelsTheLoadToken()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    // Arrange
+                    var gate = new ManualResetEventSlim(false);
+                    var captured = CancellationToken.None;
+                    var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                    _mockServiceManager.Setup(m => m.GetDependencies("ServyCore", It.IsAny<CancellationToken>()))
+                                       .Callback<string, CancellationToken>((_, token) =>
+                                       {
+                                           captured = token;
+                                           started.TrySetResult(true);
+                                       })
+                                       .Returns(() =>
+                                       {
+                                           gate.Wait(TimeSpan.FromSeconds(5));
+                                           return (ServiceDependencyNode)null;
+                                       });
+
+                    var viewModel = CreateViewModel();
+                    var disposed = false;
+                    try
+                    {
+                        viewModel.SelectedService = new DependencyService { Name = "ServyCore" };
+                        await Helper.WaitUntilAsync(
+                            () => started.Task.IsCompleted,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+                        Assert.False(captured.IsCancellationRequested);
+
+                        // Act
+                        disposed = true;
+                        viewModel.Dispose();
+
+                        // Assert
+                        Assert.True(captured.IsCancellationRequested);
+                    }
+                    finally
+                    {
+                        gate.Set();
+                        if (!disposed)
+                        {
+                            viewModel.Dispose();
+                        }
+                    }
+                }
+            }, createApp: true);
+        }
+
         #endregion
 
         #region Background Worker Loop Ticking Framework Evaluation Tests
