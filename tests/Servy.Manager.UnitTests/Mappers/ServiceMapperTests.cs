@@ -151,6 +151,25 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.False(result.IsInstalled);
         }
 
+        [Fact]
+        public async Task ToModelAsync_DisplayName_IsMappedFromTheDomainService()
+        {
+            // Arrange
+            var domainService = new Core.Domain.Service(_mockServiceManager.Object)
+            {
+                Name = "Test",
+                DisplayName = "Test Display Name"
+            };
+
+            // Act
+            var result = await ServiceMapper.ToModelAsync(domainService, true, false,
+                _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Test Display Name", result.DisplayName);
+        }
+
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
