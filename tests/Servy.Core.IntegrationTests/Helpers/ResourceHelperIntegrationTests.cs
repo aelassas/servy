@@ -827,6 +827,44 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public async Task CopyEmbeddedResource_WhenTheHandleExeCannotBeWritten_KillsNothingAndLogsTheWriteFailure()
+        {
+            // Arrange
+            string fileName = "locked_handle_unwritable";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.exe");
+            File.WriteAllText(targetPath, "stale target");
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
+            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
+
+            // The target resource is readable, the Handle resource throws while it is being written
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x03 }));
+            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources." + handleExeFileName))
+                         .Throws(new IOException("disk full"));
+
+            // The killer would report success, so only the failed verification keeps it from being reached
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
+
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object, "Servy.Resources", fileName, "exe", cancellationToken: TestContext.Current.CancellationToken));
+
+                // Assert
+                Assert.False(result);
+                Assert.False(File.Exists(handleExePath));
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+
+                // The method's own catch, not the outer catch-all that a deleted catch falls into
+                Assert.Contains("Failed to write the embedded resource", textLogOutput);
+                Assert.DoesNotContain("Failed to copy embedded resource", textLogOutput);
+            }
+        }
+
+        [Fact]
         public async Task CopyEmbeddedResource_WhenTheLockedFileIsTheHandleExeItself_KillsNothing()
         {
             // Arrange: the Handle executable being replaced is the one that would be run to find its own lock holders,
