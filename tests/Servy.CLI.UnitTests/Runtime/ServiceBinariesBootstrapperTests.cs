@@ -21,8 +21,6 @@ namespace Servy.CLI.UnitTests.Runtime
         {
             public string BaseExtractionDirectory { get; set; } = @"C:\FakeVault\bin";
 
-            public bool HasCopiedResources { get; set; }
-
             /// <summary>The resources ("name.ext") <see cref="IsExtractionNeeded"/> reports as missing or stale.</summary>
             public HashSet<string> NeedingExtraction { get; } = new HashSet<string>();
 
@@ -183,7 +181,7 @@ namespace Servy.CLI.UnitTests.Runtime
         public async Task EnsureAsync_DebugBuild_ExtractsTheDebugSymbolsAndNeverHardens()
         {
             // Arrange
-            _extractor.HasCopiedResources = true;
+            _extractor.NeedingExtraction.Add($"{AppConfig.ServyServiceCLIFileName}.exe");
             var bootstrapper = CreateBootstrapper();
 
             // Act
@@ -200,26 +198,28 @@ namespace Servy.CLI.UnitTests.Runtime
                 },
                 _extractor.Copied.Skip(4));
             _hardener.Verify(h => h.HardenServiceAccountsAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+            _hardener.Verify(h => h.SecureVaultAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 #else
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public async Task EnsureAsync_ReleaseBuild_HardensTheServiceAccountsOnlyWhenAFileWasExtracted(bool hasCopiedResources)
+        public async Task EnsureAsync_ReleaseBuild_SecuresTheVaultOnEveryStart(bool extractionNeeded)
         {
             // Arrange
-            _extractor.HasCopiedResources = hasCopiedResources;
+            if (extractionNeeded)
+                _extractor.NeedingExtraction.Add($"{AppConfig.ServyServiceCLIFileName}.exe");
             var bootstrapper = CreateBootstrapper();
 
             // Act
             await bootstrapper.EnsureAsync(CancellationToken.None);
 
             // Assert
-            // Release builds copy no debug symbols, and re-grant the service accounts only after a new file landed in the vault.
+            // Release builds copy no debug symbols, and purge the vault and re-grant the service accounts on every start,
+            // whether or not a file was extracted (#7526).
             Assert.Equal(4, _extractor.Copied.Count);
-            _hardener.Verify(
-                h => h.HardenServiceAccountsAsync(_repository.Object, It.IsAny<CancellationToken>()),
-                hasCopiedResources ? Times.Once() : Times.Never());
+            _hardener.Verify(h => h.SecureVaultAsync(_repository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.HardenServiceAccountsAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 #endif
 

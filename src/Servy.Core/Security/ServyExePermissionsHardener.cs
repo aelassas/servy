@@ -21,9 +21,12 @@ namespace Servy.Core.Security
     /// <para>
     /// This is the C# port of the former <c>Set-ServyExePermissions.ps1</c>, so Servy applies the hardening itself
     /// wherever its executables run. It is run when a service is installed under an account other than Local System
-    /// (<see cref="Services.ServiceManager"/>), and again for every such account after the desktop app, the Manager or
-    /// the CLI has extracted a binary into the vault, because a newly written file carries no grant for the service
-    /// accounts and would be unreadable to them.
+    /// (<see cref="Services.ServiceManager"/>), and again for every such account on each start of the desktop app, the
+    /// Manager or the CLI (Release builds), through <see cref="SecureVaultAsync"/>: it first purges every explicit entry for a
+    /// principal other than Administrators and Local System from every file and folder in the vault and hands the items
+    /// another principal owns to <c>BUILTIN\Administrators</c>, so nothing a standard user added to a vault it created
+    /// before Servy did survives (#7526), then grants each account its access again. A newly extracted file, which
+    /// carries no grant for the service accounts, is granted the same way.
     /// </para>
     /// <para>
     /// Each hardened file stops inheriting from the vault, is owned by Builtin Administrators, and keeps Full Control
@@ -228,6 +231,233 @@ namespace Servy.Core.Security
                     return;
 
                 await HardenAsync(group.Account, group.ServiceNames, cancellationToken);
+            }
+        }
+
+        /// <inheritdoc />
+        public virtual async Task SecureVaultAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken)
+        {
+            if (serviceRepository == null)
+                throw new ArgumentNullException(nameof(serviceRepository));
+
+            List<ServiceAccountGroup> groups;
+            try
+            {
+                if (!IsProcessElevated())
+                {
+                    Logger.Debug("Securing Servy's vault skipped: the process is not elevated.");
+                    return;
+                }
+
+                // The accounts are read before anything is purged: an entry purged without them could not be granted back
+                var services = await serviceRepository.GetAllAsync(decrypt: false, cancellationToken);
+                groups = await Task.Run(() => GetServiceAccountGroups(services), cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Warn("Securing Servy's vault was cancelled before anything was changed.");
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to read the service accounts; Servy's vault was not purged and their grants were left as they are.", ex);
+                return;
+            }
+
+            // Once the purge has started, the grants are always written back, so neither step is cancelled
+            ExePermissionsHardeningResult purge;
+            try
+            {
+                purge = await Task.Run(() => PurgeVault(groups));
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Purging the non-administrative entries of Servy's vault failed.", ex);
+                purge = new ExePermissionsHardeningResult(VaultDirectory).Complete(ExePermissionsHardeningStatus.Failed, ex.Message);
+            }
+
+            ReportPurgeResult(purge);
+
+            foreach (var group in groups)
+            {
+                await HardenAsync(group.Account, group.ServiceNames, CancellationToken.None);
+            }
+        }
+
+        /// <summary>
+        /// Removes every explicit entry for a principal other than <c>Administrators</c> and <c>Local System</c> from every
+        /// file and folder below the vault root, and hands each of them that another principal owns to
+        /// <c>BUILTIN\Administrators</c> (#7526). The vault root itself is secured by
+        /// <see cref="SecurityHelper.CreateSecureDirectory"/>.
+        /// </summary>
+        /// <param name="groups">The service accounts whose grants are written back afterwards. When one of them cannot be
+        /// resolved, nothing is purged, because its grants could not be written back.</param>
+        /// <returns>The outcome, with the items whose entries or owner were changed and those that could not be
+        /// rewritten.</returns>
+        internal ExePermissionsHardeningResult PurgeVault(IReadOnlyCollection<ServiceAccountGroup> groups)
+        {
+            var result = new ExePermissionsHardeningResult(VaultDirectory);
+
+            if (!Directory.Exists(VaultDirectory))
+                return result.Complete(ExePermissionsHardeningStatus.VaultNotFound, $"'{VaultDirectory}' does not exist");
+
+            // Everything under a linked vault would be written somewhere else
+            if ((new DirectoryInfo(VaultDirectory).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                return result.Complete(ExePermissionsHardeningStatus.Skipped, "the vault directory is a reparse point (symlink/junction)");
+
+            foreach (var group in groups ?? (IReadOnlyCollection<ServiceAccountGroup>)Array.Empty<ServiceAccountGroup>())
+            {
+                if (ResolveAccount(group.Account) == null)
+                    return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, $"the account '{group.Account}' could not be resolved, so its grants could not be written back");
+            }
+
+            PurgeTree(string.Empty, result);
+
+            return result.Complete(result.Failed.Count > 0 ? ExePermissionsHardeningStatus.Failed : ExePermissionsHardeningStatus.Revoked);
+        }
+
+        /// <summary>
+        /// Purges the non-administrative entries of every file and folder in a folder and, recursively, in its
+        /// subfolders. A linked folder is refused and never walked.
+        /// </summary>
+        /// <param name="relativeFolder">The folder, relative to <see cref="VaultDirectory"/>; empty for the vault itself.</param>
+        /// <param name="result">Receives each item that was changed, or that failed.</param>
+        private void PurgeTree(string relativeFolder, ExePermissionsHardeningResult result)
+        {
+            var path = relativeFolder.Length == 0 ? VaultDirectory : Path.Combine(VaultDirectory, relativeFolder);
+
+            string[] files;
+            string[] folders;
+            try
+            {
+                files = Directory.GetFiles(path);
+                folders = Directory.GetDirectories(path);
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Logger.Error($"Failed to list '{(relativeFolder.Length == 0 ? VaultDirectory : relativeFolder)}' to purge the non-administrative entries of its content.", ex);
+                result.AddFailed(relativeFolder.Length == 0 ? VaultDirectory : relativeFolder);
+                return;
+            }
+
+            foreach (var file in files)
+            {
+                PurgeEntries(Path.Combine(relativeFolder, Path.GetFileName(file)), result);
+            }
+
+            foreach (var folder in folders)
+            {
+                var child = Path.Combine(relativeFolder, Path.GetFileName(folder));
+                if (PurgeEntries(child, result))
+                    PurgeTree(child, result);
+            }
+        }
+
+        /// <summary>
+        /// Removes every explicit entry for a principal other than <c>Administrators</c> and <c>Local System</c> from one
+        /// vault item, and hands the item to <c>BUILTIN\Administrators</c> when another principal owns it, because an
+        /// owner keeps an implicit right to rewrite the DACL and could grant itself access again. A link is refused,
+        /// because the ACL write would land outside the vault.
+        /// </summary>
+        /// <param name="relativePath">The item, relative to <see cref="VaultDirectory"/>.</param>
+        /// <param name="result">Receives the item as revoked when it was changed, or as failed.</param>
+        /// <returns><see langword="true"/> when the item may be walked: it is not a link and its ACL could be read.</returns>
+        private bool PurgeEntries(string relativePath, ExePermissionsHardeningResult result)
+        {
+            var path = Path.Combine(VaultDirectory, relativePath);
+            try
+            {
+                if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    Logger.Error($"Cannot purge the non-administrative entries of '{relativePath}': it is a reparse point (symlink/junction).");
+                    result.AddFailed(relativePath);
+                    return false;
+                }
+
+                var isDirectory = Directory.Exists(path);
+                FileSystemSecurity acl = isDirectory
+                    ? new DirectoryInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner)
+                    : (FileSystemSecurity)new FileInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+
+                var owner = acl.GetOwner(typeof(SecurityIdentifier));
+                var foreignOwner = !IsAdministrativePrincipal(owner);
+                var foreignRules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                    .Cast<FileSystemAccessRule>()
+                    .Where(rule => !IsAdministrativePrincipal(rule.IdentityReference))
+                    .ToList();
+
+                if (foreignRules.Count == 0 && !foreignOwner)
+                    return true;
+
+                if (!isDirectory)
+                {
+                    var links = GetHardLinkCount(path);
+                    if (links != 1)
+                    {
+                        Logger.Error(links < 1
+                            ? $"Cannot purge the non-administrative entries of '{relativePath}': its hard link count could not be verified."
+                            : $"Cannot purge the non-administrative entries of '{relativePath}': it has {links} NTFS hard links.");
+                        result.AddFailed(relativePath);
+                        return true;
+                    }
+                }
+
+                foreach (var rule in foreignRules)
+                {
+                    acl.RemoveAccessRuleSpecific(rule);
+                }
+
+                if (foreignOwner)
+                    acl.SetOwner(AdministratorsSid);
+
+                if (isDirectory)
+                    new DirectoryInfo(path).SetAccessControl((DirectorySecurity)acl);
+                else
+                    new FileInfo(path).SetAccessControl((FileSecurity)acl);
+
+                Logger.Debug($"Purged the non-administrative entries of '{relativePath}'.");
+                result.AddRevoked(relativePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to purge the non-administrative entries of '{relativePath}'.", ex);
+                result.AddFailed(relativePath);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a principal is <c>Administrators</c> or <c>Local System</c>, the only principals the vault
+        /// purge keeps.
+        /// </summary>
+        /// <param name="identity">The principal, as a <see cref="SecurityIdentifier"/>.</param>
+        /// <returns><see langword="true"/> for <c>Administrators</c> and <c>Local System</c>.</returns>
+        private static bool IsAdministrativePrincipal(IdentityReference? identity)
+            => identity != null && (AdministratorsSid.Equals(identity) || LocalSystemSid.Equals(identity));
+
+        /// <summary>
+        /// Logs the outcome of a vault purge at the level it calls for.
+        /// </summary>
+        /// <param name="result">The outcome of one purge.</param>
+        internal static void ReportPurgeResult(ExePermissionsHardeningResult result)
+        {
+            switch (result.Status)
+            {
+                case ExePermissionsHardeningStatus.Revoked:
+                    if (result.Revoked.Count == 0)
+                        Logger.Debug("Servy's vault held no non-administrative entry; nothing to purge.");
+                    else
+                        Logger.Info($"Purged the non-administrative entries of Servy's vault: {string.Join(", ", result.Revoked)}.");
+                    break;
+                case ExePermissionsHardeningStatus.Failed:
+                    Logger.Error($"Purging the non-administrative entries of Servy's vault failed on: {string.Join(", ", result.Failed)}. " +
+                        "Those items keep their entries until the next elevated start.");
+                    break;
+                default:
+                    Logger.Warn($"Servy's vault was not purged of its non-administrative entries: {result.Reason}.");
+                    break;
             }
         }
 

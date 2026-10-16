@@ -59,6 +59,24 @@ namespace Servy.Core.Security
         Task HardenServiceAccountsAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken);
 
         /// <summary>
+        /// Purges every explicit entry for a principal other than <c>Administrators</c> and <c>Local System</c> from every
+        /// file and folder below the vault root, hands the items another principal owns to <c>BUILTIN\Administrators</c>,
+        /// then re-applies the hardening for every account a Servy service runs under, as
+        /// <see cref="HardenServiceAccountsAsync"/> does, so each keeps its grants on the binaries, the settings files and
+        /// the log folders of its own services (#7526).
+        /// </summary>
+        /// <param name="serviceRepository">The repository the service accounts are read from. They are read before
+        /// anything is purged; when they cannot be read, nothing is changed, and when one of them cannot be resolved,
+        /// nothing is purged.</param>
+        /// <param name="cancellationToken">A token that stops the method before the purge starts. Once the purge has
+        /// started, the purge and the re-grant both run to the end.</param>
+        /// <returns>A task that completes when the vault has been purged and every account has been processed. Nothing is
+        /// done when the process is not elevated, and a vault that is a link is not purged. Apart from a null
+        /// <paramref name="serviceRepository"/>, it does not throw.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceRepository"/> is null.</exception>
+        Task SecureVaultAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Revokes what the hardening granted <paramref name="targetAccount"/> for <paramref name="serviceName"/> - its
         /// entries on that service's log folder - and, unless a service in <paramref name="serviceRepository"/> still
         /// runs under that account, everything else it granted in the vault: its explicit entries on the vault root,

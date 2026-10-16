@@ -1499,6 +1499,169 @@ namespace Servy.Core.UnitTests.Security
 
         #endregion
 
+        #region SecureVaultAsync
+
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier UsersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+
+        [Fact]
+        public void PurgeVault_RemovesEveryNonAdministrativeEntryBelowTheRootAndKeepsTheAdministrativeOnes()
+        {
+            // Only an elevated process can hand an item it owns to Administrators
+            Assert.SkipUnless(SecurityHelper.IsAdministrator(), "Not elevated: only an elevated process can hand the vault items to Administrators.");
+
+            // Arrange
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            AddAce(exe, AdministratorsSid);
+            var serviceLogs = GrantedFolder(ServiceLogsFolder, NetworkServiceSid);
+            var log = Path.Combine(serviceLogs, "svc-one.log");
+            File.WriteAllText(log, "log");
+            AddAce(log, UsersSid);
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var result = sut.PurgeVault(new List<ServiceAccountGroup>());
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
+            Assert.Empty(result.Failed);
+            Assert.False(ItemHasAce(exe, LocalServiceSid));
+            Assert.False(ItemHasAce(serviceLogs, NetworkServiceSid));
+            Assert.False(ItemHasAce(log, UsersSid));
+            Assert.True(ItemHasAce(exe, AdministratorsSid));
+            Assert.Contains(AppConfig.ServyServiceUIExe, result.Revoked);
+            Assert.Contains(ServiceLogsFolder, result.Revoked);
+            Assert.Contains(Path.Combine(ServiceLogsFolder, "svc-one.log"), result.Revoked);
+        }
+
+        [Fact]
+        public void PurgeVault_ItemOwnedByAnotherPrincipal_HandsItToAdministrators()
+        {
+            // Only an elevated process can hand an item to Administrators
+            Assert.SkipUnless(SecurityHelper.IsAdministrator(), "Not elevated: only an elevated process can hand the vault items to Administrators.");
+
+            // Arrange
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            SecurityIdentifier currentUserSid;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUserSid = identity.User!;
+            }
+
+            var file = new FileInfo(exe);
+            var ownerAcl = file.GetAccessControl(AccessControlSections.Owner);
+            ownerAcl.SetOwner(currentUserSid);
+            file.SetAccessControl(ownerAcl);
+            Assert.Equal(currentUserSid, file.GetAccessControl(AccessControlSections.Owner).GetOwner(typeof(SecurityIdentifier)));
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var result = sut.PurgeVault(new List<ServiceAccountGroup>());
+
+            // Assert
+            Assert.Equal(AdministratorsSid, file.GetAccessControl(AccessControlSections.Owner).GetOwner(typeof(SecurityIdentifier)));
+            Assert.Contains(AppConfig.ServyServiceUIExe, result.Revoked);
+        }
+
+        [Fact]
+        public void PurgeVault_AnAccountDoesNotResolve_PurgesNothing()
+        {
+            // Arrange
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            var group = new ServiceAccountGroup("ghost");
+            group.Add(ServiceName);
+            var sut = new TestableHardener(TempDirectory) { Sid = null };
+
+            // Act
+            var result = sut.PurgeVault(new[] { group });
+
+            // Assert: the grants of an account that cannot be resolved could not be written back
+            Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
+            Assert.Empty(result.Revoked);
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+        }
+
+        [Fact]
+        public async Task SecureVaultAsync_PurgesTheVaultThenGrantsEveryAccountItsAccessBack()
+        {
+            // Only an elevated process can hand the hardened files to Administrators
+            Assert.SkipUnless(SecurityHelper.IsAdministrator(), "Not elevated: only an elevated process can hand the vault items to Administrators.");
+
+            // Arrange: the binary and the service's log folder carry the account's grants and a stray entry
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, NetworkServiceSid);
+            var serviceLogs = GrantedFolder(ServiceLogsFolder, LocalServiceSid);
+            AddAce(serviceLogs, NetworkServiceSid);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc" },
+            });
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            await sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken);
+
+            // Assert: the stray entries are gone and the account has its grants back
+            Assert.False(ItemHasAce(exe, NetworkServiceSid));
+            Assert.False(ItemHasAce(serviceLogs, NetworkServiceSid));
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+            Assert.True(ItemHasAce(serviceLogs, LocalServiceSid));
+        }
+
+        [Fact]
+        public async Task SecureVaultAsync_RepositoryThrows_PurgesNothing()
+        {
+            // Arrange
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("database locked"));
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+
+            // Act
+            var log = await LogCapture.RunAsync(() => sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken));
+
+            // Assert: without the accounts, a purged grant could not be written back
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+            Assert.Empty(sut.HardenedAccounts);
+            Assert.Contains("Servy's vault was not purged", log);
+        }
+
+        [Fact]
+        public async Task SecureVaultAsync_NotElevated_DoesNotReadTheRepository()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            var sut = new TestableHardener(TempDirectory) { Elevated = false, RecordOnly = true };
+
+            // Act
+            await sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken);
+
+            // Assert
+            repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.Empty(sut.HardenedAccounts);
+        }
+
+        [Fact]
+        public async Task SecureVaultAsync_NullRepository_Throws()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => sut.SecureVaultAsync(null!, TestContext.Current.CancellationToken));
+        }
+
+        #endregion
+
         /// <summary>No remaining service.</summary>
         private static readonly IReadOnlyCollection<ServiceDto> NoServices = new List<ServiceDto>();
 

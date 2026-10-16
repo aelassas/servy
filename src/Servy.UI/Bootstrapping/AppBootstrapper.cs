@@ -455,12 +455,9 @@ namespace Servy.UI.Bootstrapping
                                 _options.ResourceExtractionWarningTitle));
                         }
     #else
-                        // A file newly extracted into the vault carries no grant for the service accounts, so grant them
-                        // their access to it again. Debug builds extract next to the executable instead.
-                        if (resourceHelper.HasCopiedResources)
-                        {
-                            await new ServyExePermissionsHardener().HardenServiceAccountsAsync(ServiceRepository!, ct);
-                        }
+                        // Purge every non-administrative entry in the vault, then grant the service accounts their access
+                        // again, newly extracted files included (#7526). Debug builds extract next to the executable instead.
+                        await new ServyExePermissionsHardener().SecureVaultAsync(ServiceRepository!, ct);
     #endif
                         // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
                         var hostExePath = Path.Combine(resourceHelper.BaseExtractionDirectory, AppConfig.ServyHostExe);

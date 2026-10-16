@@ -39,7 +39,7 @@ namespace Servy.CLI.Runtime
         private readonly IServiceRepository _serviceRepository;
 
         /// <summary>
-        /// Grants the service accounts their access to newly extracted files.
+        /// Purges the vault of non-administrative entries and grants the service accounts their access again.
         /// </summary>
         private readonly IServyExePermissionsHardener _hardener;
 
@@ -55,7 +55,7 @@ namespace Servy.CLI.Runtime
         /// <param name="serviceHelper">Stops and starts the Servy services around the update.</param>
         /// <param name="hostInstaller">Installs, stops and starts the Servy host service.</param>
         /// <param name="serviceRepository">The repository holding the installed services.</param>
-        /// <param name="hardener">Grants the service accounts their access to newly extracted files.</param>
+        /// <param name="hardener">Purges the vault of non-administrative entries and grants the service accounts their access again.</param>
         /// <param name="osArchitecture">The architecture of the operating system.</param>
         /// <exception cref="ArgumentNullException">Thrown when a reference argument is <see langword="null"/>.</exception>
         public ServiceBinariesBootstrapper(
@@ -142,12 +142,9 @@ namespace Servy.CLI.Runtime
                     Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyHostFileName}.pdb");
                 }
 #else
-                // A file newly extracted into the vault carries no grant for the service accounts, so grant them
-                // their access to it again. Debug builds extract next to the executable instead.
-                if (_extractor.HasCopiedResources)
-                {
-                    await _hardener.HardenServiceAccountsAsync(_serviceRepository, cancellationToken);
-                }
+                // Purge every non-administrative entry in the vault, then grant the service accounts their access
+                // again, newly extracted files included (#7526). Debug builds extract next to the executable instead.
+                await _hardener.SecureVaultAsync(_serviceRepository, cancellationToken);
 #endif
                 // Install the Servy host service when it is missing, keep its startup type Automatic, and start it
                 var hostResult = await _hostInstaller.EnsureInstalledAndRunningAsync(Path.Combine(_extractor.BaseExtractionDirectory, AppConfig.ServyHostExe), _serviceHelper, cancellationToken);
