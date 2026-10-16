@@ -1,8 +1,10 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace Servy.Core.Helpers
 {
@@ -12,6 +14,16 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ResourceHelper
     {
+        /// <summary>
+        /// The rights that let a principal change a file's content, its timestamps or its ACL, or replace it.
+        /// </summary>
+        private const FileSystemRights WriteRights = FileSystemRights.WriteData | FileSystemRights.AppendData
+            | FileSystemRights.WriteAttributes | FileSystemRights.WriteExtendedAttributes | FileSystemRights.Delete
+            | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
+
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
         private readonly IProcessKiller _processKiller;
 
         /// <summary>
@@ -66,6 +78,8 @@ namespace Servy.Core.Helpers
         /// Determines whether an embedded resource has to be (re)extracted: the file is missing, or it is older than the
         /// running executable by more than <see cref="AppConfig.ResourceStalenessThresholdMinutes"/> AND its content differs
         /// from the embedded resource. A file identical to the resource is never extracted again, whatever the timestamps say.
+        /// A file whose timestamps say "keep" is still compared with the embedded resource, and extracted again when it
+        /// differs, if a principal other than Administrators and SYSTEM owns it or may write to it (#7530).
         /// </summary>
         /// <param name="assembly">The assembly that embeds the resource.</param>
         /// <param name="resourceNamespace">The resource namespace.</param>
@@ -101,9 +115,6 @@ namespace Servy.Core.Helpers
                 if (!TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
-                // Capture pre-existing explicit ACLs BEFORE killing processes or staging files
-                FileSecurity? existingAcl = GetExistingFileSecurity(targetPath);
-
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
                 // This prevents killing locking processes if the resource is missing.
                 Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -118,14 +129,15 @@ namespace Servy.Core.Helpers
                     // Check cancellation boundary right before process execution checks
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (!TerminateBlockingProcesses(targetPath))
+                    if (!TerminateBlockingProcesses(assembly, resourceNamespace, targetPath))
                         return false;
 
                     // Plumb the token parameter through to the atomic I/O engine
                     await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync, cancellationToken);
 
-                    // Restore pre-existing ACLs on the newly written file
-                    RestoreFileSecurity(targetPath, existingAcl);
+                    // Rebuild the DACL from policy rather than restoring the old one, which may carry entries that were
+                    // never Servy's (#7530); the service accounts get their access back from the vault hardening
+                    ApplyVaultFileSecurity(targetPath);
 
                     HasCopiedResources = true;
                 }
@@ -213,54 +225,85 @@ namespace Servy.Core.Helpers
         #region Shared Internal Logic
 
         /// <summary>
-        /// Attempts to retrieve the existing Access Control List (ACL) for a file before replacement,
-        /// converting inherited rules into explicit Access Control Entries (ACEs).
+        /// Gives a newly written file the vault's own security descriptor instead of the one the replaced file had:
+        /// inheritance is broken, the DACL holds Full Control for <c>BUILTIN\Administrators</c> and <c>SYSTEM</c> only
+        /// (and for the current user when the process is not elevated, as <see cref="SecurityHelper.ApplySecurityRules"/>
+        /// does for the vault itself), and an elevated process makes <c>BUILTIN\Administrators</c> the owner (#7530).
         /// </summary>
-        /// <param name="filePath">The target file path.</param>
-        /// <returns>The <see cref="FileSecurity"/> of the target file if it exists; otherwise, <c>null</c>.</returns>
-        private FileSecurity? GetExistingFileSecurity(string filePath)
+        /// <param name="filePath">The file that was just written.</param>
+        /// <remarks>
+        /// The service accounts lose the Read &amp; Execute grant the replaced file carried. In Release builds the caller
+        /// re-applies it right after the extraction pass, for every account found in the database, through
+        /// <see cref="ServyExePermissionsHardener.SecureVaultAsync"/>.
+        /// </remarks>
+        private static void ApplyVaultFileSecurity(string filePath)
         {
-            try
-            {
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {
-                    var fileInfo = new FileInfo(filePath);
-                    var security = fileInfo.GetAccessControl();
-
-                    // Protect against re-inheriting parent directory permissions upon atomic file replacement
-                    security.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
-                    return security;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Failed to read existing ACL for file '{filePath}'. Pre-existing security settings may not be preserved upon replacement.", ex);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Reapplies a previously captured Access Control List (ACL) to a target file after replacement.
-        /// </summary>
-        /// <param name="filePath">The target file path.</param>
-        /// <param name="fileSecurity">The <see cref="FileSecurity"/> settings to apply.</param>
-        private void RestoreFileSecurity(string filePath, FileSecurity? fileSecurity)
-        {
-            if (fileSecurity == null || string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                return;
-
             try
             {
                 var fileInfo = new FileInfo(filePath);
-                fileInfo.SetAccessControl(fileSecurity);
-                Logger.Debug($"Successfully restored explicit pre-existing ACL settings on '{filePath}'.");
+                var security = fileInfo.GetAccessControl();
+
+                SecurityIdentifier? currentUserSid;
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    currentUserSid = identity.User;
+                }
+
+                SecurityHelper.ApplySecurityRules(security, currentUserSid, breakInheritance: true);
+
+                if (SecurityHelper.IsAdministrator())
+                    security.SetOwner(AdministratorsSid);
+
+                fileInfo.SetAccessControl(security);
+                Logger.Debug($"Applied the vault's security descriptor to '{filePath}'.");
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to restore pre-existing ACL settings on '{filePath}'.", ex);
+                Logger.Warn($"Failed to apply the vault's security descriptor to '{filePath}'.", ex);
             }
         }
+
+        /// <summary>
+        /// Determines whether a principal other than <c>BUILTIN\Administrators</c> and <c>SYSTEM</c> owns a file or is
+        /// granted a right that changes its content, its timestamps or its ACL, so that its timestamps cannot be trusted
+        /// to stand for its content (#7530).
+        /// </summary>
+        /// <param name="filePath">The existing file.</param>
+        /// <returns><see langword="true"/> when another principal owns the file or may write to it, or when its owner and
+        /// ACL cannot be read.</returns>
+        internal static bool IsWritableByOthers(string filePath)
+        {
+            try
+            {
+                var security = new FileInfo(filePath).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+
+                if (!IsAdministrativePrincipal(security.GetOwner(typeof(SecurityIdentifier))))
+                    return true;
+
+                foreach (FileSystemAccessRule rule in security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier)))
+                {
+                    if (rule.AccessControlType == AccessControlType.Allow
+                        && (rule.FileSystemRights & WriteRights) != 0
+                        && !IsAdministrativePrincipal(rule.IdentityReference))
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Could not read the owner and ACL of '{filePath}', so it is treated as writable by others: {ex.Message}");
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a principal is <c>BUILTIN\Administrators</c> or <c>SYSTEM</c>.
+        /// </summary>
+        /// <param name="identity">The principal, as a security identifier.</param>
+        /// <returns><see langword="true"/> for either of the two.</returns>
+        private static bool IsAdministrativePrincipal(IdentityReference? identity)
+            => identity != null && (AdministratorsSid.Equals(identity) || LocalSystemSid.Equals(identity));
 
         /// <summary>
         /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required: based on
@@ -340,6 +383,15 @@ namespace Servy.Core.Helpers
 
                     Logger.Debug($"Existing file '{targetPath}' is identical to the embedded resource '{resourceName}'. Skipping copy.");
                     return false;
+                }
+
+                // The timestamps only stand for the content while nobody else can write the file or set its times. A
+                // healthy vault file costs one owner and ACL read here and no comparison; only a file another principal
+                // owns or may write to is compared with the embedded resource, and replaced when it differs (#7530).
+                if (!shouldCopy && assembly != null && IsWritableByOthers(targetPath) && !IsSameAsEmbeddedResource(assembly, resourceName, targetPath))
+                {
+                    Logger.Warn($"Existing file '{targetPath}' is owned or writable by a principal other than Administrators and SYSTEM and differs from the embedded resource '{resourceName}'. It will be replaced.");
+                    return true;
                 }
 
                 return shouldCopy;
@@ -449,9 +501,15 @@ namespace Servy.Core.Helpers
         /// Safely terminates any processes holding locks on the target file by identifying them by path.
         /// This prevents collateral damage to other service instances using the same utility names.
         /// </summary>
+        /// <param name="assembly">The assembly that embeds the Sysinternals Handle executable.</param>
+        /// <param name="resourceNamespace">The namespace of the embedded resources.</param>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <returns>True if the file was successfully cleared of blocking processes; false if termination failed.</returns>
-        internal bool TerminateBlockingProcesses(string targetPath)
+        /// <remarks>
+        /// The lock holders are found by the Sysinternals Handle executable, which runs elevated. It is run only once it
+        /// has been verified against the embedded resource, or written from it, in the same call (#7530).
+        /// </remarks>
+        internal bool TerminateBlockingProcesses(Assembly assembly, string resourceNamespace, string targetPath)
         {
             // FAST PROBE: Check if the target file is actually locked before shelling out to handle64.exe.
             // This prevents launching handle64.exe on every routine service start/update pass when no locks exist,
@@ -463,6 +521,12 @@ namespace Servy.Core.Helpers
 
             Logger.Info($"File lock detected on '{targetPath}'. Identifying and terminating blocking processes...");
 
+            if (!EnsureHandleExeVerified(assembly, resourceNamespace, targetPath))
+            {
+                Logger.Error($"The Sysinternals Handle executable could not be verified against the embedded resource, so the locks on '{targetPath}' were not cleared. Extraction aborted.");
+                return false;
+            }
+
             // Identify lock holders by path (not by executable name) so we surgically terminate
             // only the trees locking THIS specific file, leaving unrelated services that run
             // their own copy of the same executable (e.g., Servy.Restarter.exe) untouched.
@@ -473,6 +537,54 @@ namespace Servy.Core.Helpers
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Makes sure the Sysinternals Handle executable in <see cref="BaseExtractionDirectory"/> is the embedded one before
+        /// it is run: an existing file is compared with the embedded resource, and one that differs or is missing is
+        /// written from it first (#7530).
+        /// </summary>
+        /// <param name="assembly">The assembly that embeds the Handle executable.</param>
+        /// <param name="resourceNamespace">The namespace of the embedded resources.</param>
+        /// <param name="targetPath">The file whose locks are to be cleared. When it is the Handle executable itself, it
+        /// cannot be written first, so it is not verified.</param>
+        /// <returns><see langword="true"/> when the Handle executable matches the embedded resource.</returns>
+        private bool EnsureHandleExeVerified(Assembly assembly, string resourceNamespace, string targetPath)
+        {
+            var handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
+            var handleExePath = Path.Combine(BaseExtractionDirectory, handleExeFileName);
+            var resourceName = resourceNamespace + "." + handleExeFileName;
+
+            if (File.Exists(handleExePath) && IsSameAsEmbeddedResource(assembly, resourceName, handleExePath))
+                return true;
+
+            if (string.Equals(Path.GetFullPath(handleExePath), Path.GetFullPath(targetPath), StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            try
+            {
+                using (var resourceStream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (resourceStream == null)
+                    {
+                        Logger.Error($"Embedded resource not found: {resourceName}");
+                        return false;
+                    }
+
+                    Helper.WriteFileAtomic(handleExePath, resourceStream.CopyTo);
+                }
+
+                ApplyVaultFileSecurity(handleExePath);
+                HasCopiedResources = true;
+
+                Logger.Info($"Wrote the embedded resource '{resourceName}' to '{handleExePath}' before running it.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to write the embedded resource '{resourceName}' to '{handleExePath}'.", ex);
+                return false;
+            }
         }
 
         #endregion

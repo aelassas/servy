@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Testing;
 using System.Reflection;
 using System.Security.AccessControl;
@@ -11,6 +12,12 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ResourceHelperIntegrationTests : TempDirectoryTestBase
     {
+        private const string NotElevatedSkipReason = "Rewriting file owners and DACLs requires an elevated process.";
+
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+        private readonly bool _isElevated = SecurityHelper.IsAdministrator();
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly Mock<Assembly> _mockAssembly;
         private readonly ResourceHelper _resourceHelper;
@@ -127,7 +134,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             string nonExistentPath = Path.Combine(TempDirectory, "non_existent.exe");
 
             // Act
-            bool result = _resourceHelper.TerminateBlockingProcesses(nonExistentPath);
+            bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", nonExistentPath);
 
             // Assert
             Assert.True(result);
@@ -142,7 +149,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(filePath, "unlocked text");
 
             // Act
-            bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
+            bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", filePath);
 
             // Assert
             Assert.True(result);
@@ -156,12 +163,16 @@ namespace Servy.Core.IntegrationTests.Helpers
             string filePath = Path.Combine(TempDirectory, "locked_direct_success.exe");
             File.WriteAllText(filePath, "locked content");
 
+            // The Handle executable is written from the embedded resource before it is run
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x4D, 0x5A }));
+
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(true);
 
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act
-                bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
+                bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", filePath);
 
                 // Assert
                 Assert.True(result);
@@ -176,12 +187,16 @@ namespace Servy.Core.IntegrationTests.Helpers
             string filePath = Path.Combine(TempDirectory, "locked_direct_fail.exe");
             File.WriteAllText(filePath, "locked content");
 
+            // The Handle executable is written from the embedded resource before it is run
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x4D, 0x5A }));
+
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(false);
 
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act
-                bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
+                bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", filePath);
 
                 // Assert
                 Assert.False(result);
@@ -276,9 +291,14 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
 
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
             // Create a file and artificially push its LastWriteTime into the future to bypass the staleness threshold
             File.WriteAllText(targetPath, "old content");
             File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+
+            // Only Administrators and SYSTEM may write it, so its timestamps are trusted and nothing is compared (#7530)
+            SecureLikeTheVault(targetPath);
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
@@ -300,9 +320,14 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Anchor the existing extraction OLDER than the host executable, but by less than
             // AppConfig.ResourceStalenessThresholdMinutes: the threshold term is the only reason it is kept
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
             File.WriteAllText(targetPath, "existing content");
             DateTime hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
             File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddMinutes(-(AppConfig.ResourceStalenessThresholdMinutes / 2)));
+
+            // Only Administrators and SYSTEM may write it, so its timestamps are trusted and nothing is compared (#7530)
+            SecureLikeTheVault(targetPath);
 
             // Supply a stream so a copy would visibly overwrite the file if the threshold were dropped
             var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
@@ -525,6 +550,60 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateButWritableByOthersAndDifferentContent_ReturnsTrue()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the timestamps say "keep", but a standard user may write the file, so they prove nothing (#7530)
+            var targetPath = Path.Combine(TempDirectory, "writable.exe");
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03 });
+            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+            SecureLikeTheVault(targetPath);
+
+            var security = new FileInfo(targetPath).GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.Write, AccessControlType.Allow));
+            new FileInfo(targetPath).SetAccessControl(security);
+
+            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources.writable.exe")).Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x04 }));
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_mockAssembly.Object, "Servy.Resources", "writable", "exe");
+
+            // Assert
+            Assert.True(needed);
+        }
+
+        [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateButOwnedByAnotherPrincipalAndDifferentContent_ReturnsTrue()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: only Administrators and SYSTEM are granted anything, but the owner may rewrite the DACL (#7530)
+            var targetPath = Path.Combine(TempDirectory, "foreignowner.exe");
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03 });
+            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+            SecureLikeTheVault(targetPath);
+
+            SecurityIdentifier currentUser;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUser = identity.User!;
+            }
+
+            var security = new FileInfo(targetPath).GetAccessControl();
+            security.SetOwner(currentUser);
+            new FileInfo(targetPath).SetAccessControl(security);
+
+            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources.foreignowner.exe")).Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x04 }));
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_mockAssembly.Object, "Servy.Resources", "foreignowner", "exe");
+
+            // Assert
+            Assert.True(needed);
+        }
+
+        [Fact]
         public async Task CopyEmbeddedResource_StaleTimestampButIdenticalContent_WritesNothingAndKillsNothing()
         {
             // Arrange
@@ -590,6 +669,118 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(result);
             Assert.True(_resourceHelper.HasCopiedResources);
             Assert.Equal(newContent, File.ReadAllBytes(targetPath));
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenFileIsLockedAndHandleExeDiffers_ReplacesHandleExeBeforeRunningIt()
+        {
+            // Arrange
+            string fileName = "locked_handle_differs";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.exe");
+            File.WriteAllText(targetPath, "stale target");
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            // A Handle executable that is not the embedded one already sits where it would be run from (#7530)
+            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
+            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
+            File.WriteAllBytes(handleExePath, new byte[] { 0x0B, 0x0A, 0x0D });
+
+            var embeddedHandle = new byte[] { 0x4D, 0x5A, 0x48, 0x41 };
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x03 }));
+            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources." + handleExeFileName))
+                         .Returns(() => new MemoryStream(embeddedHandle));
+
+            FileStream? lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            byte[]? handleExeWhenRun = null;
+            _mockProcessKiller
+                .Setup(p => p.KillProcessesUsingFile(targetPath))
+                .Returns(() =>
+                {
+                    // What would be run at this point
+                    handleExeWhenRun = File.ReadAllBytes(handleExePath);
+                    lockStream?.Dispose();
+                    lockStream = null;
+                    return true;
+                });
+
+            try
+            {
+                // Act
+                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object, "Servy.Resources", fileName, "exe", cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.True(result);
+                Assert.Equal(embeddedHandle, handleExeWhenRun);
+            }
+            finally
+            {
+                lockStream?.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenFileIsLockedAndHandleExeCannotBeVerified_KillsNothing()
+        {
+            // Arrange
+            string fileName = "locked_handle_unverified";
+            string targetPath = Path.Combine(TempDirectory, $"{fileName}.exe");
+            File.WriteAllText(targetPath, "stale target");
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
+            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
+            var plantedHandle = new byte[] { 0x0B, 0x0A, 0x0D };
+            File.WriteAllBytes(handleExePath, plantedHandle);
+
+            // The target is embedded, the Handle executable is not, so the planted one cannot be verified (#7530)
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x03 }));
+            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources." + handleExeFileName))
+                         .Returns((Stream?)null);
+
+            // The killer would report success, so only the verification keeps it from being reached
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
+
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Act
+                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object, "Servy.Resources", fileName, "exe", cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.False(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+                Assert.Equal(plantedHandle, File.ReadAllBytes(handleExePath));
+            }
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenTheLockedFileIsTheHandleExeItself_KillsNothing()
+        {
+            // Arrange: the Handle executable being replaced is the one that would be run to find its own lock holders,
+            // and it differs from the embedded resource, so it cannot be verified first (#7530)
+            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
+            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
+            File.WriteAllBytes(handleExePath, new byte[] { 0x0B, 0x0A, 0x0D });
+            File.SetLastWriteTimeUtc(handleExePath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(new byte[] { 0x4D, 0x5A, 0x48, 0x41 }));
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
+
+            using (var lockStream = new FileStream(handleExePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                // Act
+                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
+                    _mockAssembly.Object, "Servy.Resources", Path.GetFileNameWithoutExtension(handleExeFileName), "exe",
+                    cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.False(result);
+                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+            }
         }
 
         [Fact]
@@ -692,11 +883,12 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenReplacingAFileWithAnExplicitAce_KeepsTheAceAndTheProtection()
+        public async Task CopyEmbeddedResource_WhenReplacingAFileWithAnExplicitAce_RebuildsTheDaclFromPolicy()
         {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
             // Arrange
-            // A stale existing extraction carrying one explicit entry the temp folder does not grant.
-            // The owner of a file may rewrite its own DACL, so this needs no elevation.
+            // A stale existing extraction carrying one explicit entry the vault policy does not grant
             string fileName = "aclapp";
             string extension = "exe";
             string targetPath = Path.Combine(TempDirectory, $"{fileName}.{extension}");
@@ -720,23 +912,41 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-
-            // The file really was replaced: WriteFileAtomicAsync moves a freshly staged temp file over
-            // the target, which carries the temp file's security descriptor and not the old file's.
             Assert.Equal(dummyResourceBytes, File.ReadAllBytes(targetPath));
 
+            // The old DACL is not restored: the replacement carries the vault policy only, so the foreign entry is gone
+            // and the service accounts get their access back from the vault hardening (#7530)
             var after = new FileInfo(targetPath).GetAccessControl();
-            var explicitRules = after.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
-                                     .Cast<FileSystemAccessRule>();
+            var rules = after.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+                             .Cast<FileSystemAccessRule>()
+                             .ToList();
 
-            // RestoreFileSecurity writes the captured ACL back, so the explicit entry survives
-            Assert.Contains(explicitRules, r => r.IdentityReference.Equals(networkService)
-                                                && r.AccessControlType == AccessControlType.Allow
-                                                && (r.FileSystemRights & FileSystemRights.ReadAndExecute) == FileSystemRights.ReadAndExecute);
-
-            // ... and GetExistingFileSecurity's SetAccessRuleProtection keeps the replacement from
-            // falling back to whatever the containing folder grants
             Assert.True(after.AreAccessRulesProtected);
+            Assert.DoesNotContain(rules, r => r.IdentityReference.Equals(networkService));
+            Assert.All(rules, r => Assert.True(r.IdentityReference.Equals(AdministratorsSid) || r.IdentityReference.Equals(LocalSystemSid), $"Unexpected entry for {r.IdentityReference.Value}."));
+            Assert.Contains(rules, r => r.IdentityReference.Equals(AdministratorsSid) && r.FileSystemRights.HasFlag(FileSystemRights.FullControl));
+            Assert.Contains(rules, r => r.IdentityReference.Equals(LocalSystemSid) && r.FileSystemRights.HasFlag(FileSystemRights.FullControl));
+            Assert.Equal(AdministratorsSid, after.GetOwner(typeof(SecurityIdentifier)));
+        }
+
+        /// <summary>
+        /// Gives a file the vault's own security descriptor: owned by Administrators, inheritance broken, Full Control
+        /// for Administrators and SYSTEM only.
+        /// </summary>
+        /// <param name="path">The file to secure.</param>
+        private static void SecureLikeTheVault(string path)
+        {
+            var security = new FileInfo(path).GetAccessControl();
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            foreach (FileSystemAccessRule rule in security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier)))
+            {
+                security.RemoveAccessRuleSpecific(rule);
+            }
+
+            security.AddAccessRule(new FileSystemAccessRule(AdministratorsSid, FileSystemRights.FullControl, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(LocalSystemSid, FileSystemRights.FullControl, AccessControlType.Allow));
+            security.SetOwner(AdministratorsSid);
+            new FileInfo(path).SetAccessControl(security);
         }
 
         #endregion
