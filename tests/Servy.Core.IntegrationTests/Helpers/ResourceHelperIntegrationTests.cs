@@ -230,7 +230,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            Assert.True(_resourceHelper.HasCopiedResources);
             Assert.Equal(dummyResourceBytes, File.ReadAllBytes(targetPath));
 
             // The unlocked probe short-circuits; the loose mock's default (false) would have failed the copy if it were reached
@@ -306,7 +305,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result); // Should return true early
-            Assert.False(_resourceHelper.HasCopiedResources); // Nothing was written, so nothing needs re-hardening
             _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
         }
 
@@ -392,7 +390,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.False(result);
-            Assert.False(_resourceHelper.HasCopiedResources);
         }
 
         [Fact]
@@ -427,7 +424,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                 // Assert
                 Assert.False(result);
-                Assert.False(_resourceHelper.HasCopiedResources);
 
                 // The #1851 ordering: nothing is side-effected before the resource is known to exist
                 _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
@@ -457,7 +453,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            Assert.True(_resourceHelper.HasCopiedResources); // A newly written file carries no grant for the service accounts, so it must be re-hardened
             Assert.True(File.Exists(targetPath));
             var writtenBytes = File.ReadAllBytes(targetPath);
             Assert.Equal(dummyData, writtenBytes);
@@ -513,7 +508,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Assert
             Assert.False(needed);
             Assert.Equal("current", File.ReadAllText(targetPath));
-            Assert.False(_resourceHelper.HasCopiedResources);
         }
 
         [Fact]
@@ -624,7 +618,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                 // Assert: reported as done, but the file and whatever holds it open are left alone and write time is updated to host time
                 Assert.True(result);
-                Assert.False(_resourceHelper.HasCopiedResources);
                 Assert.Equal(expectedTime, File.GetLastWriteTimeUtc(targetPath));
                 _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
             }
@@ -645,7 +638,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            Assert.False(_resourceHelper.HasCopiedResources);
             Assert.Equal(_resourceHelper.GetHostProcessLastWriteTimeUtc(), File.GetLastWriteTimeUtc(targetPath));
 
             // Verify subsequent IsExtractionNeeded queries (even without Assembly) now return false
@@ -667,7 +659,6 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(result);
-            Assert.True(_resourceHelper.HasCopiedResources);
             Assert.Equal(newContent, File.ReadAllBytes(targetPath));
         }
 

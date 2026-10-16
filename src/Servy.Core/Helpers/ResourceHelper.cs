@@ -38,15 +38,6 @@ namespace Servy.Core.Helpers
 #endif
 
         /// <summary>
-        /// Gets whether this instance has written at least one embedded resource to disk.
-        /// </summary>
-        /// <remarks>
-        /// A file newly written to the vault carries no grant for the service accounts, so a caller that sees this flag
-        /// set re-applies the executable permission hardening for them.
-        /// </remarks>
-        public bool HasCopiedResources { get; private set; }
-
-        /// <summary>
         /// Initializes a new instance of the ResourceHelper class using the specified process killer.
         /// </summary>
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
@@ -138,8 +129,6 @@ namespace Servy.Core.Helpers
                     // Rebuild the DACL from policy rather than restoring the old one, which may carry entries that were
                     // never Servy's (#7530); the service accounts get their access back from the vault hardening
                     ApplyVaultFileSecurity(targetPath);
-
-                    HasCopiedResources = true;
                 }
 
                 Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
@@ -575,7 +564,6 @@ namespace Servy.Core.Helpers
                 }
 
                 ApplyVaultFileSecurity(handleExePath);
-                HasCopiedResources = true;
 
                 Logger.Info($"Wrote the embedded resource '{resourceName}' to '{handleExePath}' before running it.");
                 return true;
