@@ -12,6 +12,7 @@ using Servy.UI.Commands;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.ComponentModel;
+using System.IO;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -364,6 +365,10 @@ namespace Servy.Manager.ViewModels
         /// Uses an incrementing Session ID to ensure that asynchronous history reads or delayed log updates from previously
         /// active sessions or superseded transitions (still pending in the Dispatcher queue) are safely discarded.
         /// </para>
+        /// <para>
+        /// A UNC or device path is opened only when it is the selected service's configured path for that stream; otherwise
+        /// that stream is not shown, so the elevated Manager never authenticates to a share the service account chose.
+        /// </para>
         /// </remarks>
         /// <param name="stdoutPath">Path to the standard output log file.</param>
         /// <param name="stderrPath">Path to the standard error log file.</param>
@@ -379,6 +384,17 @@ namespace Servy.Manager.ViewModels
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
                 var token = newCts.Token;
+
+                if (IsUncOrDevicePath(stdoutPath) || IsUncOrDevicePath(stderrPath))
+                {
+                    var configured = await _serviceRepository.GetByNameAsync(_selectedService?.Name, decrypt: false, token);
+
+                    // Re-check: see the stale-session guard below.
+                    if (sessionId != _currentSessionId) return;
+
+                    stdoutPath = KeepOpenablePath(stdoutPath, configured?.StdoutPath);
+                    stderrPath = KeepOpenablePath(stderrPath, configured?.StderrPath);
+                }
 
                 // Explicitly stop and dispose old tailers to sever event handler closures
                 StopActiveTailers();
@@ -496,6 +512,53 @@ namespace Servy.Manager.ViewModels
                     // Secondary catch blocks unhandled exception propagation if Logger itself fails
                 }
             }
+        }
+
+        /// <summary>
+        /// Determines whether a path is a UNC path (<c>\\server\share</c>) or a device path (<c>\\.\</c>, <c>\\?\</c>):
+        /// any path that starts with two directory separators.
+        /// </summary>
+        /// <param name="path">The path to check, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> when <paramref name="path"/> is a UNC or device path.</returns>
+        private static bool IsUncOrDevicePath(string? path)
+        {
+            var trimmed = path?.TrimStart();
+            return trimmed != null
+                && trimmed.Length >= 2
+                && (trimmed[0] == '\\' || trimmed[0] == '/')
+                && (trimmed[1] == '\\' || trimmed[1] == '/');
+        }
+
+        /// <summary>
+        /// Returns a log path to open, or <see langword="null"/> when it is a UNC or device path that differs from the
+        /// configured path for its stream.
+        /// </summary>
+        /// <param name="path">The active path the service reported.</param>
+        /// <param name="configured">The path configured for the same stream, or <see langword="null"/>.</param>
+        /// <returns>
+        /// <paramref name="path"/> when it is neither a UNC nor a device path, or when it equals <paramref name="configured"/>
+        /// (ignoring case, after <see cref="Path.GetFullPath(string)"/>); otherwise <see langword="null"/>.
+        /// </returns>
+        private static string? KeepOpenablePath(string? path, string? configured)
+        {
+            if (!IsUncOrDevicePath(path))
+                return path;
+
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                try
+                {
+                    if (string.Equals(Path.GetFullPath(path!), Path.GetFullPath(configured!), StringComparison.OrdinalIgnoreCase))
+                        return path;
+                }
+                catch (Exception)
+                {
+                    // A path that cannot be resolved is never opened
+                }
+            }
+
+            Logger.Warn($"Not opening the log path '{path}': it is a UNC or device path that differs from the configured path.");
+            return null;
         }
 
         /// <summary>

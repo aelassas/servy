@@ -302,6 +302,7 @@ namespace Servy.Host.UnitTests
         {
             // Arrange
             var state = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = "o", UpdatePreviousStopTimeout = true, PreviousStopTimeout = 5 };
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = ServiceName, StdoutPath = "o" });
             _repository.Setup(r => r.UpdateRuntimeStateAsync(ServiceName, state, It.IsAny<CancellationToken>())).ReturnsAsync(1);
             var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
             request.RuntimeState = state;
@@ -323,6 +324,63 @@ namespace Servy.Host.UnitTests
 
             Assert.False(response.Success);
             Assert.Equal("The runtime state is required.", response.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_ActivePathNeitherConfiguredNorStored_StoresNullForItAndStillUpdatesThePid()
+        {
+            // Arrange: the row configures local logs, and the wrapper reports a share for stdout
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, StdoutPath = @"C:\Logs\out.log", StderrPath = @"C:\Logs\err.log" });
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = @"\\attacker\share\out.log", ActiveStderrPath = @"C:\Logs\err.log" };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert: the unknown path is written as null, the known one and the PID as reported
+            Assert.True(response.Success);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName,
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 77 && s.ActiveStdoutPath == null && s.ActiveStderrPath == @"C:\Logs\err.log"),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_ActivePathIsTheConfiguredPathAfterGetFullPath_IsStoredAsReported()
+        {
+            // Arrange: the same file as the configured one, spelled with another case and a ".." segment
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, StdoutPath = @"C:\Logs\out.log" });
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = @"c:\logs\sub\..\OUT.log" };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName,
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 77 && s.ActiveStdoutPath == @"c:\logs\sub\..\OUT.log"),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_ActivePathIsTheStoredActivePathAfterAConfigurationEdit_IsStoredAsReported()
+        {
+            // Arrange: the configuration was edited while the service ran, so the wrapper still reports its start-time path
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, StderrPath = @"D:\New\err.log", ActiveStderrPath = @"\\fileserver\logs\err.log" });
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = new ServiceRuntimeStateDto { Pid = 78, ActiveStderrPath = @"\\fileserver\logs\err.log" };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName,
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 78 && s.ActiveStderrPath == @"\\fileserver\logs\err.log"),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
