@@ -24,6 +24,12 @@ namespace Servy.Core.UnitTests.Validation
 
             [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             public static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern uint GetShortPathName(string lpszLongPath, System.Text.StringBuilder lpszShortPath, uint cchBuffer);
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern SafeFileHandle CreateFile(string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
         }
 
         #region Common Security Rules
@@ -872,6 +878,46 @@ namespace Servy.Core.UnitTests.Validation
             finally
             {
                 stream?.Dispose();
+            }
+        }
+
+        [Fact]
+        public void HandleNamesValidatedPath_HandleOpenedByShortName_AcceptsTheOpenedName()
+        {
+            // Arrange
+            // Path.GetFullPath (and so FileStream and ValidatePath) expands 8.3 components before the guard runs, so the
+            // opened-name fallback is reached only through a handle opened by the raw short name, via CreateFile.
+            string filePath = Path.Combine(TempDirectory, "a_rather_long_export_name.json");
+            File.WriteAllText(filePath, "{}");
+
+            var shortPathBuffer = new System.Text.StringBuilder(260);
+            uint written = NativeTestMethods.GetShortPathName(filePath, shortPathBuffer, (uint)shortPathBuffer.Capacity);
+            string shortPath = shortPathBuffer.ToString();
+            if (written == 0 || written >= shortPathBuffer.Capacity ||
+                string.Equals(shortPath, filePath, StringComparison.OrdinalIgnoreCase))
+            {
+                // xUnit v2 has no Assert.Skip: return early when the volume cannot produce an 8.3 name
+                return;
+            }
+
+            const uint GenericRead = 0x80000000;
+            const uint FileShareRead = 0x00000001;
+            const uint OpenExisting = 3;
+            const uint FileAttributeNormal = 0x00000080;
+
+            using (SafeFileHandle handle = NativeTestMethods.CreateFile(shortPath, GenericRead, FileShareRead, IntPtr.Zero, OpenExisting, FileAttributeNormal, IntPtr.Zero))
+            {
+                Assert.False(handle.IsInvalid);
+                Assert.True(PathSecurityGuard.TryGetFinalPathByHandle(handle, out string normalizedPath));
+
+                // The normalized final path expands the short name, so the first comparison cannot match the validated short path.
+                Assert.NotEqual(shortPath, normalizedPath, StringComparer.OrdinalIgnoreCase);
+
+                // Act
+                bool result = PathSecurityGuard.HandleNamesValidatedPath(handle, normalizedPath, shortPath);
+
+                // Assert
+                Assert.True(result);
             }
         }
 
