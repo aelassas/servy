@@ -1,9 +1,11 @@
+using Microsoft.Win32.SafeHandles;
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1822,6 +1824,168 @@ namespace Servy.Core.UnitTests.IO
                 Assert.True(TestReflection.GetField<DateTime>(writer, "_disabledCooldownUntil") > DateTime.UtcNow, "The breaker cooldown should be set to the future.");
                 Assert.False(File.Exists(rotatedPath), "No rotated file may be produced by a failed move.");
             }
+        }
+
+        #endregion
+
+        #region Reparse-point refusal (#7527)
+
+        /// <summary>
+        /// Creates a writer that refuses reparse points, with the ancestor check and the handle-path check supplied by the test.
+        /// </summary>
+        private static RotatingStreamWriter CreateRefusingWriter(
+            string path,
+            Func<string, bool> hasAncestorReparsePoint,
+            Func<SafeFileHandle, string, bool> handleNamesPath,
+            long rotationSizeInBytes = 1024,
+            int maxRotations = 0,
+            Func<DateTime> timeProvider = null)
+        {
+            return new RotatingStreamWriter(
+                path,
+                true,
+                rotationSizeInBytes,
+                false,
+                DateRotationType.Daily,
+                maxRotations,
+                false,
+                timeProvider,
+                hasAncestorReparsePoint,
+                handleNamesPath);
+        }
+
+        [Fact]
+        public void Constructor_RefusingReparsePoints_AncestorIsReparsePoint_ThrowsBeforeCreatingDirectory()
+        {
+            // Arrange
+            var junctionedDir = Path.Combine(TempDirectory, "junctioned");
+            var logPath = Path.Combine(junctionedDir, "service.log");
+
+            // Act
+            var ex = Record.Exception(() => CreateRefusingWriter(logPath, _ => true, (handle, path) => true));
+
+            // Assert
+            Assert.IsType<IOException>(ex);
+            Assert.Contains("junction", ex.Message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(junctionedDir), "The directory must not be created under a refused path.");
+        }
+
+        [Fact]
+        public void WriteLine_RefusingReparsePoints_AncestorBecomesReparsePointAfterConstruction_DropsWritesForGood()
+        {
+            // Arrange
+            bool ancestorIsReparsePoint = false;
+            var writer = CreateRefusingWriter(_logFilePath, _ => ancestorIsReparsePoint, (handle, path) => true);
+            ancestorIsReparsePoint = true;
+
+            // Act
+            writer.WriteLine("refused line");
+            ancestorIsReparsePoint = false;
+            writer.WriteLine("line after the refusal");
+            writer.Dispose();
+
+            // Assert
+            Assert.False(File.Exists(_logFilePath), "No handle may be opened on a refused path, not even after the check passes again.");
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
+        [Fact]
+        public void WriteLine_RefusingReparsePoints_HandleDoesNotResolveToPath_WritesNothingAndDisablesCapture()
+        {
+            // Arrange
+            var writer = CreateRefusingWriter(_logFilePath, _ => false, (handle, path) => false);
+
+            // Act
+            writer.WriteLine("line through a redirected handle");
+            writer.Dispose();
+
+            // Assert
+            Assert.Equal(0, new FileInfo(_logFilePath).Length);
+            Assert.Null(TestReflection.GetField<StreamWriter>(writer, "_writer"));
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
+        [Fact]
+        public void Rotation_RefusingReparsePoints_AncestorBecomesReparsePointBeforeRename_KeepsFileAndDisablesCapture()
+        {
+            // Arrange
+            bool ancestorIsReparsePoint = false;
+            bool armed = false;
+
+            // CheckRotation reads the clock after the write and before the rename, so the swap lands between the two.
+            Func<DateTime> clock = () =>
+            {
+                if (armed) ancestorIsReparsePoint = true;
+                return DateTime.UtcNow;
+            };
+            var writer = CreateRefusingWriter(_logFilePath, _ => ancestorIsReparsePoint, (handle, path) => true, rotationSizeInBytes: 10, timeProvider: clock);
+            armed = true;
+
+            // Act
+            writer.WriteLine("a line longer than the rotation size");
+            writer.Dispose();
+
+            // Assert
+            Assert.True(File.Exists(_logFilePath), "The refused rename must leave the log file in place.");
+            Assert.Empty(Directory.GetFiles(TempDirectory, "test.2*.log"));
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
+        [Fact]
+        public void EnforceMaxRotations_RefusingReparsePoints_DeletesExpiredFilesThroughVerifiedHandle()
+        {
+            // Arrange
+            var expiredOld = Path.Combine(TempDirectory, "test.20200101_000000.log");
+            var expiredNewer = Path.Combine(TempDirectory, "test.20200102_000000.log");
+            File.WriteAllText(expiredOld, "old");
+            File.WriteAllText(expiredNewer, "newer");
+            File.SetLastWriteTimeUtc(expiredOld, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            File.SetLastWriteTimeUtc(expiredNewer, new DateTime(2020, 1, 2, 0, 0, 0, DateTimeKind.Utc));
+
+            var verifiedPaths = new List<string>();
+            var writer = CreateRefusingWriter(
+                _logFilePath,
+                _ => false,
+                (_, path) => { lock (verifiedPaths) { verifiedPaths.Add(path); } return true; },
+                rotationSizeInBytes: 10,
+                maxRotations: 1);
+
+            // Act
+            writer.WriteLine("a line longer than the rotation size");
+            writer.Dispose();
+
+            // Assert
+            Assert.False(File.Exists(expiredOld), "The oldest expired file should have been deleted.");
+            Assert.False(File.Exists(expiredNewer), "The second expired file should have been deleted.");
+            Assert.Contains(Path.GetFullPath(expiredOld), verifiedPaths, StringComparer.OrdinalIgnoreCase);
+            Assert.Contains(Path.GetFullPath(expiredNewer), verifiedPaths, StringComparer.OrdinalIgnoreCase);
+            Assert.Single(Directory.GetFiles(TempDirectory, "test.2*.log"));
+            Assert.False(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
+        [Fact]
+        public void EnforceMaxRotations_RefusingReparsePoints_DeleteHandleDoesNotResolveToPath_KeepsFileAndDisablesCapture()
+        {
+            // Arrange
+            var expired = Path.Combine(TempDirectory, "test.20200101_000000.log");
+            File.WriteAllText(expired, "old");
+            File.SetLastWriteTimeUtc(expired, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            var logFullPath = Path.GetFullPath(_logFilePath);
+            var writer = CreateRefusingWriter(
+                _logFilePath,
+                _ => false,
+                (_, path) => string.Equals(path, logFullPath, StringComparison.OrdinalIgnoreCase),
+                rotationSizeInBytes: 10,
+                maxRotations: 1);
+
+            // Act
+            writer.WriteLine("a line longer than the rotation size");
+            writer.Dispose();
+
+            // Assert
+            Assert.True(File.Exists(expired), "A delete through an unverified handle must be refused.");
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
         }
 
         #endregion

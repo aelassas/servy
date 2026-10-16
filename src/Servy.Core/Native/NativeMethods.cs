@@ -300,6 +300,18 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
+        /// Contains the deletion disposition passed to <c>SetFileInformationByHandle</c> with <see cref="FileDispositionInfoClass"/>.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct FILE_DISPOSITION_INFO
+        {
+            /// <summary>
+            /// Nonzero to mark the file for deletion when its last handle closes; zero to clear the mark.
+            /// </summary>
+            public byte DeleteFile;
+        }
+
+        /// <summary>
         /// Contains information that the <c>GetFileInformationByHandle</c> function retrieves.
         /// Used across security gates to obtain absolute target identity locks (volume serial and index pairs).
         /// </summary>
@@ -598,6 +610,13 @@ namespace Servy.Core.Native
         /// <summary>Retrieves file information for the specified file handle.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+        /// <summary><c>FileDispositionInfo</c>: the <c>FILE_INFO_BY_HANDLE_CLASS</c> value that marks a file for deletion through <see cref="SetFileInformationByHandle"/>.</summary>
+        public const int FileDispositionInfoClass = 4;
+
+        /// <summary>Sets the deletion disposition of the file behind an open handle; the file is removed when the last handle closes.</summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetFileInformationByHandle(SafeFileHandle hFile, int fileInformationClass, ref FILE_DISPOSITION_INFO lpFileInformation, uint dwBufferSize);
 
         /// <summary>
         /// Requests all entries of <c>NetLocalGroupGetMembers</c> in one buffer.

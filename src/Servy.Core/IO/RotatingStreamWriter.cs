@@ -1,11 +1,16 @@
+using Microsoft.Win32.SafeHandles;
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Native;
+using Servy.Core.Validation;
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -47,6 +52,25 @@ namespace Servy.Core.IO
         private readonly object _lock = new object();
         private readonly Func<DateTime> _timeProvider;
         private DateTime _oversizeWarningNextEligibleAt = DateTime.MinValue;
+
+        /// <summary>
+        /// Returns <c>true</c> when any ancestor directory of a full path is a junction, symbolic link or mount point.
+        /// <c>null</c> when this writer does not refuse reparse points, which is the default; when set, every open,
+        /// reopen, rotation rename and retention delete is checked (see the <c>refuseReparsePoints</c> constructor parameter).
+        /// </summary>
+        private readonly Func<string, bool> _hasAncestorReparsePoint;
+
+        /// <summary>
+        /// Returns <c>true</c> when an opened file handle resolves to the given full path. Consulted only when
+        /// <see cref="_hasAncestorReparsePoint"/> is set.
+        /// </summary>
+        private readonly Func<SafeFileHandle, string, bool> _handleNamesPath;
+
+        /// <summary>
+        /// Set once a reparse-point or final-path check refused the log file. From then on every write is dropped,
+        /// so output capture to this file stays disabled for the lifetime of the writer.
+        /// </summary>
+        private bool _captureDisabled;
 
         /// <summary>
         /// A circuit-breaker flag that disables all rotation logic if a permanent failure occurs.
@@ -95,6 +119,21 @@ namespace Servy.Core.IO
         /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <param name="timeProvider">The function to provide the current time. Defaults to system clock based on <paramref name="useLocalTimeForRotation"/>.</param>
+        /// <param name="refuseReparsePoints">
+        /// When <c>true</c>, the writer applies the same checks as <c>ProcessLauncher.TryOpenAppendWriter</c>: it refuses a
+        /// log path whose directory (or any ancestor directory) or file is a junction, symbolic link or mount point, before
+        /// and after creating the directory and again on every open, reopen and rotation rename; it compares the final path
+        /// of every handle it opens with the intended path; and it deletes expired rotated files only through a handle whose
+        /// final path was verified. A refusal during construction throws <see cref="IOException"/>; a refusal afterwards
+        /// logs an error and disables output capture to this file. As in that method, an ancestor directory that is a volume mount
+        /// point is allowed (see <see cref="Helper.HasAncestorReparsePoint(string)"/>). Defaults to <c>false</c>, which keeps the
+        /// unchecked behaviour.
+        /// </param>
+        /// <exception cref="ArgumentException"><paramref name="path"/> is <c>null</c>, empty or whitespace.</exception>
+        /// <exception cref="IOException">
+        /// <paramref name="refuseReparsePoints"/> is <c>true</c> and the log directory, an ancestor directory or the log file is
+        /// a junction, symbolic link or mount point.
+        /// </exception>
         /// <remarks>
         /// When both size-based and date-based rotation are enabled,
         /// size rotation takes precedence. If a size-based rotation occurs,
@@ -108,17 +147,83 @@ namespace Servy.Core.IO
             DateRotationType dateRotationType,
             int maxRotations,
             bool useLocalTimeForRotation,
-            Func<DateTime> timeProvider = null)
+            Func<DateTime> timeProvider = null,
+            bool refuseReparsePoints = false)
+            : this(
+                path,
+                enableSizeRotation,
+                rotationSizeInBytes,
+                enableDateRotation,
+                dateRotationType,
+                maxRotations,
+                useLocalTimeForRotation,
+                timeProvider,
+                refuseReparsePoints ? new Func<string, bool>(Helper.HasAncestorReparsePoint) : null,
+                HandleNamesPath)
+        {
+        }
+
+        /// <summary>
+        /// Test seam for the public constructor. It runs exactly the same sequence, with the ancestor reparse-point check
+        /// and the handle-path check supplied by the caller so that their refusal branches can be exercised.
+        /// </summary>
+        /// <remarks>
+        /// The public constructor forwards <see cref="Helper.HasAncestorReparsePoint(string)"/> (or <c>null</c> when
+        /// reparse points are not refused) and <see cref="HandleNamesPath(SafeFileHandle, string)"/> unchanged, so a
+        /// production call runs the same code with the same checks.
+        /// </remarks>
+        /// <param name="path">The path to the log file.</param>
+        /// <param name="enableSizeRotation">Enables rotation when the log file exceeds <paramref name="rotationSizeInBytes"/>.</param>
+        /// <param name="rotationSizeInBytes">The maximum file size in bytes before rotating.</param>
+        /// <param name="enableDateRotation">Enables rotation based on <paramref name="dateRotationType"/>.</param>
+        /// <param name="dateRotationType">Defines the date-based rotation schedule.</param>
+        /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
+        /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation.</param>
+        /// <param name="timeProvider">The function to provide the current time, or <c>null</c> for the system clock.</param>
+        /// <param name="hasAncestorReparsePoint">
+        /// Returns <c>true</c> when any ancestor directory of the given full path is a junction, symbolic link or mount
+        /// point. <c>null</c> disables every reparse-point and final-path check.
+        /// </param>
+        /// <param name="handleNamesPath">
+        /// Returns <c>true</c> when the opened handle resolves to the given full path. Returning <c>false</c> makes the
+        /// open or delete fail closed.
+        /// </param>
+        /// <exception cref="ArgumentException"><paramref name="path"/> is <c>null</c>, empty or whitespace.</exception>
+        /// <exception cref="IOException">
+        /// <paramref name="hasAncestorReparsePoint"/> is set and the log directory, an ancestor directory or the log file is
+        /// a junction, symbolic link or mount point.
+        /// </exception>
+        internal RotatingStreamWriter(
+            string path,
+            bool enableSizeRotation,
+            long rotationSizeInBytes,
+            bool enableDateRotation,
+            DateRotationType dateRotationType,
+            int maxRotations,
+            bool useLocalTimeForRotation,
+            Func<DateTime> timeProvider,
+            Func<string, bool> hasAncestorReparsePoint,
+            Func<SafeFileHandle, string, bool> handleNamesPath)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
                 throw new ArgumentException("Path cannot be null or empty.", nameof(path));
             }
+            _hasAncestorReparsePoint = hasAncestorReparsePoint;
+            _handleNamesPath = handleNamesPath;
+
+            // Refuse a junctioned or symlinked log path before anything is created on disk.
+            ThrowIfReparsePoint(path);
+
             var directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
+
+            // Re-verify after the directory may have been created, as ProcessLauncher.TryOpenAppendWriter does.
+            ThrowIfReparsePoint(path);
+
             _file = new FileInfo(path);
             _enableSizeRotation = enableSizeRotation;
             _rotationSizeInBytes = rotationSizeInBytes;
@@ -136,6 +241,120 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
+        /// Returns whether an opened handle resolves to <paramref name="fullPath"/>, using
+        /// <see cref="PathSecurityGuard.TryGetFinalPathByHandle(SafeFileHandle, out string)"/> and failing closed when the
+        /// handle cannot be resolved.
+        /// </summary>
+        /// <param name="handle">The open file handle.</param>
+        /// <param name="fullPath">The full path the handle was opened by.</param>
+        /// <returns><c>true</c> when the handle names <paramref name="fullPath"/>, ignoring case; otherwise, <c>false</c>.</returns>
+        private static bool HandleNamesPath(SafeFileHandle handle, string fullPath)
+            => PathSecurityGuard.TryGetFinalPathByHandle(handle, out string finalPath)
+               && PathSecurityGuard.HandleNamesValidatedPath(handle, finalPath, fullPath);
+
+        /// <summary>
+        /// Returns the refusal message when reparse points are refused and <paramref name="fullPath"/> has an ancestor
+        /// directory, or is a file, that is a junction, symbolic link or mount point.
+        /// </summary>
+        /// <param name="fullPath">The full path of the log file to check.</param>
+        /// <param name="action">The operation being refused (for example "open"), used in the message.</param>
+        /// <returns>The refusal message, or <c>null</c> when the path passes or reparse points are not refused.</returns>
+        private string FindReparsePoint(string fullPath, string action)
+        {
+            if (_hasAncestorReparsePoint == null)
+            {
+                return null;
+            }
+
+            if (_hasAncestorReparsePoint(fullPath))
+            {
+                return $"Refusing to {action} log file '{fullPath}': a directory in the path is a junction, symbolic link, or mount point.";
+            }
+
+            if (File.Exists(fullPath) && new FileInfo(fullPath).Attributes.HasFlag(FileAttributes.ReparsePoint))
+            {
+                return $"Refusing to {action} log file '{fullPath}': the file is a junction, symbolic link, or mount point.";
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Throws when reparse points are refused and <paramref name="path"/> fails <see cref="FindReparsePoint(string, string)"/>.
+        /// </summary>
+        /// <param name="path">The log file path as passed to the constructor.</param>
+        /// <exception cref="IOException">The path has a junction, symbolic link or mount point in it.</exception>
+        private void ThrowIfReparsePoint(string path)
+        {
+            string refusal = FindReparsePoint(Path.GetFullPath(path), "open");
+            if (refusal != null)
+            {
+                throw new IOException(refusal);
+            }
+        }
+
+        /// <summary>
+        /// Logs <paramref name="reason"/> as an error, closes the current handle and disables output capture to this file
+        /// for the lifetime of the writer.
+        /// </summary>
+        /// <param name="reason">The refusal message.</param>
+        private void DisableCapture(string reason)
+        {
+            Logger.Error($"{reason} Output capture to this file is disabled.");
+            lock (_lock)
+            {
+                _captureDisabled = true;
+                CloseWriter();
+            }
+        }
+
+        /// <summary>
+        /// Deletes an expired rotated file through a handle whose final path was verified, so a junction or symbolic link
+        /// swapped in after enumeration cannot redirect the delete.
+        /// </summary>
+        /// <param name="path">The rotated file to delete.</param>
+        /// <param name="refusal">When this method returns <c>false</c>, the refusal message; otherwise <c>null</c>.</param>
+        /// <returns><c>true</c> when the file was marked for deletion; <c>false</c> when a check refused it.</returns>
+        /// <exception cref="Win32Exception">The verified handle could not be marked for deletion.</exception>
+        private bool TryDeleteThroughVerifiedHandle(string path, out string refusal)
+        {
+            string fullPath = Path.GetFullPath(path);
+            refusal = FindReparsePoint(fullPath, "delete");
+            if (refusal != null)
+            {
+                return false;
+            }
+
+            using (var stream = new FileStream(
+                fullPath,
+                FileMode.Open,
+                FileSystemRights.Delete | FileSystemRights.ReadData,
+                FileShare.ReadWrite | FileShare.Delete,
+                1,
+                FileOptions.None))
+            {
+                if (!_handleNamesPath(stream.SafeFileHandle, fullPath))
+                {
+                    refusal = $"Refusing to delete log file '{fullPath}': the opened handle does not resolve to that path.";
+                    return false;
+                }
+
+                // The file is removed when this verified handle closes.
+                var disposition = new NativeMethods.FILE_DISPOSITION_INFO { DeleteFile = 1 };
+                if (!NativeMethods.SetFileInformationByHandle(
+                    stream.SafeFileHandle,
+                    NativeMethods.FileDispositionInfoClass,
+                    ref disposition,
+                    (uint)Marshal.SizeOf(typeof(NativeMethods.FILE_DISPOSITION_INFO))))
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Initializes the underlying <see cref="FileStream"/> and <see cref="StreamWriter"/>.
         /// </summary>
         /// <remarks>
@@ -147,9 +366,20 @@ namespace Servy.Core.IO
         /// The <see cref="StreamWriter"/> is configured with <see cref="StreamWriter.AutoFlush"/> enabled
         /// and uses UTF-8 encoding without a Byte Order Mark (BOM) for compatibility with Unix-style log viewers.
         /// </para>
+        /// <para>
+        /// When reparse points are refused, the path is checked before the open and the handle's final path is compared
+        /// with it after the open; a refusal leaves <see cref="_writer"/> <c>null</c> and disables output capture.
+        /// </para>
         /// </remarks>
         private void InitializeWriter()
         {
+            string refusal = FindReparsePoint(_file.FullName, "open");
+            if (refusal != null)
+            {
+                DisableCapture(refusal);
+                return;
+            }
+
             // Native Win32 Atomic Append:
             // Explicitly using FileSystemRights.AppendData forces the Win32 kernel to drop FILE_WRITE_DATA.
             // The OS will now physically reject any write that doesn't go to the true EOF,
@@ -161,6 +391,13 @@ namespace Servy.Core.IO
                   FileShare.ReadWrite | FileShare.Delete,
                   4096,
                   FileOptions.None);
+
+            // Verify the handle landed on the intended file, defending against a junction or symlink swapped in after the check.
+            if (_hasAncestorReparsePoint != null && !_handleNamesPath(_baseStream.SafeFileHandle, _file.FullName))
+            {
+                DisableCapture($"Refusing to open log file '{_file.FullName}': the opened handle does not resolve to that path.");
+                return;
+            }
 
             _writer = new StreamWriter(_baseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) // UTF-8 without BOM
             {
@@ -243,6 +480,9 @@ namespace Servy.Core.IO
 
                 // Check disposal *after* waking up, in case Dispose was called while we waited
                 if (_disposed) return;
+
+                // A reparse-point or final-path refusal disabled capture to this file for good.
+                if (_captureDisabled) return;
 
                 // 1. Lazy Initialize if null (either first run or just rotated)
                 if (_writer == null)
@@ -471,6 +711,10 @@ namespace Servy.Core.IO
         /// <summary>
         /// Deletes older rotated log files to enforce the maximum rotation limit.
         /// </summary>
+        /// <remarks>
+        /// When reparse points are refused, each expired file is deleted through a handle whose final path was verified;
+        /// a refusal logs an error, stops the pass and disables output capture.
+        /// </remarks>
         private void EnforceMaxRotations()
         {
             if (_maxRotations <= 0)
@@ -572,7 +816,15 @@ namespace Servy.Core.IO
             {
                 try
                 {
-                    File.Delete(file);
+                    if (_hasAncestorReparsePoint == null)
+                    {
+                        File.Delete(file);
+                    }
+                    else if (!TryDeleteThroughVerifiedHandle(file, out string refusal))
+                    {
+                        DisableCapture(refusal);
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -604,6 +856,14 @@ namespace Servy.Core.IO
         /// </summary>
         private void PerformPhysicalRotation(string oldPath, string rotatedPath)
         {
+            // Refuse to rename a log file whose directory, an ancestor or the file itself is a reparse point.
+            string refusal = FindReparsePoint(oldPath, "rotate");
+            if (refusal != null)
+            {
+                DisableCapture(refusal);
+                return;
+            }
+
             // Execute uniqueness generation outside the lock to minimize the critical section window
             try
             {
