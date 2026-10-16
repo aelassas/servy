@@ -461,6 +461,36 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public async Task SearchCommand_ServiceCommandsThrows_ShowsTheUnexpectedErrorWarning()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new InvalidOperationException("SCM unavailable"));
+                _messageBoxServiceMock.Setup(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>()))
+                    .Returns(Task.CompletedTask);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _messageBoxServiceMock.Verify(
+                    m => m.ShowWarningAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption),
+                    Times.Once);
+                Assert.False(vm.IsBusy);
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
         #endregion
 
         #region Background Refresh, Ghost PIDs & Data Drift
