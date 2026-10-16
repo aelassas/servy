@@ -259,6 +259,25 @@ namespace Servy.Core.IntegrationTests.NamedPipes
             }
         }
 
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task RefreshPipeAccessAsync_CallerCancels_ThrowsOperationCanceledInsteadOfReturningFalse()
+        {
+            // Arrange: the server reads the request and then sits on it
+            var ct = TestContext.Current.CancellationToken;
+            using (var stopServer = CancellationTokenSource.CreateLinkedTokenSource(ct))
+            using (var caller = CancellationTokenSource.CreateLinkedTokenSource(ct))
+            {
+                var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true }, stopServer.Token, delayBeforeAnswer: TimeSpan.FromMinutes(5));
+                caller.CancelAfter(300);
+
+                // Act & Assert: a caller cancellation is never reported as "host not reachable"
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => CreateClient(requestTimeoutMs: 60000).RefreshPipeAccessAsync(caller.Token));
+
+                stopServer.Cancel();
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => served);
+            }
+        }
+
         #endregion
 
         #region Server identity (pipe squatting)
@@ -277,6 +296,32 @@ namespace Servy.Core.IntegrationTests.NamedPipes
             // Assert: the client closed the connection without writing a request
             Assert.Contains($"process {Environment.ProcessId}", ex.Message);
             Assert.Null(await served);
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task RefreshPipeAccessAsync_PipeServedByAnotherProcessThanTheHost_ReturnsFalse()
+        {
+            // Arrange: the SCM reports another process as the host, so this process is a squatter
+            var ct = TestContext.Current.CancellationToken;
+            _api.Setup(a => a.GetServiceProcessId(AppConfig.ServyHostServiceName)).Returns(Environment.ProcessId + 1);
+            var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true }, ct);
+
+            // Act
+            var refreshed = await CreateClient().RefreshPipeAccessAsync(ct);
+
+            // Assert: the verifier's UnauthorizedAccessException is reported as "not refreshed", and no request reached the squatter
+            Assert.False(refreshed);
+            IpcRequestDto? received = null;
+            try
+            {
+                received = await served;
+            }
+            catch (IOException)
+            {
+                // The client closed the pipe before the server's accept completed, so there was no request to read
+            }
+
+            Assert.Null(received);
         }
 
         [Fact(Timeout = IntegrationTestTimeoutMs)]
