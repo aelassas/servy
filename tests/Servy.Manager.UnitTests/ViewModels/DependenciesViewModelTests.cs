@@ -234,7 +234,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // lets the STA dispatcher message pump run, which Thread.Sleep would block.
                         await Helper.WaitUntilAsync(
                             () => _mockServiceManager.Invocations.Count > 0,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -423,7 +423,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // allow the STA dispatcher message pump to process incoming UI collection modification updates concurrently.
                         await Helper.WaitUntilAsync(
                             () => viewModel.DependencyTree.Count > 0,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -474,7 +474,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         await Helper.WaitUntilAsync(
                             () => viewModel.DependencyTree.Count > 0 && !viewModel.IsBusy,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -530,7 +530,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         await Helper.WaitUntilAsync(
                             () => viewModel.DependencyTree.Count > 0 && !viewModel.IsBusy,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -587,7 +587,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         await Helper.WaitUntilAsync(
                             () => viewModel.DependencyTree.Count > 0 && !viewModel.IsBusy,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -601,7 +601,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                             () => viewModel.DependencyTree.Count > 0 &&
                                   viewModel.DependencyTree[0].ServiceName == "ServiceB" &&
                                   !viewModel.IsBusy,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -642,7 +642,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // its catch/finally frames by polling until IsBusy is false AND the first error box has landed.
                         await Helper.WaitUntilAsync(
                             () => !viewModel.IsBusy && _mockMessageBoxService.Invocations.Count == 1,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -689,7 +689,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Wait securely for the fire-and-forget task to drain its catch/finally frames
                         await Helper.WaitUntilAsync(
                             () => !viewModel.IsBusy,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -751,14 +751,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = new DependencyService { Name = "ServyCore" }; // 1st load, blocked in its gate
                         await Helper.WaitUntilAsync(
                             () => Volatile.Read(ref calls) == 1,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
                         var secondLoad = viewModel.LoadDependencyTreeAsync(null); // 2nd load supersedes the 1st
                         await Helper.WaitUntilAsync(
                             () => Volatile.Read(ref calls) == 2,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -766,7 +766,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         firstGate.Set();
                         await Helper.WaitUntilAsync(
                             () => Volatile.Read(ref firstLoadHandled),
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
 
@@ -816,7 +816,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = new DependencyService { Name = "ServyCore" };
                         await Helper.WaitUntilAsync(
                             () => started.Task.IsCompleted,
-                            TimeSpan.FromSeconds(2),
+                            TestTimeouts.CiGenerous,
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
                         Assert.False(captured.IsCancellationRequested);

@@ -258,7 +258,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Wait for the debounce + dispatcher queue
                     await Helper.WaitUntilAsync(
                         () => vm.VisibleLines.Cast<LogLine>().Count() == 1,
-                        TimeSpan.FromSeconds(2),
+                        TestTimeouts.CiGenerous,
                         TimeSpan.FromMilliseconds(20),
                         TestContext.Current.CancellationToken);
 
@@ -289,7 +289,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.ConsoleSearchText = "Crash";
                     await Helper.WaitUntilAsync(
                         () => vm.VisibleLines.Cast<LogLine>().Count() == 1,
-                        TimeSpan.FromSeconds(2),
+                        TestTimeouts.CiGenerous,
                         TimeSpan.FromMilliseconds(20),
                         TestContext.Current.CancellationToken);
 
@@ -300,7 +300,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.ConsoleSearchText = string.Empty;
                     await Helper.WaitUntilAsync(
                         () => scrolls.Count > 0,
-                        TimeSpan.FromSeconds(2),
+                        TestTimeouts.CiGenerous,
                         TimeSpan.FromMilliseconds(20),
                         TestContext.Current.CancellationToken);
 
@@ -583,7 +583,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Poll deterministically until history is fully loaded into RawLines
                         await Helper.WaitUntilAsync(
                             () => viewModel.RawLines.Count == 2,
-                            TimeSpan.FromSeconds(5),
+                            TestTimeouts.CiGenerous,
                             cancellationToken: TestContext.Current.CancellationToken);
 
                         // Assert

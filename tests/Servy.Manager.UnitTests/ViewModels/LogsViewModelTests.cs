@@ -449,7 +449,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // 2. Poll until the first token reference is registered inside the model
                     await Helper.WaitUntilAsync(
                         () => TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts") != null,
-                        TimeSpan.FromSeconds(2),
+                        TestTimeouts.CiGenerous,
                         TimeSpan.FromMilliseconds(10),
                         TestContext.Current.CancellationToken);
 
