@@ -12,7 +12,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
     /// <summary>
     /// Runs the version 10 migration of <see cref="SQLiteDbInitializer"/> against a real SQLite database and a real legacy
     /// recovery folder: the restart attempts columns, the import of the per-service counter files the wrapper wrote in
-    /// <c>recovery\</c>, which runs only with that migration and skips a link or a file with several hard links, and the deletion of that
+    /// <c>recovery\</c>, which runs only with that migration and skips a link, a file with several hard links or an oversized file, and the deletion of that
     /// folder once the import passed.
     /// </summary>
     [Collection(DatabaseTestCollection.Name)]
@@ -300,6 +300,27 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal((null, null), ReadCounter(conn, "Linked"));
                 Assert.True(File.Exists(path));
                 Assert.Equal("6", File.ReadAllText(secondName));
+            }
+        }
+
+        [Fact]
+        public void Initialize_OversizedCounterFile_IsSkippedAndKept()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: a 1 MiB counter file, far larger than any counter the wrapper wrote
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Huge");
+                DowngradeToVersion9(conn);
+                var path = WriteCounterFile("Huge", new string('9', 1024 * 1024), new DateTime(2026, 9, 27, 0, 0, 0, DateTimeKind.Utc));
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+
+                // Assert: not read, not imported, not deleted, and the migration still committed
+                Assert.Equal((null, null), ReadCounter(conn, "Huge"));
+                Assert.True(File.Exists(path));
+                Assert.Equal(11, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
             }
         }
 

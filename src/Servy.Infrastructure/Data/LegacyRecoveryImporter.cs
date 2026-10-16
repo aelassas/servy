@@ -20,6 +20,12 @@ namespace Servy.Infrastructure.Data
         internal const string CounterFileSuffix = "_restartAttempts.dat";
 
         /// <summary>
+        /// The largest legacy counter file that is imported, in bytes. A counter is one <see cref="int"/>, so a larger file
+        /// was not written by the wrapper, and reading it whole could exhaust memory (#7564).
+        /// </summary>
+        internal const long MaxCounterFileBytes = 1024;
+
+        /// <summary>
         /// Imports every counter file of <paramref name="folderPath"/> whose service has a row, whose counter was never
         /// written through the database, and which passes <see cref="TryReadTrustedCounterFile"/>.
         /// </summary>
@@ -105,8 +111,8 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Reads a legacy counter file only when it is a file of its own in the folder: neither a reparse point (a symbolic
-        /// link or junction) nor one of several hard links to the same data. A file that fails a check is logged as a
-        /// security warning and left in place.
+        /// link or junction) nor one of several hard links to the same data, and no larger than
+        /// <see cref="MaxCounterFileBytes"/>. A file that fails a check is logged as a security warning and left in place.
         /// </summary>
         /// <remarks>
         /// The owner is not checked (#7532). The wrapper wrote the file as the service's account and rewrote it in place,
@@ -135,6 +141,10 @@ namespace Servy.Infrastructure.Data
                 var links = NativeMethods.GetFileInformationByHandle(stream.SafeFileHandle, out var info) ? (long)info.NumberOfLinks : -1;
                 if (links != 1)
                     return Skip(path, links < 0 ? "its hard link count could not be read" : $"it has {links} hard links");
+
+                // A counter is a few bytes: a larger file is never read, so it cannot exhaust memory
+                if (stream.Length > MaxCounterFileBytes)
+                    return Skip(path, $"it is {stream.Length} bytes, far more than a restart attempts counter");
 
                 using (var reader = new StreamReader(stream))
                 {
