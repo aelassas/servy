@@ -655,14 +655,6 @@ public static class ServyNativeWinSqliteRecord
             $sidecarError       = $_.Exception.Message
         }
 
-        # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
-        if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
-            Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
-            if (Test-Path -LiteralPath $sidecarPath) {
-                Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
-            }
-        }
-
         # Move the hardened archive into place (same volume, so its ACL is kept)
         try {
             Move-ServyDumpStagedFile -StagedPath $stagedArchivePath -DestinationPath $resolvedArchivePath -Overwrite:$Overwrite.IsPresent
@@ -670,6 +662,14 @@ public static class ServyNativeWinSqliteRecord
         catch {
             Write-Host "`nServy configuration dump FAILED: the archive could not be moved from the staging directory to '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
             exit 4
+        }
+
+        # The new archive is in place; a pre-existing sidecar is stale from here on
+        if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
+            Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
+            if (Test-Path -LiteralPath $sidecarPath) {
+                Write-Host "WARNING: Pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
+            }
         }
 
         # Move the hardened sidecar into place, replacing any orphaned sidecar left without its archive

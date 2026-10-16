@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Tests path resolution, destination normalization, service name sanitization,
-    Win32 reserved device name prefixing, and collision disambiguation, and the staged-file move that keeps the archive's hardened ACL (ACL hardening itself is covered by Servy.test.ps1).
+    Win32 reserved device name prefixing, and collision disambiguation, the staged-file move that keeps the archive's hardened ACL (ACL hardening itself is covered by Servy.test.ps1), and the -Overwrite order that removes a stale sidecar only after the archive move.
 #>
 
 Set-StrictMode -Version Latest
@@ -196,5 +196,22 @@ finally {
         Remove-Item -LiteralPath $moveTestRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
+
+# --- 4. Overwrite Replacement Order Tests (#7548) ---
+Write-Host "`n4. Testing the -Overwrite replacement order of the archive and its sidecar..." -ForegroundColor Yellow
+
+# Arrange
+$dumpScriptText     = [System.IO.File]::ReadAllText($scriptPath)
+$archiveMoveIndex   = $dumpScriptText.IndexOf('Move-ServyDumpStagedFile -StagedPath $stagedArchivePath', [StringComparison]::Ordinal)
+$sidecarRemoveIndex = $dumpScriptText.IndexOf('Remove-Item -LiteralPath $sidecarPath', [StringComparison]::Ordinal)
+if ($archiveMoveIndex -lt 0 -or $sidecarRemoveIndex -lt 0) {
+    throw "Could not locate the archive move or the stale-sidecar removal in Servy-Dump.ps1"
+}
+
+# Act
+$sidecarRemovedAfterArchiveMove = $sidecarRemoveIndex -gt $archiveMoveIndex
+
+# Assert
+Assert-True "Pre-existing sidecar is removed only after the archive move into place" $sidecarRemovedAfterArchiveMove
 
 Invoke-TestSummary
