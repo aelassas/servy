@@ -9,10 +9,13 @@
     interactive desktop alerts for service failures.
 
     This script:
-      1. Filters the Windows Application event log for errors related to 'Servy'.
+      1. Filters the Windows Application event log for errors related to 'Servy', keeping
+         only the Servy error event IDs (3000-3199).
       2. Retrieves all new errors since the last execution using a timestamp file.
       3. Parses the error messages to extract service names and log text.
-      4. Shows individual Windows toast notifications for each failure.
+      4. Shows individual Windows toast notifications for each failure, at most 10 per run:
+         when more errors arrived, the newest 10 are shown and the older ones are skipped and
+         recorded in ServyWatermarkErrors.log.
 
 .NOTES
     Author      : Akram El Assas
