@@ -674,6 +674,85 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void IsWritableByOthers_WhenTheAclCannotBeRead_ReturnsTrue()
+        {
+            // Arrange
+            string missing = Path.Combine(TempDirectory, "no_such_file.exe");
+
+            // Act
+            bool writable = ResourceHelper.IsWritableByOthers(missing);
+
+            // Assert
+            Assert.True(writable); // the failed read is treated as writable, so the file is compared
+        }
+
+        [Fact]
+        public void IsWritableByOthers_VaultFileWithAReadOnlyGrantToAnotherPrincipal_ReturnsFalse()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: what SecureVaultAsync leaves behind - Administrators/SYSTEM plus Read & Execute for a service account
+            string path = Path.Combine(TempDirectory, "readonly_grant.exe");
+            File.WriteAllBytes(path, new byte[] { 0x01 });
+            SecureLikeTheVault(path);
+            var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var security = new FileInfo(path).GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(users, FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+            new FileInfo(path).SetAccessControl(security);
+
+            // Act
+            bool writable = ResourceHelper.IsWritableByOthers(path);
+
+            // Assert
+            Assert.False(writable);
+        }
+
+        [Fact]
+        public void IsWritableByOthers_VaultFileWithADenyRuleForAnotherPrincipal_ReturnsFalse()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange
+            string path = Path.Combine(TempDirectory, "deny_rule.exe");
+            File.WriteAllBytes(path, new byte[] { 0x01 });
+            SecureLikeTheVault(path);
+            var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var security = new FileInfo(path).GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(users, FileSystemRights.Write, AccessControlType.Deny));
+            new FileInfo(path).SetAccessControl(security);
+
+            // Act
+            bool writable = ResourceHelper.IsWritableByOthers(path);
+
+            // Assert
+            Assert.False(writable);
+        }
+
+        [Theory]
+        [InlineData(FileSystemRights.Delete)]
+        [InlineData(FileSystemRights.ChangePermissions)]
+        [InlineData(FileSystemRights.TakeOwnership)]
+        public void IsWritableByOthers_VaultFileWithAnotherPrincipalAbleToReplaceItOrRewriteItsAcl_ReturnsTrue(FileSystemRights granted)
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange
+            string path = Path.Combine(TempDirectory, "replace_right.exe");
+            File.WriteAllBytes(path, new byte[] { 0x01 });
+            SecureLikeTheVault(path);
+            var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var security = new FileInfo(path).GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(users, granted, AccessControlType.Allow));
+            new FileInfo(path).SetAccessControl(security);
+
+            // Act
+            bool writable = ResourceHelper.IsWritableByOthers(path);
+
+            // Assert
+            Assert.True(writable);
+        }
+
+        [Fact]
         public async Task CopyEmbeddedResource_StaleTimestampButIdenticalContent_WritesNothingAndKillsNothing()
         {
             // Arrange
