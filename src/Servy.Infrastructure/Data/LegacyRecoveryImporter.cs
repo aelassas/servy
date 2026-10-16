@@ -4,9 +4,7 @@ using Servy.Core.Logging;
 using Servy.Core.Native;
 using System.Data.Common;
 using System.Globalization;
-using System.Security.AccessControl;
 using System.Security.Cryptography;
-using System.Security.Principal;
 using System.Text;
 
 namespace Servy.Infrastructure.Data
@@ -20,12 +18,6 @@ namespace Servy.Infrastructure.Data
     {
         /// <summary>The suffix of every legacy counter file.</summary>
         internal const string CounterFileSuffix = "_restartAttempts.dat";
-
-        /// <summary>The <c>BUILTIN\Administrators</c> group, one of the two owners a counter file is imported from.</summary>
-        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-
-        /// <summary>The <c>NT AUTHORITY\SYSTEM</c> account, one of the two owners a counter file is imported from.</summary>
-        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
         /// <summary>
         /// Imports every counter file of <paramref name="folderPath"/> whose service has a row, whose counter was never
@@ -112,16 +104,22 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Reads a legacy counter file only when it can be the wrapper's own: a file owned by <c>BUILTIN\Administrators</c>
-        /// or <c>NT AUTHORITY\SYSTEM</c> that is neither a reparse point (a symbolic link or junction) nor one of several
-        /// hard links to the same data. A file that fails a check is logged as a security warning and left in place.
+        /// Reads a legacy counter file only when it is a file of its own in the folder: neither a reparse point (a symbolic
+        /// link or junction) nor one of several hard links to the same data. A file that fails a check is logged as a
+        /// security warning and left in place.
         /// </summary>
+        /// <remarks>
+        /// The owner is not checked (#7532). The wrapper wrote the file as the service's account and rewrote it in place,
+        /// which keeps the owner, so a service that now runs as another account, or whose account was deleted, still has a
+        /// file owned by the former one. The owner never said who wrote the content either: before v10.2 every service
+        /// account could write every file in <c>recovery\</c>, and <c>Servy.db</c> itself.
+        /// </remarks>
         /// <param name="path">The counter file.</param>
         /// <param name="content">The file content when it passed the checks; otherwise <see cref="string.Empty"/>.</param>
         /// <param name="updatedAtTicks">The file's last write time, in UTC ticks, when it passed the checks; otherwise 0.</param>
         /// <returns><see langword="true"/> when the file passed every check and was read; otherwise <see langword="false"/>.</returns>
         /// <exception cref="IOException">The file could not be opened or read.</exception>
-        /// <exception cref="UnauthorizedAccessException">The file or its security descriptor could not be read.</exception>
+        /// <exception cref="UnauthorizedAccessException">The file could not be opened.</exception>
         internal static bool TryReadTrustedCounterFile(string path, out string content, out long updatedAtTicks)
         {
             content = string.Empty;
@@ -131,16 +129,12 @@ namespace Servy.Infrastructure.Data
             if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 return Skip(path, "it is a reparse point (a symbolic link or junction)");
 
-            // No other writer, rename or delete while the checks and the read run on this one handle
+            // No other writer, rename or delete while the check and the read run on this one handle
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 var links = NativeMethods.GetFileInformationByHandle(stream.SafeFileHandle, out var info) ? (long)info.NumberOfLinks : -1;
                 if (links != 1)
                     return Skip(path, links < 0 ? "its hard link count could not be read" : $"it has {links} hard links");
-
-                var owner = stream.GetAccessControl().GetOwner(typeof(SecurityIdentifier));
-                if (!IsTrustedOwner(owner))
-                    return Skip(path, $"it is owned by '{owner?.Value ?? "nobody"}', not by BUILTIN\\Administrators or NT AUTHORITY\\SYSTEM");
 
                 using (var reader = new StreamReader(stream))
                 {
@@ -151,14 +145,6 @@ namespace Servy.Infrastructure.Data
             updatedAtTicks = File.GetLastWriteTimeUtc(path).Ticks;
             return true;
         }
-
-        /// <summary>
-        /// Returns whether <paramref name="owner"/> is <c>BUILTIN\Administrators</c> or <c>NT AUTHORITY\SYSTEM</c>.
-        /// </summary>
-        /// <param name="owner">The owner of a counter file; <see langword="null"/> when it has none.</param>
-        /// <returns><see langword="true"/> for one of the two trusted owners; otherwise <see langword="false"/>.</returns>
-        private static bool IsTrustedOwner(IdentityReference? owner)
-            => owner != null && (AdministratorsSid.Equals(owner) || LocalSystemSid.Equals(owner));
 
         /// <summary>
         /// Logs the security warning for a counter file that failed a check of <see cref="TryReadTrustedCounterFile"/>.
