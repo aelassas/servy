@@ -185,6 +185,32 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void CreateSecureDirectory_VaultRootIsALink_LeavesTheLinkedDirectoryUnchanged()
+        {
+            // Arrange: a real directory carrying an entry for Users, and a vault root that links to it
+            var realDir = Path.Combine(TempDirectory, "RealVault");
+            Directory.CreateDirectory(realDir);
+            var usersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var realInfo = new DirectoryInfo(realDir);
+            var acl = realInfo.GetAccessControl(AccessControlSections.Access);
+            acl.AddAccessRule(new FileSystemAccessRule(usersSid, FileSystemRights.Read, AccessControlType.Allow));
+            realInfo.SetAccessControl(acl);
+            var linkDir = Path.Combine(TempDirectory, "LinkedVault");
+
+            Testing.Helper.CreateJunction(linkDir, realDir);
+
+            // Act
+            var exception = Record.Exception(() => SecurityHelper.CreateSecureDirectory(linkDir, breakInheritance: true));
+
+            // Assert: refused with a warning, not an exception, and neither the link nor its target was rewritten
+            Assert.Null(exception);
+            Assert.False(new DirectoryInfo(linkDir).GetAccessControl(AccessControlSections.Access).AreAccessRulesProtected);
+            var after = realInfo.GetAccessControl(AccessControlSections.Access);
+            Assert.False(after.AreAccessRulesProtected);
+            Assert.Contains(after.GetAccessRules(true, false, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>(), r => usersSid.Equals(r.IdentityReference));
+        }
+
+        [Fact]
         public void CreateSecureDirectory_EnsuresCurrentUserHasAccess()
         {
             // Skip on elevated runs: when elevated, current user access is covered transitively
