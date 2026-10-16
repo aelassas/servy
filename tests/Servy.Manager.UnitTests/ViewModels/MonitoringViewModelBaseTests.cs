@@ -228,7 +228,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             tcs.SetResult(null);
             await Helper.WaitUntilAsync(
                 () => vm.ExposeIsTickRunningFlag == 0,
-                TimeSpan.FromSeconds(5),
+                TestTimeouts.CiGenerous,
                 cancellationToken: CancellationToken.None);
 
             // Assert - the safety check must keep the timer stopped after the stop request
