@@ -393,12 +393,93 @@ begin
   end;
 end;
 
+function GetFileAttributes(lpFileName: String): Cardinal;
+  external 'GetFileAttributesW@kernel32.dll stdcall';
+
+// FILE_ATTRIBUTE_REPARSE_POINT is predefined by Inno Setup
+const
+  INVALID_FILE_ATTRIBUTES = $FFFFFFFF;
+
+// Runs icacls.exe on the service data directory and reports whether it succeeded
+function RunIcacls(const Params: string): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Log('Securing service data directory: icacls.exe ' + Params);
+  Result := Exec(ExpandConstant('{sys}\icacls.exe'), Params, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+  if not Result then
+    Log(Format('ERROR: icacls.exe failed with exit code %d.', [ResultCode]));
+end;
+
+// Secures the service data directory before anything is installed (#7526). Returns an empty string on success,
+// otherwise the reason setup must stop: setup fails closed rather than install into a vault it could not secure.
+function SecureDataDirectory(): String;
+var
+  DataDir, Params: string;
+  Attributes: Cardinal;
+begin
+  Result := '';
+  DataDir := ExpandConstant('{commonappdata}\Servy');
+
+  if not DirExists(DataDir) and not ForceDirectories(DataDir) then
+  begin
+    Result := Format('Failed to create the service data directory "%s".', [DataDir]);
+    Log('ERROR: ' + Result);
+    Exit;
+  end;
+
+  // A linked directory would have its owner and ACL written on a directory outside it: refuse it with a warning
+  Attributes := GetFileAttributes(DataDir);
+  if (Attributes <> INVALID_FILE_ATTRIBUTES) and ((Attributes and FILE_ATTRIBUTE_REPARSE_POINT) <> 0) then
+  begin
+    Log(Format('WARNING: the service data directory "%s" is a reparse point (symlink/junction); its owner and permissions were left unchanged.', [DataDir]));
+    if not WizardSilent then
+      MsgBox(Format('The service data directory "%s" is a symbolic link or junction, so setup did not secure it. Replace it with a real directory.', [DataDir]), mbInformation, MB_OK);
+    Exit;
+  end;
+
+  // 1. Hand the directory to Administrators: a standard user who created it before Servy did stays its owner
+  //    otherwise, and an owner can always rewrite the DACL
+  Params := Format('"%s" /setowner *S-1-5-32-544', [DataDir]);
+  if not RunIcacls(Params) then
+  begin
+    Result := Format('Failed to give the ownership of the service data directory "%s" to Administrators.', [DataDir]);
+    Exit;
+  end;
+
+  // 2. Reset inheritance, grant Admins/System, and PURGE broad groups
+  // *S-1-5-32-544: Administrators
+  // *S-1-5-18:     Local System
+  // *S-1-5-32-545: Users (Purge)
+  // *S-1-5-11:     Authenticated Users (Purge)
+  // *S-1-1-0:      Everyone (Purge)
+  //
+  // NOTE: No personal user ACE is granted here because an elevated installer's user is always covered by the
+  // BUILTIN\Administrators grant. Every other explicit entry, on this directory and on everything in it, is purged by
+  // SecurityHelper.CreateSecureDirectory and ServyExePermissionsHardener.SecureVaultAsync on the first elevated start
+  // of Servy, Servy Manager or the CLI, which grant the custom service accounts their access back right after; setup
+  // cannot read their accounts, so it leaves the entries below this directory to them.
+  Params := Format('"%s" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0 /remove:g "%s"', [DataDir, ExpandConstant('{username}')]);
+  if not RunIcacls(Params) then
+    Result := Format('Failed to secure the permissions of the service data directory "%s".', [DataDir]);
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   sNeedsRestart : String;
 begin
   sNeedsRestart := BoolToStr(NeedsRestart);
   Log('PrepareToInstall(' + sNeedsRestart + ') called');
+
+  // Secure the service data directory before anything changes, so a failure leaves the machine as it was
+  Result := SecureDataDirectory();
+  if Result <> '' then
+  begin
+    if not WizardSilent then
+      MsgBox(Result, mbError, MB_OK);
+    Exit;
+  end;
+
   if IsUpgrade() then
   begin
     if UnInstallOldVersion() <> 3 then
@@ -542,33 +623,6 @@ begin
   StringChangeEx(Result, '>', '&gt;', True);
 end;
 
-procedure SecureDataDirectory();
-var
-  DataDir, Params: string;
-  ResultCode: Integer;
-begin
-  DataDir := ExpandConstant('{commonappdata}\Servy');
-
-  // Reset inheritance, grant Admins/System, and PURGE broad groups
-  // *S-1-5-32-544: Administrators
-  // *S-1-5-18:     Local System
-  // *S-1-5-32-545: Users (Purge)
-  // *S-1-5-11:     Authenticated Users (Purge)
-  // *S-1-1-0:      Everyone (Purge)
-  //
-  // NOTE: Replicates SecurityHelper.ApplySecurityRules: No personal user ACE is granted here
-  // because an elevated installer's user is always covered by the BUILTIN\Administrators grant.
-  Params := Format('"%s" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0 /remove:g "%s"', [DataDir, ExpandConstant('{username}')]);
-
-  Log('Securing service data directory: icacls.exe ' + Params);
-  if not Exec(ExpandConstant('{sys}\icacls.exe'), Params, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
-  begin
-    Log(Format('WARNING: icacls.exe failed with exit code %d while hardening data directory "%s".', [ResultCode, DataDir]));
-    if not WizardSilent then
-      MsgBox('Failed to secure service data directory permissions. Please review system ACLs manually.', mbError, MB_OK);
-  end;
-end;
-
 procedure CleanupOldSetupRegistryState();
 var
   UninstKey: String;
@@ -607,13 +661,11 @@ begin
     // 1. Refresh icon cache
     RefreshIconCache();
 
-    // 2. Secure service data directory
-    SecureDataDirectory();
-
-    // 3. Clean up legacy remembered setup state post-install
+    // 2. Clean up legacy remembered setup state post-install
+    //    (the service data directory is secured before the installation, in PrepareToInstall)
     CleanupOldSetupRegistryState();
 
-    // 4. Add to PATH logic (if selected)
+    // 3. Add to PATH logic (if selected)
     if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
     begin
       InstallDir := NormalizeFolder(ExpandConstant('{app}'));
@@ -622,7 +674,7 @@ begin
         Log('WARNING: Failed to write AddedToPath registry marker.');
     end;
 
-    // 5. Resolve Hardcoded Paths in Task Scheduler XMLs
+    // 4. Resolve Hardcoded Paths in Task Scheduler XMLs
     InstallPath := ExpandConstant('{app}');
     XmlInstallPath := XmlEscape(InstallPath);
     FilesToFix[0] := InstallPath + '\taskschd\ServyFailureNotification.xml';
