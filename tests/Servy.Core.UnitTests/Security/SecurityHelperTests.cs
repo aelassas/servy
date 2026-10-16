@@ -112,17 +112,16 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
-        public void CreateSecureDirectory_PreservesSpecificExplicitRulesWhilePurgingBroadGroups()
+        public void CreateSecureDirectory_PurgesEveryNonAdministrativeExplicitRule()
         {
             // Arrange
-            var path = Path.Combine(TempDirectory, "PreserveExplicitDir");
+            // A standard user who created the directory before Servy did can add explicit rules for any principal,
+            // not only for the broad groups, so none of them may survive (#7526).
+            var path = Path.Combine(TempDirectory, "PurgeEveryExplicitDir");
             Directory.CreateDirectory(path);
             var dirInfo = new DirectoryInfo(path);
 
-            // 1. Use LocalService as a "legitimate" manual rule that SHOULD be kept
             var localServiceSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
-
-            // 2. Use Everyone as a broad rule that SHOULD be purged
             var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
 
             var acl = dirInfo.GetAccessControl();
@@ -139,15 +138,43 @@ namespace Servy.Core.UnitTests.Security
                                .Cast<FileSystemAccessRule>()
                                .ToList();
 
-            // Verify preservation: LocalService should still be there
-            Assert.Contains(rules, r => r.IdentityReference == localServiceSid);
-
-            // Verify purge: Everyone should be GONE
+            Assert.DoesNotContain(rules, r => r.IdentityReference == localServiceSid);
             Assert.DoesNotContain(rules, r => r.IdentityReference == everyoneSid);
 
             // Verify standard high-privilege accounts exist
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
             Assert.Contains(rules, r => r.IdentityReference == adminSid);
+        }
+
+        [Fact]
+        public void CreateSecureDirectory_ExistingDirectoryOwnedByAnotherPrincipal_HandsItToAdministrators()
+        {
+            // Only an elevated process can make Administrators the owner
+            Assert.SkipUnless(SecurityHelper.IsAdministrator(), "Not elevated: only an elevated process can hand the directory to Administrators.");
+
+            // Arrange
+            var path = Path.Combine(TempDirectory, "ForeignOwnerDir");
+            Directory.CreateDirectory(path);
+            var dirInfo = new DirectoryInfo(path);
+
+            SecurityIdentifier currentUserSid;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUserSid = identity.User!;
+            }
+
+            // The owner keeps an implicit right to rewrite the DACL, so a directory owned by its creator is not hardened
+            var ownerAcl = dirInfo.GetAccessControl(AccessControlSections.Owner);
+            ownerAcl.SetOwner(currentUserSid);
+            dirInfo.SetAccessControl(ownerAcl);
+            Assert.Equal(currentUserSid, dirInfo.GetAccessControl(AccessControlSections.Owner).GetOwner(typeof(SecurityIdentifier)));
+
+            // Act
+            SecurityHelper.CreateSecureDirectory(path);
+
+            // Assert
+            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            Assert.Equal(adminSid, dirInfo.GetAccessControl(AccessControlSections.Owner).GetOwner(typeof(SecurityIdentifier)));
         }
 
         [Fact]
@@ -436,6 +463,43 @@ namespace Servy.Core.UnitTests.Security
                                 .ToList();
             Assert.Equal(expectAce, rules.Any(r => r.IdentityReference.Equals(ordinarySid) && r.FileSystemRights == FileSystemRights.FullControl));
             Assert.Equal(expectAce ? 3 : 2, rules.Count);
+        }
+
+        [Fact]
+        public void ApplySecurityRules_ExplicitRulesForOtherPrincipals_LeavesOnlyTheMandatoryAces()
+        {
+            // Arrange
+            // Every explicit rule goes, an Allow for a principal outside the broad groups included (#7526)
+            var security = new DirectorySecurity();
+            var localServiceSid = new SecurityIdentifier(WellKnownSidType.LocalServiceSid, null);
+            var networkServiceSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            security.AddAccessRule(new FileSystemAccessRule(localServiceSid, FileSystemRights.Modify, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(networkServiceSid, FileSystemRights.Read, AccessControlType.Deny));
+
+            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => true;
+
+            try
+            {
+                // Act
+                SecurityHelper.ApplySecurityRules(security, null);
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert
+            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<FileSystemAccessRule>()
+                                .ToList();
+            Assert.DoesNotContain(rules, r => r.IdentityReference.Equals(localServiceSid));
+            Assert.DoesNotContain(rules, r => r.IdentityReference.Equals(networkServiceSid));
+            Assert.Contains(rules, r => r.IdentityReference.Equals(adminSid) && r.FileSystemRights == FileSystemRights.FullControl);
+            Assert.Contains(rules, r => r.IdentityReference.Equals(systemSid) && r.FileSystemRights == FileSystemRights.FullControl);
+            Assert.Equal(2, rules.Count);
         }
     }
 }

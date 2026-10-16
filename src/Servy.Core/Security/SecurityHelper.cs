@@ -14,7 +14,7 @@ namespace Servy.Core.Security
         /// The well-known principals that stand for "any standard user" in Servy's DACL audits.
         /// </summary>
         /// <remarks>
-        /// Both the vault purge in <see cref="ApplySecurityRules"/> and the install-directory audit in
+        /// Both the file hardening in <see cref="ServyExePermissionsHardener"/> and the install-directory audit in
         /// <c>PathSecurityGuard.WarnIfDirectoryAclNotHardened</c> decide who counts as a standard user, so the
         /// set is declared once here rather than rebuilt at each site.
         /// </remarks>
@@ -63,8 +63,11 @@ namespace Servy.Core.Security
         /// </list>
         /// </para>
         /// <para>
-        /// For existing directories, or immediately following initialization, the DACL is modified in-place to purge broad
-        /// unprivileged groups and anti-squatting components via <see cref="ApplySecurityRules"/>.
+        /// For existing directories, or immediately following initialization, the DACL is modified in-place to purge every
+        /// explicit entry for a principal other than <c>Administrators</c> and <c>Local System</c> via
+        /// <see cref="ApplySecurityRules"/>. An elevated process also hands the directory to <c>BUILTIN\Administrators</c>
+        /// when another principal owns it, because an owner keeps an implicit right to rewrite the DACL and could grant
+        /// itself access again (#7526).
         /// </para>
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or whitespace.</exception>
@@ -128,8 +131,20 @@ namespace Servy.Core.Security
             {
                 DirectoryInfo dirInfo = new DirectoryInfo(path);
 
-                // CRITICAL: Explicitly request only the Access rules (DACL).
-                var security = dirInfo.GetAccessControl(AccessControlSections.Access);
+                // CRITICAL: Explicitly request only the Access rules (DACL), plus the owner when elevated.
+                bool isAdmin = IsAdministrator();
+                var security = dirInfo.GetAccessControl(isAdmin ? AccessControlSections.Access | AccessControlSections.Owner : AccessControlSections.Access);
+
+                // A directory a standard user created before Servy did stays theirs, and its owner can rewrite the DACL
+                if (isAdmin)
+                {
+                    var owner = security.GetOwner(typeof(SecurityIdentifier));
+                    if (owner == null || !(owner.Equals(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null)) ||
+                                           owner.Equals(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null))))
+                    {
+                        security.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+                    }
+                }
 
                 // Apply the hardened rules.
                 ApplySecurityRules(security, currentUserSid, breakInheritance);
@@ -144,7 +159,7 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Configures a <see cref="FileSystemSecurity"/> object with restrictive rules,
-        /// purging broad group access and optionally managing inheritance boundaries.
+        /// purging every non-administrative explicit entry and optionally managing inheritance boundaries.
         /// </summary>
         /// <param name="security">The file or directory security descriptor to modify.</param>
         /// <param name="currentUserSid">
@@ -166,14 +181,10 @@ namespace Servy.Core.Security
         /// </item>
         /// <item>
         /// <description>
-        /// <b>Dangerous Group Purge:</b> Explicitly removes access for <c>Users</c>, <c>Authenticated Users</c>,
-        /// and <c>Everyone</c> to close LPE vectors.
-        /// </description>
-        /// </item>
-        /// <item>
-        /// <description>
-        /// <b>Anti-Squatting Purge:</b> Explicitly removes any <c>Deny</c> rules for <c>Administrators</c> and
-        /// <c>Local System</c> (and the current user) to prevent Denial-of-Service via directory squatting.
+        /// <b>Full Purge:</b> Removes every explicit <c>Allow</c> and <c>Deny</c> entry, whatever its principal, so an entry
+        /// a standard user added to a directory it created before Servy did cannot survive (#7526). The service
+        /// accounts' own grants are written by <see cref="ServyExePermissionsHardener"/> on the files it hardens and on
+        /// each service's log folder, which it grants after securing it with this method.
         /// </description>
         /// </item>
         /// <item>
@@ -210,30 +221,13 @@ namespace Servy.Core.Security
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
-            // 3. PURGE: Remove explicit/manual GRANTS for dangerous groups AND explicit DENY rules for critical accounts
-            // Extract only explicit, non-inherited access rules to audit the DACL modifications safely
+            // 3. PURGE: Replace the DACL entirely. Every explicit rule goes, Allow or Deny, whatever its principal;
+            // the mandatory rules are added back below. The inherited rules are left to the inheritance setting above.
             var explicitRules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
 
             foreach (FileSystemAccessRule rule in explicitRules)
             {
-                // Purge Allow rules for broad, unprivileged groups.
-                // NOTE: We intentionally preserve explicit 'Allow' rules for other principals (e.g., custom service accounts),
-                // otherwise a user could never run a service under a custom account, as CreateSecureDirectory
-                // is invoked during service start, desktop app and manager startup, and CLI operations.
-                if (rule.AccessControlType == AccessControlType.Allow &&
-                    rule.IdentityReference is SecurityIdentifier ruleSid && IsBroadUnprivilegedSid(ruleSid))
-                {
-                    security.RemoveAccessRule(rule);
-                }
-
-                // Purge Deny rules targeting required operational accounts (Anti-squatting)
-                if (rule.AccessControlType == AccessControlType.Deny &&
-                    (rule.IdentityReference.Equals(adminSid) ||
-                     rule.IdentityReference.Equals(systemSid) ||
-                     (currentUserSid != null && rule.IdentityReference.Equals(currentUserSid))))
-                {
-                    security.RemoveAccessRule(rule);
-                }
+                security.RemoveAccessRuleSpecific(rule);
             }
 
             // Determine inheritance flags safely based on object descriptor target type
