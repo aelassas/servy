@@ -20,6 +20,9 @@ namespace Servy.Core.Validation
         private const string ExtendedPrefix = @"\\?\";
         private const string ExtendedUncPrefix = @"\\?\UNC\";
 
+        /// <summary><c>FILE_NAME_OPENED</c>: <c>GetFinalPathNameByHandle</c> returns the name the handle was opened by, not normalized.</summary>
+        private const uint FileNameOpened = 0x8;
+
         /// <summary>
         /// The protected system directories no imported or exported configuration file may live under.
         /// Both validation stages match against this one set, so a root added here hardens the pre-handle
@@ -245,6 +248,26 @@ namespace Servy.Core.Validation
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
+                // The checks above ran on the path string and the FileStream open resolved it again, so an ancestor
+                // junction or symlink swapped in between (or a subst drive) can land the handle on another file.
+                // Require the handle to name the very path that was validated.
+                if (!HandleNamesValidatedPath(safeHandle, normalizedPath, fullPath))
+                {
+                    var errorMsg = Pick(Strings.Msg_SecurityDirReparsePointProhibited, Strings.Msg_SecurityDirReparsePointExportProhibited);
+                    Logger.Error($"{errorMsg} Validated '{fullPath}', opened '{normalizedPath}'.");
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
+                }
+
+                // A hard link is a second name for a file that can live anywhere on the volume, protected folders
+                // included, and the final path reports the name it was opened by. Require exactly one link; a
+                // failed information query fails closed like the native guards above.
+                if (!NativeMethods.GetFileInformationByHandle(safeHandle, out var handleInfo) || handleInfo.NumberOfLinks != 1)
+                {
+                    var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, "the target file must have exactly one hard link");
+                    Logger.Error(errorMsg);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
+                }
+
                 stream = fileStream;
                 fileStream = null; // ownership transferred to caller; don't dispose
                 success = true;
@@ -274,6 +297,38 @@ namespace Servy.Core.Validation
         /// <param name="finalPath">When this method returns <c>true</c>, the normalized final path for <paramref name="handle"/>.</param>
         /// <returns><c>true</c> when the handle path was resolved; otherwise, <c>false</c>.</returns>
         public static bool TryGetFinalPathByHandle(SafeFileHandle handle, out string finalPath)
+            => TryGetFinalPathByHandle(handle, NativeMethods.VOLUME_NAME_DOS, out finalPath);
+
+        /// <summary>
+        /// Returns whether an opened handle names <paramref name="validatedPath"/>. The normalized final path
+        /// expands 8.3 components the caller may have passed (such as <c>C:\Users\RUNNER~1</c>), so when it
+        /// differs, the opened (non-normalized) name of the same handle, which keeps them, is compared as well.
+        /// Both names come from the handle, so a redirection through a junction, symlink or subst drive fails both.
+        /// </summary>
+        /// <param name="handle">The open file handle.</param>
+        /// <param name="normalizedPath">The normalized final path already resolved for <paramref name="handle"/>.</param>
+        /// <param name="validatedPath">The full path the pre-handle checks validated.</param>
+        /// <returns><c>true</c> when either name equals <paramref name="validatedPath"/>, ignoring case; otherwise, <c>false</c>.</returns>
+        private static bool HandleNamesValidatedPath(SafeFileHandle handle, string normalizedPath, string validatedPath)
+        {
+            if (string.Equals(normalizedPath, validatedPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return TryGetFinalPathByHandle(handle, FileNameOpened | NativeMethods.VOLUME_NAME_DOS, out string openedPath)
+                && string.Equals(openedPath, validatedPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Resolves an open file handle to a DOS path with the given <c>GetFinalPathNameByHandle</c> flags,
+        /// failing closed if the path cannot be determined.
+        /// </summary>
+        /// <param name="handle">The open file handle to resolve.</param>
+        /// <param name="flags">The <c>GetFinalPathNameByHandle</c> flags.</param>
+        /// <param name="finalPath">When this method returns <c>true</c>, the path for <paramref name="handle"/> without its extended-length prefix.</param>
+        /// <returns><c>true</c> when the handle path was resolved; otherwise, <c>false</c>.</returns>
+        private static bool TryGetFinalPathByHandle(SafeFileHandle handle, uint flags, out string finalPath)
         {
             finalPath = string.Empty;
 
@@ -282,14 +337,14 @@ namespace Servy.Core.Validation
                 return false;
             }
 
-            uint requiredSize = NativeMethods.GetFinalPathNameByHandle(handle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
+            uint requiredSize = NativeMethods.GetFinalPathNameByHandle(handle, null!, 0, flags);
             if (requiredSize == 0 || requiredSize > int.MaxValue)
             {
                 return false;
             }
 
             var pathBuilder = new StringBuilder((int)requiredSize);
-            uint resultSize = NativeMethods.GetFinalPathNameByHandle(handle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+            uint resultSize = NativeMethods.GetFinalPathNameByHandle(handle, pathBuilder, requiredSize, flags);
             if (resultSize == 0 || resultSize >= requiredSize)
             {
                 return false;

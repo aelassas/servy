@@ -16,6 +16,9 @@ namespace Servy.Core.UnitTests.Validation
         {
             [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             public static extern bool DefineDosDevice(uint dwFlags, string lpDeviceName, string? lpTargetPath);
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
         }
 
         #region Common Security Rules
@@ -469,6 +472,74 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
             Assert.Null(stream);
             Assert.True(File.Exists(filePath), "A rejected open must not delete a file that existed before the call.");
+            Assert.Equal(originalContents, File.ReadAllText(filePath));
+        }
+
+        [Fact]
+        public void ValidatePath_HandleResolvesToAnotherPath_ReturnsFail()
+        {
+            // Arrange: an existing file in an unprotected folder, reached through a virtual drive. Every pre-handle
+            // check passes on "<X>:\<file>.json" and the protected-folder re-check passes on the resolved path, so
+            // only the final-path equality check refuses a handle that resolves to a path the caller did not name.
+            string fileName = "redirected_target.json";
+            File.WriteAllText(Path.Combine(TempDirectory, fileName), "{}");
+
+            char driveLetter = GetUnusedDriveLetter();
+            if (driveLetter == '\0')
+            {
+                Assert.Skip("No unused drive letter available for subst mapping.");
+            }
+
+            string drivePath = $"{driveLetter}:";
+            if (!NativeTestMethods.DefineDosDevice(0, drivePath, TempDirectory))
+            {
+                Assert.Skip($"Failed to define virtual drive {drivePath}. Win32 Error: {Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                string substFilePath = Path.Combine($"{drivePath}\\", fileName);
+
+                // Act
+                var result = PathSecurityGuard.ValidatePath(substFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
+
+                // Assert
+                stream?.Dispose();
+                Assert.False(result.IsValid);
+                Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+                Assert.Equal(Strings.Msg_SecurityDirReparsePointProhibited, result.ErrorMessage);
+                Assert.Null(stream);
+            }
+            finally
+            {
+                // Clean up virtual DOS drive mapping (DDD_REMOVE_DEFINITION = 0x2)
+                NativeTestMethods.DefineDosDevice(2, drivePath, null);
+            }
+        }
+
+        [Fact]
+        public void ValidatePath_TargetHasASecondHardLink_ReturnsFailAndKeepsTheFile()
+        {
+            // Arrange: a hard link names the same file under a second path, which the final path does not reveal.
+            const string originalContents = "{\"original\":true}";
+            string filePath = Path.Combine(TempDirectory, "linked_export.json");
+            string linkPath = Path.Combine(TempDirectory, "second_name.json");
+            File.WriteAllText(filePath, originalContents);
+
+            if (!NativeTestMethods.CreateHardLink(linkPath, filePath, IntPtr.Zero))
+            {
+                Assert.Skip($"Failed to create a hard link. Win32 Error: {Marshal.GetLastWin32Error()}");
+            }
+
+            // Act
+            var result = PathSecurityGuard.ValidatePath(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, out var stream);
+
+            // Assert
+            stream?.Dispose();
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Contains("hard link", result.ErrorMessage);
+            Assert.Null(stream);
             Assert.Equal(originalContents, File.ReadAllText(filePath));
         }
 
