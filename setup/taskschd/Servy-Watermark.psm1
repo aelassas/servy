@@ -347,17 +347,14 @@ function ConvertFrom-ServyEventMessage {
     #>
     param([string]$Message)
 
-    # Parse raw message context
-    # Split the first line to safely extract the service prefix, preventing multi-line stack traces
-    # from forcing a fallback to an 'Unknown Service' state.
+    # Split first line to inspect header brackets safely
     $firstLine, $rest = $Message -split "\r?\n", 2
 
-    if ($firstLine -match '^\[(.+)\]\s*(.*)$') {
+    # Match the primary service name in the first bracket [ServiceName]
+    if ($firstLine -match '^\[([^\]]+)\]\s*(.*)$') {
         return @{
             ServiceName = $matches[1]
-            LogText = if ($rest) {
-                if ([string]::IsNullOrEmpty($matches[2])) { $rest } else { "$($matches[2])`n$rest" }
-            } else { $matches[2] }
+            LogText     = $Message  # Retain the complete raw message including all brackets
         }
     } else {
         return @{
