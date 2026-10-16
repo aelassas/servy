@@ -356,6 +356,40 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SearchCommand_MapsEveryEventLogFieldOntoTheLogEntryModel()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    // Arrange - distinctive values so no field can match by default
+                    var time = new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.FromHours(5));
+                    var entries = new List<ServyEventLogEntry>
+                    {
+                        new ServyEventLogEntry { EventId = 4242, Time = time, Level = EventLogLevel.Warning, Message = "disk almost full" }
+                    };
+
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(entries);
+
+                    using (var vm = CreateViewModel())
+                    {
+                        // Act
+                        await vm.SearchCommand.ExecuteAsync(null);
+
+                        // Assert
+                        var row = Assert.Single(vm.LogsView.SourceCollection.Cast<LogEntryModel>());
+                        Assert.Equal(4242, row.EventId);
+                        Assert.Equal(EventLogLevel.Warning, row.Level);
+                        Assert.Equal("disk almost full", row.Message);
+                        Assert.Equal(time.LocalDateTime, row.Time);
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SearchCommand_PassesLevelDatesAndKeywordToTheEventLogService()
         {
             await Helper.RunOnSTA(async () =>
