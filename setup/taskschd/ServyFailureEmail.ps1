@@ -8,10 +8,13 @@
     This script performs a targeted audit of the Windows Application event log to identify
     failures within services managed by Servy. It provides an automated alerting mechanism
     for administrators by:
-      1. Filtering the Application log specifically for 'Servy' error sources.
+      1. Filtering the Application log specifically for 'Servy' error sources, keeping only
+         the Servy error event IDs (3000-3199).
       2. Tracking the last processed event via a local timestamp file to prevent duplicate alerts.
       3. Parsing event messages to identify the specific service name and error context.
-      4. Dispatching HTML-formatted notification emails using a robust .NET SMTP implementation.
+      4. Dispatching HTML-formatted notification emails using a robust .NET SMTP implementation,
+         at most 10 per run: when more errors arrived, the newest 10 are sent and the older ones
+         are skipped and recorded in ServyWatermarkErrors.log.
       5. Providing fallback logging to the Event Log or local disk if email delivery fails.
 
 .NOTES

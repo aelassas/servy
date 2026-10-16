@@ -35,6 +35,10 @@ if ((Test-Path -LiteralPath $getErrorsScript) -and (Test-Path -LiteralPath $writ
 # 3000-3099: Core Errors | 3100-3199: Script Errors
 $EVENT_ID_ERROR = 3103 # mirrors EventIds.ScheduledTaskScriptError
 
+# Per-run notification cap (#7539): the most error events one run of ServyFailureEmail.ps1 or
+# ServyFailureNotification.ps1 delivers. Get-EventsToProcess keeps the newest ones and skips the rest.
+$MAX_EVENTS_PER_RUN = 10
+
 # -------------------------------
 # Helper: Fallback Logging
 # -------------------------------
@@ -264,10 +268,27 @@ function Get-EventsToProcess {
     <#
     .SYNOPSIS
         Fetches and sorts the new Servy errors based on the provided watermark.
+
+    .DESCRIPTION
+        Returns the newest valid event on a first run (no watermark), otherwise the new events in
+        chronological order, at most MaxEventsPerRun of them. When more arrived since the watermark,
+        the newest MaxEventsPerRun are returned and the older ones are skipped; the skip is written
+        as a warning and to the local ServyWatermarkErrors.log.
+
+    .PARAMETER ScriptDir
+        The calling script's directory, where the local log is written.
+
+    .PARAMETER LastProcessed
+        The watermark: the creation time of the last delivered event, or $null on a first run.
+
+    .PARAMETER MaxEventsPerRun
+        The per-run cap. Defaults to $MAX_EVENTS_PER_RUN (10).
     #>
     param(
         [string]$ScriptDir,
-        [System.Nullable[DateTime]]$LastProcessed = $null
+        [System.Nullable[DateTime]]$LastProcessed = $null,
+        [ValidateRange(1, 1000)]
+        [int]$MaxEventsPerRun = $MAX_EVENTS_PER_RUN
     )
 
     # Dot-sourced into module scope; pass the event ID explicitly rather than relying on scope inheritance.
@@ -301,7 +322,21 @@ function Get-EventsToProcess {
     } else {
         # NORMAL RUN LOGIC: Chronological order
         # Explicitly cast to array to handle single-event scenarios
-        return @($errors | Sort-Object TimeCreated)
+        $sorted = @($errors | Sort-Object TimeCreated)
+
+        # PER-RUN CAP (#7539): a burst of error events must not become a burst of emails or toasts.
+        # Keep the newest $MaxEventsPerRun, still oldest first, and skip the older ones. Once the caller
+        # advances the watermark past the delivered events, the skipped ones are behind it and are never
+        # notified, so a flood costs one capped run instead of one email or toast per event.
+        if ($sorted.Count -gt $MaxEventsPerRun) {
+            $skipped = $sorted.Count - $MaxEventsPerRun
+            $capMessage = "Per-run cap reached: $($sorted.Count) new Servy error events, notifying the newest $MaxEventsPerRun and skipping the $skipped oldest (created $($sorted[0].TimeCreated.ToString('o')) to $($sorted[$skipped - 1].TimeCreated.ToString('o')))."
+            Write-Warning "ServyWatermark: $capMessage"
+            Write-WatermarkLocalLog -ScriptDir $ScriptDir -Message $capMessage
+            $sorted = @($sorted | Select-Object -Last $MaxEventsPerRun)
+        }
+
+        return $sorted
     }
 }
 

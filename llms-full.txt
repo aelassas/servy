@@ -4809,7 +4809,8 @@ When Servy sends a `/fail` signal or stops pinging because the host machine went
 ## Limitations
 
 * **Interactive Session Required:** Toast notifications operate strictly in the user context (Session 1+). They will not appear if the task is run as `SYSTEM` (Session 0) or if the user is completely logged out.
-* **Event Log Dependency:** Task Scheduler triggers for toast and email scripts are bound to the Windows Event Log. Notifications will only fire for events logged specifically by the "Servy" source with an Error level.
+* **Event Log Dependency:** Task Scheduler triggers for toast and email scripts are bound to the Windows Event Log. Notifications will only fire for events logged specifically by the "Servy" source with an Error level and an event ID in the Servy error ranges (3000-3199, see [Event IDs](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation#event-ids)); any other Error event of that source is ignored.
+* **Per-Run Cap:** Each run of the toast or email script delivers at most 10 notifications. When more errors arrived since the last run, the newest 10 are delivered and the older ones are skipped and recorded in `ServyWatermarkErrors.log` in the `taskschd` folder. The event-ID filter and the cap live in the scripts, so a task imported from an earlier `ServyFailureEmail.xml` or `ServyFailureNotification.xml` gets them without a re-import.
 * **Credential Portability:** The `smtp-cred.xml` file cannot be copied to another machine or used by another user account without being regenerated.
 * **Network Connectivity for Heartbeat Pings:** Heartbeat URL pings require outbound HTTP/HTTPS communication. High-security offline environments without internet or proxy routing will drop out-of-band ping attempts.
 

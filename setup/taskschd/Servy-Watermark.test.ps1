@@ -194,6 +194,71 @@ try {
     }
     Write-Host "  [OK] Get-EventsToProcess correctly pre-filters feedback loops and sorts events." -ForegroundColor Gray
 
+    # ----------------------------------------------------
+    # Test 7: Get-ServyLastErrors event-ID filter (#7539)
+    # ----------------------------------------------------
+    # Arrange: load the real query function into this scope and shadow Get-WinEvent with a stub that
+    # returns Level 2 'Servy' events on both sides of each edge of the 3000-3199 error ranges.
+    . (Join-Path $scriptDir "Get-ServyLastErrors.ps1")
+    $global:WatermarkTestWinEvents = @(
+        [PSCustomObject]@{ Id = 0;    Message = "[Svc] id 0";    TimeCreated = $base.AddMinutes(-8) },
+        [PSCustomObject]@{ Id = 2999; Message = "[Svc] id 2999"; TimeCreated = $base.AddMinutes(-7) },
+        [PSCustomObject]@{ Id = 3000; Message = "[Svc] id 3000"; TimeCreated = $base.AddMinutes(-6) },
+        [PSCustomObject]@{ Id = 3001; Message = "[Svc] id 3001"; TimeCreated = $base.AddMinutes(-5) },
+        [PSCustomObject]@{ Id = 3103; Message = "[Svc] id 3103"; TimeCreated = $base.AddMinutes(-4) },
+        [PSCustomObject]@{ Id = 3199; Message = "[Svc] id 3199"; TimeCreated = $base.AddMinutes(-3) },
+        [PSCustomObject]@{ Id = 3200; Message = "[Svc] id 3200"; TimeCreated = $base.AddMinutes(-2) },
+        [PSCustomObject]@{ Id = 1;    Message = "[Svc] id 1";    TimeCreated = $base.AddMinutes(-1) }
+    )
+    function Get-WinEvent {
+        [CmdletBinding()]
+        param([hashtable]$FilterHashtable, [int]$MaxEvents)
+        return $global:WatermarkTestWinEvents
+    }
+
+    # Act: a normal run (watermark set) and a first run (no watermark)
+    $normalIds = (@(Get-ServyLastErrors -LastProcessed $base.AddMinutes(-10)) | ForEach-Object { $_.Id }) -join ','
+    $firstRunIds = (@(Get-ServyLastErrors -LastProcessed $null) | ForEach-Object { $_.Id }) -join ','
+
+    # Assert: only the IDs inside 3000-3199 are returned, on both paths
+    if ($normalIds -ne "3000,3001,3103,3199" -or $firstRunIds -ne "3000,3001,3103,3199") {
+        Write-Host "FAIL: Get-ServyLastErrors returned event IDs '$normalIds' (normal run) and '$firstRunIds' (first run); expected '3000,3001,3103,3199' for both." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Get-ServyLastErrors keeps only the Servy error event IDs (3000-3199)." -ForegroundColor Gray
+
+    # ----------------------------------------------------
+    # Test 8: Get-EventsToProcess per-run cap (#7539)
+    # ----------------------------------------------------
+    # Arrange: thirteen genuine events, three over the default cap of 10, served newest first by the
+    # Get-ServyLastErrors stub installed in Test 6.
+    $global:WatermarkTestEvents = @(1..13 | Sort-Object -Descending | ForEach-Object {
+        [PSCustomObject]@{ Message = "[Svc$_] Error $_"; TimeCreated = $base.AddMinutes(-20 + $_) }
+    })
+    $capLogFile = Join-Path $tempDir "ServyWatermarkErrors.log"
+    if (Test-Path -LiteralPath $capLogFile) { Remove-Item -LiteralPath $capLogFile -Force }
+
+    # Act
+    $capped = @(Get-EventsToProcess -ScriptDir $tempDir -LastProcessed $base.AddMinutes(-30) 3>$null)
+    $explicitCap = @(Get-EventsToProcess -ScriptDir $tempDir -LastProcessed $base.AddMinutes(-30) -MaxEventsPerRun 2 3>$null)
+
+    # Assert: the newest ten survive, oldest first, the three oldest are skipped and the skip is logged
+    $cappedNames = ($capped | ForEach-Object { $_.Message }) -join '|'
+    $expectedNames = (4..13 | ForEach-Object { "[Svc$_] Error $_" }) -join '|'
+    if ($cappedNames -ne $expectedNames) {
+        Write-Host "FAIL: Get-EventsToProcess returned '$cappedNames'; expected the newest ten events oldest first: '$expectedNames'." -ForegroundColor Red
+        exit 1
+    }
+    if (-not (Test-Path -LiteralPath $capLogFile) -or (Get-Content -LiteralPath $capLogFile -Raw) -notmatch 'skipping the 3 oldest') {
+        Write-Host "FAIL: Get-EventsToProcess did not record the three skipped events in ServyWatermarkErrors.log." -ForegroundColor Red
+        exit 1
+    }
+    if ((($explicitCap | ForEach-Object { $_.Message }) -join '|') -ne "[Svc12] Error 12|[Svc13] Error 13") {
+        Write-Host "FAIL: Get-EventsToProcess -MaxEventsPerRun 2 did not return only the newest two events." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Get-EventsToProcess caps a run at the newest events and logs the skipped ones." -ForegroundColor Gray
+
 
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: Servy-Watermark.psm1 validated successfully!" -ForegroundColor Green
@@ -207,6 +272,7 @@ catch {
 }
 finally {
     Remove-Variable -Name WatermarkTestEvents -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name WatermarkTestWinEvents -Scope Global -ErrorAction SilentlyContinue
     if (Test-Path $tempDir) {
         Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
