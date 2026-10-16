@@ -202,12 +202,22 @@ namespace Servy.Core.UnitTests.NamedPipes
         }
 
         [Fact]
-        public void Read_LengthJustAboveTheCap_ReturnsNull()
+        public async Task Read_ResponseLengthJustAboveTheMessageCap_ReturnsNullWithoutReadingThePayload()
         {
-            var bytes = BitConverter.GetBytes((int)AppConfig.ServyHostMaxAllowedMessageSizeBytes + 1);
-            using (var stream = new MemoryStream(bytes))
+            // Arrange: a response frame one byte above the 10 MB message cap, followed by some bytes
+            var bytes = BitConverter.GetBytes((int)AppConfig.ServyHostMaxAllowedMessageSizeBytes + 1).Concat(Encoding.UTF8.GetBytes("{}")).ToArray();
+            using (var sync = new MemoryStream(bytes))
+            using (var async = new MemoryStream(bytes))
             {
-                Assert.Null(_sut.Read<IpcRequestDto>(stream, TestContext.Current.CancellationToken));
+                // Act
+                var syncRead = _sut.Read<IpcResponseDto>(sync, TestContext.Current.CancellationToken);
+                var asyncRead = await _sut.ReadAsync<IpcResponseDto>(async, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Null(syncRead);
+                Assert.Null(asyncRead);
+                Assert.Equal(4, sync.Position);
+                Assert.Equal(4, async.Position);
             }
         }
 
@@ -282,15 +292,18 @@ namespace Servy.Core.UnitTests.NamedPipes
         }
 
         [Fact]
-        public void Write_PayloadAboveTheCap_ThrowsInsteadOfSendingAFrameTheReaderWouldRefuse()
+        public async Task Write_ResponseAboveTheMessageCap_ThrowsInsteadOfSendingAFrameTheReaderWouldRefuse()
         {
-            // Arrange: a string of 10 MB + 1 byte serializes above the cap
-            var request = new IpcRequestDto { ServiceName = new string('x', (int)AppConfig.ServyHostMaxAllowedMessageSizeBytes + 1) };
-            using (var stream = new MemoryStream())
+            // Arrange: an error text of 10 MB + 1 byte serializes above the message cap
+            var response = new IpcResponseDto { ErrorMessage = new string('x', (int)AppConfig.ServyHostMaxAllowedMessageSizeBytes + 1) };
+            using (var sync = new MemoryStream())
+            using (var async = new MemoryStream())
             {
                 // Act & Assert
-                Assert.Throws<InvalidOperationException>(() => _sut.Write(stream, request, TestContext.Current.CancellationToken));
-                Assert.Equal(0, stream.Length);
+                Assert.Throws<InvalidOperationException>(() => _sut.Write(sync, response, TestContext.Current.CancellationToken));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.WriteAsync(async, response, TestContext.Current.CancellationToken));
+                Assert.Equal(0, sync.Length);
+                Assert.Equal(0, async.Length);
             }
         }
 
