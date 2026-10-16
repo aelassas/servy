@@ -234,8 +234,11 @@ namespace Servy.Service.UnitTests.ProcessManagement
             _swapTarget = Path.Combine(_tempDir, "elsewhere.log");
 
             // Act
+            // A real swap redirects the handle's opened name too, so the comparison is supplied as one that sees only
+            // the resolved name; the real handle here was opened by the requested path and would otherwise match.
             var writer = ProcessLauncher.TryOpenAppendWriter(
-                path, Encoding.UTF8, "app.exe", "stdout", _logger.Object, _ => false, ResolvesElsewhere);
+                path, Encoding.UTF8, "app.exe", "stdout", _logger.Object, _ => false, ResolvesElsewhere,
+                (handle, finalPath, validatedPath) => string.Equals(finalPath, validatedPath, StringComparison.OrdinalIgnoreCase));
 
             // Assert
             Assert.Null(writer);
@@ -251,6 +254,32 @@ namespace Servy.Service.UnitTests.ProcessManagement
                     It.Is<string>(m => m.Contains(_swapTarget) && m.Contains(Path.GetFullPath(path))),
                     It.IsAny<Exception>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public void TryOpenAppendWriter_FinalPathExpandsAShortNameComponent_AcceptsTheOpenedNameLikeRotatingStreamWriter()
+        {
+            // Arrange
+            // The caller's path keeps an 8.3 component; the normalized final path of the same handle is the long form.
+            // Path.GetFullPath does not expand 8.3 names, so only the handle's opened name still equals the full path.
+            var path = Path.Combine(_tempDir, "out.log");
+            var longForm = Path.Combine(_tempDir, "LongDirectoryName", "out.log");
+            ProcessLauncher.FinalPathResolver resolvesToLongForm = (SafeFileHandle handle, out string finalPath) =>
+            {
+                finalPath = longForm;
+                return true;
+            };
+
+            // Act
+            using (var writer = ProcessLauncher.TryOpenAppendWriter(
+                path, Encoding.UTF8, "app.exe", "stdout", _logger.Object, _ => false, resolvesToLongForm))
+            {
+                // Assert
+                Assert.NotNull(writer);
+                writer.WriteLine("captured");
+            }
+            Assert.Equal("captured" + Environment.NewLine, File.ReadAllText(path));
+            _logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]

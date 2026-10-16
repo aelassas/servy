@@ -43,4 +43,5 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Servy.CLI.UnitTests")]
 [assembly: InternalsVisibleTo("Servy.Restarter.UnitTests")]
 [assembly: InternalsVisibleTo("Servy.UI.IntegrationTests")]
+[assembly: InternalsVisibleTo("Servy.Service")]
 [assembly: NeutralResourcesLanguage("en", UltimateResourceFallbackLocation.MainAssembly)]
