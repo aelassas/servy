@@ -28,6 +28,12 @@ namespace Servy.Core.NamedPipes
             DateTimeZoneHandling = DateTimeZoneHandling.Utc,
         };
 
+        /// <summary>
+        /// The size in bytes of the buffer a frame's payload is first read into (4 KB). It grows as the bytes arrive, so a
+        /// connection that announces a frame and then stalls holds this much rather than the announced length.
+        /// </summary>
+        private const int InitialPayloadBufferSize = 4 * 1_024;
+
         private readonly string _namedPipesName;
         private readonly INamedPipeServerVerifier _serverVerifier;
         private readonly int _connectTimeoutMs;
@@ -103,12 +109,11 @@ namespace Servy.Core.NamedPipes
                 return default;
 
             int messageLength = BitConverter.ToInt32(lengthPrefix, 0);
-            if (!IsValidMessageLength(messageLength))
+            if (!IsValidMessageLength(messageLength, MaxFrameLength<T>()))
                 return default;
 
-            byte[] jsonBytes = new byte[messageLength];
-            int payloadRead = await ReadExactAsync(stream, jsonBytes, 0, messageLength, ct);
-            if (payloadRead < messageLength)
+            byte[] jsonBytes = await ReadPayloadAsync(stream, messageLength, ct);
+            if (jsonBytes == null)
                 return default;
 
             return DeserializePayload<T>(jsonBytes);
@@ -141,12 +146,11 @@ namespace Servy.Core.NamedPipes
                 return default;
 
             int messageLength = BitConverter.ToInt32(lengthPrefix, 0);
-            if (!IsValidMessageLength(messageLength))
+            if (!IsValidMessageLength(messageLength, MaxFrameLength<T>()))
                 return default;
 
-            byte[] jsonBytes = new byte[messageLength];
-            int payloadRead = ReadExact(stream, jsonBytes, 0, messageLength, ct);
-            if (payloadRead < messageLength)
+            byte[] jsonBytes = ReadPayload(stream, messageLength, ct);
+            if (jsonBytes == null)
                 return default;
 
             return DeserializePayload<T>(jsonBytes);
@@ -273,9 +277,24 @@ namespace Servy.Core.NamedPipes
         /// Determines whether a frame's length prefix is acceptable.
         /// </summary>
         /// <param name="messageLength">The length read from the prefix.</param>
-        /// <returns><see langword="true"/> for a positive length no larger than <see cref="AppConfig.ServyHostMaxAllowedMessageSizeBytes"/>.</returns>
-        private static bool IsValidMessageLength(int messageLength)
-            => messageLength > 0 && messageLength <= AppConfig.ServyHostMaxAllowedMessageSizeBytes;
+        /// <param name="maxLength">The largest length accepted for the frame's type; see <see cref="MaxFrameLength{T}"/>.</param>
+        /// <returns><see langword="true"/> for a positive length no larger than <paramref name="maxLength"/>.</returns>
+        private static bool IsValidMessageLength(int messageLength, long maxLength)
+            => messageLength > 0 && messageLength <= maxLength;
+
+        /// <summary>
+        /// Returns the largest frame accepted for a payload type, when it is written and when it is read.
+        /// </summary>
+        /// <typeparam name="T">The type of the payload.</typeparam>
+        /// <returns>
+        /// <see cref="AppConfig.ServyHostMaxAllowedRequestSizeBytes"/> for an <see cref="IpcRequestDto"/>, which the host reads
+        /// before it identifies the caller; <see cref="AppConfig.ServyHostMaxAllowedMessageSizeBytes"/> for any other type,
+        /// such as a response carrying a service configuration.
+        /// </returns>
+        private static long MaxFrameLength<T>()
+            => typeof(T) == typeof(IpcRequestDto)
+                ? AppConfig.ServyHostMaxAllowedRequestSizeBytes
+                : AppConfig.ServyHostMaxAllowedMessageSizeBytes;
 
         /// <summary>
         /// Serializes the specified payload to UTF-8 JSON bytes and constructs its 4-byte length prefix.
@@ -283,13 +302,14 @@ namespace Servy.Core.NamedPipes
         /// <typeparam name="T">The type of the payload object to serialize.</typeparam>
         /// <param name="dto">The object instance to frame.</param>
         /// <returns>A tuple containing the 4-byte length prefix header and the UTF-8 serialized JSON payload bytes.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the serialized payload is larger than <see cref="AppConfig.ServyHostMaxAllowedMessageSizeBytes"/>,
-        /// which the reading end would refuse.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the serialized payload is larger than <see cref="MaxFrameLength{T}"/>
+        /// allows for its type, which the reading end would refuse.</exception>
         private static (byte[] LengthPrefix, byte[] JsonBytes) PrepareFrame<T>(T dto)
         {
             byte[] jsonBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(dto, FrameJsonSettings));
-            if (jsonBytes.Length > AppConfig.ServyHostMaxAllowedMessageSizeBytes)
-                throw new InvalidOperationException($"The IPC message is {jsonBytes.Length} bytes, above the {AppConfig.ServyHostMaxAllowedMessageSizeBytes}-byte limit.");
+            long maxLength = MaxFrameLength<T>();
+            if (jsonBytes.Length > maxLength)
+                throw new InvalidOperationException($"The IPC message is {jsonBytes.Length} bytes, above the {maxLength}-byte limit.");
 
             byte[] lengthPrefix = BitConverter.GetBytes(jsonBytes.Length);
             return (lengthPrefix, jsonBytes);
@@ -426,6 +446,65 @@ namespace Servy.Core.NamedPipes
                 totalRead += read;
             }
             return totalRead;
+        }
+
+        /// <summary>
+        /// Returns the size the payload buffer grows to once it is full: double its current size, capped at the frame's length.
+        /// </summary>
+        /// <param name="currentSize">The current size of the buffer.</param>
+        /// <param name="messageLength">The frame's length, read from its prefix.</param>
+        /// <returns>The next size of the buffer.</returns>
+        private static int NextPayloadBufferSize(int currentSize, int messageLength)
+            => (int)Math.Min((long)currentSize * 2, messageLength);
+
+        /// <summary>
+        /// Asynchronously reads a frame's payload into a buffer that starts at <see cref="InitialPayloadBufferSize"/> bytes
+        /// and grows only as the bytes arrive, so a peer that announces a large frame and sends nothing holds a small buffer.
+        /// </summary>
+        /// <param name="stream">The source stream to read from.</param>
+        /// <param name="messageLength">The frame's length, read from its prefix; positive.</param>
+        /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <returns>The <paramref name="messageLength"/> payload bytes, or <see langword="null"/> when the stream ends first.</returns>
+        private static async Task<byte[]> ReadPayloadAsync(Stream stream, int messageLength, CancellationToken ct)
+        {
+            byte[] buffer = new byte[Math.Min(messageLength, InitialPayloadBufferSize)];
+            int totalRead = 0;
+            while (totalRead < messageLength)
+            {
+                if (totalRead == buffer.Length)
+                    Array.Resize(ref buffer, NextPayloadBufferSize(buffer.Length, messageLength));
+
+                ct.ThrowIfCancellationRequested();
+                int read = await stream.ReadAsync(buffer, totalRead, buffer.Length - totalRead, ct);
+                if (read == 0) return null;
+                totalRead += read;
+            }
+            return buffer;
+        }
+
+        /// <summary>
+        /// Synchronously reads a frame's payload into a buffer that starts at <see cref="InitialPayloadBufferSize"/> bytes
+        /// and grows only as the bytes arrive, so a peer that announces a large frame and sends nothing holds a small buffer.
+        /// </summary>
+        /// <param name="stream">The source stream to read from.</param>
+        /// <param name="messageLength">The frame's length, read from its prefix; positive.</param>
+        /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <returns>The <paramref name="messageLength"/> payload bytes, or <see langword="null"/> when the stream ends first.</returns>
+        private static byte[] ReadPayload(Stream stream, int messageLength, CancellationToken ct)
+        {
+            byte[] buffer = new byte[Math.Min(messageLength, InitialPayloadBufferSize)];
+            int totalRead = 0;
+            while (totalRead < messageLength)
+            {
+                if (totalRead == buffer.Length)
+                    Array.Resize(ref buffer, NextPayloadBufferSize(buffer.Length, messageLength));
+
+                ct.ThrowIfCancellationRequested();
+                int read = stream.Read(buffer, totalRead, buffer.Length - totalRead);
+                if (read == 0) return null;
+                totalRead += read;
+            }
+            return buffer;
         }
 
         #endregion
