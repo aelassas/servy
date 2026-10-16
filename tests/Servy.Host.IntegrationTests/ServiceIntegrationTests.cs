@@ -75,7 +75,15 @@ namespace Servy.Host.IntegrationTests
             => new NamedPipesService(_pipeName, new ServyHostServerVerifier(_api.Object), connectTimeoutMs: connectTimeoutMs, requestTimeoutMs: requestTimeoutMs);
 
         private async Task SeedAsync(string name)
-            => await _repository.UpsertAsync(new ServiceDto { Name = name, ExecutablePath = "C:\\app.exe", Parameters = "--secret", Password = "pwd" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: CancellationToken.None);
+                  => await _repository.UpsertAsync(new ServiceDto
+                  {
+                      Name = name,
+                      ExecutablePath = "C:\\app.exe",
+                      Parameters = "--secret",
+                      Password = "pwd",
+                      StdoutPath = "C:\\out.log",
+                      StderrPath = "C:\\err.log"
+                  }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: CancellationToken.None);
 
         [Fact]
         public async Task ServiceProcess_ReadsItsConfigurationAndWritesItsRuntimeStateAndCounter()
