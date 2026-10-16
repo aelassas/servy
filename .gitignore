@@ -221,6 +221,8 @@ PublishScripts/
 # NuGet v3's project.json files produces more ignorable files
 *.nuget.props
 *.nuget.targets
+# Allow NuGet lock files for deterministic restores
+!**/packages.lock.json
 
 # Microsoft Azure Build Output
 csx/
