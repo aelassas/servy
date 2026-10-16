@@ -60,6 +60,15 @@ try {
         exit 1
     }
     Write-Host "  [OK] ConvertFrom-ServyEventMessage parses bracketed service message format." -ForegroundColor Gray
+    
+    $rawMsg = "[MyTestService] [EventID: 3003] Service crashed unexpectedly.`nStack trace line 1"
+    $parsedMsg = ConvertFrom-ServyEventMessage -Message $rawMsg
+
+    if ($parsedMsg.ServiceName -ne "MyTestService" -or $parsedMsg.LogText -ne $rawMsg) {
+        Write-Host "FAIL: ConvertFrom-ServyEventMessage failed to parse service name or retain complete log text." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] ConvertFrom-ServyEventMessage parses service name and retains full bracketed message body." -ForegroundColor Gray
 
     $unbracketedMsg = "General error without service header"
     $parsedUnbracketed = ConvertFrom-ServyEventMessage -Message $unbracketedMsg
