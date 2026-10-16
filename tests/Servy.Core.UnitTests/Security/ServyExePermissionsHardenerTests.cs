@@ -644,6 +644,22 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void ReportPurgeResult_Failed_NamesTheItemsThatKeepTheirEntriesAtErrorLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("vault");
+            result.AddFailed("Servy.Restarter.exe");
+            result.Complete(ExePermissionsHardeningStatus.Failed);
+
+            // Act
+            var log = LogCapture.Run(() => ServyExePermissionsHardener.ReportPurgeResult(result), LogLevel.Error);
+
+            // Assert
+            Assert.Contains("failed on: Servy.Restarter.exe", log);
+            Assert.Contains("keep their entries until the next elevated start", log);
+        }
+
+        [Fact]
         public void ReportResult_NotApplied_GivesTheReason()
         {
             // Arrange
@@ -1439,6 +1455,69 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
             Assert.Empty(result.Revoked);
             Assert.True(ItemHasAce(exe, LocalServiceSid));
+        }
+
+        [Theory]
+        [InlineData(2, "it has 2 NTFS hard links")]
+        [InlineData(-1, "its hard link count could not be verified")]
+        public void PurgeVault_FileWithAnUnusableHardLinkCount_IsNotTouchedAndFails(int links, string expectedLog)
+        {
+            // Arrange
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            AddAce(exe, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory) { HardLinkCount = _ => links };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.PurgeVault(new List<ServiceAccountGroup>()), LogLevel.Error);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, capture.Result.Failed);
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+            Assert.Contains(expectedLog, capture.Log);
+        }
+
+        [Fact]
+        public void PurgeVault_ItemThatThrows_IsRecordedAsFailedAndTheWalkContinues()
+        {
+            // Arrange: the hard link query throws for the binary only, so its entry is neither purged nor lost track of
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            var other = Path.Combine(TempDirectory, AppConfig.ServyServiceCLIExe);
+            File.WriteAllText(exe, "ui");
+            File.WriteAllText(other, "cli");
+            AddAce(exe, LocalServiceSid);
+            AddAce(other, LocalServiceSid);
+            var sut = new TestableHardener(TempDirectory)
+            {
+                HardLinkCount = path => Path.GetFileName(path) == AppConfig.ServyServiceUIExe
+                    ? throw new IOException("simulated failure")
+                    : 1
+            };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.PurgeVault(new List<ServiceAccountGroup>()), LogLevel.Error);
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, capture.Result.Status);
+            Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, capture.Result.Failed);
+            Assert.Contains(AppConfig.ServyServiceCLIExe, capture.Result.Revoked);
+            Assert.True(ItemHasAce(exe, LocalServiceSid));
+            Assert.False(ItemHasAce(other, LocalServiceSid));
+            Assert.Contains($"Failed to purge the non-administrative entries of '{AppConfig.ServyServiceUIExe}'", capture.Log);
+        }
+
+        [Fact]
+        public void PurgeVault_VaultMissing_ReturnsVaultNotFound()
+        {
+            // Arrange
+            var sut = new TestableHardener(Path.Combine(TempDirectory, "absent"));
+
+            // Act
+            var result = sut.PurgeVault(new List<ServiceAccountGroup>());
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.VaultNotFound, result.Status);
         }
 
         [Fact]
