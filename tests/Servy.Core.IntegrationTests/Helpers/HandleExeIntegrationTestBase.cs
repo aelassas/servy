@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using System.IO;
 using Xunit;
 
@@ -21,6 +22,10 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Accepting the EULA up front stops handle64.exe from prompting for it on a headless runner.
             Testing.Helper.AcceptSysinternalsEula();
+
+            // RELEASE builds resolve handle64.exe from the vault only; let ProcessKiller find the copy
+            // extracted next to the test assembly (#7528). DEBUG builds look there anyway.
+            AppConfig.TestAllowBaseDirectoryProbe = true;
         }
     }
 }

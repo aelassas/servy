@@ -149,6 +149,64 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
+        public void GetServyCLIServicePath_PlantedFileNextToExe_SwitchOff_ResolvesToVaultInRelease()
+        {
+            // Arrange
+            // A Servy.Service.CLI.Net48.exe next to the running executable is what a planted file looks like (#7528).
+            var localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.CLI.Net48.exe");
+            var created = !File.Exists(localPath);
+            if (created) File.WriteAllText(localPath, "planted");
+            var savedSwitch = AppConfig.TestAllowBaseDirectoryProbe;
+            AppConfig.TestAllowBaseDirectoryProbe = false;
+
+            try
+            {
+                // Act
+                var path = AppConfig.GetServyCLIServicePath();
+
+                // Assert
+#if DEBUG
+                // DEBUG builds always resolve to the build output folder.
+                Assert.Equal(localPath, path);
+#else
+                // RELEASE builds must ignore the planted file and resolve to the hardened vault.
+                Assert.Equal(Path.Combine(AppConfig.ProgramDataPath, "Servy.Service.CLI.Net48.exe"), path);
+#endif
+            }
+            finally
+            {
+                AppConfig.TestAllowBaseDirectoryProbe = savedSwitch;
+                if (created) File.Delete(localPath);
+            }
+        }
+
+        [Fact]
+        public void GetServyCLIServicePath_PlantedFileNextToExe_SwitchOn_ResolvesToBaseDirectory()
+        {
+            // Arrange
+            var localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.CLI.Net48.exe");
+            var created = !File.Exists(localPath);
+            if (created) File.WriteAllText(localPath, "planted");
+            var savedSwitch = AppConfig.TestAllowBaseDirectoryProbe;
+            AppConfig.TestAllowBaseDirectoryProbe = true;
+
+            try
+            {
+                // Act
+                var path = AppConfig.GetServyCLIServicePath();
+
+                // Assert
+                // The test-only switch re-enables the base-directory probe in RELEASE; DEBUG always uses it.
+                Assert.Equal(localPath, path);
+            }
+            finally
+            {
+                AppConfig.TestAllowBaseDirectoryProbe = savedSwitch;
+                if (created) File.Delete(localPath);
+            }
+        }
+
+        [Fact]
         public void ProgramDataPath_ShouldBeUnderCommonApplicationData()
         {
             // Act
