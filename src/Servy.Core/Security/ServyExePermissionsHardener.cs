@@ -20,7 +20,8 @@ namespace Servy.Core.Security
     /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in
     /// <c>logs\services\&lt;ServiceName&gt;\</c> of each of its own services, the only folders it writes. The account
     /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and nothing at all on <c>db\</c>,
-    /// <c>security\</c> and <c>logs\</c> or anything in them, the log folders of other services included.
+    /// <c>security\</c>, <c>logs\</c> and the legacy <c>recovery\</c> or anything in them, the log folders of other
+    /// services included.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -52,7 +53,10 @@ namespace Servy.Core.Security
     /// removed when it is hardened again. The same goes for <c>logs\</c>, which holds the logs of the administrative
     /// tools and the host, and for every file and folder under it other than the account's own service log folders:
     /// the whole tree is walked, so a grant a previous version gave on <c>logs\services\</c> itself or on any other
-    /// folder or file under <c>logs\</c> (such as the shared <c>Servy.Service.log</c>) is removed as well.
+    /// folder or file under <c>logs\</c> (such as the shared <c>Servy.Service.log</c>) is removed as well. The legacy
+    /// <c>recovery\</c> folder, where earlier versions let the account write its restart attempts counters, is walked
+    /// the same way until the database migration has deleted it, so its grants go and the counter files the account
+    /// created there are handed to <c>BUILTIN\Administrators</c> (#7532).
     /// </para>
     /// <para>
     /// Each service writes in its own folder only, <c>logs\services\&lt;ServiceName&gt;\</c>
@@ -335,7 +339,7 @@ namespace Servy.Core.Security
 
             RevokeEntries(string.Empty, targetSid, result);
 
-            // db\, security\ and the whole logs\ tree, every service log folder included
+            // db\, security\, recovery\ and the whole logs\ tree, every service log folder included
             RevokeClosedFolders(targetSid, new HashSet<string>(StringComparer.OrdinalIgnoreCase), result, cancellationToken);
 
             foreach (var target in GetTargetFiles())
@@ -489,7 +493,7 @@ namespace Servy.Core.Security
 
             RevokeVaultRootAccess(targetSid, result);
 
-            // Take back everything granted in db\, security\ and logs\ (a previous version's grant on logs\services\ itself, the
+            // Take back everything granted in db\, security\, recovery\ and logs\ (a previous version's grant on logs\services\ itself, the
             // folders of services the account no longer runs) before granting the account's own service log folders
             var writableFolders = GetWritableFolders(serviceNames);
             RevokeClosedFolders(targetSid, new HashSet<string>(writableFolders, StringComparer.OrdinalIgnoreCase), result, cancellationToken);
@@ -559,11 +563,13 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Lists the folders, relative to <see cref="VaultDirectory"/>, on which and in which the service account must
-        /// hold no entry: the database, the encryption keys, and the logs of the administrative tools and the host.
+        /// hold no entry: the database, the encryption keys, the logs of the administrative tools and the host, and the
+        /// legacy <c>recovery\</c> folder, in which versions before v10.2 let the account write its restart attempts
+        /// counters and which stays until the database migration has imported and deleted it (#7532).
         /// </summary>
         /// <returns>The closed folders.</returns>
         internal static IReadOnlyList<string> GetClosedFolders()
-            => new[] { AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName };
+            => new[] { AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName, AppConfig.RecoveryFolderName };
 
         /// <summary>
         /// Returns the rights the target gets on the files inside one of the <see cref="GetWritableFolders"/> folders.
@@ -576,7 +582,8 @@ namespace Servy.Core.Security
         /// <summary>
         /// Removes the target's explicit entries from each of the <see cref="GetClosedFolders"/> folders and from every
         /// file and folder under them, such as the grants on <c>db\Servy.db</c> and <c>security\aes_key.dat</c>, the
-        /// folder grants of <c>db\</c>, <c>logs\</c> and <c>logs\services\</c> that earlier versions wrote, and the
+        /// folder grants of <c>db\</c>, <c>logs\</c>, <c>logs\services\</c> and <c>recovery\</c> that earlier versions
+        /// wrote, the counter files the account created in <c>recovery\</c> and therefore owns, and the
         /// grants on the log folders of services the account no longer runs. The entries the files inherited from those
         /// folder grants go with them.
         /// </summary>

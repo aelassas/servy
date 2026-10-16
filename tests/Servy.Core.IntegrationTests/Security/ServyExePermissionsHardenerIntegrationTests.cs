@@ -841,6 +841,45 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
+        public void RevokeIfUnused_LegacyRecoveryFolderAndCounterOwnedByTheAccount_AreReownedByAdministrators()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange - a version before v10.2 let the service account write its restart attempts counter in recovery\, so
+            //           the folder and the counter it created can be owned by it until the migration deletes them; hand both
+            //           the current user's own SID, which any token may set as owner, and revoke that account (#7532)
+            CreateVault();
+            var recovery = Path.Combine(_vault, AppConfig.RecoveryFolderName);
+            Directory.CreateDirectory(recovery);
+            var counter = Path.Combine(recovery, "svc-one_restartAttempts.dat");
+            File.WriteAllText(counter, "2");
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                var folderAcl = new DirectoryInfo(recovery).GetAccessControl();
+                folderAcl.SetOwner(identity.User);
+                new DirectoryInfo(recovery).SetAccessControl(folderAcl);
+                var counterAcl = new FileInfo(counter).GetAccessControl();
+                counterAcl.SetOwner(identity.User);
+                new FileInfo(counter).SetAccessControl(counterAcl);
+                Assert.Equal(identity.User, new DirectoryInfo(recovery).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                Assert.Equal(identity.User, new FileInfo(counter).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+
+                // Act
+                var result = _sut.RevokeIfUnused(identity.Name, ServiceName, new List<ServiceDto>(), CancellationToken.None);
+
+                // Assert - neither item is left to the account, so it holds no implicit right to rewrite their DACLs, and the
+                //          counter is kept for the migration to import
+                Assert.Equal(ExePermissionsHardeningStatus.Revoked, result.Status);
+                Assert.Empty(result.Failed);
+                Assert.Contains(AppConfig.RecoveryFolderName, result.Revoked);
+                Assert.Contains(Path.Combine(AppConfig.RecoveryFolderName, "svc-one_restartAttempts.dat"), result.Revoked);
+                Assert.Equal(AdministratorsSid, new DirectoryInfo(recovery).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                Assert.Equal(AdministratorsSid, new FileInfo(counter).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                Assert.Equal("2", File.ReadAllText(counter));
+            }
+        }
+
+        [Fact]
         public void RevokeIfUnused_FileIsASymbolicLink_IsNotTouchedAndFails()
         {
             if (!_isElevated) return;
