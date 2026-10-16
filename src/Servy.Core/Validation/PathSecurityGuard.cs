@@ -309,7 +309,7 @@ namespace Servy.Core.Validation
         /// <param name="normalizedPath">The normalized final path already resolved for <paramref name="handle"/>.</param>
         /// <param name="validatedPath">The full path the pre-handle checks validated.</param>
         /// <returns><c>true</c> when either name equals <paramref name="validatedPath"/>, ignoring case; otherwise, <c>false</c>.</returns>
-        private static bool HandleNamesValidatedPath(SafeFileHandle handle, string normalizedPath, string validatedPath)
+        internal static bool HandleNamesValidatedPath(SafeFileHandle handle, string normalizedPath, string validatedPath)
         {
             if (string.Equals(normalizedPath, validatedPath, StringComparison.OrdinalIgnoreCase))
             {

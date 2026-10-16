@@ -16,6 +16,11 @@ namespace Servy.Service.StreamWriters
         /// Initializes a new instance of the <see cref="RotatingStreamWriterAdapter"/> class.
         /// </summary>
         /// <inheritdoc cref="IStreamWriterFactory.Create"/>
+        /// <remarks>
+        /// The inner writer refuses reparse points: a log directory, ancestor directory or log file that is a junction,
+        /// symbolic link or mount point makes this constructor throw <see cref="IOException"/>, and a refusal after
+        /// construction logs an error and disables capture to the file (#7527).
+        /// </remarks>
         public RotatingStreamWriterAdapter(
             string path,
             bool enableSizeRotation,
@@ -32,7 +37,8 @@ namespace Servy.Service.StreamWriters
                 enableDateRotation,
                 dateRotationType,
                 maxRotations,
-                useLocalTimeForRotation);
+                useLocalTimeForRotation,
+                refuseReparsePoints: true);
         }
 
         /// <inheritdoc />

@@ -57,6 +57,21 @@ namespace Servy.Service.UnitTests.StreamWriters
             }
         }
 
+        [Fact]
+        public void Constructor_InnerWriterRefusesReparsePoints()
+        {
+            // Arrange
+            using (var adapter = CreateAdapter())
+            {
+                // Act
+                var inner = TestReflection.GetField<RotatingStreamWriter>(adapter, "_inner");
+                var ancestorCheck = TestReflection.GetField<Func<string, bool>?>(inner, "_hasAncestorReparsePoint");
+
+                // Assert: the stdout/stderr writer must run the reparse-point and final-path checks (#7527)
+                Assert.NotNull(ancestorCheck);
+            }
+        }
+
         #endregion
 
         #region Disposal & Guard Clause Tests
