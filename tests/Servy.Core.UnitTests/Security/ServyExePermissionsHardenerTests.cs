@@ -429,6 +429,31 @@ namespace Servy.Core.UnitTests.Security
             Assert.True(ItemHasAce(Path.Combine(TempDirectory, ServiceLogsFolder), LocalServiceSid));
         }
 
+        [Fact]
+        public void Harden_PreviousVersionGrants_AreRemovedFromTheLegacyRecoveryFolder()
+        {
+            // Arrange: the write grant earlier versions gave on recovery\ and a counter file in it, which the migration has
+            // not deleted yet, plus another account's entry on the file, which must stay (#7532)
+            var recovery = GrantedFolder(AppConfig.RecoveryFolderName, LocalServiceSid);
+            var counter = Path.Combine(recovery, "svc-one_restartAttempts.dat");
+            File.WriteAllText(counter, "2");
+            AddAce(counter, LocalServiceSid);
+            AddAce(counter, NetworkServiceSid);
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var result = sut.Harden("svc", Services, CancellationToken.None);
+
+            // Assert
+            Assert.Empty(result.Failed);
+            Assert.Contains(AppConfig.RecoveryFolderName, result.Revoked);
+            Assert.Contains(Path.Combine(AppConfig.RecoveryFolderName, "svc-one_restartAttempts.dat"), result.Revoked);
+            Assert.False(ItemHasAce(recovery, LocalServiceSid), "recovery\\ still names the account");
+            Assert.False(ItemHasAce(counter, LocalServiceSid), "the counter file still names the account");
+            Assert.True(ItemHasAce(counter, NetworkServiceSid));
+            Assert.Equal("2", File.ReadAllText(counter));
+        }
+
         #endregion
 
         #region GetTargetFiles
@@ -488,13 +513,13 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
-        public void GetClosedFolders_AreTheDatabaseTheKeysAndTheLogs()
+        public void GetClosedFolders_AreTheDatabaseTheKeysTheLogsAndTheLegacyRecoveryFolder()
         {
             // Act
             var folders = ServyExePermissionsHardener.GetClosedFolders();
 
             // Assert
-            Assert.Equal(new[] { "db", "security", "logs" }, folders);
+            Assert.Equal(new[] { "db", "security", "logs", "recovery" }, folders);
         }
 
         [Fact]
