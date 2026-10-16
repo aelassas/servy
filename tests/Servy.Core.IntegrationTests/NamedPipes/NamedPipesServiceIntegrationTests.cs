@@ -2,8 +2,10 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.NamedPipes;
+using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Pipes;
@@ -334,19 +336,75 @@ namespace Servy.Core.IntegrationTests.NamedPipes
                 var waiting = server.WaitForConnectionAsync(ct);
                 await client.ConnectAsync(2000, ct);
                 await waiting;
+                var identifier = new PipeCallerIdentifier();
 
-                // Impersonation needs the server to have read something the client wrote. No Flush: flushing a pipe
-                // waits until the other end has read, and that end is this same thread.
+                using (var pin = identifier.Pin(server))
+                {
+                    // Impersonation needs the server to have read something the client wrote. No Flush: flushing a pipe
+                    // waits until the other end has read, and that end is this same thread.
+                    var received = server.ReadAsync(new byte[1], 0, 1, ct);
+                    await client.WriteAsync(new byte[] { 1 }, 0, 1, ct);
+                    Assert.Equal(1, await received);
+
+                    // Act
+                    var caller = identifier.Identify(server, pin);
+
+                    // Assert
+                    Assert.Equal(Environment.ProcessId, caller.ProcessId);
+                    Assert.Equal(SecurityHelper.IsAdministrator(), caller.IsAdministrator);
+                }
+            }
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task PipeCallerIdentifier_Pin_BeforeTheRead_HoldsAHandleToTheClientProcessUntilDisposed()
+        {
+            // Arrange
+            var ct = TestContext.Current.CancellationToken;
+            using (var server = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+            using (var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification))
+            {
+                var waiting = server.WaitForConnectionAsync(ct);
+                await client.ConnectAsync(2000, ct);
+                await waiting;
+
+                // Act: nothing has been read from the pipe yet
+                var pin = new PipeCallerIdentifier().Pin(server);
+                var held = TestReflection.GetField<IDisposable?>(pin, "_processHandle") as SafeWinProcessHandle;
+                var openWhilePinned = held != null && !held.IsInvalid && !held.IsClosed;
+                pin.Dispose();
+
+                // Assert: the identifier is this process's, an open handle to it kept it from being reused while pinned,
+                // and disposing the pin released that handle
+                Assert.Equal(Environment.ProcessId, pin.ProcessId);
+                Assert.True(openWhilePinned);
+                Assert.True(held!.IsClosed);
+            }
+        }
+
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task PipeCallerIdentifier_Identify_ReportsThePinnedProcessIdNotTheOneReadAfterTheRequest()
+        {
+            // Arrange: a pin carrying another identifier than the client's, which the pipe would report after the read
+            var ct = TestContext.Current.CancellationToken;
+            const int pinnedProcessId = 424242;
+            using (var server = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+            using (var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification))
+            using (var pin = new PipeClientPin(pinnedProcessId, null))
+            {
+                var waiting = server.WaitForConnectionAsync(ct);
+                await client.ConnectAsync(2000, ct);
+                await waiting;
                 var received = server.ReadAsync(new byte[1], 0, 1, ct);
                 await client.WriteAsync(new byte[] { 1 }, 0, 1, ct);
                 Assert.Equal(1, await received);
 
                 // Act
-                var caller = new PipeCallerIdentifier().Identify(server);
+                var caller = new PipeCallerIdentifier().Identify(server, pin);
 
                 // Assert
-                Assert.Equal(Environment.ProcessId, caller.ProcessId);
-                Assert.Equal(SecurityHelper.IsAdministrator(), caller.IsAdministrator);
+                Assert.Equal(pinnedProcessId, caller.ProcessId);
+                Assert.NotEqual(Environment.ProcessId, caller.ProcessId);
             }
         }
 
@@ -361,16 +419,21 @@ namespace Servy.Core.IntegrationTests.NamedPipes
                 var waiting = server.WaitForConnectionAsync(ct);
                 await client.ConnectAsync(2000, ct);
                 await waiting;
-                var received = server.ReadAsync(new byte[1], 0, 1, ct);
-                await client.WriteAsync(new byte[] { 1 }, 0, 1, ct);
-                Assert.Equal(1, await received);
+                var identifier = new PipeCallerIdentifier();
 
-                // Act
-                var caller = new PipeCallerIdentifier().Identify(server);
+                using (var pin = identifier.Pin(server))
+                {
+                    var received = server.ReadAsync(new byte[1], 0, 1, ct);
+                    await client.WriteAsync(new byte[] { 1 }, 0, 1, ct);
+                    Assert.Equal(1, await received);
 
-                // Assert
-                Assert.False(caller.IsAdministrator);
-                Assert.Equal(Environment.ProcessId, caller.ProcessId);
+                    // Act
+                    var caller = identifier.Identify(server, pin);
+
+                    // Assert
+                    Assert.False(caller.IsAdministrator);
+                    Assert.Equal(Environment.ProcessId, caller.ProcessId);
+                }
             }
         }
 

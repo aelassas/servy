@@ -771,7 +771,7 @@ namespace Servy.Host
         #region IPC Request Handling
 
         /// <summary>
-        /// Handles one connection: reads the request, identifies the caller, answers, and closes the pipe.
+        /// Handles one connection: pins the client, reads the request, identifies the caller, answers, and closes the pipe.
         /// </summary>
         /// <param name="pipe">The connected server pipe stream; disposed by this method.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
@@ -787,13 +787,19 @@ namespace Servy.Host
                 requestCts.CancelAfter(RequestTimeoutMs);
                 try
                 {
-                    var request = await _namedPipesService.ReadAsync<IpcRequestDto>(pipe, requestCts.Token);
-                    if (request == null) return;
+                    // Pinned before the read: the client's process ID is taken right after the connection completed and a
+                    // handle to that process is held until the request is answered, so the ID IsAuthorized compares with
+                    // the Service Control Manager's cannot have passed to another process in the meantime (#7534)
+                    using (var client = _callerIdentifier.Pin(pipe))
+                    {
+                        var request = await _namedPipesService.ReadAsync<IpcRequestDto>(pipe, requestCts.Token);
+                        if (request == null) return;
 
-                    var caller = _callerIdentifier.Identify(pipe);
-                    var response = await ProcessRequestAsync(request, caller, requestCts.Token);
+                        var caller = _callerIdentifier.Identify(pipe, client);
+                        var response = await ProcessRequestAsync(request, caller, requestCts.Token);
 
-                    await _namedPipesService.WriteAsync(pipe, response, requestCts.Token);
+                        await _namedPipesService.WriteAsync(pipe, response, requestCts.Token);
+                    }
                 }
                 catch (OperationCanceledException) when (!ct.IsCancellationRequested)
                 {
@@ -931,7 +937,8 @@ namespace Servy.Host
 
         /// <summary>
         /// Determines whether a caller may read or write a service's data: an administrator (or Local System), or the
-        /// process the Service Control Manager runs the service in.
+        /// process the Service Control Manager runs the service in. The caller's process ID was pinned at connect time and
+        /// a handle to that process is held while the request is processed, so it cannot be another process's reused ID.
         /// </summary>
         /// <param name="serviceName">The service the request is about.</param>
         /// <param name="caller">The client.</param>
