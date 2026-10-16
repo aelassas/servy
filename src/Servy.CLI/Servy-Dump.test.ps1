@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Tests path resolution, destination normalization, service name sanitization,
-    Win32 reserved device name prefixing, and collision disambiguation (ACL hardening is covered by Servy.test.ps1).
+    Win32 reserved device name prefixing, and collision disambiguation, and the staged-file move that keeps the archive's hardened ACL (ACL hardening itself is covered by Servy.test.ps1).
 #>
 
 Set-StrictMode -Version Latest
@@ -137,5 +137,64 @@ Assert-Equal "First collision appends _1 suffix" $col1 "MyService_1"
 
 $col2 = Get-ServySanitizedFileName -ServiceName "MyService" -InvalidChars $invalidChars -ReservedNames $reservedNames -UsedBaseNames $usedSetCollision
 Assert-Equal "Second collision appends _2 suffix" $col2 "MyService_2"
+
+# --- 3. Staged File Move Tests (#7538) ---
+Write-Host "`n3. Testing Move-ServyDumpStagedFile..." -ForegroundColor Yellow
+
+$moveTestRoot = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDumpMoveTest_" + [System.IO.Path]::GetRandomFileName())
+try {
+    # Arrange
+    $moveStagingDir = [System.IO.Path]::Combine($moveTestRoot, "staging")
+    $moveTargetDir  = [System.IO.Path]::Combine($moveTestRoot, "target")
+    [void][System.IO.Directory]::CreateDirectory($moveStagingDir)
+    [void][System.IO.Directory]::CreateDirectory($moveTargetDir)
+    $stagedFile = [System.IO.Path]::Combine($moveStagingDir, "Servy_Dump.zip")
+    $targetFile = [System.IO.Path]::Combine($moveTargetDir, "Servy_Dump.zip")
+    [System.IO.File]::WriteAllText($stagedFile, "first")
+
+    # Give the staged file a protected ACL that the target directory would not hand down to a new file
+    $currentUserSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+    $stagedAcl      = Get-Acl -LiteralPath $stagedFile
+    $stagedAcl.SetAccessRuleProtection($true, $false)
+    $stagedAcl.SetAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($currentUserSid, "FullControl", "Allow")))
+    Set-Acl -LiteralPath $stagedFile -AclObject $stagedAcl
+    $expectedDacl = (Get-Acl -LiteralPath $stagedFile).GetSecurityDescriptorSddlForm([System.Security.AccessControl.AccessControlSections]::Access)
+
+    # Act
+    Move-ServyDumpStagedFile -StagedPath $stagedFile -DestinationPath $targetFile
+
+    # Assert
+    $movedAcl = Get-Acl -LiteralPath $targetFile
+    Assert-True "Moved file no longer exists in the staging directory" (-not (Test-Path -LiteralPath $stagedFile))
+    Assert-True "Moved file keeps its protected (non-inherited) ACL" $movedAcl.AreAccessRulesProtected
+    Assert-Equal "Moved file keeps the DACL it was given in staging" $movedAcl.GetSecurityDescriptorSddlForm([System.Security.AccessControl.AccessControlSections]::Access) $expectedDacl
+
+    # Arrange
+    [System.IO.File]::WriteAllText($stagedFile, "second")
+
+    # Act
+    $moveWithoutOverwriteThrew = $false
+    try {
+        Move-ServyDumpStagedFile -StagedPath $stagedFile -DestinationPath $targetFile
+    }
+    catch {
+        $moveWithoutOverwriteThrew = $true
+    }
+
+    # Assert
+    Assert-True "Move without -Overwrite fails when the destination exists" $moveWithoutOverwriteThrew
+    Assert-Equal "Move without -Overwrite leaves the existing destination untouched" ([System.IO.File]::ReadAllText($targetFile)) "first"
+
+    # Act
+    Move-ServyDumpStagedFile -StagedPath $stagedFile -DestinationPath $targetFile -Overwrite
+
+    # Assert
+    Assert-Equal "Move with -Overwrite replaces the existing destination" ([System.IO.File]::ReadAllText($targetFile)) "second"
+}
+finally {
+    if (Test-Path -LiteralPath $moveTestRoot) {
+        Remove-Item -LiteralPath $moveTestRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
 
 Invoke-TestSummary

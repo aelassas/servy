@@ -29,7 +29,7 @@
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
-    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, an existing SHA-256 sidecar could not be replaced under -Overwrite, archive compression or ACL hardening failed, or an unexpected runtime error occurred.
+    - 4 : I/O & Inspection Failure. The database could not be read, the destination path is invalid or unwritable, an existing SHA-256 sidecar could not be replaced under -Overwrite, archive compression or ACL hardening failed, the hardened archive could not be moved from the staging directory into place, or an unexpected runtime error occurred.
     - 5 : Setup Compilation Failure. Failed to compile native SQLite dynamic P/Invoke assembly bindings.
     - 6 : Complete Export Failure. No service configurations could be exported; no output archive was generated.
     - 7 : Partial Export Warning. The dump archive was successfully created, but one or more services failed to export or uninstall, or the SHA-256 integrity sidecar could not be written.
@@ -225,6 +225,45 @@ function Get-ServySanitizedFileName {
     }
 
     return $candidateName
+}
+
+<#
+.SYNOPSIS
+    Moves a file out of the hardened staging directory to its final destination.
+
+.DESCRIPTION
+    Renames the file with System.IO.File.Move instead of copying it, so it arrives with the security descriptor
+    it was given in the staging directory and is never readable at the destination under an inherited ACL.
+    The staging directory is created next to the destination so the move stays on one volume (a cross-volume
+    move is a copy, and a copy takes the destination folder's inherited ACL).
+
+.PARAMETER StagedPath
+    Mandatory literal path of the staged file.
+
+.PARAMETER DestinationPath
+    Mandatory literal path the staged file is moved to.
+
+.PARAMETER Overwrite
+    Optional switch. Deletes an existing destination file before the move; without it, an existing destination file makes the move fail.
+#>
+function Move-ServyDumpStagedFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$StagedPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$DestinationPath,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$Overwrite
+    )
+
+    if ($Overwrite.IsPresent -and [System.IO.File]::Exists($DestinationPath)) {
+        [System.IO.File]::Delete($DestinationPath)
+    }
+
+    [System.IO.File]::Move($StagedPath, $DestinationPath)
 }
 
 # Centralized reserved Win32 device names array, accessible across dot-sourced test harnesses.
@@ -512,8 +551,9 @@ public static class ServyNativeWinSqliteRecord
         exit 0
     }
 
-    # Create an isolated temporary directory for staging exported XML files inside the try/finally scope
-    $tempStagingDir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "ServyDump_" + [System.IO.Path]::GetRandomFileName())
+    # Create an isolated staging directory for the exported XML files, the archive and its sidecar inside the try/finally scope.
+    # It sits next to the destination archive so the hardened archive is moved into place on the same volume and keeps its ACL (#7538).
+    $tempStagingDir = [System.IO.Path]::Combine($parentDir, ".servydump_staging_" + [System.IO.Path]::GetRandomFileName())
 
     try {
         [void][System.IO.Directory]::CreateDirectory($tempStagingDir)
@@ -568,20 +608,18 @@ public static class ServyNativeWinSqliteRecord
             exit 8
         }
 
-        # Compress the staging directory containing XML dumps into the target zip file
+        # Compress the staged XML dumps into a zip file inside the hardened staging directory; it is moved to the target only once hardened
         Write-Host "Compressing exported configurations into zip archive..." -ForegroundColor Cyan
 
         $stagedItemsToCompress = $stagedXmlFiles | Select-Object -ExpandProperty FullName
+        $stagedArchivePath     = [System.IO.Path]::Combine($tempStagingDir, [System.IO.Path]::GetFileName($resolvedArchivePath))
+        $stagedSidecarPath     = "$stagedArchivePath.sha256"
 
         $compressParams = @{
             LiteralPath      = $stagedItemsToCompress
-            DestinationPath  = $resolvedArchivePath
+            DestinationPath  = $stagedArchivePath
             CompressionLevel = "Optimal"
             WhatIf           = $false
-        }
-
-        if ($Overwrite.IsPresent) {
-            $compressParams['Force'] = $true
         }
 
         try {
@@ -593,31 +631,28 @@ public static class ServyNativeWinSqliteRecord
             exit 4
         }
 
-        # Apply ACL hardening to the newly created archive
+        # Apply explicit ACL hardening to the staged archive so it keeps the hardened ACL after the move
         try {
-            Set-ServyHardenedFileAcl -Path $resolvedArchivePath
+            Set-ServyHardenedFileAcl -Path $stagedArchivePath
         }
         catch {
-            Write-Host "`nWARNING: Could not restrict permissions on the archive '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
-
-            # Best-effort removal of the unprotected archive
-            Remove-Item -LiteralPath $resolvedArchivePath -Force -ErrorAction SilentlyContinue -WhatIf:$false
-
-            if (Test-Path -LiteralPath $resolvedArchivePath) {
-                Write-Host "The archive could NOT be removed. It EXISTS UNPROTECTED at '$resolvedArchivePath' and contains plain-text service configurations - delete or protect it manually." -ForegroundColor Red
-            }
-            else {
-                Write-Host "The archive was removed because it contains unencrypted plain-text service configurations and could not be protected." -ForegroundColor Red
-            }
-
-            if ($Overwrite.IsPresent -and (Test-Path -LiteralPath $sidecarPath)) {
-                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
-                if (Test-Path -LiteralPath $sidecarPath) {
-                    Write-Host "WARNING: A pre-existing SHA-256 sidecar file could NOT be removed and remains at '$sidecarPath' - delete or update it manually." -ForegroundColor Red
-                }
-            }
-
+            Write-Host "`nWARNING: Could not restrict permissions on the archive '$stagedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "The archive was NOT moved to '$resolvedArchivePath'; it is removed with the staging directory." -ForegroundColor Red
             exit 4
+        }
+
+        $sidecarWriteFailed = $false
+        $sidecarError       = $null
+
+        # Emit SHA-256 sidecar hash file for integrity verification, hardened inside the staging directory
+        try {
+            $hashValue = (Get-FileHash -LiteralPath $stagedArchivePath -Algorithm SHA256).Hash
+            [System.IO.File]::WriteAllText($stagedSidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
+            Set-ServyHardenedFileAcl -Path $stagedSidecarPath
+        }
+        catch {
+            $sidecarWriteFailed = $true
+            $sidecarError       = $_.Exception.Message
         }
 
         # Remove pre-existing sidecar only after compression and hardening succeed to avoid corrupting surviving backups
@@ -628,21 +663,29 @@ public static class ServyNativeWinSqliteRecord
             }
         }
 
-        $sidecarWriteFailed = $false
-
-        # Emit SHA-256 sidecar hash file for integrity verification
+        # Move the hardened archive into place (same volume, so its ACL is kept)
         try {
-            $hashValue = (Get-FileHash -LiteralPath $resolvedArchivePath -Algorithm SHA256).Hash
-            [System.IO.File]::WriteAllText($sidecarPath, "$hashValue *$([System.IO.Path]::GetFileName($resolvedArchivePath))`n", (New-Object System.Text.UTF8Encoding($false)))
-            Set-ServyHardenedFileAcl -Path $sidecarPath
-            Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
+            Move-ServyDumpStagedFile -StagedPath $stagedArchivePath -DestinationPath $resolvedArchivePath -Overwrite:$Overwrite.IsPresent
         }
         catch {
-            $sidecarWriteFailed = $true
-            if (Test-Path -LiteralPath $sidecarPath) {
-                Remove-Item -LiteralPath $sidecarPath -Force -ErrorAction SilentlyContinue -WhatIf:$false
+            Write-Host "`nServy configuration dump FAILED: the archive could not be moved from the staging directory to '$resolvedArchivePath': $($_.Exception.Message)" -ForegroundColor Red
+            exit 4
+        }
+
+        # Move the hardened sidecar into place, replacing any orphaned sidecar left without its archive
+        if (-not $sidecarWriteFailed) {
+            try {
+                Move-ServyDumpStagedFile -StagedPath $stagedSidecarPath -DestinationPath $sidecarPath -Overwrite
+                Write-Host "SHA-256 checksum sidecar written -> '$sidecarPath'" -ForegroundColor Cyan
             }
-            Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $($_.Exception.Message)" -ForegroundColor Red
+            catch {
+                $sidecarWriteFailed = $true
+                $sidecarError       = $_.Exception.Message
+            }
+        }
+
+        if ($sidecarWriteFailed) {
+            Write-Host "Archive was created at '$resolvedArchivePath', but the SHA-256 sidecar could not be written: $sidecarError" -ForegroundColor Red
 
             if (Test-Path -LiteralPath $sidecarPath) {
                 Write-Host "A stale SHA-256 sidecar could NOT be removed and remains at '$sidecarPath' - delete or regenerate it (Get-FileHash) before restoring, or restore verification will reject the archive." -ForegroundColor Red
@@ -650,7 +693,7 @@ public static class ServyNativeWinSqliteRecord
             else {
                 Write-Host "Generate the checksum manually (Get-FileHash) before relying on integrity verification." -ForegroundColor Yellow
             }
-            $failed.Add([PSCustomObject]@{ Service = "SHA256 Sidecar"; Reason = "Sidecar write failed: $($_.Exception.Message)" })
+            $failed.Add([PSCustomObject]@{ Service = "SHA256 Sidecar"; Reason = "Sidecar write failed: $sidecarError" })
         }
 
         # If -Uninstall is specified, uninstall successfully exported services from SCM and DB
