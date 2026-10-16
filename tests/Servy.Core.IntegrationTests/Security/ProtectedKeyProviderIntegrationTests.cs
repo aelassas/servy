@@ -888,6 +888,55 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Contains(ExplicitRules(acl), rule => ForeignSid.Equals(rule.IdentityReference));
         }
 
+        [Fact]
+        public void GetKey_ElevatedRunAndKeyFileIsASymbolicLink_LoadsTheKeyAndLeavesTheTargetUnchanged()
+        {
+            if (!SecurityHelper.IsAdministrator()) return; // NotElevatedSkipReason
+
+            // Arrange: a real key file owned by the current user with a foreign ACE, and a link to it that the provider is pointed at
+            var targetKeyPath = Path.Combine(TempDirectory, "link_target.key");
+            var targetIvPath = Path.Combine(TempDirectory, "link_target.iv");
+            var expectedKey = CreateKeyOwnedByCurrentUserWithForeignAce(targetKeyPath, targetIvPath, out var currentUserSid);
+
+            var linkKeyPath = Path.Combine(TempDirectory, "link.key");
+            var linkIvPath = Path.Combine(TempDirectory, "link.iv");
+            CreateFileSymbolicLink(linkKeyPath, targetKeyPath);
+
+            // The link gets the same owner and foreign entry as its target, so the guard is observable on either of them
+            var linkInfo = new FileInfo(linkKeyPath);
+            Assert.True((linkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint, "the key path is a reparse point");
+            var linkArranged = linkInfo.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+            linkArranged.SetOwner(currentUserSid);
+            linkArranged.AddAccessRule(new FileSystemAccessRule(ForeignSid, FileSystemRights.Read, AccessControlType.Allow));
+            linkInfo.SetAccessControl(linkArranged);
+
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => true;
+            byte[] key;
+
+            try
+            {
+                // Act
+                using (var provider = new ProtectedKeyProvider(linkKeyPath, linkIvPath))
+                {
+                    key = provider.GetKey();
+                }
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert: the key still loads through the link, and neither the link nor the file it points at changes owner or loses its foreign entry
+            Assert.Equal(expectedKey, key);
+            foreach (var path in new[] { targetKeyPath, linkKeyPath })
+            {
+                var acl = new FileInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+                Assert.Equal(currentUserSid, acl.GetOwner(typeof(SecurityIdentifier)));
+                Assert.Contains(ExplicitRules(acl), rule => ForeignSid.Equals(rule.IdentityReference));
+            }
+        }
+
         #endregion
 
         #region Test Lifecycle
@@ -928,6 +977,30 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Contains(ExplicitRules(arranged), rule => ForeignSid.Equals(rule.IdentityReference));
 
             return key;
+        }
+
+        /// <summary>
+        /// Creates a file symbolic link with the <c>mklink</c> built-in of <c>cmd.exe</c>, because .NET Framework has no
+        /// equivalent of <c>File.CreateSymbolicLink</c>. Creating the link needs an elevated process.
+        /// </summary>
+        /// <param name="linkPath">The path of the link to create.</param>
+        /// <param name="targetPath">The file the link points at.</param>
+        private static void CreateFileSymbolicLink(string linkPath, string targetPath)
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), $"/c mklink \"{linkPath}\" \"{targetPath}\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            using (var process = System.Diagnostics.Process.Start(psi))
+            {
+                var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+                process.WaitForExit();
+                Assert.True(process.ExitCode == 0, $"mklink \"{linkPath}\" \"{targetPath}\" failed: {output}");
+            }
         }
 
         /// <summary>
