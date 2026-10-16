@@ -581,6 +581,55 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Empty(ExplicitRules(realVault, TargetSid, AccessControlType.Allow));
         }
 
+        [Fact]
+        public void PurgeVault_VaultIsAJunction_PurgesNothingBehindItAndIsSkipped()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: the real folder holds a file with an entry for the target account, and the vault is a junction to it.
+            // The entry is written before the junction exists, so the arrange step never goes through the link.
+            var realVault = Path.Combine(TempDirectory, "real-vault");
+            Directory.CreateDirectory(realVault);
+            var realFile = Path.Combine(realVault, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(realFile, "test");
+            ProtectWithGrant(realFile, FileSystemRights.Read);
+            RunCmd($"mklink /J \"{_vault}\" \"{realVault}\"");
+
+            // Act
+            var result = _sut.PurgeVault(new List<ServiceAccountGroup>());
+
+            // Assert: the link is refused as a whole, and the file behind it keeps its entry
+            Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
+            Assert.Empty(result.Revoked);
+            Assert.NotEmpty(ExplicitRules(realFile, TargetSid, AccessControlType.Allow));
+        }
+
+        [Fact]
+        public void PurgeVault_FolderInTheVaultIsAJunction_PurgesNothingBehindItAndFails()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: a file outside the vault holds an entry for the target account, and the vault's logs\ is a
+            // junction to its folder. The entry is written before the junction exists, so the arrange step never
+            // goes through the link.
+            Directory.CreateDirectory(_vault);
+            var outside = Path.Combine(TempDirectory, "outside-logs");
+            Directory.CreateDirectory(outside);
+            var outsideFile = Path.Combine(outside, "other.log");
+            File.WriteAllText(outsideFile, "test");
+            ProtectWithGrant(outsideFile, FileSystemRights.Read);
+            RunCmd($"mklink /J \"{Path.Combine(_vault, AppConfig.LogsFolderName)}\" \"{outside}\"");
+
+            // Act
+            var result = _sut.PurgeVault(new List<ServiceAccountGroup>());
+
+            // Assert: the link is refused and never walked, so the file behind it keeps its entry
+            Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+            Assert.Contains(AppConfig.LogsFolderName, result.Failed);
+            Assert.DoesNotContain(Path.Combine(AppConfig.LogsFolderName, "other.log"), result.Revoked);
+            Assert.NotEmpty(ExplicitRules(outsideFile, TargetSid, AccessControlType.Allow));
+        }
+
         #endregion
 
         #region Accounts that are not hardened
