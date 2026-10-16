@@ -1853,8 +1853,8 @@ namespace Servy.Core.Config
         /// <summary>
         /// Gets the full path to the Sysinternals Handle executable (<c>handle64.exe</c> on x64, or
         /// <c>handle64a.exe</c> on ARM64). In DEBUG mode, it looks in the application's base directory;
-        /// in RELEASE mode, it looks there first and falls back to the ProgramData folder when the
-        /// executable is not present locally.
+        /// in RELEASE mode, it looks in the ProgramData folder, and the application's base directory is
+        /// probed first only when a test sets <see cref="TestAllowBaseDirectoryProbe"/>.
         /// </summary>
         /// <returns>The full path to the Handle executable.</returns>
         public static string GetHandleExePath() =>
@@ -1865,9 +1865,9 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests work)
-        /// before falling back to the hardened <c>ProgramData</c> vault, where installed and portable
-        /// versions of Servy place the service executables.
+        /// In <c>RELEASE</c> builds, the path points to the hardened <c>ProgramData</c> vault, where installed
+        /// and portable versions of Servy place the service executables; the base directory is probed first
+        /// only when a test sets <see cref="TestAllowBaseDirectoryProbe"/>.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.CLI.exe</c>.</returns>
         public static string GetServyCLIServicePath() => ResolveExe(ServyServiceCLIFileName);
@@ -1877,9 +1877,9 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests work)
-        /// before falling back to the hardened <c>ProgramData</c> vault, where installed and portable
-        /// versions of Servy place the service executables.
+        /// In <c>RELEASE</c> builds, the path points to the hardened <c>ProgramData</c> vault, where installed
+        /// and portable versions of Servy place the service executables; the base directory is probed first
+        /// only when a test sets <see cref="TestAllowBaseDirectoryProbe"/>.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Service.exe</c>.</returns>
         public static string GetServyUIServicePath() => ResolveExe(ServyServiceUIFileName);
@@ -1889,9 +1889,9 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
-        /// In <c>RELEASE</c> builds, the base directory is probed first (which is what makes unit tests work)
-        /// before falling back to the hardened <c>ProgramData</c> vault, where installed and portable
-        /// versions of Servy place the service executables.
+        /// In <c>RELEASE</c> builds, the path points to the hardened <c>ProgramData</c> vault, where installed
+        /// and portable versions of Servy place the service executables; the base directory is probed first
+        /// only when a test sets <see cref="TestAllowBaseDirectoryProbe"/>.
         /// </remarks>
         /// <returns>The full file path to <c>Servy.Restarter.exe</c>.</returns>
         public static string GetServyRestarterPath() => ResolveExe(ServyRestarterFileName);
@@ -1908,15 +1908,30 @@ namespace Servy.Core.Config
         #region Private Helpers
 
         /// <summary>
+        /// Test-only switch that lets <c>RELEASE</c> builds resolve the Servy service, restarter and Handle
+        /// executables from the application's base directory when a file of that name exists there, so tests
+        /// can run against binaries extracted next to the test assembly.
+        /// <see langword="false"/> (the default) means only the hardened <c>ProgramData</c> vault is used.
+        /// Not reachable from any settings file, environment variable or command-line option.
+        /// </summary>
+        /// <remarks>
+        /// A file next to <c>servy-cli.exe</c> or <c>Servy.exe</c> must never win over the vault copy in
+        /// production: that folder may be writable by a non-admin user, and the resolved path becomes the
+        /// binPath of a LocalSystem service or runs as elevated <c>handle64.exe</c> (#7528).
+        /// <c>DEBUG</c> builds always use the base directory and ignore this switch.
+        /// </remarks>
+        internal static bool TestAllowBaseDirectoryProbe { get; set; }
+
+        /// <summary>
         /// Resolves the absolute path for an executable based on the current environment and build configuration.
         /// </summary>
         /// <param name="fileName">The base name of the executable (without the .exe extension).</param>
         /// <returns>The fully qualified path to the executable; callers must verify with File.Exists.</returns>
         /// <remarks>
         /// In <c>DEBUG</c> mode, this resolves to the application's base directory (the build output folder),
-        /// where the required executables are copied during the build. In <c>RELEASE</c> mode, it checks the application's
-        /// base directory (supporting unit tests) before falling back to the hardened <c>ProgramData</c> vault,
-        /// where installed and portable versions of Servy place the service executables.
+        /// where the required executables are copied during the build. In <c>RELEASE</c> mode, it resolves to the hardened
+        /// <c>ProgramData</c> vault, where installed and portable versions of Servy place the service executables;
+        /// the application's base directory is checked first only when a test sets <see cref="TestAllowBaseDirectoryProbe"/>.
         /// </remarks>
         private static string ResolveExe(string fileName)
         {
@@ -1926,11 +1941,15 @@ namespace Servy.Core.Config
             // Development
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
 #else
-            // 1. Check local directory first (Critical for Unit Tests in Release mode)
-            string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
-            if (File.Exists(localPath))
+            // 1. Check local directory first, only when a test enables it (#7528): in production a planted
+            // file next to servy-cli.exe or Servy.exe must never win over the vault copy.
+            if (TestAllowBaseDirectoryProbe)
             {
-                return localPath;
+                string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
+                if (File.Exists(localPath))
+                {
+                    return localPath;
+                }
             }
 
             // 2. Fallback to the hardened vault (Production Service mode)
