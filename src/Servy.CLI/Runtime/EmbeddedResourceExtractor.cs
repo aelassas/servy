@@ -49,11 +49,6 @@ namespace Servy.CLI.Runtime
         public string BaseExtractionDirectory => _resourceHelper.BaseExtractionDirectory;
 
         /// <summary>
-        /// Gets a value indicating whether at least one resource was written to disk by this extractor.
-        /// </summary>
-        public bool HasCopiedResources => _resourceHelper.HasCopiedResources;
-
-        /// <summary>
         /// Determines whether a resource is missing or out of date on disk and must be extracted again.
         /// </summary>
         /// <param name="fileName">The file name of the resource, without its extension.</param>
