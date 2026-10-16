@@ -789,6 +789,32 @@ namespace Servy.Service.UnitTests
         }
 
         [Theory]
+        [InlineData(75, false)]   // between 40+30 (constant buffer) and 40+40 (window buffer): must be kept
+        [InlineData(85, true)]    // past 40+40: must be reset
+        public async Task CheckHealth_DetectionWindowAboveTheStabilityBuffer_UsesTheWindowAsTheBuffer(int secondsSinceWrite, bool expectReset)
+        {
+            // Arrange: window 40s > 30s constant, so the threshold is 40 + 40 = 80s, not 40 + 30 = 70s
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 3, updatedAtUtc: DateTime.UtcNow.AddSeconds(-secondsSinceWrite));
+
+            TestReflection.SetField(service, "_options", CreateStabilityOptions(heartbeatIntervalInSeconds: 40, maxFailedChecks: 1));
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(expectReset ? 0 : 3, store.Attempts);
+            Assert.Equal(expectReset ? new[] { 0 } : Array.Empty<int>(), store.Writes);
+        }
+
+        [Theory]
         [InlineData(3600, 2, 7200)]                                 // window over the cap
         [InlineData(int.MaxValue, 2, int.MaxValue)]                  // product over int.MaxValue, clamped
         public async Task CheckHealth_DetectionWindowExceedsCap_WarnsAndIgnoresTheCap(
