@@ -69,6 +69,12 @@ namespace Servy.Core.Security
         /// when another principal owns it, because an owner keeps an implicit right to rewrite the DACL and could grant
         /// itself access again (#7526).
         /// </para>
+        /// <para>
+        /// An existing Root Vault (<c>breakInheritance: true</c>) that is a reparse point (symlink or junction) is refused:
+        /// a warning is logged and neither its owner nor its DACL is changed, because securing the link would leave the
+        /// directory it points to, where the vault's content lives, as it is (#7526). The files and folders below the vault root are purged of their non-administrative
+        /// entries by <see cref="ServyExePermissionsHardener.SecureVaultAsync"/> on each elevated start.
+        /// </para>
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or whitespace.</exception>
         /// <exception cref="UnauthorizedAccessException">
@@ -124,6 +130,14 @@ namespace Servy.Core.Security
                         throw;
                     }
                 }
+            }
+
+            // Securing a vault root that is a link would secure the link only, and leave the directory it points to,
+            // where the vault's content lives, as it is (#7526)
+            if (breakInheritance && (new DirectoryInfo(path).Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+            {
+                Logger.Warn($"Refused to secure '{path}': the vault root is a reparse point (symlink/junction), so its owner and ACL were left unchanged. Replace it with a real directory.");
+                return;
             }
 
             // EXISTING OR INHERITANCE-INITIALIZED DIRECTORY: Harden in-place.
