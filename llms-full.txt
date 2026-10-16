@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-16T11:35:49Z
+> Generated on: 2026-10-16T11:38:33Z
 
 ---
 
@@ -4677,6 +4677,9 @@ Once configured, Windows will automatically trigger this task whenever Servy wri
 > [!IMPORTANT]
 > If you are using the portable version of Servy, you must edit `ServyFailureNotification.xml` and replace `{SERVY_INSTALL_PATH}` with the absolute path to the directory containing your Servy executable.
 
+> [!WARNING]
+> The imported task runs with the highest privileges available to the account that imported it, and it runs the scripts in the `taskschd` folder of your Servy directory (`{SERVY_INSTALL_PATH}\taskschd`). Make sure that folder, and the Servy directory above it, can be written only by administrators. If a standard user can write there (a custom install directory such as `C:\Servy`, or a portable copy in a user-writable folder), that user can replace a script and have it run with administrator rights. The default `%ProgramFiles%\Servy` location is already admin-only.
+
 ## Manual Notification (Optional)
 
 You can test or run the notification script manually in a PowerShell window:
@@ -4754,6 +4757,9 @@ If you cannot use PsExec, change the Scheduled Task to run under a dedicated ser
 
 > [!IMPORTANT]
 > If you are using the portable version of Servy, you must edit `ServyFailureEmail.xml` and replace `{SERVY_INSTALL_PATH}` with the absolute path to the directory containing your Servy executable.
+
+> [!WARNING]
+> The imported task runs with the highest privileges available to the account that imported it, and it runs the scripts in the `taskschd` folder of your Servy directory (`{SERVY_INSTALL_PATH}\taskschd`). Make sure that folder, and the Servy directory above it, can be written only by administrators. If a standard user can write there (a custom install directory such as `C:\Servy`, or a portable copy in a user-writable folder), that user can replace a script and have it run with administrator rights. The default `%ProgramFiles%\Servy` location is already admin-only.
 
 ## Heartbeat Ping URL Notifications
 
