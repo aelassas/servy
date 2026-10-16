@@ -1,9 +1,12 @@
 using Dapper;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using System.Data.Common;
 using System.Globalization;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 
 namespace Servy.Infrastructure.Data
@@ -18,17 +21,23 @@ namespace Servy.Infrastructure.Data
         /// <summary>The suffix of every legacy counter file.</summary>
         internal const string CounterFileSuffix = "_restartAttempts.dat";
 
+        /// <summary>The <c>BUILTIN\Administrators</c> group, one of the two owners a counter file is imported from.</summary>
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+
+        /// <summary>The <c>NT AUTHORITY\SYSTEM</c> account, one of the two owners a counter file is imported from.</summary>
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
         /// <summary>
-        /// Imports every counter file of <paramref name="folderPath"/> whose service has a row and whose counter was never
-        /// written through the database.
+        /// Imports every counter file of <paramref name="folderPath"/> whose service has a row, whose counter was never
+        /// written through the database, and which passes <see cref="TryReadTrustedCounterFile"/>.
         /// </summary>
         /// <param name="connection">The open connection.</param>
         /// <param name="transaction">The migration's transaction.</param>
         /// <param name="folderPath">The legacy recovery folder; <see langword="null"/> or missing imports nothing.</param>
         /// <returns>
         /// <see langword="true"/> when the folder exists and every counter file in it was handled, so it can be deleted
-        /// once the transaction is committed; <see langword="false"/> when there is no folder, or a file could not be
-        /// read and the folder must stay for the next attempt.
+        /// once the transaction is committed; <see langword="false"/> when there is no folder, or a file was skipped by
+        /// the security checks or could not be read, so the folder and that file are kept.
         /// </returns>
         internal static bool Import(DbConnection connection, DbTransaction transaction, string? folderPath)
         {
@@ -61,8 +70,14 @@ namespace Servy.Infrastructure.Data
 
                 try
                 {
-                    var attempts = ParseCounter(File.ReadAllText(path));
-                    var updatedAtTicks = File.GetLastWriteTimeUtc(path).Ticks;
+                    // A file that fails the checks is neither imported nor deleted
+                    if (!TryReadTrustedCounterFile(path, out var content, out var updatedAtTicks))
+                    {
+                        allHandled = false;
+                        continue;
+                    }
+
+                    var attempts = ParseCounter(content);
 
                     connection.Execute(
                         $"UPDATE {SqlConstants.ServicesTableName} SET RestartAttempts = @Attempts, RestartAttemptsUpdatedAtTicks = @UpdatedAtTicks WHERE Id = @Id;",
@@ -72,7 +87,7 @@ namespace Servy.Infrastructure.Data
                 }
                 catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
-                    Logger.Warn($"Could not import the legacy restart attempts file '{path}' of service '{service.Name}'; the recovery folder is kept and the import is retried at the next start.", ex);
+                    Logger.Warn($"Could not import the legacy restart attempts file '{path}' of service '{service.Name}'; the recovery folder is kept.", ex);
                     allHandled = false;
                 }
             }
@@ -94,6 +109,67 @@ namespace Servy.Infrastructure.Data
                 Logger.Info($"Imported {imported} restart attempts counter(s) from the legacy recovery folder '{folderPath}' into the database.");
 
             return allHandled;
+        }
+
+        /// <summary>
+        /// Reads a legacy counter file only when it can be the wrapper's own: a file owned by <c>BUILTIN\Administrators</c>
+        /// or <c>NT AUTHORITY\SYSTEM</c> that is neither a reparse point (a symbolic link or junction) nor one of several
+        /// hard links to the same data. A file that fails a check is logged as a security warning and left in place.
+        /// </summary>
+        /// <param name="path">The counter file.</param>
+        /// <param name="content">The file content when it passed the checks; otherwise <see cref="string.Empty"/>.</param>
+        /// <param name="updatedAtTicks">The file's last write time, in UTC ticks, when it passed the checks; otherwise 0.</param>
+        /// <returns><see langword="true"/> when the file passed every check and was read; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="IOException">The file could not be opened or read.</exception>
+        /// <exception cref="UnauthorizedAccessException">The file or its security descriptor could not be read.</exception>
+        internal static bool TryReadTrustedCounterFile(string path, out string content, out long updatedAtTicks)
+        {
+            content = string.Empty;
+            updatedAtTicks = 0;
+
+            // The attributes of the name itself: a link is never followed to a file outside the folder
+            if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                return Skip(path, "it is a reparse point (a symbolic link or junction)");
+
+            // No other writer, rename or delete while the checks and the read run on this one handle
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var links = NativeMethods.GetFileInformationByHandle(stream.SafeFileHandle, out var info) ? (long)info.NumberOfLinks : -1;
+                if (links != 1)
+                    return Skip(path, links < 0 ? "its hard link count could not be read" : $"it has {links} hard links");
+
+                var owner = stream.GetAccessControl().GetOwner(typeof(SecurityIdentifier));
+                if (!IsTrustedOwner(owner))
+                    return Skip(path, $"it is owned by '{owner?.Value ?? "nobody"}', not by BUILTIN\\Administrators or NT AUTHORITY\\SYSTEM");
+
+                using (var reader = new StreamReader(stream))
+                {
+                    content = reader.ReadToEnd();
+                }
+            }
+
+            updatedAtTicks = File.GetLastWriteTimeUtc(path).Ticks;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns whether <paramref name="owner"/> is <c>BUILTIN\Administrators</c> or <c>NT AUTHORITY\SYSTEM</c>.
+        /// </summary>
+        /// <param name="owner">The owner of a counter file; <see langword="null"/> when it has none.</param>
+        /// <returns><see langword="true"/> for one of the two trusted owners; otherwise <see langword="false"/>.</returns>
+        private static bool IsTrustedOwner(IdentityReference? owner)
+            => owner != null && (AdministratorsSid.Equals(owner) || LocalSystemSid.Equals(owner));
+
+        /// <summary>
+        /// Logs the security warning for a counter file that failed a check of <see cref="TryReadTrustedCounterFile"/>.
+        /// </summary>
+        /// <param name="path">The counter file.</param>
+        /// <param name="reason">Why it failed, completing "was not imported because".</param>
+        /// <returns>Always <see langword="false"/>, so the caller can return it.</returns>
+        private static bool Skip(string path, string reason)
+        {
+            Logger.Warn($"Security: the legacy restart attempts file '{path}' was not imported because {reason}. It is not deleted, and the recovery folder is kept.");
+            return false;
         }
 
         /// <summary>
@@ -121,7 +197,7 @@ namespace Servy.Infrastructure.Data
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
-                Logger.Warn($"Could not delete the legacy recovery folder '{folderPath}'; it is retried at the next start.", ex);
+                Logger.Warn($"Could not delete the legacy recovery folder '{folderPath}'; it is left in place, as the import does not run again.", ex);
                 return false;
             }
         }
