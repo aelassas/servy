@@ -648,7 +648,7 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
-        public async Task HardenServiceAccountsAsync_HardensTheAccountsOfInstalledServices()
+        public async Task SecureVaultAsync_GrantsTheAccountsOfInstalledServicesTheirAccessBack()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
 
@@ -663,7 +663,7 @@ namespace Servy.Core.IntegrationTests.Security
             });
 
             // Act
-            await _sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken);
+            await _sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken);
 
             // Assert
             var restarter = Path.Combine(_vault, AppConfig.ServyRestarterExe);

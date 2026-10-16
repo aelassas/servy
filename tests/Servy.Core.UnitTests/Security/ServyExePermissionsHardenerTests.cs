@@ -763,146 +763,6 @@ namespace Servy.Core.UnitTests.Security
 
         #endregion
 
-        #region HardenServiceAccountsAsync
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_NullRepository_Throws()
-        {
-            // Arrange
-            var sut = new TestableHardener(TempDirectory);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => sut.HardenServiceAccountsAsync(null!, TestContext.Current.CancellationToken));
-        }
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_HardensEachDistinctServiceAccountOnce()
-        {
-            // Arrange
-            var repository = new Mock<IServiceRepository>();
-            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
-            {
-                new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @".\svc-one" },
-                new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = @".\SVC-ONE" },
-                new ServiceDto { Name = "c", RunAsLocalSystem = true },
-                new ServiceDto { Name = "d", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\NetworkService" },
-                new ServiceDto { Name = "e", RunAsLocalSystem = false, UserAccount = @"HOST\svc-one" },
-            });
-            var sut = new TestableHardener(TempDirectory)
-            {
-                RecordOnly = true,
-                Resolver = a => a.IndexOf("NetworkService", StringComparison.Ordinal) >= 0 ? NetworkServiceSid : LocalServiceSid,
-            };
-
-            // Act
-            await sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken);
-
-            // Assert: one call per account, compared by SID, with every service of that account
-            Assert.Equal(new[] { @".\svc-one", @"NT AUTHORITY\NetworkService" }, sut.HardenedAccounts);
-            Assert.Equal(new[] { "a", "b", "e" }, sut.HardenedServiceNames[0]);
-            Assert.Equal(new[] { "d" }, sut.HardenedServiceNames[1]);
-            repository.Verify(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_NotElevated_DoesNotReadTheRepository()
-        {
-            // Arrange
-            var repository = new Mock<IServiceRepository>();
-            var sut = new TestableHardener(TempDirectory) { Elevated = false, RecordOnly = true };
-
-            // Act
-            await sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken);
-
-            // Assert
-            repository.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
-            Assert.Empty(sut.HardenedAccounts);
-        }
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_RepositoryThrows_LogsAndReturns()
-        {
-            // Arrange
-            var repository = new Mock<IServiceRepository>();
-            repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("database locked"));
-            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
-
-            // Act
-            var log = await LogCapture.RunAsync(() => sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken));
-
-            // Assert
-            Assert.Empty(sut.HardenedAccounts);
-            Assert.Contains("Failed to read the service accounts", log);
-            Assert.Contains("database locked", log);
-        }
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_RepositoryCancelled_WarnsInsteadOfReportingAReadFailure()
-        {
-            // Arrange
-            var repository = new Mock<IServiceRepository>();
-            repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
-            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
-
-            // Act
-            var log = await LogCapture.RunAsync(() => sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken));
-
-            // Assert
-            Assert.Empty(sut.HardenedAccounts);
-            Assert.Contains("Executable permission hardening of the service accounts was cancelled.", log);
-            Assert.DoesNotContain("Failed to read the service accounts", log);
-        }
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_CancelledBetweenAccounts_StopsBeforeTheNext()
-        {
-            // Arrange
-            using (var cts = new CancellationTokenSource())
-            {
-                var repository = new Mock<IServiceRepository>();
-                repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
-                {
-                    new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "first" },
-                    new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = "second" },
-                });
-                var sut = new TestableHardener(TempDirectory)
-                {
-                    RecordOnly = true,
-                    OnHarden = cts.Cancel,
-                    Resolver = a => a == "first" ? LocalServiceSid : NetworkServiceSid,
-                };
-
-                // Act
-                await sut.HardenServiceAccountsAsync(repository.Object, cts.Token);
-
-                // Assert
-                Assert.Equal(new[] { "first" }, sut.HardenedAccounts);
-            }
-        }
-
-        [Fact]
-        public async Task HardenServiceAccountsAsync_UnresolvableAccounts_AreGroupedByName()
-        {
-            // Arrange
-            var repository = new Mock<IServiceRepository>();
-            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
-            {
-                new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "ghost" },
-                new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = "GHOST" },
-                new ServiceDto { Name = "c", RunAsLocalSystem = false, UserAccount = "phantom" },
-            });
-            var sut = new TestableHardener(TempDirectory) { RecordOnly = true, Sid = null };
-
-            // Act
-            await sut.HardenServiceAccountsAsync(repository.Object, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(new[] { "ghost", "phantom" }, sut.HardenedAccounts);
-            Assert.Equal(new[] { "a", "b" }, sut.HardenedServiceNames[0]);
-        }
-
-        #endregion
-
         #region HardenServiceAsync
 
         [Fact]
@@ -1616,6 +1476,73 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public async Task SecureVaultAsync_GrantsEachDistinctServiceAccountOnce()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = @".\svc-one" },
+                new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = @".\SVC-ONE" },
+                new ServiceDto { Name = "c", RunAsLocalSystem = true },
+                new ServiceDto { Name = "d", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\NetworkService" },
+                new ServiceDto { Name = "e", RunAsLocalSystem = false, UserAccount = @"HOST\svc-one" },
+            });
+            var sut = new TestableHardener(TempDirectory)
+            {
+                RecordOnly = true,
+                Resolver = a => a.IndexOf("NetworkService", StringComparison.Ordinal) >= 0 ? NetworkServiceSid : LocalServiceSid,
+            };
+
+            // Act
+            await sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken);
+
+            // Assert: one grant per account, compared by SID, with every service of that account
+            Assert.Equal(new[] { @".\svc-one", @"NT AUTHORITY\NetworkService" }, sut.HardenedAccounts);
+            Assert.Equal(new[] { "a", "b", "e" }, sut.HardenedServiceNames[0]);
+            Assert.Equal(new[] { "d" }, sut.HardenedServiceNames[1]);
+            repository.Verify(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SecureVaultAsync_UnresolvableAccounts_AreGroupedByName()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = "a", RunAsLocalSystem = false, UserAccount = "ghost" },
+                new ServiceDto { Name = "b", RunAsLocalSystem = false, UserAccount = "GHOST" },
+                new ServiceDto { Name = "c", RunAsLocalSystem = false, UserAccount = "phantom" },
+            });
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true, Sid = null };
+
+            // Act
+            await sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken);
+
+            // Assert: the vault is not purged, but each account is still granted its access once, by name
+            Assert.Equal(new[] { "ghost", "phantom" }, sut.HardenedAccounts);
+            Assert.Equal(new[] { "a", "b" }, sut.HardenedServiceNames[0]);
+        }
+
+        [Fact]
+        public async Task SecureVaultAsync_RepositoryCancelled_WarnsInsteadOfReportingAReadFailure()
+        {
+            // Arrange
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
+            var sut = new TestableHardener(TempDirectory) { RecordOnly = true };
+
+            // Act
+            var log = await LogCapture.RunAsync(() => sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Empty(sut.HardenedAccounts);
+            Assert.Contains("Securing Servy's vault was cancelled before anything was changed.", log);
+            Assert.DoesNotContain("Failed to read the service accounts", log);
+        }
+
+        [Fact]
         public async Task SecureVaultAsync_RepositoryThrows_PurgesNothing()
         {
             // Arrange
@@ -1759,8 +1686,6 @@ namespace Servy.Core.UnitTests.Security
 
             public bool RecordOnly { get; set; }
 
-            public Action? OnHarden { get; set; }
-
             public int ResolveCalls { get; private set; }
 
             public int MembershipCalls { get; private set; }
@@ -1779,7 +1704,6 @@ namespace Servy.Core.UnitTests.Security
 
                 HardenedAccounts.Add(targetAccount);
                 HardenedServiceNames.Add(serviceNames.ToList());
-                OnHarden?.Invoke();
                 return Task.FromResult(true);
             }
 

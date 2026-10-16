@@ -197,7 +197,6 @@ namespace Servy.CLI.UnitTests.Runtime
                     $"{AppConfig.ServyHostFileName}.pdb",
                 },
                 _extractor.Copied.Skip(4));
-            _hardener.Verify(h => h.HardenServiceAccountsAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
             _hardener.Verify(h => h.SecureVaultAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 #else
@@ -219,7 +218,6 @@ namespace Servy.CLI.UnitTests.Runtime
             // whether or not a file was extracted (#7526).
             Assert.Equal(4, _extractor.Copied.Count);
             _hardener.Verify(h => h.SecureVaultAsync(_repository.Object, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.HardenServiceAccountsAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 #endif
 

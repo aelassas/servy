@@ -48,22 +48,10 @@ namespace Servy.Core.Security
         Task<bool> HardenServiceAsync(string serviceName, string targetAccount, IServiceRepository serviceRepository, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Re-applies the hardening for every account a Servy service runs under, other than Local System, each with the
-        /// log folders of its own services.
-        /// </summary>
-        /// <param name="serviceRepository">The repository the service accounts are read from.</param>
-        /// <param name="cancellationToken">A token that stops the hardening between two accounts or two files.</param>
-        /// <returns>A task that completes when every account has been processed. Apart from a null
-        /// <paramref name="serviceRepository"/>, it does not throw.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="serviceRepository"/> is null.</exception>
-        Task HardenServiceAccountsAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken);
-
-        /// <summary>
         /// Purges every explicit entry for a principal other than <c>Administrators</c> and <c>Local System</c> from every
         /// file and folder below the vault root, hands the items another principal owns to <c>BUILTIN\Administrators</c>,
-        /// then re-applies the hardening for every account a Servy service runs under, as
-        /// <see cref="HardenServiceAccountsAsync"/> does, so each keeps its grants on the binaries, the settings files and
-        /// the log folders of its own services (#7526).
+        /// then re-applies the hardening for every account a Servy service runs under, other than Local System, so each
+        /// keeps its grants on the binaries, the settings files and the log folders of its own services (#7526).
         /// </summary>
         /// <param name="serviceRepository">The repository the service accounts are read from. They are read before
         /// anything is purged; when they cannot be read, nothing is changed, and when one of them cannot be resolved,
