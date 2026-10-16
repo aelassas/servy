@@ -13,6 +13,7 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -538,6 +539,35 @@ namespace Servy.Manager.UnitTests.ViewModels
                         _mockMessageBoxService.Verify(
                             m => m.ShowErrorAsync("WMI Repository Event log corruption detected", UiAppConfig.Caption),
                             Times.Once);
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task SearchCommand_ServiceThrowsSecurityException_ShowsItsOwnMessage()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    // Arrange - the access-denied wrapper EventLogService throws for a non-elevated caller
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new SecurityException("Access denied to Windows Event Log."));
+
+                    using (var vm = CreateViewModel())
+                    {
+                        // Act
+                        await vm.SearchCommand.ExecuteAsync(null);
+
+                        // Assert - its own message, not the generic one
+                        _mockMessageBoxService.Verify(
+                            m => m.ShowErrorAsync("Access denied to Windows Event Log.", UiAppConfig.Caption),
+                            Times.Once);
+                        _mockMessageBoxService.Verify(
+                            m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption),
+                            Times.Never);
                     }
                 }
             }, createApp: true);
