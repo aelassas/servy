@@ -4,7 +4,9 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
+using Servy.Core.Native;
 using Servy.Core.Services;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Security.Principal;
@@ -1109,6 +1111,94 @@ namespace Servy.Host.UnitTests
                 // Assert
                 logger.Verify(l => l.Error("Exception in OnStart.", It.IsAny<InvalidOperationException>()), Times.Once);
                 Assert.Equal(AppConfig.ServiceSpecificErrorCode, probe.ExitCode);
+            }
+        }
+
+        #endregion
+
+        #region First pipe instance
+
+        /// <summary>
+        /// Points <see cref="_sut"/> at a unique pipe name whose instances are created by a recording factory, which
+        /// refuses an instance that asks to be the first of its name when <paramref name="refuseFirstInstance"/> is set.
+        /// </summary>
+        /// <param name="refuseFirstInstance">Whether an instance created with <c>FILE_FLAG_FIRST_PIPE_INSTANCE</c> is refused with <c>ERROR_ACCESS_DENIED</c>.</param>
+        /// <param name="calls">Receives, in call order, whether each instance asked to be the first of its name; lock it to read it.</param>
+        /// <param name="created">Signalled once every listener has a waiting instance.</param>
+        /// <returns>The pipe name.</returns>
+        private string RecordPipeInstances(bool refuseFirstInstance, List<bool> calls, ManualResetEventSlim created)
+        {
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            var instances = 0;
+            _sut.PipeName = pipeName;
+            _sut.PipeInstanceFactory = (name, security, firstInstance) =>
+            {
+                lock (calls)
+                    calls.Add(firstInstance);
+                if (firstInstance && refuseFirstInstance)
+                    throw new Win32Exception(Errors.ERROR_ACCESS_DENIED, "Access is denied.");
+
+                var stream = new NamedPipeServerStream(name, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                if (Interlocked.Increment(ref instances) == AppConfig.ServyHostListenerCount)
+                    created.Set();
+                return stream;
+            };
+            return pipeName;
+        }
+
+        [Fact]
+        public void StartListening_NameFree_OnlyTheFirstInstanceAsksToBeTheFirstOfTheName()
+        {
+            // Arrange
+            var calls = new List<bool>();
+            using (var created = new ManualResetEventSlim())
+            {
+                RecordPipeInstances(refuseFirstInstance: false, calls, created);
+
+                // Act
+                _sut.StartListening();
+                var allCreated = created.Wait(TimeSpan.FromSeconds(10));
+                _sut.StopListening();
+
+                // Assert: one instance per listener, and only the first carries FILE_FLAG_FIRST_PIPE_INSTANCE (#7537)
+                Assert.True(allCreated);
+                bool[] snapshot;
+                lock (calls)
+                    snapshot = calls.ToArray();
+                Assert.Equal(AppConfig.ServyHostListenerCount, snapshot.Length);
+                Assert.True(snapshot[0]);
+                Assert.Single(snapshot, firstInstance => firstInstance);
+                _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("FILE_FLAG_FIRST_PIPE_INSTANCE")), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void StartListening_FirstInstanceRefusedAsTheNameIsHeld_LogsAWarningAndCreatesItWithoutTheFlag()
+        {
+            // Arrange: the name is already held, so the instance asking to be the first is refused (#7537)
+            var calls = new List<bool>();
+            using (var created = new ManualResetEventSlim())
+            {
+                var pipeName = RecordPipeInstances(refuseFirstInstance: true, calls, created);
+
+                // Act
+                _sut.StartListening();
+                var allCreated = created.Wait(TimeSpan.FromSeconds(10));
+                _sut.StopListening();
+
+                // Assert: one refused attempt with the flag, then every listener's instance without it, and a warning
+                Assert.True(allCreated);
+                bool[] snapshot;
+                lock (calls)
+                    snapshot = calls.ToArray();
+                Assert.Equal(AppConfig.ServyHostListenerCount + 1, snapshot.Length);
+                Assert.True(snapshot[0]);
+                Assert.Single(snapshot, firstInstance => firstInstance);
+                _logger.Verify(l => l.Warn(
+                    It.Is<string>(m => m.Contains(pipeName) && m.Contains("FILE_FLAG_FIRST_PIPE_INSTANCE")),
+                    It.Is<Win32Exception>(e => e.NativeErrorCode == Errors.ERROR_ACCESS_DENIED)), Times.Once);
+                _logger.Verify(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<Exception>()), Times.Never);
             }
         }
 

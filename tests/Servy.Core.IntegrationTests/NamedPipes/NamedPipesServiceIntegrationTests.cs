@@ -543,6 +543,42 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         }
 
         [Fact]
+        public void LocalPipeServer_Create_FirstInstanceWhileAnotherServerHoldsTheName_ThrowsAccessDenied()
+        {
+            // Arrange: another server holds the name and allows any number of instances, as a squatter could (#7537)
+            var me = WindowsIdentity.GetCurrent().User!;
+            using (new NamedPipeServerStream(_pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
+            {
+                // Act
+                var ex = Assert.Throws<Win32Exception>(() => LocalPipeServer.Create(_pipeName, Dacl(me), firstInstance: true));
+
+                // Assert: FILE_FLAG_FIRST_PIPE_INSTANCE reports the held name, where an instance without it would join it
+                Assert.Equal(Errors.ERROR_ACCESS_DENIED, ex.NativeErrorCode);
+                Assert.Contains(_pipeName, ex.Message);
+            }
+        }
+
+        [Fact]
+        public void LocalPipeServer_Create_FirstInstanceFlag_OnlyTheFirstInstanceOfTheNameMayCarryIt()
+        {
+            // Arrange: the first instance of a free name, created with the flag
+            var me = WindowsIdentity.GetCurrent().User!;
+            using (LocalPipeServer.Create(_pipeName, Dacl(me), firstInstance: true))
+            {
+                // Act: a second instance that asks to be the first, then one that does not
+                var refused = Record.Exception(() => LocalPipeServer.Create(_pipeName, Dacl(me), firstInstance: true).Dispose());
+                var laterCreated = false;
+                using (LocalPipeServer.Create(_pipeName, Dacl(me), firstInstance: false))
+                    laterCreated = true;
+
+                // Assert: the flag is refused once the name exists, and a later instance without it is still created
+                var win32 = Assert.IsType<Win32Exception>(refused);
+                Assert.Equal(Errors.ERROR_ACCESS_DENIED, win32.NativeErrorCode);
+                Assert.True(laterCreated);
+            }
+        }
+
+        [Fact]
         public void LocalPipeServer_Create_NullArguments_Throw()
         {
             // Arrange, Act & Assert
