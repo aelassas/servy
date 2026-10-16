@@ -896,6 +896,8 @@ namespace Servy.Host
                             if (request.RuntimeState == null)
                                 return Fail("The runtime state is required.");
 
+                            await KeepOnlyKnownActivePathsAsync(serviceName, request.RuntimeState, ct);
+
                             var updated = await _serviceRepository.UpdateRuntimeStateAsync(serviceName, request.RuntimeState, ct);
                             _logger?.Debug($"IPC UpdateRuntimeState request for '{serviceName}': {updated} row(s) updated.");
                             return new IpcResponseDto { Success = true, UpdateData = updated };
@@ -940,6 +942,78 @@ namespace Servy.Host
                || action == AppConfig.ServyHostUpdateRuntimeStateAction
                || action == AppConfig.ServyHostGetRestartAttemptsAction
                || action == AppConfig.ServyHostUpdateRestartAttemptsAction;
+
+        /// <summary>
+        /// Clears each active log path a wrapper reports unless it is the service's configured path or the active path
+        /// already stored for it, so the elevated Manager is never handed a log path the service account chose.
+        /// </summary>
+        /// <remarks>
+        /// The stored active path is accepted as well as the configured one: a configuration edited while the service runs
+        /// leaves the wrapper on its start-time paths, and an in-wrapper recovery restart reports them again. A refused path
+        /// is written as <see langword="null"/>; the PID and the rest of the state are written as reported. The stored row is
+        /// read only when a path was reported.
+        /// </remarks>
+        /// <param name="serviceName">The service the state is reported for.</param>
+        /// <param name="state">The reported runtime state; a refused path in it is set to <see langword="null"/>.</param>
+        /// <param name="ct">A token that cancels the read of the stored row.</param>
+        /// <returns>A task that completes when both paths have been checked.</returns>
+        private async Task KeepOnlyKnownActivePathsAsync(string serviceName, ServiceRuntimeStateDto state, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(state.ActiveStdoutPath) && string.IsNullOrWhiteSpace(state.ActiveStderrPath))
+                return;
+
+            var stored = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, ct);
+
+            state.ActiveStdoutPath = KeepKnownActivePath(serviceName, "stdout", state.ActiveStdoutPath, stored?.StdoutPath, stored?.ActiveStdoutPath);
+            state.ActiveStderrPath = KeepKnownActivePath(serviceName, "stderr", state.ActiveStderrPath, stored?.StderrPath, stored?.ActiveStderrPath);
+        }
+
+        /// <summary>
+        /// Returns a reported active log path when it is the configured path or the stored active path, and
+        /// <see langword="null"/> (with a warning) when it is neither.
+        /// </summary>
+        /// <param name="serviceName">The service the path is reported for, for the warning.</param>
+        /// <param name="stream">The stream the path is for (<c>stdout</c> or <c>stderr</c>), for the warning.</param>
+        /// <param name="reported">The path the wrapper reported.</param>
+        /// <param name="configured">The path configured for the stream, or <see langword="null"/>.</param>
+        /// <param name="storedActive">The active path already stored for the stream, or <see langword="null"/>.</param>
+        /// <returns>
+        /// <paramref name="reported"/> when it is blank or matches <paramref name="configured"/> or
+        /// <paramref name="storedActive"/>; otherwise <see langword="null"/>.
+        /// </returns>
+        private string KeepKnownActivePath(string serviceName, string stream, string reported, string configured, string storedActive)
+        {
+            if (string.IsNullOrWhiteSpace(reported) || IsSamePath(reported, configured) || IsSamePath(reported, storedActive))
+                return reported;
+
+            _logger?.Warn($"Ignored the active {stream} path reported for '{serviceName}': it is neither the configured path nor the active path already stored.");
+            return null;
+        }
+
+        /// <summary>
+        /// Determines whether two paths name the same file: equal, ignoring case, after <see cref="Path.GetFullPath(string)"/>.
+        /// </summary>
+        /// <param name="path">The path to check.</param>
+        /// <param name="other">The path to compare it with, or <see langword="null"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> when both resolve to the same full path; <see langword="false"/> when they do not, when
+        /// <paramref name="other"/> is blank, or when either cannot be resolved.
+        /// </returns>
+        private static bool IsSamePath(string path, string other)
+        {
+            if (string.IsNullOrWhiteSpace(other))
+                return false;
+
+            try
+            {
+                return string.Equals(Path.GetFullPath(path), Path.GetFullPath(other), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception)
+            {
+                // A path that cannot be resolved is never accepted
+                return false;
+            }
+        }
 
         /// <summary>
         /// Determines whether a caller may read or write a service's data: an administrator (or Local System), or the

@@ -760,6 +760,77 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SwitchServiceAsync_DevicePathThatDiffersFromTheConfiguredPath_IsNotOpened()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: a readable log reached through a device path, while the row configures another file
+                string logFile = Path.GetTempFileName();
+                File.WriteAllText(logFile, "Reported line" + Environment.NewLine);
+                string devicePath = @"\\?\" + Path.GetFullPath(logFile);
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("DeviceService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "DeviceService", StdoutPath = Path.Combine(Path.GetTempPath(), "configured-stdout.log") });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    try
+                    {
+                        TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "DeviceService" });
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", devicePath, null);
+                        await task;
+
+                        // Assert: the reported path was not read
+                        Assert.Empty(vm.RawLines);
+                    }
+                    finally
+                    {
+                        try { File.Delete(logFile); } catch { /* fail-silent */ }
+                    }
+                }
+            });
+        }
+
+        [Fact]
+        public async Task SwitchServiceAsync_DevicePathThatIsTheConfiguredPath_IsOpened()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the same device path is the one configured for stdout
+                string logFile = Path.GetTempFileName();
+                File.WriteAllText(logFile, "Configured line" + Environment.NewLine);
+                string devicePath = @"\\?\" + Path.GetFullPath(logFile);
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("DeviceService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "DeviceService", StdoutPath = devicePath.ToUpperInvariant() });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    try
+                    {
+                        TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "DeviceService" });
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", devicePath, null);
+                        await task;
+
+                        // Assert: the configured path was read
+                        var line = Assert.Single(vm.RawLines);
+                        Assert.EndsWith("Configured line", line.Text);
+                    }
+                    finally
+                    {
+                        try { File.Delete(logFile); } catch { /* fail-silent */ }
+                    }
+                }
+            });
+        }
+
+        [Fact]
         public void StartLiveTail_LogReceivedOnActiveSession_AppendsToRawLinesAndTrimsExcessRows()
         {
             // Arrange, Act & Assert
