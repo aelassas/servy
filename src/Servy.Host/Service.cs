@@ -694,7 +694,7 @@ namespace Servy.Host
 
                 // Said once when the bound is reached, rather than repeating the last attempt's line with every recheck
                 // of a lingering account (#7362)
-                retriesSpent = unresolved > 0 && !retryUnresolved && !_unresolvedRetriesSpentLogged;
+                retriesSpent = (unresolved > 0 || readFailed) && !retryUnresolved && !_unresolvedRetriesSpentLogged;
                 if (retriesSpent)
                     _unresolvedRetriesSpentLogged = true;
 
@@ -710,7 +710,10 @@ namespace Servy.Host
                 }
             }
 
-            if (retriesSpent)
+            if (retriesSpent && readFailed)
+                _logger?.Warn($"The service accounts still could not be read after {AppConfig.ServyHostUnresolvedAccountRetryCount} retries, " +
+                    "so the Servy host named pipe DACL was not rebuilt. No further retry is scheduled until the pipe access is next refreshed.");
+            else if (retriesSpent)
                 _logger?.Warn($"{unresolved} service account(s) still could not be resolved after {AppConfig.ServyHostUnresolvedAccountRetryCount} retries " +
                     "and are not granted access to the Servy host named pipe. No further retry is scheduled for them until the pipe access is next refreshed.");
 
