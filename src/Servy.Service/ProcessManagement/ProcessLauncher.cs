@@ -580,9 +580,17 @@ namespace Servy.Service.ProcessManagement
         /// Resolves an opened file handle to its final, fully-qualified path. Returning <c>false</c> makes the open
         /// fail closed.
         /// </param>
+        /// <param name="handleNamesPath">
+        /// Returns whether the opened handle (first argument), whose resolved final path is the second argument, names
+        /// the validated full path (third argument). <c>null</c>, the value every production call uses, selects
+        /// <see cref="PathSecurityGuard.HandleNamesValidatedPath(SafeFileHandle, string, string)"/>, the comparison
+        /// <see cref="Servy.Core.IO.RotatingStreamWriter"/> uses, so a path with an 8.3 component is accepted by both writers alike.
+        /// A test supplies its own only to stand in for a redirection that changes every name of the handle.
+        /// </param>
         /// <returns>An active autoflushing <see cref="StreamWriter"/> instance if initialization succeeds; otherwise, <c>null</c>.</returns>
         internal static StreamWriter? TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger,
-            Func<string, bool> hasAncestorReparsePoint, FinalPathResolver resolveFinalPath)
+            Func<string, bool> hasAncestorReparsePoint, FinalPathResolver resolveFinalPath,
+            Func<SafeFileHandle, string, string, bool>? handleNamesPath = null)
         {
             FileStream? fs = null;
             try
@@ -632,7 +640,8 @@ namespace Servy.Service.ProcessManagement
                     return null;
                 }
 
-                if (!string.Equals(Path.GetFullPath(handleFinalPath), fullPath, StringComparison.OrdinalIgnoreCase))
+                // The normalized final path expands 8.3 components, so the handle's opened name is compared as well
+                if (!(handleNamesPath ?? PathSecurityGuard.HandleNamesValidatedPath)(fs.SafeFileHandle, Path.GetFullPath(handleFinalPath), fullPath))
                 {
                     logger.Error($"Refusing to write {scope} for '{exePath}': target handle path '{handleFinalPath}' does not match expected path '{fullPath}'.");
                     fs.Dispose();
