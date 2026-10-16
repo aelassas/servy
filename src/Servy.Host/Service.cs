@@ -4,12 +4,14 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
+using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Host.Bootstrap;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Pipes;
@@ -93,6 +95,18 @@ namespace Servy.Host
         /// <summary>The number of the DACL rebuild whose result is published in <see cref="_pipeSecurity"/>; guarded by <see cref="_securityLock"/>.</summary>
         private long _refreshPublished;
 
+        /// <summary>
+        /// Serializes the creation of the first server instance after <see cref="StartListening"/> with every other
+        /// creation, so no listener creates an instance of the name before the first one exists.
+        /// </summary>
+        private readonly object _firstInstanceLock = new object();
+
+        /// <summary>
+        /// Whether the next server instance is the first one since <see cref="StartListening"/>, which is created with
+        /// <c>FILE_FLAG_FIRST_PIPE_INSTANCE</c>; guarded by <see cref="_firstInstanceLock"/>.
+        /// </summary>
+        private bool _firstInstancePending;
+
         #endregion
 
         #region Test Seams
@@ -121,7 +135,14 @@ namespace Servy.Host
         /// <summary>
         /// Gets or sets the factory that creates a server instance of the pipe with the given security.
         /// </summary>
-        internal Func<string, PipeSecurity, NamedPipeServerStream> ServerStreamFactory { get; set; } = CreateServerStream;
+        internal Func<string, PipeSecurity, NamedPipeServerStream> ServerStreamFactory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the function the default <see cref="ServerStreamFactory"/> creates each server instance with: the
+        /// pipe name, its DACL, and whether the instance must be the first of its name (<c>FILE_FLAG_FIRST_PIPE_INSTANCE</c>);
+        /// tests replace it.
+        /// </summary>
+        internal Func<string, PipeSecurity, bool, NamedPipeServerStream> PipeInstanceFactory { get; set; } = LocalPipeServer.Create;
 
         /// <summary>
         /// Gets or sets the delay before the DACL is rebuilt again when an account could not be resolved, or when a running
@@ -184,6 +205,7 @@ namespace Servy.Host
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _windowsServiceApi = windowsServiceApi ?? throw new ArgumentNullException(nameof(windowsServiceApi));
             _callerIdentifier = callerIdentifier ?? throw new ArgumentNullException(nameof(callerIdentifier));
+            ServerStreamFactory = CreateServerStream;
         }
 
         /// <summary>
@@ -202,6 +224,7 @@ namespace Servy.Host
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _namedPipesService = namedPipesService ?? throw new ArgumentNullException(nameof(namedPipesService));
             _bootstrapEnvironment = bootstrapEnvironment ?? throw new ArgumentNullException(nameof(bootstrapEnvironment));
+            ServerStreamFactory = CreateServerStream;
 
             _bootstrapEnvironment.InitializeLogger(AppConfig.ServyHostLogFileName);
 
@@ -294,6 +317,10 @@ namespace Servy.Host
         {
             _cancellationSource = new CancellationTokenSource();
             var token = _cancellationSource.Token;
+
+            // The first instance created from here on must be the first of the pipe name (#7537)
+            lock (_firstInstanceLock)
+                _firstInstancePending = true;
 
             // Build the DACL before the first instance exists, so no instance is ever created without one
             RefreshPipeSecurityAsync(token).GetAwaiter().GetResult();
@@ -766,11 +793,56 @@ namespace Servy.Host
         /// the host restarted: an account granted after the host started (a service installed or moved to
         /// <c>NT AUTHORITY\NetworkService</c>, a local, domain or gMSA account) was refused with "Access to the path is
         /// denied", and a revoked account kept its access. Writing the DACL through the new instance's handle replaces
-        /// the shared descriptor, which is why the instance is opened with WRITE_DAC (see <see cref="LocalPipeServer.Create"/>).
+        /// the shared descriptor, which is why the instance is opened with WRITE_DAC (see <see cref="LocalPipeServer.Create(string, PipeSecurity, bool)"/>).
+        /// <para>
+        /// The first instance since <see cref="StartListening"/> is created with <c>FILE_FLAG_FIRST_PIPE_INSTANCE</c>
+        /// (<see cref="CreateFirstServerStream"/>), so a name that is already held is reported; every later instance, such
+        /// as the one a listener creates after handing its connection over, is created without it (#7537).
+        /// </para>
         /// </remarks>
-        [ExcludeFromCodeCoverage]
-        private static NamedPipeServerStream CreateServerStream(string pipeName, PipeSecurity security)
-            => LocalPipeServer.Create(pipeName, security);
+        private NamedPipeServerStream CreateServerStream(string pipeName, PipeSecurity security)
+        {
+            lock (_firstInstanceLock)
+            {
+                if (_firstInstancePending)
+                {
+                    var first = CreateFirstServerStream(pipeName, security);
+                    _firstInstancePending = false;
+                    return first;
+                }
+            }
+
+            return PipeInstanceFactory(pipeName, security, false);
+        }
+
+        /// <summary>
+        /// Creates the first server instance of the pipe with <c>FILE_FLAG_FIRST_PIPE_INSTANCE</c>. When that is refused
+        /// because the name already exists, logs a warning and creates the instance without the flag.
+        /// </summary>
+        /// <param name="pipeName">The pipe name.</param>
+        /// <param name="security">The DACL of the instance.</param>
+        /// <returns>The server instance.</returns>
+        /// <remarks>
+        /// The flag only detects that the name is held; it cannot evict the holder. The name is held either by another
+        /// process (which could squat it while the host was stopped) or, on a legitimate restart, by a client that still
+        /// holds an instance of the previous host. The host therefore keeps serving as it did before the flag, next to
+        /// the other instances, and the warning is the diagnosis (#7537).
+        /// </remarks>
+        /// <exception cref="Win32Exception">
+        /// Thrown when the instance cannot be created for another reason, or cannot be created even without the flag.
+        /// </exception>
+        private NamedPipeServerStream CreateFirstServerStream(string pipeName, PipeSecurity security)
+        {
+            try
+            {
+                return PipeInstanceFactory(pipeName, security, true);
+            }
+            catch (Win32Exception ex) when (ex.NativeErrorCode == Errors.ERROR_ACCESS_DENIED)
+            {
+                _logger?.Warn($"The named pipe '{pipeName}' already existed when the host created its first instance: another process holds the name, or a client still holds an instance of a previous host. Creating the instance without FILE_FLAG_FIRST_PIPE_INSTANCE.", ex);
+                return PipeInstanceFactory(pipeName, security, false);
+            }
+        }
 
         #endregion
 
