@@ -329,6 +329,115 @@ namespace Servy.Core.UnitTests.NamedPipes
             }
         }
 
+        [Fact]
+        public async Task Read_RequestAboveTheRequestCap_ReturnsNullWithoutReadingThePayload()
+        {
+            // Arrange: a request frame one byte above the 256 KB request cap, well under the 10 MB message cap (#7536)
+            var bytes = BitConverter.GetBytes((int)AppConfig.ServyHostMaxAllowedRequestSizeBytes + 1).Concat(Encoding.UTF8.GetBytes("{}")).ToArray();
+            using (var sync = new MemoryStream(bytes))
+            using (var async = new MemoryStream(bytes))
+            {
+                // Act
+                var syncRead = _sut.Read<IpcRequestDto>(sync, TestContext.Current.CancellationToken);
+                var asyncRead = await _sut.ReadAsync<IpcRequestDto>(async, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Null(syncRead);
+                Assert.Null(asyncRead);
+                Assert.Equal(4, sync.Position);
+                Assert.Equal(4, async.Position);
+            }
+        }
+
+        [Fact]
+        public async Task WriteThenRead_ResponseAboveTheRequestCap_IsStillRead()
+        {
+            // Arrange: the request cap applies to requests only; a response carrying a large configuration keeps the 10 MB cap
+            var parameters = new string('p', (int)AppConfig.ServyHostMaxAllowedRequestSizeBytes + 1);
+            var response = new IpcResponseDto { Success = true, Data = new ServiceDto { Name = "svc", Parameters = parameters } };
+            using (var sync = new MemoryStream())
+            using (var async = new MemoryStream())
+            {
+                // Act
+                _sut.Write(sync, response, TestContext.Current.CancellationToken);
+                await _sut.WriteAsync(async, response, TestContext.Current.CancellationToken);
+                sync.Position = 0;
+                async.Position = 0;
+                var syncRead = _sut.Read<IpcResponseDto>(sync, TestContext.Current.CancellationToken);
+                var asyncRead = await _sut.ReadAsync<IpcResponseDto>(async, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(parameters, syncRead!.Data!.Parameters);
+                Assert.Equal(parameters, asyncRead!.Data!.Parameters);
+            }
+        }
+
+        [Fact]
+        public async Task Write_RequestAboveTheRequestCap_ThrowsInsteadOfSendingAFrameTheHostWouldRefuse()
+        {
+            // Arrange: a request one byte above the 256 KB request cap
+            var request = new IpcRequestDto { ServiceName = new string('x', (int)AppConfig.ServyHostMaxAllowedRequestSizeBytes + 1) };
+            using (var sync = new MemoryStream())
+            using (var async = new MemoryStream())
+            {
+                // Act & Assert
+                Assert.Throws<InvalidOperationException>(() => _sut.Write(sync, request, TestContext.Current.CancellationToken));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.WriteAsync(async, request, TestContext.Current.CancellationToken));
+                Assert.Equal(0, sync.Length);
+                Assert.Equal(0, async.Length);
+            }
+        }
+
+        [Fact]
+        public async Task WriteThenRead_LongestLegitimateRequest_FitsUnderTheRequestCap()
+        {
+            // Arrange: two extended-length paths of 32,767 UTF-16 units, each a 3-byte UTF-8 character - the worst case
+            var path = new string('€', 32767);
+            var request = new IpcRequestDto
+            {
+                Action = AppConfig.ServyHostUpdateRuntimeStateAction,
+                ServiceName = "svc",
+                RuntimeState = new ServiceRuntimeStateDto { Pid = 1, ActiveStdoutPath = path, ActiveStderrPath = path },
+            };
+            using (var sync = new MemoryStream())
+            using (var async = new MemoryStream())
+            {
+                // Act
+                _sut.Write(sync, request, TestContext.Current.CancellationToken);
+                await _sut.WriteAsync(async, request, TestContext.Current.CancellationToken);
+                sync.Position = 0;
+                async.Position = 0;
+                var syncRead = _sut.Read<IpcRequestDto>(sync, TestContext.Current.CancellationToken);
+                var asyncRead = await _sut.ReadAsync<IpcRequestDto>(async, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(path, syncRead!.RuntimeState!.ActiveStdoutPath);
+                Assert.Equal(path, syncRead.RuntimeState.ActiveStderrPath);
+                Assert.Equal(path, asyncRead!.RuntimeState!.ActiveStdoutPath);
+                Assert.Equal(path, asyncRead.RuntimeState.ActiveStderrPath);
+            }
+        }
+
+        [Fact]
+        public async Task Read_StalledFrame_HoldsA4KbBufferNotTheAnnouncedLength()
+        {
+            // Arrange: a frame that announces the full request cap, then sends 10 bytes and stops (#7536)
+            var bytes = BitConverter.GetBytes((int)AppConfig.ServyHostMaxAllowedRequestSizeBytes).Concat(new byte[10]).ToArray();
+            using (var sync = new BufferRecordingStream(bytes))
+            using (var async = new BufferRecordingStream(bytes))
+            {
+                // Act
+                var syncRead = _sut.Read<IpcRequestDto>(sync, TestContext.Current.CancellationToken);
+                var asyncRead = await _sut.ReadAsync<IpcRequestDto>(async, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Null(syncRead);
+                Assert.Null(asyncRead);
+                Assert.Equal(4 * 1024, sync.LargestBuffer);
+                Assert.Equal(4 * 1024, async.LargestBuffer);
+            }
+        }
+
         #endregion
 
         #region Request Argument Contract
@@ -397,6 +506,53 @@ namespace Servy.Core.UnitTests.NamedPipes
             {
                 Reads++;
                 return base.ReadAsync(buffer, offset, Math.Min(count, _chunk), cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// A read-only stream that records the size of the largest buffer a reader hands it, which is what a peer that
+        /// stalls mid-frame pins for as long as the read waits.
+        /// </summary>
+        private sealed class BufferRecordingStream : MemoryStream
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="BufferRecordingStream"/> class over the given bytes.
+            /// </summary>
+            /// <param name="bytes">The bytes the stream hands over.</param>
+            public BufferRecordingStream(byte[] bytes) : base(bytes)
+            {
+            }
+
+            /// <summary>
+            /// Gets the length of the largest buffer passed to a read.
+            /// </summary>
+            public int LargestBuffer { get; private set; }
+
+            /// <summary>
+            /// Records the buffer's length, then reads from the underlying bytes.
+            /// </summary>
+            /// <param name="buffer">The buffer to read into.</param>
+            /// <param name="offset">The offset in <paramref name="buffer"/> at which to start.</param>
+            /// <param name="count">The largest number of bytes to read.</param>
+            /// <returns>The number of bytes read; 0 at the end of the bytes.</returns>
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                LargestBuffer = Math.Max(LargestBuffer, buffer.Length);
+                return base.Read(buffer, offset, count);
+            }
+
+            /// <summary>
+            /// Records the buffer's length, then reads from the underlying bytes.
+            /// </summary>
+            /// <param name="buffer">The buffer to read into.</param>
+            /// <param name="offset">The offset in <paramref name="buffer"/> at which to start.</param>
+            /// <param name="count">The largest number of bytes to read.</param>
+            /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+            /// <returns>A task whose result is the number of bytes read; 0 at the end of the bytes.</returns>
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                LargestBuffer = Math.Max(LargestBuffer, buffer.Length);
+                return base.ReadAsync(buffer, offset, count, cancellationToken);
             }
         }
     }

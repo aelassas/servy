@@ -1843,8 +1843,16 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// The maximum permitted IPC message payload size in bytes (10 MB) to prevent heap overflow exploits or excessive memory allocation.
+        /// Request frames are held to the smaller <see cref="ServyHostMaxAllowedRequestSizeBytes"/>.
         /// </summary>
         public const long ServyHostMaxAllowedMessageSizeBytes = 10 * BytesInMegabyte;
+
+        /// <summary>
+        /// The maximum permitted size in bytes (256 KB) of a request frame sent to the Servy host, which reads it before it
+        /// identifies the caller. The largest legitimate request carries two extended-length paths of up to 32,767 UTF-16
+        /// units each, about 197 KB as UTF-8 JSON in the worst case. Responses keep <see cref="ServyHostMaxAllowedMessageSizeBytes"/>.
+        /// </summary>
+        public const long ServyHostMaxAllowedRequestSizeBytes = 256 * 1_024;
 
         #endregion
 
