@@ -206,6 +206,42 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void FromDate_SetToNull_ClearsToDateMinDate()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange - the constructor seeded a window, so the bound starts out set
+                Assert.NotNull(vm.ToDateMinDate);
+
+                // Act
+                vm.FromDate = null;
+
+                // Assert
+                Assert.Null(vm.FromDate);
+                Assert.Null(vm.ToDateMinDate);
+            }
+        }
+
+        [Fact]
+        public void ToDate_SetToNull_ClearsFromDateMaxDate()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange - the constructor seeded a window, so the bound starts out set
+                Assert.NotNull(vm.FromDateMaxDate);
+
+                // Act
+                vm.ToDate = null;
+
+                // Assert
+                Assert.Null(vm.ToDate);
+                Assert.Null(vm.FromDateMaxDate);
+            }
+        }
+
+        [Fact]
         public void Keyword_PropertyMutates_RaisesNotificationCorrectly()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
