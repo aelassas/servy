@@ -657,7 +657,7 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
-        public async Task HardenServiceAccountsAsync_HardensTheAccountsOfInstalledServices()
+        public async Task SecureVaultAsync_GrantsTheAccountsOfInstalledServicesTheirAccessBack()
         {
             if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
 
@@ -672,7 +672,7 @@ namespace Servy.Core.IntegrationTests.Security
             });
 
             // Act
-            await _sut.HardenServiceAccountsAsync(repository.Object, CancellationToken.None);
+            await _sut.SecureVaultAsync(repository.Object, CancellationToken.None);
 
             // Assert
             var restarter = Path.Combine(_vault, AppConfig.ServyRestarterExe);

@@ -197,44 +197,6 @@ namespace Servy.Core.Security
         }
 
         /// <inheritdoc />
-        public virtual async Task HardenServiceAccountsAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken)
-        {
-            if (serviceRepository == null)
-                throw new ArgumentNullException(nameof(serviceRepository));
-
-            List<ServiceAccountGroup> groups;
-            try
-            {
-                if (!IsProcessElevated())
-                {
-                    Logger.Debug("Executable permission hardening of the service accounts skipped: the process is not elevated.");
-                    return;
-                }
-
-                var services = await serviceRepository.GetAllAsync(decrypt: false, cancellationToken);
-                groups = await Task.Run(() => GetServiceAccountGroups(services), cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                Logger.Warn("Executable permission hardening of the service accounts was cancelled.");
-                return;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Failed to read the service accounts to re-apply the executable permission hardening.", ex);
-                return;
-            }
-
-            foreach (var group in groups)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-
-                await HardenAsync(group.Account, group.ServiceNames, cancellationToken);
-            }
-        }
-
-        /// <inheritdoc />
         public virtual async Task SecureVaultAsync(IServiceRepository serviceRepository, CancellationToken cancellationToken)
         {
             if (serviceRepository == null)

@@ -210,7 +210,6 @@ namespace Servy.CLI.UnitTests.Runtime
                 },
                 _extractor.Copied.Where(c => c.EndsWith(".pdb")));
             Assert.Equal(2, _extractor.CopiedTogether.Count);
-            _hardener.Verify(h => h.HardenServiceAccountsAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
             _hardener.Verify(h => h.SecureVaultAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 #else
@@ -235,7 +234,6 @@ namespace Servy.CLI.UnitTests.Runtime
             Assert.Contains("System.Data.SQLite.dll", _extractor.CopiedTogether);
             Assert.DoesNotContain(_extractor.Copied, c => c.EndsWith(".pdb"));
             _hardener.Verify(h => h.SecureVaultAsync(_repository.Object, It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.HardenServiceAccountsAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
