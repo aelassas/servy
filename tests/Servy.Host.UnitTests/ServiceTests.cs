@@ -385,6 +385,28 @@ namespace Servy.Host.UnitTests
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Theory]
+        [InlineData("bad\0path.log", @"C:\Logs\out.log")]
+        [InlineData(@"C:\Logs\out.log", "bad\0configured.log")]
+        public async Task UpdateRuntimeState_PathThatCannotBeResolved_IsNeverAcceptedAndStillUpdatesThePid(string reported, string configured)
+        {
+            // Arrange: either the reported path or the configured one holds a NUL, which Path.GetFullPath refuses
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, StdoutPath = configured });
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = reported };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert: the unresolvable path is written as null with a warning, the PID as reported
+            Assert.True(response.Success);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName,
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 77 && s.ActiveStdoutPath == null),
+                It.IsAny<CancellationToken>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("Ignored the active stdout path")), It.IsAny<Exception>()), Times.Once);
+        }
+
         [Fact]
         public async Task GetRestartAttempts_ReturnsTheStoredCounter()
         {
