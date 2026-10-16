@@ -1239,7 +1239,7 @@ namespace Servy.Restarter.UnitTests
             _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Start operation failed")), It.IsAny<Exception>()), Times.Once);
             _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Entering transitional recovery loop")), It.IsAny<Exception>()), Times.Once);
 
-            // 3. Transitional recovery pending branch and post-exception probe failure
+            // 3. Transitional recovery poll exception and post-exception probe failure
             _mockController.Reset();
             _mockLogger.Reset();
 
