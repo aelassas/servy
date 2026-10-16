@@ -689,20 +689,21 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void ExpandEnvironmentVariables_ShouldAllowOverridingNonProtectedVariables()
+        public void ExpandEnvironmentVariables_NonProtectedVariable_ReplacesTheInheritedOsValue()
         {
             // Arrange
-            // Create a custom variable that isn't in the blocklist
+            const string name = "SERVY_TEST_OVERRIDE_TARGET";
+            SetTempOsVariable(name, "inherited-value");
             var vars = new List<EnvironmentVariable>
             {
-                new EnvironmentVariable { Name = "CUSTOM_APP_SETTING", Value = "SafeValue" }
+                new EnvironmentVariable { Name = name, Value = "configured-value" }
             };
 
             // Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false);
 
             // Assert
-            Assert.Equal("SafeValue", expanded["CUSTOM_APP_SETTING"]);
+            Assert.Equal("configured-value", expanded[name]);
         }
 
         [Fact]
