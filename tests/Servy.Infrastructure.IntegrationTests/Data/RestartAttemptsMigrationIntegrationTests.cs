@@ -1,5 +1,4 @@
 using Dapper;
-using Servy.Core.Security;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System;
@@ -17,14 +16,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
     /// <summary>
     /// Runs the version 10 migration of <see cref="SQLiteDbInitializer"/> against a real SQLite database and a real legacy
     /// recovery folder: the restart attempts columns, the import of the per-service counter files the wrapper wrote in
-    /// <c>recovery\</c>, which runs only with that migration and skips a file it cannot trust, and the deletion of that
+    /// <c>recovery\</c>, which runs only with that migration and skips a link or a file with several hard links, and the deletion of that
     /// folder once the import passed.
     /// </summary>
     [Collection(DatabaseTestCollection.Name)]
     public class RestartAttemptsMigrationIntegrationTests : TempDirectoryTestBase
     {
         private readonly string _recoveryFolder;
-        private readonly bool _isElevated = SecurityHelper.IsAdministrator();
 
         public RestartAttemptsMigrationIntegrationTests()
         {
@@ -126,8 +124,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_LegacyRecoveryFolder_ImportsEachCounterWithItsTimeAndDeletesTheFolder()
         {
-            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
-
             using (var conn = CreateConnection())
             {
                 // Arrange
@@ -158,8 +154,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [InlineData("")]
         public void Initialize_CorruptCounterFile_ImportsZeroAsTheWrapperReadIt(string content)
         {
-            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
-
             using (var conn = CreateConnection())
             {
                 // Arrange
@@ -257,8 +251,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_DatabaseAlreadyMigrated_DoesNotScanTheLegacyRecoveryFolder()
         {
-            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
-
             using (var conn = CreateConnection())
             {
                 // Arrange: a database already at the latest version, and a valid counter file whose row was never written
@@ -276,45 +268,37 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void Initialize_CounterFileNotOwnedByAdministratorsOrSystem_IsSkippedAndKept()
+        public void Initialize_CounterFileOwnedByAnotherAccount_IsImportedAndTheFolderDeleted()
         {
-            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
-
             using (var conn = CreateConnection())
             {
-                // Arrange: one counter file the wrapper could have written, and one owned by the current user's own SID,
-                //          which any token may set as owner, as a file a service account planted would be
+                // Arrange: a counter file owned by the current user's own SID, neither BUILTIN\Administrators nor
+                //          NT AUTHORITY\SYSTEM, as the wrapper left it when it ran under a service account (#7532)
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
-                AddService(conn, "Trusted");
-                AddService(conn, "Planted");
+                AddService(conn, "ServiceAccount");
                 DowngradeToVersion9(conn);
                 var time = new DateTime(2026, 9, 25, 0, 0, 0, DateTimeKind.Utc);
-                WriteCounterFile("Trusted", "2", time);
-                var planted = WriteCounterFile("Planted", "8", time);
+                var path = WriteCounterFile("ServiceAccount", "8", time);
                 using (var identity = WindowsIdentity.GetCurrent())
                 {
-                    var acl = new FileInfo(planted).GetAccessControl();
+                    var acl = new FileInfo(path).GetAccessControl();
                     acl.SetOwner(identity.User);
-                    new FileInfo(planted).SetAccessControl(acl);
-                    Assert.Equal(identity.User, new FileInfo(planted).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                    new FileInfo(path).SetAccessControl(acl);
+                    Assert.Equal(identity.User, new FileInfo(path).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
                 }
 
                 // Act
                 SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
 
-                // Assert: the trusted file is imported; the planted one is neither imported nor deleted
-                Assert.Equal((2, time.Ticks), ReadCounter(conn, "Trusted"));
-                Assert.Equal((null, null), ReadCounter(conn, "Planted"));
-                Assert.True(File.Exists(planted));
-                Assert.Equal("8", File.ReadAllText(planted));
+                // Assert: imported whatever its owner, and the folder deleted
+                Assert.Equal((8, time.Ticks), ReadCounter(conn, "ServiceAccount"));
+                Assert.False(Directory.Exists(_recoveryFolder), "the recovery folder is deleted once the import passed");
             }
         }
 
         [Fact]
         public void Initialize_CounterFileWithASecondHardLink_IsSkippedAndKept()
         {
-            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
-
             using (var conn = CreateConnection())
             {
                 // Arrange: the counter file is also reachable under a second name outside the folder
@@ -338,8 +322,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_CounterFileIsASymbolicLink_IsSkippedAndTheTargetKept()
         {
-            if (!_isElevated) return; // only an elevated process creates counter files owned by BUILTIN\Administrators, the owner the import trusts
-
             using (var conn = CreateConnection())
             {
                 // Arrange: the counter file's name is a link to a file outside the folder
