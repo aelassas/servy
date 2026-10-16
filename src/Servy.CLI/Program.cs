@@ -87,7 +87,7 @@ namespace Servy.CLI
 
                 IAppDbContext dbContext = null;
                 ProtectedKeyProvider protectedKeyProvider = null;
-                SecureData secureData = null;
+                DeferredSecureData secureData = null;
                 try
                 {
                     var verbs = GetVerbs();
@@ -138,8 +138,11 @@ namespace Servy.CLI
                     var appDbContext = new AppDbContext(connectionString);
                     dbContext = appDbContext;
                     var dapperExecutor = new DapperExecutor(appDbContext);
-                    protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                    secureData = new SecureData(protectedKeyProvider);
+                    var keyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                    protectedKeyProvider = keyProvider;
+                    // Built on the first encrypt or decrypt, which every command reaches only after its
+                    // EnsureAdministrator check: an eager build created the key on an unelevated --help (#7531).
+                    secureData = new DeferredSecureData(() => new SecureData(keyProvider));
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();
                     var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);

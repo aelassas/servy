@@ -134,6 +134,7 @@
     <Compile Include="Models\CommandResultTests.cs" />
     <Compile Include="Options\SensitiveOptionsTests.cs" />
     <Compile Include="ProgramTests.cs" />
+    <Compile Include="Runtime\DeferredSecureDataTests.cs" />
     <Compile Include="Runtime\FakeCliRuntime.cs" />
     <Compile Include="Runtime\ServiceBinariesBootstrapperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

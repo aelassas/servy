@@ -132,6 +132,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Runtime\CliRuntime.cs" />
+    <Compile Include="Runtime\DeferredSecureData.cs" />
     <Compile Include="Runtime\ConsoleEnvironment.cs" />
     <Compile Include="Runtime\EmbeddedResourceExtractor.cs" />
     <Compile Include="Runtime\ICliRuntime.cs" />
