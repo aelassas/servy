@@ -861,8 +861,10 @@ namespace Servy.Host.UnitTests
             }
             _sut.StopListening();
 
-            // Assert: the first read plus the configured retries, then nothing until the next refresh
+            // Assert: the first read plus the configured retries, then nothing until the next refresh, and a single line
+            // saying no further retry is scheduled (#7563)
             Assert.Equal(1 + AppConfig.ServyHostUnresolvedAccountRetryCount, Volatile.Read(ref reads));
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("No further retry")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
