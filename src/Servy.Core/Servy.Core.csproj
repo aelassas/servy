@@ -154,6 +154,7 @@
     <Compile Include="NamedPipes\NamedPipesService.cs" />
     <Compile Include="NamedPipes\PipeCaller.cs" />
     <Compile Include="NamedPipes\PipeCallerIdentifier.cs" />
+    <Compile Include="NamedPipes\PipeClientPin.cs" />
     <Compile Include="NamedPipes\PipePeer.cs" />
     <Compile Include="NamedPipes\ServyHostServerVerifier.cs" />
     <Compile Include="Native\Errors.cs" />

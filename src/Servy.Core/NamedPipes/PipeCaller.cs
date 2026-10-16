@@ -8,7 +8,7 @@ namespace Servy.Core.NamedPipes
         /// <summary>
         /// Initializes a new instance of the <see cref="PipeCaller"/> class.
         /// </summary>
-        /// <param name="processId">The client's process identifier; 0 when it could not be read.</param>
+        /// <param name="processId">The client's process identifier as pinned at connect time; 0 when it could not be read.</param>
         /// <param name="isAdministrator">Whether the client runs as Local System or as an elevated administrator.</param>
         /// <param name="isRemote">Whether the client reached the pipe from another computer.</param>
         public PipeCaller(int processId, bool isAdministrator, bool isRemote = false)
@@ -19,7 +19,8 @@ namespace Servy.Core.NamedPipes
         }
 
         /// <summary>
-        /// Gets the client's process identifier; 0 when it could not be read.
+        /// Gets the client's process identifier as pinned at connect time (see <see cref="PipeClientPin"/>); 0 when it could
+        /// not be read.
         /// </summary>
         public int ProcessId { get; }
 

@@ -1120,6 +1120,51 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public void HandleConnectionAsync_PinsTheClientBeforeTheRead_AndReleasesItOnlyAfterTheAnswer()
+        {
+            // Arrange: every step of the connection records itself, and the pinned client's process handle records its
+            // release, so the test sees whether the client was pinned before the read and held until the answer (#7534)
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            var steps = new List<string>();
+            void Record(string step) { lock (steps) steps.Add(step); }
+            using (var released = new ManualResetEventSlim())
+            {
+                var processHandle = new Mock<IDisposable>();
+                processHandle.Setup(h => h.Dispose()).Callback(() => { Record("release"); released.Set(); });
+                var pin = new PipeClientPin(ServicePid, processHandle.Object);
+                _identifier.Setup(i => i.Pin(It.IsAny<NamedPipeServerStream>())).Callback(() => Record("pin")).Returns(pin);
+                _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                    .Callback(() => Record("read"))
+                    .ReturnsAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction));
+                _identifier.Setup(i => i.Identify(It.IsAny<NamedPipeServerStream>(), pin)).Callback(() => Record("identify")).Returns(TheServiceProcess);
+                _api.Setup(a => a.GetServiceProcessId(ServiceName)).Callback(() => Record("authorize")).Returns(ServicePid);
+                _repository.Setup(r => r.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync(new RestartAttemptsDto());
+                _pipes.Setup(p => p.WriteAsync(It.IsAny<Stream>(), It.Is<IpcResponseDto>(r => r.Success), It.IsAny<CancellationToken>()))
+                    .Callback(() => Record("answer"))
+                    .Returns(Task.CompletedTask);
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 5000))
+                {
+                    // Act
+                    bool observed;
+                    using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                    {
+                        client.Connect(3000);
+                        observed = released.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                    }
+
+                    host.StopListening();
+
+                    // Assert
+                    Assert.True(observed);
+                    string[] recorded;
+                    lock (steps) recorded = steps.ToArray();
+                    Assert.Equal(new[] { "pin", "read", "identify", "authorize", "answer", "release" }, recorded);
+                }
+            }
+        }
+
+        [Fact]
         public void ListenForPipeConnectionsAsync_PipeCreationFails_BacksOffThenAcceptsTheNextClient()
         {
             // Arrange

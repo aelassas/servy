@@ -875,9 +875,16 @@ namespace Servy.Host.IntegrationTests
 
             public bool IsAdministrator { get; set; }
 
-            public PipeCaller Identify(NamedPipeServerStream connectedServer)
+            /// <summary>
+            /// Pins the client through the production identifier, unchanged.
+            /// </summary>
+            /// <param name="connectedServer">The connected server end of the pipe.</param>
+            /// <returns>The production identifier's pin.</returns>
+            public PipeClientPin Pin(NamedPipeServerStream connectedServer) => _inner.Pin(connectedServer);
+
+            public PipeCaller Identify(NamedPipeServerStream connectedServer, PipeClientPin pin)
             {
-                var identified = _inner.Identify(connectedServer);
+                var identified = _inner.Identify(connectedServer, pin);
                 LastWasRemote = identified.IsRemote;
                 return new PipeCaller(identified.ProcessId, IsAdministrator, identified.IsRemote);
             }
