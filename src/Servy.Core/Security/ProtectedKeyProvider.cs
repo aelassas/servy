@@ -392,6 +392,7 @@ namespace Servy.Core.Security
 
                     // 2. Fallback Attempt (v7.8 compatibility): Try with NO entropy (null)
                     byte[] decryptedData = EnsureLength(ProtectedData.Unprotect(encrypted, null, ProtectionScope), length, materialName, path);
+                    EnsureAdministrativeOwner(path, materialName);
 
                     try
                     {
@@ -434,6 +435,7 @@ namespace Servy.Core.Security
                 }
 
                 var unprotectResult = EnsureLength(primary, length, materialName, path);
+                EnsureAdministrativeOwner(path, materialName);
 
                 // Reset failure counter on successful read with modern entropy
                 MigrationFailureCounts.TryRemove(path, out _);
@@ -503,8 +505,7 @@ namespace Servy.Core.Security
 
                 // CHECK: Is this a child of the root vault?
                 // This prevents the "reset ACL" bug for subfolders like /db or /security
-                string root = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                bool isChildOfRoot = directory != null && directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+                bool isChildOfRoot = IsChildOfVaultRoot(directory);
 
                 if (!string.IsNullOrEmpty(directory))
                 {
@@ -562,6 +563,79 @@ namespace Servy.Core.Security
                 {
                     Array.Clear(encrypted, 0, encrypted.Length);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a directory lies below the Servy vault root, <see cref="AppConfig.ProgramDataPath"/>, where
+        /// key files inherit their DACL from the vault instead of carrying a protected one.
+        /// </summary>
+        /// <param name="directory">The directory that holds a key file.</param>
+        /// <returns><see langword="true"/> when <paramref name="directory"/> is below the vault root.</returns>
+        private static bool IsChildOfVaultRoot(string directory)
+        {
+            string root = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return directory != null && directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// On an elevated run, hands an existing key file that a principal other than <c>Administrators</c> or
+        /// <c>Local System</c> owns to <c>BUILTIN\Administrators</c> and re-hardens its DACL the way
+        /// <see cref="SaveProtected"/> writes it (#7531).
+        /// </summary>
+        /// <param name="path">The full filesystem path of the key file, already read and unprotected.</param>
+        /// <param name="materialName">A label for the material.</param>
+        /// <remarks>
+        /// <para>
+        /// A key file created by an earlier unelevated run, such as a portable install without a vault yet, is owned by
+        /// that user, who keeps an implicit right to rewrite its DACL. The file is still loaded, so the secrets it
+        /// encrypts stay readable; only its owner and DACL are changed.
+        /// </para>
+        /// <para>
+        /// An unelevated run leaves the file exactly as it is and loads it as before, so a command that reads the key
+        /// today without elevation keeps working. A reparse point is left as it is, because the ACL write would land on
+        /// the link's target. A failure to rewrite the owner or the DACL is logged and never stops the key from loading.
+        /// </para>
+        /// </remarks>
+        private static void EnsureAdministrativeOwner(string path, string materialName)
+        {
+            if (!SecurityHelper.IsAdministrator())
+                return;
+
+            try
+            {
+                var file = new FileInfo(path);
+                if ((file.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    Logger.Warn($"The {materialName} at '{path}' is a reparse point (symlink/junction), so its owner and ACL were left unchanged.");
+                    return;
+                }
+
+                var security = file.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+                var owner = security.GetOwner(typeof(SecurityIdentifier));
+                var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+                if (owner != null && (owner.Equals(adminSid) || owner.Equals(systemSid)))
+                    return;
+
+                // An owner keeps an implicit right to rewrite the DACL, so the file is handed over before it is re-hardened
+                security.SetOwner(adminSid);
+
+                SecurityIdentifier currentUserSid;
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    currentUserSid = identity.User;
+                }
+
+                SecurityHelper.ApplySecurityRules(security, currentUserSid, breakInheritance: !IsChildOfVaultRoot(Path.GetDirectoryName(path)));
+                file.SetAccessControl(security);
+
+                Logger.Warn($"The {materialName} at '{path}' was owned by '{owner?.Value ?? "an unknown principal"}'. It was handed to BUILTIN\\Administrators and its ACL was re-hardened.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Could not take ownership of the {materialName} at '{path}' and re-harden its ACL. It was loaded anyway.", ex);
             }
         }
 

@@ -5,7 +5,10 @@ using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Threading;
 using Xunit;
 
@@ -798,6 +801,142 @@ namespace Servy.Core.IntegrationTests.Security
         {
             return Path.Combine(TempDirectory, fileName);
         }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Integration tests for the owner check <see cref="ProtectedKeyProvider"/> runs on a key file it loads (#7531):
+    /// an elevated run hands a key file another principal owns to <c>BUILTIN\Administrators</c> and re-hardens its DACL,
+    /// an unelevated run loads it unchanged. The tests swap the process-global
+    /// <see cref="SecurityHelper.IsAdministratorCore"/> seam, which is why they join
+    /// <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
+    /// </summary>
+    [Collection(CoreOsIntegrationCollection.Name)]
+    public class ProtectedKeyProviderOwnerIntegrationTests : TempDirectoryTestBase
+    {
+        private const string NotElevatedSkipReason = "Handing a file to BUILTIN\\Administrators requires an elevated process.";
+
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier ForeignSid = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+
+        #region Owner Check Tests
+
+        [Fact]
+        public void GetKey_ElevatedRunAndKeyFileOwnedByAnotherPrincipal_TakesOwnershipAndReHardensTheAcl()
+        {
+            if (!SecurityHelper.IsAdministrator()) return; // NotElevatedSkipReason
+
+            // Arrange
+            var keyPath = Path.Combine(TempDirectory, "foreign_owner.key");
+            var ivPath = Path.Combine(TempDirectory, "foreign_owner.iv");
+            var expectedKey = CreateKeyOwnedByCurrentUserWithForeignAce(keyPath, ivPath, out var currentUserSid);
+
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => true;
+            byte[] key;
+
+            try
+            {
+                // Act
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    key = provider.GetKey();
+                }
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert: the key is still loaded, the file is handed over and the foreign entry is gone
+            Assert.Equal(expectedKey, key);
+            var acl = new FileInfo(keyPath).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+            Assert.Equal(AdministratorsSid, acl.GetOwner(typeof(SecurityIdentifier)));
+            Assert.DoesNotContain(ExplicitRules(acl), rule => ForeignSid.Equals(rule.IdentityReference));
+        }
+
+        [Fact]
+        public void GetKey_UnelevatedRunAndKeyFileOwnedByAnotherPrincipal_LoadsTheKeyAndLeavesTheFileUnchanged()
+        {
+            // Arrange
+            var keyPath = Path.Combine(TempDirectory, "foreign_owner_unelevated.key");
+            var ivPath = Path.Combine(TempDirectory, "foreign_owner_unelevated.iv");
+            var expectedKey = CreateKeyOwnedByCurrentUserWithForeignAce(keyPath, ivPath, out var currentUserSid);
+
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => false;
+            byte[] key;
+
+            try
+            {
+                // Act
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    key = provider.GetKey();
+                }
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert: an unelevated read works as before and changes neither the owner nor the DACL
+            Assert.Equal(expectedKey, key);
+            var acl = new FileInfo(keyPath).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+            Assert.Equal(currentUserSid, acl.GetOwner(typeof(SecurityIdentifier)));
+            Assert.Contains(ExplicitRules(acl), rule => ForeignSid.Equals(rule.IdentityReference));
+        }
+
+        #endregion
+
+        #region Test Lifecycle
+
+        /// <summary>
+        /// Generates a key file, then hands it to the current user's own SID, which any token may set as owner, and adds
+        /// an explicit entry for a principal that is neither Administrators nor Local System.
+        /// </summary>
+        /// <param name="keyPath">The key file path.</param>
+        /// <param name="ivPath">The IV file path.</param>
+        /// <param name="currentUserSid">Receives the SID the file is handed to.</param>
+        /// <returns>The key the file holds.</returns>
+        private static byte[] CreateKeyOwnedByCurrentUserWithForeignAce(string keyPath, string ivPath, out SecurityIdentifier currentUserSid)
+        {
+            byte[] key;
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                key = provider.GetKey();
+            }
+
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUserSid = identity.User;
+            }
+
+            // The arrangement means nothing when the current user is itself one of the administrative principals
+            Assert.NotEqual(AdministratorsSid, currentUserSid);
+            Assert.NotEqual(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), currentUserSid);
+
+            var file = new FileInfo(keyPath);
+            var acl = file.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+            acl.SetOwner(currentUserSid);
+            acl.AddAccessRule(new FileSystemAccessRule(ForeignSid, FileSystemRights.Read, AccessControlType.Allow));
+            file.SetAccessControl(acl);
+
+            var arranged = file.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+            Assert.Equal(currentUserSid, arranged.GetOwner(typeof(SecurityIdentifier)));
+            Assert.Contains(ExplicitRules(arranged), rule => ForeignSid.Equals(rule.IdentityReference));
+
+            return key;
+        }
+
+        /// <summary>
+        /// Lists the explicit entries of a file's DACL.
+        /// </summary>
+        /// <param name="acl">The file's security descriptor.</param>
+        /// <returns>The explicit access rules, with their principals as SIDs.</returns>
+        private static List<FileSystemAccessRule> ExplicitRules(FileSecurity acl)
+            => acl.GetAccessRules(true, false, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToList();
 
         #endregion
     }
