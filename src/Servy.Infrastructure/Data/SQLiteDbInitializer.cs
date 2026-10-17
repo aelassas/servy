@@ -52,6 +52,11 @@ namespace Servy.Infrastructure.Data
         /// Analyzes the current database state, applies necessary migrations,
         /// and ensures all schema requirements match the current application version.
         /// </summary>
+        /// <remarks>
+        /// When this start migrates the database to version 10, it also imports the restart attempts counter files of
+        /// <see cref="AppConfig.RecoveryFolderPath"/> and then deletes that folder, so on a machine with a legacy
+        /// <c>recovery\</c> folder this call changes the file system as well as the database.
+        /// </remarks>
         /// <param name="connection">An open database connection to execute commands on.</param>
         public static void Initialize(DbConnection connection)
             => Initialize(connection, AppConfig.RecoveryFolderPath);
