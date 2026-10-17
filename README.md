@@ -15,7 +15,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 ## Resources
 
-For background notes, see [NOTES.md](NOTES.md). For release history, see [CHANGELOG.md](CHANGELOG.md). For planned features, check the [ROADMAP.md](ROADMAP.md).
+For full documentation, check the [wiki](https://github.com/aelassas/servy/wiki). For background notes, see [NOTES.md](NOTES.md). For release history, see [CHANGELOG.md](CHANGELOG.md). For planned features, check the [ROADMAP.md](ROADMAP.md).
 
 ## Support
 
