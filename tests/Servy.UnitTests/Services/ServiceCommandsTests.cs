@@ -1207,6 +1207,39 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task ImportJsonConfig_ValidatorYieldsNoDto_DisplaysJsonLoadErrorMessageAndStops()
+        {
+            // Arrange
+            bool bindCalled = false;
+            var sut = CreateSut(dto => { bindCalled = true; });
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+            File.WriteAllText(path, "{}");
+            _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(path);
+
+            string errorOut = null;
+            ServiceDto jsonParsedDto = null;
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut, out jsonParsedDto)).Returns(true);
+
+            try
+            {
+                // Act
+                await sut.ImportJsonConfigAsync(cancellationToken: CancellationToken.None);
+
+                // Assert
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_FailedToLoadJson, UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_FailedToLoadXml, It.IsAny<string>()), Times.Never);
+
+                // The null-DTO arm is terminal: domain validation and binding never run.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.False(bindCalled);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
         public async Task ImportConfig_DomainValidationFails_AbortsBinding()
         {
             // Arrange
