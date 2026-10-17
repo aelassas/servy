@@ -244,7 +244,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.UseLocalTimeForRotation = true;
             _viewModel.EnableHealthMonitoring = true;
             _viewModel.HeartbeatInterval = "60";
-            _viewModel.MaxFailedChecks = "5";
+            _viewModel.MaxFailedChecks = "7";
             _viewModel.MaxRestartAttempts = "3";
             _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
             _viewModel.HeartbeatUrlTimeoutSeconds = "10";
@@ -266,7 +266,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PreLaunchStdoutPath = @"C:\logs\pre-launch-stdout.log";
             _viewModel.PreLaunchStderrPath = @"C:\logs\pre-launch-stderr.log";
             _viewModel.PreLaunchTimeoutSeconds = "40";
-            _viewModel.PreLaunchRetryAttempts = "3";
+            _viewModel.PreLaunchRetryAttempts = "4";
             _viewModel.PreLaunchIgnoreFailure = true;
 
             _viewModel.FailureProgramExecutablePath = @"C:\failureProgram\failureProgram.exe";
@@ -324,7 +324,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.True(capturedDto.UseLocalTimeForRotation);
             Assert.True(capturedDto.EnableHealthMonitoring);
             Assert.Equal(60, capturedDto.HeartbeatInterval);
-            Assert.Equal(5, capturedDto.MaxFailedChecks);
+            Assert.Equal(7, capturedDto.MaxFailedChecks);
             Assert.Equal((int)RecoveryAction.RestartService, capturedDto.RecoveryAction);
             Assert.Equal(3, capturedDto.MaxRestartAttempts);
             Assert.Equal("https://example.com/heartbeat", capturedDto.HeartbeatUrl);
@@ -346,7 +346,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(@"C:\logs\pre-launch-stdout.log", capturedDto.PreLaunchStdoutPath);
             Assert.Equal(@"C:\logs\pre-launch-stderr.log", capturedDto.PreLaunchStderrPath);
             Assert.Equal(40, capturedDto.PreLaunchTimeoutSeconds);
-            Assert.Equal(3, capturedDto.PreLaunchRetryAttempts);
+            Assert.Equal(4, capturedDto.PreLaunchRetryAttempts);
             Assert.True(capturedDto.PreLaunchIgnoreFailure);
             Assert.Equal(@"C:\post-launch\post-launch.exe", capturedDto.PostLaunchExecutablePath);
             Assert.Equal(@"C:\post-launch", capturedDto.PostLaunchStartupDirectory);
@@ -831,13 +831,13 @@ namespace Servy.UnitTests.ViewModels
                 MaxRotations = 10,
                 UseLocalTimeForRotation = true,
                 EnableHealthMonitoring = true,
-                HeartbeatInterval = 30,
-                MaxFailedChecks = 3,
+                HeartbeatInterval = 37,
+                MaxFailedChecks = 4,
                 RecoveryAction = (int)RecoveryAction.RestartProcess,
                 RecoveryOnCleanExit = true,
                 MaxRestartAttempts = 5,
                 HeartbeatUrl = "https://example.com/heartbeat",
-                HeartbeatUrlTimeoutSeconds = 10,
+                HeartbeatUrlTimeoutSeconds = 12,
                 EnableHeartbeatUrlFlags = true,
                 FailureProgramPath = "fail.exe",
                 FailureProgramStartupDirectory = "fail_dir",
@@ -895,13 +895,13 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal("10", _viewModel.MaxRotations);
             Assert.True(_viewModel.UseLocalTimeForRotation);
             Assert.True(_viewModel.EnableHealthMonitoring);
-            Assert.Equal("30", _viewModel.HeartbeatInterval);
-            Assert.Equal("3", _viewModel.MaxFailedChecks);
+            Assert.Equal("37", _viewModel.HeartbeatInterval);
+            Assert.Equal("4", _viewModel.MaxFailedChecks);
             Assert.Equal(RecoveryAction.RestartProcess, _viewModel.SelectedRecoveryAction);
             Assert.True(_viewModel.RecoveryOnCleanExit);
             Assert.Equal("5", _viewModel.MaxRestartAttempts);
             Assert.Equal(dto.HeartbeatUrl, _viewModel.HeartbeatUrl);
-            Assert.Equal("10", _viewModel.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal("12", _viewModel.HeartbeatUrlTimeoutSeconds);
             Assert.True(_viewModel.EnableHeartbeatUrlFlags);
             Assert.Equal(dto.FailureProgramPath, _viewModel.FailureProgramExecutablePath);
             Assert.Equal(dto.FailureProgramStartupDirectory, _viewModel.FailureProgramStartupDirectory);
@@ -1079,7 +1079,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.RecoveryOnCleanExit = false;
             _viewModel.MaxRestartAttempts = "0";
             _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
-            _viewModel.HeartbeatUrlTimeoutSeconds = "10";
+            _viewModel.HeartbeatUrlTimeoutSeconds = "12";
             _viewModel.EnableHeartbeatUrlFlags = true;
             _viewModel.FailureProgramExecutablePath = "kill.exe";
             _viewModel.FailureProgramStartupDirectory = "kill_dir";
@@ -1095,7 +1095,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PreLaunchEnvironmentVariables = $"X=9{Environment.NewLine}Y=10";
             _viewModel.PreLaunchStdoutPath = "p.log";
             _viewModel.PreLaunchStderrPath = "p_err.log";
-            _viewModel.PreLaunchTimeoutSeconds = "5";
+            _viewModel.PreLaunchTimeoutSeconds = "6";
             _viewModel.PreLaunchRetryAttempts = "1";
             _viewModel.PreLaunchIgnoreFailure = false;
             _viewModel.PostLaunchExecutablePath = "po.exe";
@@ -1107,7 +1107,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PreStopExecutablePath = "ps.exe";
             _viewModel.PreStopStartupDirectory = "ps_dir";
             _viewModel.PreStopParameters = "-ps";
-            _viewModel.PreStopTimeoutSeconds = "10";
+            _viewModel.PreStopTimeoutSeconds = "15";
             _viewModel.PreStopLogAsError = false;
             _viewModel.PostStopExecutablePath = "pst.exe";
             _viewModel.PostStopStartupDirectory = "pst_dir";
@@ -1142,7 +1142,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.False(dto.RecoveryOnCleanExit);
             Assert.Equal(0, dto.MaxRestartAttempts);
             Assert.Equal(_viewModel.HeartbeatUrl, dto.HeartbeatUrl);
-            Assert.Equal(10, dto.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(12, dto.HeartbeatUrlTimeoutSeconds);
             Assert.True(dto.EnableHeartbeatUrlFlags);
             Assert.Equal(_viewModel.FailureProgramExecutablePath, dto.FailureProgramPath);
             Assert.Equal(_viewModel.FailureProgramStartupDirectory, dto.FailureProgramStartupDirectory);
@@ -1164,7 +1164,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal("X=9;Y=10", dto.PreLaunchEnvironmentVariables);
             Assert.Equal(_viewModel.PreLaunchStdoutPath, dto.PreLaunchStdoutPath);
             Assert.Equal(_viewModel.PreLaunchStderrPath, dto.PreLaunchStderrPath);
-            Assert.Equal(5, dto.PreLaunchTimeoutSeconds);
+            Assert.Equal(6, dto.PreLaunchTimeoutSeconds);
             Assert.Equal(1, dto.PreLaunchRetryAttempts);
             Assert.False(dto.PreLaunchIgnoreFailure);
 
@@ -1181,7 +1181,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.PreStopExecutablePath, dto.PreStopExecutablePath);
             Assert.Equal(_viewModel.PreStopStartupDirectory, dto.PreStopStartupDirectory);
             Assert.Equal(_viewModel.PreStopParameters, dto.PreStopParameters);
-            Assert.Equal(10, dto.PreStopTimeoutSeconds);
+            Assert.Equal(15, dto.PreStopTimeoutSeconds);
             Assert.False(dto.PreStopLogAsError);
 
             // Post-Stop Life-cycle Assertions
