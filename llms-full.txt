@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-17T10:33:37Z
+> Generated on: 2026-10-17T18:03:36Z
 
 ---
 
@@ -7082,7 +7082,7 @@ These tools have stood the test of time, but their age shows. They lack security
 ## The Contenders
 
 * **NSSM (Non-Sucking Service Manager):** The "classic." It's incredibly lightweight but hasn't seen a stable update in over a decade. It is not secure for production environments: it keeps the arguments and environment variables of every service in plaintext under `HKLM\SYSTEM\CurrentControlSet\Services\<ServiceName>\Parameters`, where any local user can read them. It also lacks modern observability.
-* **WinSW (Windows Service Wrapper):** A staple for Jenkins users. It's powerful and XML-driven, but it's currently in maintenance limbo and lacks a graphical interface for quick troubleshooting.
+* **WinSW (Windows Service Wrapper):** A staple for Jenkins users. It's powerful and XML-driven, but it lacks a graphical interface for quick troubleshooting and centralized service management.
 * **Servy:** A secure, actively maintained, open-source alternative. It features a lightweight Desktop UI alongside a robust CLI and PowerShell module for seamless CI/CD automation.
 
 ## Why the Wrapper Matters
@@ -7138,7 +7138,7 @@ In short, Servy solves the pain points that legacy wrappers leave unresolved and
 
 ## Conclusion
 
-While NSSM and WinSW served the community for years, they belong to a different era of system administration. For teams that require security, real-time monitoring, process safety, and deep integration with modern CI/CD pipelines, Servy is the clear successor. It's free, open-source, and fully supported on Windows 10 (1809+), Windows 11 and Windows Server 2016+, with dedicated builds available for legacy releases like Windows 7 SP1+ and Windows Server 2008 R2+.
+While NSSM and WinSW served the community for years, they belong to a different era of system administration. For teams that require security, real-time monitoring, process safety, and deep integration with modern CI/CD pipelines, Servy is a modern alternative worth considering. It's free, open-source, and fully supported on Windows 10 (1809+), Windows 11 and Windows Server 2016+, with dedicated builds available for legacy releases like Windows 7 SP1+ and Windows Server 2008 R2+.
 
 
 ---
