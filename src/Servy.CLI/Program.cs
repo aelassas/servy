@@ -2,6 +2,7 @@ using CommandLine;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.CLI.Runtime;
 using Servy.CLI.Validation;
 using Servy.Core.Config;
@@ -182,8 +183,16 @@ namespace Servy.CLI
                         );
 
                     // Helper to defer targeted runtime initialization until AFTER successful argument parsing
-                    async Task<int> ExecuteWithRuntimeAsync(Func<Task<CommandResult>> commandAction, bool isQuiet, bool requireDatabase = true, bool requireBinaries = false)
+                    async Task<int> ExecuteWithRuntimeAsync(Func<Task<CommandResult>> commandAction, string commandName, bool isQuiet, bool requireDatabase = true, bool requireBinaries = false)
                     {
+                        // The bootstrap opens the vault under ProgramData, which only an Administrator can open once an
+                        // elevated run has created it, so the elevation check runs first. Left to the command, it came after
+                        // the bootstrap, and an unelevated run reported the vault's access error instead of this message (#7573).
+                        if ((requireDatabase || requireBinaries) && !runtime.IsAdministrator())
+                        {
+                            return PrintAndReturn(CommandResult.Fail(string.Format(Strings.Msg_AdminPrivilegesRequired, commandName)));
+                        }
+
                         async Task BootstrapAsync()
                         {
                             if (requireDatabase) runtime.EnsureDatabase(connectionString, aesKeyFilePath, aesIVFilePath, appDbContext);
@@ -223,15 +232,15 @@ namespace Servy.CLI
                         ShowServiceOptions
                         >(args)
                         .MapResult(
-                            async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
-                            async (UninstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => uninstallCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
-                            async (StartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => startCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
-                            async (StopServiceOptions opts) => await ExecuteWithRuntimeAsync(() => stopCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
-                            async (RestartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => restartCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
-                            async (ServiceStatusOptions opts) => await ExecuteWithRuntimeAsync(() => Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token)), opts.Quiet, requireDatabase: false, requireBinaries: false),
-                            async (ExportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => exportCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
-                            async (ImportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => importCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: true),
-                            async (ShowServiceOptions opts) => await ExecuteWithRuntimeAsync(() => showCommand.ExecuteAsync(opts, cts.Token), opts.Quiet, requireDatabase: true, requireBinaries: false),
+                            async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token), "install", opts.Quiet, requireDatabase: true, requireBinaries: true),
+                            async (UninstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => uninstallCommand.ExecuteAsync(opts, cts.Token), "uninstall", opts.Quiet, requireDatabase: true, requireBinaries: false),
+                            async (StartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => startCommand.ExecuteAsync(opts, cts.Token), "start", opts.Quiet, requireDatabase: true, requireBinaries: true),
+                            async (StopServiceOptions opts) => await ExecuteWithRuntimeAsync(() => stopCommand.ExecuteAsync(opts, cts.Token), "stop", opts.Quiet, requireDatabase: true, requireBinaries: false),
+                            async (RestartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => restartCommand.ExecuteAsync(opts, cts.Token), "restart", opts.Quiet, requireDatabase: true, requireBinaries: true),
+                            async (ServiceStatusOptions opts) => await ExecuteWithRuntimeAsync(() => Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token)), "status", opts.Quiet, requireDatabase: false, requireBinaries: false),
+                            async (ExportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => exportCommand.ExecuteAsync(opts, cts.Token), "export", opts.Quiet, requireDatabase: true, requireBinaries: false),
+                            async (ImportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => importCommand.ExecuteAsync(opts, cts.Token), "import", opts.Quiet, requireDatabase: true, requireBinaries: true),
+                            async (ShowServiceOptions opts) => await ExecuteWithRuntimeAsync(() => showCommand.ExecuteAsync(opts, cts.Token), "show", opts.Quiet, requireDatabase: true, requireBinaries: false),
                             // Wrap synchronous error result in Task
                             errs =>
                             {

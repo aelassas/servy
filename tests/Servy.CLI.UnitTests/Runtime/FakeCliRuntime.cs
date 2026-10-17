@@ -23,6 +23,12 @@ namespace Servy.CLI.UnitTests.Runtime
         /// <summary>Gets or sets the version <see cref="IsSqliteVersionSafe"/> reports.</summary>
         public string SqliteVersion { get; set; } = "3.50.4";
 
+        /// <summary>Gets or sets the value <see cref="IsAdministrator"/> returns.</summary>
+        public bool Elevated { get; set; } = true;
+
+        /// <summary>Gets the number of times <see cref="IsAdministrator"/> was called; it is not logged in <see cref="Calls"/>.</summary>
+        public int AdministratorChecks { get; private set; }
+
         /// <summary>Gets or sets the value <see cref="IsRealConsole"/> returns.</summary>
         public bool RealConsole { get; set; }
 
@@ -37,6 +43,12 @@ namespace Servy.CLI.UnitTests.Runtime
             Calls.Add(nameof(IsSqliteVersionSafe));
             detectedVersion = SqliteVersion;
             return SqliteVersionSafe;
+        }
+
+        public bool IsAdministrator()
+        {
+            AdministratorChecks++;
+            return Elevated;
         }
 
         public void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext)

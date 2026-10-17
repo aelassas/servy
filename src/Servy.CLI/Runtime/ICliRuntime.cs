@@ -8,7 +8,8 @@ namespace Servy.CLI.Runtime
 {
     /// <summary>
     /// The machine-touching steps <see cref="Program"/> runs while it bootstraps a command: the SQLite version
-    /// check, the database and vault folders, the extraction of the embedded binaries, and the console probes.
+    /// check, the elevation check, the database and vault folders, the extraction of the embedded binaries, and
+    /// the console probes.
     /// </summary>
     /// <remarks>
     /// Production uses <see cref="CliRuntime"/>. Tests pass a fake to <see cref="Program.RunAsync"/> so the
@@ -23,6 +24,12 @@ namespace Servy.CLI.Runtime
         /// <param name="detectedVersion">The SQLite version that was detected, or <see langword="null"/> when it could not be read.</param>
         /// <returns><see langword="true"/> when the version is safe to use; otherwise <see langword="false"/>.</returns>
         bool IsSqliteVersionSafe(out string detectedVersion);
+
+        /// <summary>
+        /// Determines whether the current process runs with administrative privileges.
+        /// </summary>
+        /// <returns><see langword="true"/> when the process is elevated; otherwise <see langword="false"/>.</returns>
+        bool IsAdministrator();
 
         /// <summary>
         /// Creates the database and security folders, registers the event source, and initializes the database.

@@ -137,10 +137,14 @@ namespace Servy.CLI.UnitTests
             // to satisfy CommandLineParser constraints and route into the quiet logic path.
             string[] args = { "start", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
 
+            // The production runtime Main builds, with the elevation probe pinned to elevated: the elevation check runs
+            // before the bootstrap (#7573), so an unelevated host would stop there instead of reaching EnsureFolders.
+            var runtime = new CliRuntime(() => true);
+
             // Act
             var result = await ConsoleCapture.RunAsync(async () =>
             {
-                return await Program.Main(args);
+                return await Program.RunAsync(args, runtime);
             });
 
             // Assert
@@ -215,7 +219,8 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep, this is one of only two
+            // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep and
+            // RunAsync_UnelevatedStatusVerb_TakesTheFastPathWithoutTheElevationCheck, this is one of only three
             // tests that reach the single PrintAndReturnAsync line the nine MapResult verb
             // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath, the
             // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory and the RunAsync tests
@@ -246,12 +251,15 @@ namespace Servy.CLI.UnitTests
             // to requireDatabase: false would reach its handler, or EnsureServiceBinariesAsync
             // first, and report something else. status is deliberately absent: it is the one verb
             // mapped false, pinned by Main_StatusOfMissingService_TakesFastPathAndPrintsNotInstalled.
+            // The production runtime Main builds, with the elevation probe pinned to elevated: the elevation check runs
+            // before the bootstrap (#7573), so an unelevated host would stop there instead of reaching EnsureFolders.
             string[] args = commandLine.Split(' ');
+            var runtime = new CliRuntime(() => true);
 
             // Act
             var result = await ConsoleCapture.RunAsync(async () =>
             {
-                return await Program.Main(args);
+                return await Program.RunAsync(args, runtime);
             });
 
             // Assert
@@ -300,6 +308,56 @@ namespace Servy.CLI.UnitTests
             Assert.Contains("[CRITICAL] Vulnerable SQLite version detected: 3.40.0", result.StdErr);
             Assert.Contains($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.", result.StdErr);
             Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe) }, runtime.Calls);
+        }
+
+        [Theory]
+        [InlineData("install", "install -n NonExistentServiceForTestingOnly -p C:\\NonExistent\\app.exe")]
+        [InlineData("uninstall", "uninstall -n NonExistentServiceForTestingOnly")]
+        [InlineData("start", "start -n NonExistentServiceForTestingOnly")]
+        [InlineData("stop", "stop -n NonExistentServiceForTestingOnly")]
+        [InlineData("restart", "restart -n NonExistentServiceForTestingOnly")]
+        [InlineData("import", "import -c xml -p C:\\NonExistent\\in.xml")]
+        [InlineData("export", "export -n NonExistentServiceForTestingOnly -c xml -p C:\\NonExistent\\out.xml")]
+        [InlineData("show", "show")]
+        public async Task RunAsync_UnelevatedVerbWithAnExistingVault_ReportsAdministratorRequiredBeforeAnyBootstrap(string verb, string commandLine)
+        {
+            // Arrange
+            // An elevated run has already created the vault, so opening it from an unelevated shell is denied. The
+            // elevation check used to run in the command, after this bootstrap, so the vault's access error reached
+            // Main's catch-all as "An unexpected error occurred" instead of the standard message (#7573).
+            var runtime = new FakeCliRuntime
+            {
+                Elevated = false,
+                EnsureDatabaseThrows = new UnauthorizedAccessException(@"Access to the path 'C:\ProgramData\Servy\db' is denied."),
+            };
+            string[] args = commandLine.Split(' ');
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains($"Access Denied. Please restart your shell as Administrator to run the '{verb}' command.", result.StdErr);
+            Assert.DoesNotContain("An unexpected error occurred", result.StdErr);
+            Assert.Equal(1, runtime.AdministratorChecks);
+            Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe) }, runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_UnelevatedStatusVerb_TakesTheFastPathWithoutTheElevationCheck()
+        {
+            // Arrange
+            // status reads the Service Control Manager only and needs no bootstrap, so it stays open to an unelevated shell.
+            var runtime = new FakeCliRuntime { Elevated = false };
+            string[] args = { "status", "-n", "NonExistentServiceForTestingOnly" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
+            Assert.Equal(0, runtime.AdministratorChecks);
         }
 
         [Fact]
