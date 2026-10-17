@@ -45,7 +45,8 @@ namespace Servy.Core.Security
     /// The grants are taken back when a service goes away: after an uninstall, and after an install moves a service to
     /// another account, <see cref="Services.ServiceManager"/> calls <see cref="RevokeIfUnusedAsync"/>, which always
     /// removes the account's entries from that service's log folder, and removes its explicit entries from the vault
-    /// root, the log folders and every hardened file as well unless a remaining service still runs under it (#7161).
+    /// root, <c>db\</c>, <c>security\</c>, <c>recovery\</c>, the whole <c>logs\</c> tree and every hardened file as well unless a
+    /// remaining service still runs under it (#7161).
     /// </para>
     /// <para>
     /// The wrapper never opens <c>Servy.db</c> or the encryption key: it reads its own configuration and writes its own
@@ -459,7 +460,8 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Removes <paramref name="account"/>'s entries from the log folder of <paramref name="serviceName"/>, and its
-        /// explicit entries from the vault root, the log folders and every hardened file as well unless one of
+        /// explicit entries from the vault root, <c>db\</c>, <c>security\</c>, <c>recovery\</c>, the whole <c>logs\</c> tree and every
+        /// hardened file as well unless one of
         /// <paramref name="remainingServices"/> still runs under the same account.
         /// </summary>
         /// <param name="account">The trimmed account whose access is revoked.</param>
