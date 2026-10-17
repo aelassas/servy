@@ -19,7 +19,7 @@ For full documentation, check the [wiki](https://github.com/aelassas/servy/wiki)
 
 ## Support
 
-Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
+Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas) to keep it active, independent, and free for everyone.
 
 ## Stats for Nerds
 
