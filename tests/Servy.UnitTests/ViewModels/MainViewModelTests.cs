@@ -374,6 +374,47 @@ namespace Servy.UnitTests.ViewModels
             _serviceCommandsMock.Verify(s => s.InstallServiceAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Theory]
+        [InlineData(true, "")]
+        [InlineData(false, "password")]
+        public async Task InstallCommand_ClearsConfirmPassword_OnlyOnSuccess(bool installSucceeds, string expectedConfirmPassword)
+        {
+            // Arrange
+            _serviceCommandsMock
+                .Setup(s => s.InstallServiceAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(installSucceeds);
+
+            _viewModel.ServiceName = "TestService";
+            _viewModel.ExecutablePath = @"C:\app\test.exe";
+            _viewModel.Password = "password";
+            _viewModel.ConfirmPassword = "password";
+
+            // Act
+            await _viewModel.InstallCommand.ExecuteAsync(null);
+
+            // Assert
+            Assert.Equal(expectedConfirmPassword, _viewModel.ConfirmPassword);
+        }
+
+        [Fact]
+        public async Task StartCommand_ServiceCommandThrows_ResetsIsBusyAndPropagates()
+        {
+            // Arrange
+            _serviceCommandsMock
+                .Setup(s => s.StartServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("SCM unavailable"));
+
+            _viewModel.ServiceName = "MyService";
+
+            // Act
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _viewModel.StartCommand.ExecuteAsync(null));
+
+            // Assert
+            Assert.Equal("SCM unavailable", ex.Message);
+            Assert.False(_viewModel.IsBusy, "IsBusy must be reset by RunBusyAsync's finally block.");
+            Assert.True(_viewModel.StartCommand.CanExecute(null));
+        }
+
         [Fact]
         public async Task StartCommand_Calls_StartService()
         {
