@@ -26,7 +26,7 @@ Servy is free and open source. If it helped you, saved you time, or powered your
 [![LoC - Prod](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-prod.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
 [![LoC - Tests](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-tests.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
 [![LoC - Total](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-total.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
-[![GitHub Downloads](https://img.shields.io/github/downloads/aelassas/servy/total?t=2)](https://servy-win.github.io/downloads)
+[![GitHub Downloads](https://img.shields.io/github/downloads/aelassas/servy/total?t=3)](https://servy-win.github.io/downloads)
 
 ## License
 
