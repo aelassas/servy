@@ -92,9 +92,8 @@ namespace Servy.Core.UnitTests.Security
         public void CreateSecureDirectory_PurgesOtherBroadUnprivilegedSids(WellKnownSidType sidType)
         {
             // Arrange
-            // BroadUnprivilegedSids holds three principals and CreateSecureDirectory's purge step
-            // rejects an explicit Allow rule for any of them, but the sibling test above only ever
-            // drives the purge with the BuiltinUsers SID, so the other two arms have no coverage.
+            // The purge removes every explicit rule whatever its principal (#7526); this theory pins it
+            // for the two broad groups other than BuiltinUsers, which the sibling test above covers.
             var path = Path.Combine(TempDirectory, "PurgeOtherSidDir_" + sidType);
             Directory.CreateDirectory(path);
             var dirInfo = new DirectoryInfo(path);
@@ -323,9 +322,9 @@ namespace Servy.Core.UnitTests.Security
         public void ApplySecurityRules_ExplicitDenyRulesForMandatoryPrincipals_ArePurged()
         {
             // Arrange
-            // The anti-squatting purge drops explicit Deny rules for Administrators, Local System
-            // and the current user; every other ApplySecurityRules_* test seeds Allow rules only,
-            // so the Deny arm of the purge loop is evaluated but never taken.
+            // The purge removes every explicit rule, Deny included, whatever its principal (#7526);
+            // no other ApplySecurityRules_* test in this class seeds a Deny rule, so this one pins
+            // that case for the three mandatory principals.
             var security = new DirectorySecurity();
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
@@ -343,8 +342,8 @@ namespace Servy.Core.UnitTests.Security
                                 .Cast<FileSystemAccessRule>()
                                 .ToList();
 
-            // One assertion per arm of the purge condition, so a regression that narrows which
-            // principals are covered names the principal it dropped.
+            // One assertion per principal, so a regression that stops removing a Deny rule names
+            // the principal it kept.
             Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny && r.IdentityReference == adminSid);
             Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny && r.IdentityReference == systemSid);
             Assert.DoesNotContain(rules, r => r.AccessControlType == AccessControlType.Deny && r.IdentityReference == currentUserSid);
