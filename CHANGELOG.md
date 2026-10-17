@@ -59,7 +59,12 @@ Compare changes: https://github.com/aelassas/servy/compare/v10.4...v10.5
 
 **Date:** 2026-10-12 | **Tag:** [`v10.4`](https://github.com/aelassas/servy/tree/v10.4)
 
-Servy v10.4 introduces enhancements in **Servy Manager**, including the ability to show or hide columns in the Services and Logs grids by right-clicking on a column header, with preferences automatically persisted across sessions. Additionally, the **Description** column in the Services grid can now be resized and supports horizontal scrolling for better readability.
+Servy v10.4 introduces enhancements in **Servy Manager**, including the ability to show or hide columns in the Services and Logs grids by right-clicking on a column header, with preferences automatically persisted across sessions (#7412). Additionally, the **Description** column in the Services grid can now be resized and supports horizontal scrolling for better readability.
+
+<p align="left">
+  <img alt="v10 4-services-grid" src="https://github.com/user-attachments/assets/402ec9e7-ee9f-47a6-bacd-744fa40d0b0d" />
+  <img alt="v10 4-logs-grid" src="https://github.com/user-attachments/assets/a4508f6d-d5c3-443b-8d27-f673c9869d78" />
+</p>
 
 This release also includes bug fixes, security patches, and documentation updates. The full changelog is listed below.
 
