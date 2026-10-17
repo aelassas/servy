@@ -126,7 +126,7 @@ If you have suggestions, feature requests, or bug reports, feel free to [open an
 [![LoC - Prod](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-prod.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
 [![LoC - Tests](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-tests.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
 [![LoC - Total](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-total.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
-[![GitHub Downloads](https://img.shields.io/github/downloads/aelassas/servy/total)](https://servy-win.github.io/downloads)
+[![GitHub Downloads](https://img.shields.io/github/downloads/aelassas/servy/total?t=2)](https://servy-win.github.io/downloads)
 
 ## License
 
