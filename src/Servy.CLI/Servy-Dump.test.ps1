@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Tests path resolution, destination normalization, service name sanitization,
-    Win32 reserved device name prefixing, and collision disambiguation, the staged-file move that keeps the archive's hardened ACL (ACL hardening itself is covered by Servy.test.ps1), and the -Overwrite order that removes a stale sidecar only after the archive move.
+    Win32 reserved device name prefixing, collision disambiguation, the staged-file move that keeps the archive's hardened ACL (ACL hardening itself is covered by Servy.test.ps1), and the -Overwrite order that removes a stale sidecar only after the archive move.
 #>
 
 Set-StrictMode -Version 2.0
