@@ -26,7 +26,7 @@ Servy is free and open source. If it helped you, saved you time, or powered your
 
 ## License
 
-Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). It ships no third-party executables: the processes locking a file are found through the Windows Restart Manager API.
+Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). It ships no third-party binaries, external tools, or non-permissive code.
 
 ## Acknowledgments
 
