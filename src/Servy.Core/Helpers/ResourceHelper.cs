@@ -699,7 +699,7 @@ namespace Servy.Core.Helpers
             if (isExe && !_processKiller.KillProcessTreeAndParents(targetFileName))
                 return false;
 
-            if (isDll && !skipDll && IsFileLocked(targetPath) && !_processKiller.KillProcessesUsingFile(targetPath))
+            if ((isExe || (isDll && !skipDll)) && IsFileLocked(targetPath) && !_processKiller.KillProcessesUsingFile(targetPath))
                 return false;
 
             return true;
