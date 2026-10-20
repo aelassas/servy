@@ -7,7 +7,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
-using System.Runtime.InteropServices;
 
 namespace Servy.CLI.UnitTests.Runtime
 {
@@ -27,8 +26,14 @@ namespace Servy.CLI.UnitTests.Runtime
             /// <summary>The resources ("name.ext") <see cref="CopyAsync"/> fails to extract.</summary>
             public HashSet<string> FailingCopies { get; } = new HashSet<string>();
 
-            /// <summary>Every resource ("name.ext") <see cref="CopyAsync"/> was asked for, in order.</summary>
+            /// <summary>
+            /// Every resource ("name.ext") <see cref="CopyAsync"/> was asked for, in order, with
+            /// <see cref="LegacyHandleDeletion"/> where <see cref="DeleteLegacyHandleExecutables"/> was called.
+            /// </summary>
             public List<string> Copied { get; } = new List<string>();
+
+            /// <summary>What <see cref="DeleteLegacyHandleExecutables"/> reports.</summary>
+            public bool LegacyDeletionSucceeds { get; set; } = true;
 
             public bool IsExtractionNeeded(string fileName, string extension)
                 => NeedingExtraction.Contains($"{fileName}.{extension}");
@@ -39,7 +44,16 @@ namespace Servy.CLI.UnitTests.Runtime
                 Copied.Add(resource);
                 return Task.FromResult(!FailingCopies.Contains(resource));
             }
+
+            public bool DeleteLegacyHandleExecutables()
+            {
+                Copied.Add(LegacyHandleDeletion);
+                return LegacyDeletionSucceeds;
+            }
         }
+
+        /// <summary>The entry <see cref="FakeExtractor.Copied"/> records for the deletion of the legacy Handle executables.</summary>
+        private const string LegacyHandleDeletion = "<delete legacy handle64>";
 
         private readonly FakeExtractor _extractor = new FakeExtractor();
         private readonly Mock<IServiceHelper> _serviceHelper = new Mock<IServiceHelper>();
@@ -61,8 +75,8 @@ namespace Servy.CLI.UnitTests.Runtime
                 .ReturnsAsync(new[] { new ServiceDto { Name = "Alpha" }, new ServiceDto { Name = "Beta" } });
         }
 
-        private ServiceBinariesBootstrapper CreateBootstrapper(Architecture architecture = Architecture.X64)
-            => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, _hardener.Object, architecture);
+        private ServiceBinariesBootstrapper CreateBootstrapper()
+            => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, _hardener.Object);
 
         [Fact]
         public async Task EnsureAsync_NothingNeedsExtraction_CopiesInOrderWithoutPausingTheServices()
@@ -74,14 +88,15 @@ namespace Servy.CLI.UnitTests.Runtime
             await bootstrapper.EnsureAsync(CancellationToken.None);
 
             // Assert
-            // The wrapper, the restarter and the host come first, in that order, then Sysinternals Handle.
+            // The wrapper, the restarter and the host come first, in that order, then the legacy Sysinternals Handle
+            // executables are deleted from the vault; nothing named handle64 is extracted any more.
             Assert.Equal(
                 new[]
                 {
                     $"{AppConfig.ServyServiceCLIFileName}.exe",
                     $"{AppConfig.ServyRestarterFileName}.exe",
                     $"{AppConfig.ServyHostFileName}.exe",
-                    $"{AppConfig.HandleExeX64FileName}.exe",
+                    LegacyHandleDeletion,
                 },
                 _extractor.Copied.Take(4));
 
@@ -139,31 +154,41 @@ namespace Servy.CLI.UnitTests.Runtime
             _hostInstaller.Verify(h => h.EnsureInstalledAndRunningAsync(It.IsAny<string>(), It.IsAny<IServiceHelper>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
-        [Theory]
-        [InlineData(Architecture.Arm64, true)]
-        [InlineData(Architecture.X64, false)]
-        [InlineData(Architecture.X86, false)]
-        public async Task EnsureAsync_SelectsTheHandleBuildOfTheOperatingSystemArchitecture(Architecture architecture, bool expectArm64)
+        [Fact]
+        public async Task EnsureAsync_NeverExtractsAHandleExecutable()
         {
             // Arrange
-            var bootstrapper = CreateBootstrapper(architecture);
-            var expected = expectArm64 ? AppConfig.HandleExeARM64FileName : AppConfig.HandleExeX64FileName;
-            var other = expectArm64 ? AppConfig.HandleExeX64FileName : AppConfig.HandleExeARM64FileName;
+            var bootstrapper = CreateBootstrapper();
 
             // Act
             await bootstrapper.EnsureAsync(CancellationToken.None);
 
             // Assert
-            Assert.Contains($"{expected}.exe", _extractor.Copied);
-            Assert.DoesNotContain($"{other}.exe", _extractor.Copied);
+            Assert.DoesNotContain(_extractor.Copied, c => c.StartsWith("handle64", StringComparison.OrdinalIgnoreCase));
+            Assert.Single(_extractor.Copied, c => c == LegacyHandleDeletion);
+        }
+
+        [Fact]
+        public async Task EnsureAsync_RequiredBinaryFails_LeavesTheLegacyHandleExecutablesAlone()
+        {
+            // Arrange
+            _extractor.FailingCopies.Add($"{AppConfig.ServyHostFileName}.exe");
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await Assert.ThrowsAsync<InvalidOperationException>(() => bootstrapper.EnsureAsync(CancellationToken.None));
+
+            // Assert
+            Assert.DoesNotContain(LegacyHandleDeletion, _extractor.Copied);
         }
 
         [Fact]
         public async Task EnsureAsync_OptionalBinariesFailToExtract_ContinuesToTheHostInstall()
         {
             // Arrange
-            // Sysinternals Handle (and, in Debug builds, the three .pdb files) only degrade features when missing.
-            _extractor.FailingCopies.Add($"{AppConfig.HandleExeX64FileName}.exe");
+            // A legacy Handle executable that cannot be deleted, and in Debug builds the three .pdb files, only
+            // degrade the installation when they fail.
+            _extractor.LegacyDeletionSucceeds = false;
             _extractor.FailingCopies.Add($"{AppConfig.ServyServiceCLIFileName}.pdb");
             _extractor.FailingCopies.Add($"{AppConfig.ServyRestarterFileName}.pdb");
             _extractor.FailingCopies.Add($"{AppConfig.ServyHostFileName}.pdb");
@@ -263,15 +288,12 @@ namespace Servy.CLI.UnitTests.Runtime
         [Fact]
         public void Constructor_NullDependency_Throws()
         {
-            // Arrange
-            var arch = Architecture.X64;
-
             // Act
-            var nullExtractor = Record.Exception(() => new ServiceBinariesBootstrapper(null!, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, _hardener.Object, arch));
-            var nullHelper = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, null!, _hostInstaller.Object, _repository.Object, _hardener.Object, arch));
-            var nullHost = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, null!, _repository.Object, _hardener.Object, arch));
-            var nullRepository = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, null!, _hardener.Object, arch));
-            var nullHardener = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, null!, arch));
+            var nullExtractor = Record.Exception(() => new ServiceBinariesBootstrapper(null!, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, _hardener.Object));
+            var nullHelper = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, null!, _hostInstaller.Object, _repository.Object, _hardener.Object));
+            var nullHost = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, null!, _repository.Object, _hardener.Object));
+            var nullRepository = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, null!, _hardener.Object));
+            var nullHardener = Record.Exception(() => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, null!));
 
             // Assert
             Assert.Equal("extractor", Assert.IsType<ArgumentNullException>(nullExtractor).ParamName);

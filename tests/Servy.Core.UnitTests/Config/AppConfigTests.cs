@@ -1,6 +1,5 @@
 using Servy.Core.Config;
 using Servy.Testing;
-using System.Runtime.InteropServices;
 
 namespace Servy.Core.UnitTests.Config
 {
@@ -99,26 +98,11 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
-        public void GetHandleExePath_ShouldReturnFullPath()
+        public void LegacyHandleExeFileNames_NameBothSysinternalsHandleBuilds()
         {
-            // Act
-            var path = AppConfig.GetHandleExePath();
-
-            // Assert
-            Assert.False(string.IsNullOrWhiteSpace(path));
-            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
-
-            // Use literal expected values instead of re-evaluating production constants.
-            // This breaks the lockstep behavior and guarantees that inverted architectural mappings
-            // or swapped internal filenames are successfully caught by the test runner.
-            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-            {
-                Assert.EndsWith("handle64a.exe", path, StringComparison.OrdinalIgnoreCase);
-            }
-            else
-            {
-                Assert.EndsWith("handle64.exe", path, StringComparison.OrdinalIgnoreCase);
-            }
+            // Literal values rather than production constants: these are the names earlier versions extracted to
+            // the vault, so a renamed entry would leave that copy behind forever.
+            Assert.Equal(new[] { "handle64.exe", "handle64a.exe" }, AppConfig.LegacyHandleExeFileNames);
         }
 
         [Fact]

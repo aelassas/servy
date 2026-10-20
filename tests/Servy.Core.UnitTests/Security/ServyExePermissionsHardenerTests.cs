@@ -560,35 +560,21 @@ namespace Servy.Core.UnitTests.Security
             Assert.DoesNotContain(targets.Keys, k => k.StartsWith("security" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
         }
 
-        [Theory]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        [InlineData(false, true)]
-        [InlineData(true, true)]
-        public void GetTargetFiles_HardensTheHandleBinariesThatArePresent(bool x64Present, bool arm64Present)
+        [Fact]
+        public void GetTargetFiles_LegacyHandleBinariesInTheVault_AreNotHardened()
         {
             // Arrange
-            var x64 = AppConfig.HandleExeX64FileName + ".exe";
-            var arm64 = AppConfig.HandleExeARM64FileName + ".exe";
-            if (x64Present) File.WriteAllText(Path.Combine(TempDirectory, x64), "x");
-            if (arm64Present) File.WriteAllText(Path.Combine(TempDirectory, arm64), "a");
+            // Earlier versions extracted handle64.exe / handle64a.exe here; they are deleted on start-up now and must
+            // not be granted Read & Execute, or reported missing, by the hardening in the meantime.
+            foreach (var legacy in AppConfig.LegacyHandleExeFileNames)
+                File.WriteAllText(Path.Combine(TempDirectory, legacy), "x");
             var sut = new TestableHardener(TempDirectory);
 
             // Act
             var names = sut.GetTargetFiles().Select(t => t.RelativePath).ToList();
 
             // Assert
-            if (!x64Present && !arm64Present)
-            {
-                var expected = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? arm64 : x64;
-                Assert.Single(names, n => n == x64 || n == arm64);
-                Assert.Contains(expected, names);
-            }
-            else
-            {
-                Assert.Equal(x64Present, names.Contains(x64));
-                Assert.Equal(arm64Present, names.Contains(arm64));
-            }
+            Assert.DoesNotContain(names, n => n.StartsWith("handle64", StringComparison.OrdinalIgnoreCase));
         }
 
         #endregion

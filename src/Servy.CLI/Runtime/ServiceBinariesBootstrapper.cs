@@ -4,13 +4,12 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
-using System.Runtime.InteropServices;
 
 namespace Servy.CLI.Runtime
 {
     /// <summary>
     /// Puts the binaries the Servy services run in place before a command that needs them: the service wrapper, the
-    /// restarter, the Servy host and Sysinternals Handle, then installs and starts the Servy host service.
+    /// restarter and the Servy host, then installs and starts the Servy host service.
     /// </summary>
     /// <remarks>
     /// Replacing the service wrapper or the host needs every running Servy service and the host stopped. They are
@@ -44,11 +43,6 @@ namespace Servy.CLI.Runtime
         private readonly IServyExePermissionsHardener _hardener;
 
         /// <summary>
-        /// The architecture of the operating system, which selects the Sysinternals Handle build to extract.
-        /// </summary>
-        private readonly Architecture _osArchitecture;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBinariesBootstrapper"/> class.
         /// </summary>
         /// <param name="extractor">Extracts the embedded binaries.</param>
@@ -56,22 +50,19 @@ namespace Servy.CLI.Runtime
         /// <param name="hostInstaller">Installs, stops and starts the Servy host service.</param>
         /// <param name="serviceRepository">The repository holding the installed services.</param>
         /// <param name="hardener">Purges the vault of non-administrative entries and grants the service accounts their access again.</param>
-        /// <param name="osArchitecture">The architecture of the operating system.</param>
         /// <exception cref="ArgumentNullException">Thrown when a reference argument is <see langword="null"/>.</exception>
         public ServiceBinariesBootstrapper(
             IEmbeddedResourceExtractor extractor,
             IServiceHelper serviceHelper,
             IServyHostInstaller hostInstaller,
             IServiceRepository serviceRepository,
-            IServyExePermissionsHardener hardener,
-            Architecture osArchitecture)
+            IServyExePermissionsHardener hardener)
         {
             _extractor = extractor ?? throw new ArgumentNullException(nameof(extractor));
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _hostInstaller = hostInstaller ?? throw new ArgumentNullException(nameof(hostInstaller));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _hardener = hardener ?? throw new ArgumentNullException(nameof(hardener));
-            _osArchitecture = osArchitecture;
         }
 
         /// <summary>
@@ -116,14 +107,9 @@ namespace Servy.CLI.Runtime
                         "CLI cannot start safely - see file log for details.");
                 }
 
-                // Copy Sysinternals from embedded resources
-                var handleExeFileName = _osArchitecture == Architecture.Arm64
-                    ? AppConfig.HandleExeARM64FileName
-                    : AppConfig.HandleExeX64FileName;
-                if (!await _extractor.CopyAsync(handleExeFileName, "exe", cancellationToken))
-                {
-                    Logger.Warn($"Failed copying embedded resource: {handleExeFileName}; process-tree handle features may be degraded.");
-                }
+                // File locks are found through the Restart Manager now: remove the Sysinternals Handle executables an
+                // earlier version extracted to the vault. A failure is logged and does not stop the CLI.
+                _extractor.DeleteLegacyHandleExecutables();
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)

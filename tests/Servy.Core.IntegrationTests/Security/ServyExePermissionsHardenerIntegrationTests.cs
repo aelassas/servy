@@ -35,7 +35,6 @@ namespace Servy.Core.IntegrationTests.Security
 
         private static readonly string DbFile = Path.Combine(AppConfig.DbFolderName, AppConfig.DatabaseFileName);
         private static readonly string KeyFile = Path.Combine(AppConfig.SecurityFolderName, AppConfig.AESKeyFileName);
-        private static readonly string HandleFile = AppConfig.HandleExeX64FileName + ".exe";
         private static readonly string ServiceLogsRoot = Path.Combine(AppConfig.LogsFolderName, AppConfig.ServiceLogsFolderName);
         private static readonly string ServiceLogsFolder = ServiceLogPaths.GetRelativeFolderPath(ServiceName);
         private static readonly string OtherServiceLogsFolder = ServiceLogPaths.GetRelativeFolderPath(OtherServiceName);
@@ -71,7 +70,7 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(ServyExePermissionsHardener.GetWritableFolders(Services), result.GrantedFolders);
             Assert.Empty(result.Failed);
             Assert.Empty(result.Missing);
-            Assert.Equal(6, result.Hardened.Count);
+            Assert.Equal(5, result.Hardened.Count);
 
             // 1. Nothing on the vault root; List and Create Files on each writable folder, Read, Write and Delete on the files created in it
             Assert.Empty(ExplicitRules(_vault, TargetSid, AccessControlType.Allow));
@@ -82,7 +81,7 @@ namespace Servy.Core.IntegrationTests.Security
             }
 
             // 2. Binaries: Read & Execute, no write, no Delete (Servy.Host.exe excluded)
-            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, HandleFile })
+            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe })
             {
                 var rights = AllowedRights(Path.Combine(_vault, exe), TargetSid);
                 Assert.True(Has(rights, FileSystemRights.ReadAndExecute), $"{exe} is Read & Execute");
@@ -771,7 +770,7 @@ namespace Servy.Core.IntegrationTests.Security
             var items = new List<string> { _vault };
             foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
                 items.Add(Path.Combine(_vault, folder));
-            foreach (var file in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, HandleFile,
+            foreach (var file in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe,
                 ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName,
                 DbFile, KeyFile, AppConfig.DbFolderName, AppConfig.SecurityFolderName, AppConfig.LogsFolderName, ServiceLogsRoot })
                 items.Add(Path.Combine(_vault, file));
@@ -1136,7 +1135,7 @@ namespace Servy.Core.IntegrationTests.Security
             Directory.CreateDirectory(Path.Combine(_vault, AppConfig.SecurityFolderName));
             foreach (var file in new[]
             {
-                AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe, HandleFile,
+                AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.ServyHostExe,
                 ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName, ServyExePermissionsHardener.HostSettingsFileName,
                 DbFile, KeyFile,
             })

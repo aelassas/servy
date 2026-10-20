@@ -134,7 +134,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             string nonExistentPath = Path.Combine(TempDirectory, "non_existent.exe");
 
             // Act
-            bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", nonExistentPath);
+            bool result = _resourceHelper.TerminateBlockingProcesses(nonExistentPath);
 
             // Assert
             Assert.True(result);
@@ -149,7 +149,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(filePath, "unlocked text");
 
             // Act
-            bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", filePath);
+            bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
 
             // Assert
             Assert.True(result);
@@ -172,7 +172,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act
-                bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", filePath);
+                bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
 
                 // Assert
                 Assert.True(result);
@@ -196,7 +196,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act
-                bool result = _resourceHelper.TerminateBlockingProcesses(_mockAssembly.Object, "Servy.Resources", filePath);
+                bool result = _resourceHelper.TerminateBlockingProcesses(filePath);
 
                 // Assert
                 Assert.False(result);
@@ -742,152 +742,51 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenFileIsLockedAndHandleExeDiffers_ReplacesHandleExeBeforeRunningIt()
+        public void DeleteLegacyHandleExecutables_BothPresent_DeletesThemAndNothingElse()
         {
             // Arrange
-            string fileName = "locked_handle_differs";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.exe");
-            File.WriteAllText(targetPath, "stale target");
-            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            string x64 = Path.Combine(TempDirectory, "handle64.exe");
+            string arm64 = Path.Combine(TempDirectory, "handle64a.exe");
+            string neighbour = Path.Combine(TempDirectory, AppConfig.ServyHostExe);
+            File.WriteAllBytes(x64, new byte[] { 0x4D, 0x5A });
+            File.WriteAllBytes(arm64, new byte[] { 0x4D, 0x5A });
+            File.WriteAllBytes(neighbour, new byte[] { 0x4D, 0x5A });
 
-            // A Handle executable that is not the embedded one already sits where it would be run from (#7530)
-            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
-            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
-            File.WriteAllBytes(handleExePath, new byte[] { 0x0B, 0x0A, 0x0D });
+            // Act
+            bool result = _resourceHelper.DeleteLegacyHandleExecutables(TempDirectory);
 
-            var embeddedHandle = new byte[] { 0x4D, 0x5A, 0x48, 0x41 };
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x03 }));
-            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources." + handleExeFileName))
-                         .Returns(() => new MemoryStream(embeddedHandle));
-
-            FileStream? lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-            byte[]? handleExeWhenRun = null;
-            _mockProcessKiller
-                .Setup(p => p.KillProcessesUsingFile(targetPath))
-                .Returns(() =>
-                {
-                    // What would be run at this point
-                    handleExeWhenRun = File.ReadAllBytes(handleExePath);
-                    lockStream?.Dispose();
-                    lockStream = null;
-                    return true;
-                });
-
-            try
-            {
-                // Act
-                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                    _mockAssembly.Object, "Servy.Resources", fileName, "exe", cancellationToken: TestContext.Current.CancellationToken);
-
-                // Assert
-                Assert.True(result);
-                Assert.Equal(embeddedHandle, handleExeWhenRun);
-            }
-            finally
-            {
-                lockStream?.Dispose();
-            }
+            // Assert
+            Assert.True(result);
+            Assert.False(File.Exists(x64));
+            Assert.False(File.Exists(arm64));
+            Assert.True(File.Exists(neighbour));
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenFileIsLockedAndHandleExeCannotBeVerified_KillsNothing()
+        public void DeleteLegacyHandleExecutables_NonePresent_ReturnsTrue()
         {
-            // Arrange
-            string fileName = "locked_handle_unverified";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.exe");
-            File.WriteAllText(targetPath, "stale target");
-            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
-
-            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
-            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
-            var plantedHandle = new byte[] { 0x0B, 0x0A, 0x0D };
-            File.WriteAllBytes(handleExePath, plantedHandle);
-
-            // The target is embedded, the Handle executable is not, so the planted one cannot be verified (#7530)
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x03 }));
-            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources." + handleExeFileName))
-                         .Returns((Stream?)null);
-
-            // The killer would report success, so only the verification keeps it from being reached
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
-
-            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-            {
-                // Act
-                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                    _mockAssembly.Object, "Servy.Resources", fileName, "exe", cancellationToken: TestContext.Current.CancellationToken);
-
-                // Assert
-                Assert.False(result);
-                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
-                Assert.Equal(plantedHandle, File.ReadAllBytes(handleExePath));
-            }
+            Assert.True(_resourceHelper.DeleteLegacyHandleExecutables(TempDirectory));
         }
 
         [Fact]
-        public async Task CopyEmbeddedResource_WhenTheHandleExeCannotBeWritten_KillsNothingAndLogsTheWriteFailure()
+        public void DeleteLegacyHandleExecutables_OneIsLocked_DeletesTheOtherReturnsFalseAndWarns()
         {
             // Arrange
-            string fileName = "locked_handle_unwritable";
-            string targetPath = Path.Combine(TempDirectory, $"{fileName}.exe");
-            File.WriteAllText(targetPath, "stale target");
-            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
+            string x64 = Path.Combine(TempDirectory, "handle64.exe");
+            string arm64 = Path.Combine(TempDirectory, "handle64a.exe");
+            File.WriteAllBytes(x64, new byte[] { 0x4D, 0x5A });
+            File.WriteAllBytes(arm64, new byte[] { 0x4D, 0x5A });
 
-            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
-            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
-
-            // The target resource is readable, the Handle resource throws while it is being written
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x01, 0x02, 0x03 }));
-            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources." + handleExeFileName))
-                         .Throws(new IOException("disk full"));
-
-            // The killer would report success, so only the failed verification keeps it from being reached
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
-
-            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            using (new FileStream(x64, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 // Act
-                var (result, textLogOutput) = await LogCapture.RunAsync(() => _resourceHelper.CopyEmbeddedResourceAsync(
-                    _mockAssembly.Object, "Servy.Resources", fileName, "exe", cancellationToken: TestContext.Current.CancellationToken));
+                var (result, log) = LogCapture.Run(() => _resourceHelper.DeleteLegacyHandleExecutables(TempDirectory));
 
                 // Assert
                 Assert.False(result);
-                Assert.False(File.Exists(handleExePath));
-                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
-
-                // The method's own catch, not the outer catch-all that a deleted catch falls into
-                Assert.Contains("Failed to write the embedded resource", textLogOutput);
-                Assert.DoesNotContain("Failed to copy embedded resource", textLogOutput);
-            }
-        }
-
-        [Fact]
-        public async Task CopyEmbeddedResource_WhenTheLockedFileIsTheHandleExeItself_KillsNothing()
-        {
-            // Arrange: the Handle executable being replaced is the one that would be run to find its own lock holders,
-            // and it differs from the embedded resource, so it cannot be verified first (#7530)
-            string handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
-            string handleExePath = Path.Combine(TempDirectory, handleExeFileName);
-            File.WriteAllBytes(handleExePath, new byte[] { 0x0B, 0x0A, 0x0D });
-            File.SetLastWriteTimeUtc(handleExePath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddDays(-1));
-
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x4D, 0x5A, 0x48, 0x41 }));
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(true);
-
-            using (var lockStream = new FileStream(handleExePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                // Act
-                bool result = await _resourceHelper.CopyEmbeddedResourceAsync(
-                    _mockAssembly.Object, "Servy.Resources", Path.GetFileNameWithoutExtension(handleExeFileName), "exe",
-                    cancellationToken: TestContext.Current.CancellationToken);
-
-                // Assert
-                Assert.False(result);
-                _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Never);
+                Assert.True(File.Exists(x64));
+                Assert.False(File.Exists(arm64));
+                Assert.Contains("Failed to delete the legacy Sysinternals Handle executable", log);
             }
         }
 

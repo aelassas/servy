@@ -37,7 +37,7 @@ namespace Servy.UI.UnitTests.Bootstrapping
         public void CombineWarnings_SeveralWarnings_ListsEveryMessageInOrderUnderTheGenericCaption()
         {
             // Arrange
-            var first = ("Failed to copy handle64.exe.", "Resource Extraction Warning");
+            var first = ("Failed to copy Servy.Service.pdb.", "Resource Extraction Warning");
             var second = ("The Servy host could not be started.", "Servy Host Unavailable");
 
             // Act
@@ -45,7 +45,7 @@ namespace Servy.UI.UnitTests.Bootstrapping
 
             // Assert
             var separator = Environment.NewLine + Environment.NewLine;
-            Assert.Equal("Failed to copy handle64.exe." + separator + "The Servy host could not be started.", message);
+            Assert.Equal("Failed to copy Servy.Service.pdb." + separator + "The Servy host could not be started.", message);
             Assert.Equal(Resources.Strings.Msg_StartupWarningsTitle, title);
             Assert.Equal("Servy Startup Warnings", title);
         }

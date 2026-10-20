@@ -2,7 +2,7 @@ namespace Servy.Core.Native
 {
     /// <summary>
     /// Defines the Win32 error codes Servy's native interop checks: service control, file moves, process snapshots,
-    /// console pipes, named-pipe client location and logon validation.
+    /// console pipes, named-pipe client location, logon validation and Restart Manager lookups.
     /// </summary>
     public static class Errors
     {
@@ -32,6 +32,9 @@ namespace Servy.Core.Native
 
         /// <summary>The pipe is not connected (no console attached to the target process).</summary>
         public const int ERROR_PIPE_NOT_CONNECTED = 233;
+
+        /// <summary>More data is available: the buffer passed to RmGetList is too small for the list of processes.</summary>
+        public const int ERROR_MORE_DATA = 234;
 
         /// <summary>An instance of the service is already running.</summary>
         public const int ERROR_SERVICE_ALREADY_RUNNING = 1056;

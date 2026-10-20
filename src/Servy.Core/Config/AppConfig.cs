@@ -107,26 +107,15 @@ namespace Servy.Core.Config
 #endif
 
         /// <summary>
-        /// The default file name of the Sysinternals Handle executable used to detect
-        /// processes holding handles to files. Typically <c>handle64.exe</c> on 64-bit systems.
+        /// The file names of the Sysinternals Handle executables (<c>handle64.exe</c> on x64, <c>handle64a.exe</c> on
+        /// ARM64) that earlier versions extracted to <see cref="ProgramDataPath"/> to find the processes locking a file.
         /// </summary>
-        public const string HandleExeX64FileName = "handle64";
-
-        /// <summary>
-        /// Gets the full file name of the Sysinternals Handle executable (x64), including the ".exe" extension.
-        /// </summary>
-        public static readonly string HandleExeX64 = $"{HandleExeX64FileName}.exe";
-
-        /// <summary>
-        /// The default file name of the Sysinternals Handle executable used to detect
-        /// processes holding handles to files. Typically <c>handle64a.exe</c> on ARM64 systems.
-        /// </summary>
-        public const string HandleExeARM64FileName = "handle64a";
-
-        /// <summary>
-        /// Gets the full file name of the Sysinternals Handle executable (ARM64), including the ".exe" extension.
-        /// </summary>
-        public static readonly string HandleExeARM64 = $"{HandleExeARM64FileName}.exe";
+        /// <remarks>
+        /// Servy no longer ships or runs them: the lock holders are found through the Windows Restart Manager
+        /// (<see cref="Helpers.HandleHelper"/>). The Desktop app, the Manager and the CLI delete any copy an earlier
+        /// version left in the vault when they extract their binaries.
+        /// </remarks>
+        public static readonly IReadOnlyList<string> LegacyHandleExeFileNames = new[] { "handle64.exe", "handle64a.exe" };
 
         /// <summary>
         /// The base file name (without extension) of the Servy Service UI executable.
@@ -818,27 +807,6 @@ namespace Servy.Core.Config
         public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
 
         /// <summary>
-        /// Gets the timeout duration for Regex operations used to parse output from handle.exe.
-        /// </summary>
-        /// <remarks>
-        /// Uses a 10x multiplier over standard input regex timeout to accommodate large system handle tables.
-        /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output,
-        /// such as when a single large file is associated with thousands of owners or handles.
-        /// </remarks>
-        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs * 10);
-
-        /// <summary>
-        /// Specifies the maximum duration, in milliseconds, allowed for standard output and error streams
-        /// of <c>handle.exe</c> to completely flush and drain after a termination event.
-        /// </summary>
-        /// <remarks>
-        /// This timeout provides a best-effort structural buffer to ensure that diagnostic traces are fully
-        /// written to logs before resources are cleaned up, preventing deadlocks if the underlying stream is blocked
-        /// during a forced <see cref="TimeoutException"/> escalation.
-        /// </remarks>
-        public const int HandleExeKillDrainTimeoutMs = 2_000;
-
-        /// <summary>
         /// Timeout in milliseconds to wait for an individual child process to exit after a termination signal.
         /// </summary>
         /// <remarks>
@@ -868,9 +836,10 @@ namespace Servy.Core.Config
         public const int KillParentWaitMs = 5_000;
 
         /// <summary>
-        /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
+        /// The number of times the Restart Manager is asked for the processes holding a file open before the lookup
+        /// gives up, when the list keeps growing between the call that sizes the buffer and the call that fills it.
         /// </summary>
-        public const int HandleExeTimeoutMs = 10_000;
+        public const int RestartManagerGetListMaxAttempts = 5;
 
         /// <summary>
         /// The maximum character length for a Windows Service display name.
@@ -1859,16 +1828,6 @@ namespace Servy.Core.Config
         #region Public Methods
 
         /// <summary>
-        /// Gets the full path to the Sysinternals Handle executable (<c>handle64.exe</c> on x64, or
-        /// <c>handle64a.exe</c> on ARM64). In DEBUG mode, it looks in the application's base directory;
-        /// in RELEASE mode, it looks in the ProgramData folder, and the application's base directory is
-        /// probed first only when a test sets <see cref="TestAllowBaseDirectoryProbe"/>.
-        /// </summary>
-        /// <returns>The full path to the Handle executable.</returns>
-        public static string GetHandleExePath() =>
-            ResolveExe(RuntimeInformation.OSArchitecture == Architecture.Arm64 ? HandleExeARM64FileName : HandleExeX64FileName);
-
-        /// <summary>
         /// Gets the absolute path to the Servy CLI service executable.
         /// </summary>
         /// <remarks>
@@ -1916,7 +1875,7 @@ namespace Servy.Core.Config
         #region Private Helpers
 
         /// <summary>
-        /// Test-only switch that lets <c>RELEASE</c> builds resolve the Servy service, restarter and Handle
+        /// Test-only switch that lets <c>RELEASE</c> builds resolve the Servy service and restarter
         /// executables from the application's base directory when a file of that name exists there, so tests
         /// can run against binaries extracted next to the test assembly.
         /// <see langword="false"/> (the default) means only the hardened <c>ProgramData</c> vault is used.
@@ -1925,7 +1884,7 @@ namespace Servy.Core.Config
         /// <remarks>
         /// A file next to <c>servy-cli.exe</c> or <c>Servy.exe</c> must never win over the vault copy in
         /// production: that folder may be writable by a non-admin user, and the resolved path becomes the
-        /// binPath of a LocalSystem service or runs as elevated <c>handle64.exe</c> (#7528).
+        /// binPath of a LocalSystem service (#7528).
         /// <c>DEBUG</c> builds always use the base directory and ignore this switch.
         /// </remarks>
         internal static bool TestAllowBaseDirectoryProbe { get; set; }

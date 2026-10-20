@@ -853,5 +853,86 @@ namespace Servy.Core.Native
         public static extern bool GetNamedPipeServerProcessId(SafeHandle pipe, out uint serverProcessId);
 
         #endregion
+
+        #region Restart Manager Functions
+
+        /// <summary>The number of characters of a Restart Manager session key, without the terminating null (<c>CCH_RM_SESSION_KEY</c>).</summary>
+        public const int CCH_RM_SESSION_KEY = 32;
+
+        /// <summary>The maximum number of characters of an application name in <see cref="RM_PROCESS_INFO"/> (<c>CCH_RM_MAX_APP_NAME</c>).</summary>
+        public const int CCH_RM_MAX_APP_NAME = 255;
+
+        /// <summary>The maximum number of characters of a service short name in <see cref="RM_PROCESS_INFO"/> (<c>CCH_RM_MAX_SVC_NAME</c>).</summary>
+        public const int CCH_RM_MAX_SVC_NAME = 63;
+
+        /// <summary>
+        /// Identifies a process to the Restart Manager: its identifier and its creation time, which together tell a
+        /// process apart from a later one that reuses the identifier (<c>RM_UNIQUE_PROCESS</c>).
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RM_UNIQUE_PROCESS
+        {
+            /// <summary>The process identifier.</summary>
+            public int dwProcessId;
+            /// <summary>The creation time of the process.</summary>
+            public FILETIME ProcessStartTime;
+        }
+
+        /// <summary>Describes an application that uses a resource registered with a Restart Manager session (<c>RM_PROCESS_INFO</c>).</summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct RM_PROCESS_INFO
+        {
+            /// <summary>The process that uses the resource.</summary>
+            public RM_UNIQUE_PROCESS Process;
+            /// <summary>The display name of the application.</summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCH_RM_MAX_APP_NAME + 1)]
+            public string strAppName;
+            /// <summary>The short name of the service, when the application is a service.</summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCH_RM_MAX_SVC_NAME + 1)]
+            public string strServiceShortName;
+            /// <summary>The type of application (<c>RM_APP_TYPE</c>).</summary>
+            public int ApplicationType;
+            /// <summary>The status of the application (<c>RM_APP_STATUS</c> flags).</summary>
+            public uint AppStatus;
+            /// <summary>The Terminal Services session the process runs in.</summary>
+            public uint TSSessionId;
+            /// <summary>Whether the Restart Manager can restart the application.</summary>
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool bRestartable;
+        }
+
+        /// <summary>Starts a new Restart Manager session. Returns a Win32 error code; 0 on success.</summary>
+        [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)]
+        public static extern int RmStartSession(out uint pSessionHandle, int dwSessionFlags, StringBuilder strSessionKey);
+
+        /// <summary>Ends a Restart Manager session. Returns a Win32 error code; 0 on success.</summary>
+        [DllImport("rstrtmgr.dll")]
+        public static extern int RmEndSession(uint pSessionHandle);
+
+        /// <summary>Registers files, processes or services with a Restart Manager session. Returns a Win32 error code; 0 on success.</summary>
+        [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)]
+        public static extern int RmRegisterResources(
+            uint pSessionHandle,
+            uint nFiles,
+            string[] rgsFilenames,
+            uint nApplications,
+            [In] RM_UNIQUE_PROCESS[]? rgApplications,
+            uint nServices,
+            string[]? rgsServiceNames);
+
+        /// <summary>
+        /// Lists the processes that use the resources registered with a Restart Manager session. Returns a Win32 error
+        /// code: 0 on success, or <see cref="Errors.ERROR_MORE_DATA"/> when <paramref name="rgAffectedApps"/> is too
+        /// small, with the size it needs in <paramref name="pnProcInfoNeeded"/>.
+        /// </summary>
+        [DllImport("rstrtmgr.dll")]
+        public static extern int RmGetList(
+            uint dwSessionHandle,
+            out uint pnProcInfoNeeded,
+            ref uint pnProcInfo,
+            [In, Out] RM_PROCESS_INFO[]? rgAffectedApps,
+            ref uint lpdwRebootReasons);
+
+        #endregion
     }
 }

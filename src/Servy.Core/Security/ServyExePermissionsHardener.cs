@@ -729,19 +729,6 @@ namespace Servy.Core.Security
                 new ExePermissionsTarget(AppConfig.ServyRestarterExe, FileSystemRights.ReadAndExecute),
             };
 
-            // Harden whichever handle binary is actually present (#6472); when neither is, report the one this
-            // machine's architecture extracts.
-            var handleX64 = AppConfig.HandleExeX64FileName + ".exe";
-            var handleArm64 = AppConfig.HandleExeARM64FileName + ".exe";
-            var hasX64 = File.Exists(Path.Combine(VaultDirectory, handleX64));
-            var hasArm64 = File.Exists(Path.Combine(VaultDirectory, handleArm64));
-            if (hasX64)
-                targets.Add(new ExePermissionsTarget(handleX64, FileSystemRights.ReadAndExecute));
-            if (hasArm64)
-                targets.Add(new ExePermissionsTarget(handleArm64, FileSystemRights.ReadAndExecute));
-            if (!hasX64 && !hasArm64)
-                targets.Add(new ExePermissionsTarget(RuntimeInformation.OSArchitecture == Architecture.Arm64 ? handleArm64 : handleX64, FileSystemRights.ReadAndExecute));
-
             AddCommonTargets(targets);
             return targets;
         }

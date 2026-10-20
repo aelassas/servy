@@ -120,7 +120,7 @@ namespace Servy.Core.Helpers
                     // Check cancellation boundary right before process execution checks
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (!TerminateBlockingProcesses(assembly, resourceNamespace, targetPath))
+                    if (!TerminateBlockingProcesses(targetPath))
                         return false;
 
                     // Plumb the token parameter through to the atomic I/O engine
@@ -490,31 +490,21 @@ namespace Servy.Core.Helpers
         /// Safely terminates any processes holding locks on the target file by identifying them by path.
         /// This prevents collateral damage to other service instances using the same utility names.
         /// </summary>
-        /// <param name="assembly">The assembly that embeds the Sysinternals Handle executable.</param>
-        /// <param name="resourceNamespace">The namespace of the embedded resources.</param>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <returns>True if the file was successfully cleared of blocking processes; false if termination failed.</returns>
         /// <remarks>
-        /// The lock holders are found by the Sysinternals Handle executable, which runs elevated. It is run only once it
-        /// has been verified against the embedded resource, or written from it, in the same call (#7530).
+        /// The lock holders are found through the Windows Restart Manager (<see cref="HandleHelper"/>).
         /// </remarks>
-        internal bool TerminateBlockingProcesses(Assembly assembly, string resourceNamespace, string targetPath)
+        internal bool TerminateBlockingProcesses(string targetPath)
         {
-            // FAST PROBE: Check if the target file is actually locked before shelling out to handle64.exe.
-            // This prevents launching handle64.exe on every routine service start/update pass when no locks exist,
-            // eliminating unnecessary process executions and avoiding false-positive EDR/AV heuristic alerts.
+            // FAST PROBE: Check if the target file is actually locked before looking up and killing its holders,
+            // so a routine service start/update pass with no locks does no lookup at all.
             if (!IsFileLocked(targetPath))
             {
                 return true;
             }
 
             Logger.Info($"File lock detected on '{targetPath}'. Identifying and terminating blocking processes...");
-
-            if (!EnsureHandleExeVerified(assembly, resourceNamespace, targetPath))
-            {
-                Logger.Error($"The Sysinternals Handle executable could not be verified against the embedded resource, so the locks on '{targetPath}' were not cleared. Extraction aborted.");
-                return false;
-            }
 
             // Identify lock holders by path (not by executable name) so we surgically terminate
             // only the trees locking THIS specific file, leaving unrelated services that run
@@ -529,50 +519,37 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Makes sure the Sysinternals Handle executable in <see cref="BaseExtractionDirectory"/> is the embedded one before
-        /// it is run: an existing file is compared with the embedded resource, and one that differs or is missing is
-        /// written from it first (#7530).
+        /// Deletes the Sysinternals Handle executables (<see cref="AppConfig.LegacyHandleExeFileNames"/>) that earlier
+        /// versions extracted to the ProgramData vault. File locks are found through the Windows Restart Manager now,
+        /// so a copy left behind would only be an unused binary nobody updates any more.
         /// </summary>
-        /// <param name="assembly">The assembly that embeds the Handle executable.</param>
-        /// <param name="resourceNamespace">The namespace of the embedded resources.</param>
-        /// <param name="targetPath">The file whose locks are to be cleared. When it is the Handle executable itself, it
-        /// cannot be written first, so it is not verified.</param>
-        /// <returns><see langword="true"/> when the Handle executable matches the embedded resource.</returns>
-        private bool EnsureHandleExeVerified(Assembly assembly, string resourceNamespace, string targetPath)
+        /// <param name="directory">The folder to clean. Defaults to <see cref="AppConfig.ProgramDataPath"/>, the vault.</param>
+        /// <returns><see langword="true"/> when none of the files is left in the folder; a file that cannot be deleted is
+        /// logged and makes the result <see langword="false"/>, without failing the extraction.</returns>
+        public bool DeleteLegacyHandleExecutables(string? directory = null)
         {
-            var handleExeFileName = Path.GetFileName(AppConfig.GetHandleExePath());
-            var handleExePath = Path.Combine(BaseExtractionDirectory, handleExeFileName);
-            var resourceName = resourceNamespace + "." + handleExeFileName;
+            var folder = string.IsNullOrWhiteSpace(directory) ? AppConfig.ProgramDataPath : directory!;
+            bool allGone = true;
 
-            if (File.Exists(handleExePath) && IsSameAsEmbeddedResource(assembly, resourceName, handleExePath))
-                return true;
-
-            if (string.Equals(Path.GetFullPath(handleExePath), Path.GetFullPath(targetPath), StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            try
+            foreach (var fileName in AppConfig.LegacyHandleExeFileNames)
             {
-                using (var resourceStream = assembly.GetManifestResourceStream(resourceName))
+                var path = Path.Combine(folder, fileName);
+                try
                 {
-                    if (resourceStream == null)
-                    {
-                        Logger.Error($"Embedded resource not found: {resourceName}");
-                        return false;
-                    }
+                    if (!File.Exists(path))
+                        continue;
 
-                    Helper.WriteFileAtomic(handleExePath, resourceStream.CopyTo);
+                    File.Delete(path);
+                    Logger.Info($"Deleted '{path}': Servy no longer uses the Sysinternals Handle executable.");
                 }
-
-                ApplyVaultFileSecurity(handleExePath);
-
-                Logger.Info($"Wrote the embedded resource '{resourceName}' to '{handleExePath}' before running it.");
-                return true;
+                catch (Exception ex)
+                {
+                    allGone = false;
+                    Logger.Warn($"Failed to delete the legacy Sysinternals Handle executable '{path}'.", ex);
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to write the embedded resource '{resourceName}' to '{handleExePath}'.", ex);
-                return false;
-            }
+
+            return allGone;
         }
 
         #endregion

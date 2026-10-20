@@ -31,5 +31,11 @@ namespace Servy.CLI.Runtime
         /// <param name="cancellationToken">A token that cancels the extraction.</param>
         /// <returns><see langword="true"/> when the resource is in place on disk; otherwise <see langword="false"/>.</returns>
         Task<bool> CopyAsync(string fileName, string extension, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Deletes the Sysinternals Handle executables an earlier version extracted to the ProgramData vault.
+        /// </summary>
+        /// <returns><see langword="true"/> when none of them is left; a failure is logged, never thrown.</returns>
+        bool DeleteLegacyHandleExecutables();
     }
 }

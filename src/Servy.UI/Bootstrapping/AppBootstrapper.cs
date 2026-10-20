@@ -12,7 +12,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -420,18 +419,9 @@ namespace Servy.UI.Bootstrapping
                                 "The application cannot start safely - see file log for details.");
                         }
 
-                        var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
-                            ? AppConfig.HandleExeARM64FileName
-                            : AppConfig.HandleExeX64FileName;
-
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", cancellationToken: ct))
-                        {
-                            string resourceName = $"{handleExeFileName}.exe";
-                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
-                            deferredWarnings.Add((
-                                string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                                _options.ResourceExtractionWarningTitle));
-                        }
+                        // File locks are found through the Restart Manager now: remove the Sysinternals Handle executables
+                        // an earlier version extracted to the vault. A failure is logged and does not stop the start-up.
+                        resourceHelper.DeleteLegacyHandleExecutables();
 
     #if DEBUG
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", cancellationToken: ct))

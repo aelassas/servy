@@ -25,8 +25,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\handle64.exe" />
-    <None Remove="Resources\handle64a.exe" />
     <None Remove="Resources\Servy.Host.exe" />
     <None Remove="Resources\Servy.Host.pdb" />
     <None Remove="Resources\Servy.Service.exe" />
@@ -43,8 +41,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\handle64.exe" />
-    <EmbeddedResource Include="Resources\handle64a.exe" />
     <EmbeddedResource Include="Resources\Servy.Host.exe" />
     <EmbeddedResource Include="Resources\Servy.Host.pdb" />
     <EmbeddedResource Include="Resources\Servy.Service.exe" />

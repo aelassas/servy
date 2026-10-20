@@ -27,7 +27,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA
 		NOTES.md = NOTES.md
 		README.md = README.md
 		ROADMAP.md = ROADMAP.md
-		THIRD-PARTY-NOTICES.md = THIRD-PARTY-NOTICES.md
 		Update-FileHelpers.ps1 = Update-FileHelpers.ps1
 	EndProjectSection
 EndProject
