@@ -385,18 +385,6 @@ namespace Servy.UI.Bootstrapping
                     try
                     {
                         // Binary Resource Extraction
-                        if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", cancellationToken: ct))
-                        {
-                            string resourceName = $"{AppConfig.HandleExeFileName}.exe";
-                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window)app.MainWindow,
-                                string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
-                        }
-
                         var resourceItems = new List<ResourceItem>
                         {
                             new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceUIFileName, Extension= "exe"},
@@ -481,6 +469,10 @@ namespace Servy.UI.Bootstrapping
                             throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
                                 "The application cannot start safely - see file log for details.");
                         }
+
+                        // File locks are found through the Restart Manager now: remove the Sysinternals Handle executables
+                        // an earlier version extracted to the vault. A failure is logged and does not stop the start-up.
+                        resourceHelper.DeleteLegacyHandleExecutables();
 
 #if !DEBUG
                         // Purge every non-administrative entry in the vault, then grant the service accounts their access

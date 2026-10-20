@@ -41,8 +41,8 @@ namespace Servy.CLI.Runtime
         void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext);
 
         /// <summary>
-        /// Extracts the embedded service wrapper, restarter, host and Sysinternals binaries, then installs and starts
-        /// the Servy host service.
+        /// Extracts the embedded service wrapper, restarter and host binaries, removes the legacy Sysinternals Handle
+        /// executables, then installs and starts the Servy host service.
         /// </summary>
         /// <param name="serviceRepository">The repository holding the installed services.</param>
         /// <param name="controllerFactory">Creates a service controller wrapper for a service name.</param>

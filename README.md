@@ -19,4 +19,4 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 ## License
 
-Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for third-party software notices and licenses.
+Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). It ships no third-party executables: the processes locking a file are found through the Windows Restart Manager API.

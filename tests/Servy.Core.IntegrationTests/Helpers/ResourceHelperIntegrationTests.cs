@@ -472,66 +472,35 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public async Task CopyResources_OneItemFailsTermination_ContinuesAndReturnsFalse()
         {
-            // Arrange: Use the Integration Test assembly which contains the resource
-            var assembly = typeof(Testing.Helper).Assembly;
-
-            // 1. Explicitly define resource details based on the error message
-            string detectedNamespace = "Servy.Testing.Resources";
-            string detectedFileName = "handle64";
-            string detectedExtension = "exe";
-
-            // 2. FORCE EXTRACTION: Pre-calculate the shadow-copy target path and delete it.
-            // This ensures ShouldCopyResource returns true.
-            string targetDir = Path.GetDirectoryName(assembly.Location);
-            string expectedTargetPath = Path.Combine(targetDir, $"{detectedFileName}.{detectedExtension}");
-
-            if (File.Exists(expectedTargetPath))
-            {
-                try { File.Delete(expectedTargetPath); } catch { /* Handle locked files */ }
-            }
-
+            // Arrange
             var items = new List<ResourceItem>
             {
                 // Item 1: Will fail termination to trigger the 'res = false' path
                 new ResourceItem { FileNameWithoutExtension = "failapp", Extension = "exe" },
                 // Item 2: The actual resource to be extracted
-                new ResourceItem { FileNameWithoutExtension = detectedFileName, Extension = detectedExtension }
+                new ResourceItem { FileNameWithoutExtension = "payload", Extension = "exe" }
             };
 
-            // 3. MOCK ALIGNMENT: Match the 1-parameter signature used in the .NET 4.8 build
+            var payload = new byte[] { 0x4D, 0x5A, 0x90, 0x00 };
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(payload);
+
             _mockProcessKiller
                 .Setup(p => p.KillProcessTreeAndParents("failapp.exe", It.IsAny<bool>()))
                 .Returns(false);
 
             _mockProcessKiller
-                .Setup(p => p.KillProcessTreeAndParents($"{detectedFileName}.{detectedExtension}", It.IsAny<bool>()))
+                .Setup(p => p.KillProcessTreeAndParents("payload.exe", It.IsAny<bool>()))
                 .Returns(true);
-
-            _mockProcessKiller
-                .Setup(p => p.KillProcessesUsingFile(It.IsAny<string>()))
-                .Returns(true);
-
-            string itemTargetPath = Path.Combine(targetDir, $"{detectedFileName}.{detectedExtension}");
-
-            if (File.Exists(itemTargetPath))
-            {
-                File.Delete(itemTargetPath); // Forces ShouldCopy to return true
-            }
 
             // Act
-            // Passing the correct namespace ensures GetManifestResourceStream finds the data.
-            bool result = await _resourceHelper.CopyResources(assembly, detectedNamespace, items, stopServices: false);
+            bool result = await _resourceHelper.CopyResources(_fakeAssembly, "Servy.Resources", items, stopServices: false);
 
             // Assert
             Assert.False(result); // Overall status should be false because the first item failed
 
             // Verify Item 2: The loop must have continued and successfully extracted the second file
-            Assert.True(File.Exists(items[1].TargetPath),
-                $"File was not created at: {items[1].TargetPath}. " +
-                $"Shadow Copy Path: {targetDir}");
-
-            // Clean up
-            if (File.Exists(items[1].TargetPath)) File.Delete(items[1].TargetPath);
+            Assert.True(File.Exists(items[1].TargetPath), $"File was not created at: {items[1].TargetPath}.");
+            Assert.Equal(payload, File.ReadAllBytes(items[1].TargetPath));
         }
 
         [Fact]
@@ -975,6 +944,59 @@ namespace Servy.Core.IntegrationTests.Helpers
             security.AddAccessRule(new FileSystemAccessRule(LocalSystemSid, FileSystemRights.FullControl, AccessControlType.Allow));
             security.SetOwner(AdministratorsSid);
             new FileInfo(path).SetAccessControl(security);
+        }
+
+        #endregion
+
+        #region DeleteLegacyHandleExecutables
+
+        [Fact]
+        public void DeleteLegacyHandleExecutables_BothPresent_DeletesThemAndNothingElse()
+        {
+            // Arrange
+            string x64 = Path.Combine(TempDirectory, "handle64.exe");
+            string arm64 = Path.Combine(TempDirectory, "handle64a.exe");
+            string neighbour = Path.Combine(TempDirectory, AppConfig.ServyHostExe);
+            File.WriteAllBytes(x64, new byte[] { 0x4D, 0x5A });
+            File.WriteAllBytes(arm64, new byte[] { 0x4D, 0x5A });
+            File.WriteAllBytes(neighbour, new byte[] { 0x4D, 0x5A });
+
+            // Act
+            bool result = _resourceHelper.DeleteLegacyHandleExecutables(TempDirectory);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(File.Exists(x64));
+            Assert.False(File.Exists(arm64));
+            Assert.True(File.Exists(neighbour));
+        }
+
+        [Fact]
+        public void DeleteLegacyHandleExecutables_NonePresent_ReturnsTrue()
+        {
+            Assert.True(_resourceHelper.DeleteLegacyHandleExecutables(TempDirectory));
+        }
+
+        [Fact]
+        public void DeleteLegacyHandleExecutables_OneIsLocked_DeletesTheOtherReturnsFalseAndWarns()
+        {
+            // Arrange
+            string x64 = Path.Combine(TempDirectory, "handle64.exe");
+            string arm64 = Path.Combine(TempDirectory, "handle64a.exe");
+            File.WriteAllBytes(x64, new byte[] { 0x4D, 0x5A });
+            File.WriteAllBytes(arm64, new byte[] { 0x4D, 0x5A });
+
+            using (new FileStream(x64, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                // Act
+                var (result, log) = LogCapture.Run(() => _resourceHelper.DeleteLegacyHandleExecutables(TempDirectory));
+
+                // Assert
+                Assert.False(result);
+                Assert.True(File.Exists(x64));
+                Assert.False(File.Exists(arm64));
+                Assert.Contains("Failed to delete the legacy Sysinternals Handle executable", log);
+            }
         }
 
         #endregion

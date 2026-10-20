@@ -17,7 +17,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Guard-only checks that spawn no process (input validation, the critical-process safelist) live in ProcessKillerTests.
     /// </summary>
     [Collection(ProcessIntegrationTestsCollection.Name)]
-    public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
+    public class ProcessKillerIntegrationTests : IDisposable
     {
         private static readonly string PowerShellPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe");
 
@@ -26,9 +26,9 @@ namespace Servy.Core.IntegrationTests.Helpers
         private readonly List<string> _tempFiles;
 
         /// <summary>
-        /// Initializes a new instance of the ProcessKillerIntegrationTests class, configuring tracking lists for safe teardown and ensuring necessary diagnostic utilities are extracted.
+        /// Initializes a new instance of the ProcessKillerIntegrationTests class, configuring tracking lists for safe teardown.
         /// </summary>
-        public ProcessKillerIntegrationTests() : base()
+        public ProcessKillerIntegrationTests()
         {
             _processKiller = new ProcessKiller();
             _trackedProcesses = new List<Process>();
@@ -63,10 +63,6 @@ namespace Servy.Core.IntegrationTests.Helpers
                     try { File.Delete(file); } catch { }
                 }
             }
-
-            // DO NOT delete handle64.exe here.
-            // Deleting an executable while another test's constructor is initializing causes the IOException.
-            // Leaving it in the bin folder is completely safe for integration tests.
         }
 
         /// <summary>

@@ -548,7 +548,7 @@ namespace Servy.Core.UnitTests.Security
             var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
 
             // Assert
-            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe, AppConfig.HandleExeFileName + ".exe" })
+            foreach (var exe in new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe })
             {
                 Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
                 Assert.False(targets[exe].Optional);
@@ -584,6 +584,23 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(new[] { "Newtonsoft.Json.DLL", "Servy.Core.dll" }, dlls.Select(t => t.RelativePath));
             Assert.All(dlls, d => Assert.Equal(FileSystemRights.ReadAndExecute, d.Rights));
             Assert.All(dlls, d => Assert.False(d.Optional));
+        }
+
+        [Fact]
+        public void GetTargetFiles_LegacyHandleBinariesInTheVault_AreNotHardened()
+        {
+            // Arrange
+            // Earlier versions extracted handle64.exe here; it is deleted on start-up now and must not be granted
+            // Read & Execute, or reported missing, by the hardening in the meantime.
+            foreach (var legacy in AppConfig.LegacyHandleExeFileNames)
+                File.WriteAllText(Path.Combine(TempDirectory, legacy), "x");
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var names = sut.GetTargetFiles().Select(t => t.RelativePath).ToList();
+
+            // Assert
+            Assert.DoesNotContain(names, n => n.StartsWith("handle64", StringComparison.OrdinalIgnoreCase));
         }
 
         #endregion

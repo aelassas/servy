@@ -501,18 +501,11 @@ namespace Servy.Core.Helpers
                 return true;
             }
 
-            var handleExePath = AppConfig.GetHandleExePath();
-            if (!File.Exists(handleExePath))
-            {
-                Logger.Error($"Handle.exe not found at: {handleExePath}");
-                return false;
-            }
-
             bool success = true;
 
             try
             {
-                var processes = HandleHelper.GetProcessesUsingFile(handleExePath, filePath);
+                var processes = HandleHelper.GetProcessesUsingFile(filePath);
 
                 foreach (var procInfo in processes)
                 {
@@ -528,7 +521,7 @@ namespace Servy.Core.Helpers
                     }
                     catch { /* process might have exited */ }
 
-                    // Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
+                    // IsCriticalProcess validates the executable name (with or without .exe) against the safelist
                     if (IsCriticalProcess(procInfo.ProcessName, procInfo.ProcessId, executablePath))
                     {
                         Logger.Warn($"Skipping kill request for critical system process: {procInfo.ProcessName} (PID {procInfo.ProcessId})");

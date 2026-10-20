@@ -51,14 +51,13 @@ namespace Servy.Core.Helpers
         bool KillProcessTreeAndParents(int pid, bool killParents = true);
 
         /// <summary>
-        /// Discovers and violently terminates any process trees holding an active lock on the specified file path using diagnostic tooling.
+        /// Discovers and violently terminates any process trees holding an active lock on the specified file path.
         /// </summary>
         /// <param name="filePath">The absolute path of the targeted file currently constrained by an active lock.</param>
         /// <returns>A boolean value indicating whether the lock release operation resolved and executed without encountering critical errors.</returns>
         /// <remarks>
-        /// This method requires the Sysinternals handle utility (handle64.exe),
-        /// which Servy extracts to its ProgramData vault during install (or to the application base
-        /// directory in DEBUG builds). The actual lookup is performed by <see cref="Config.AppConfig.GetHandleExePath"/>.
+        /// The lock holders are found through the Windows Restart Manager by <see cref="HandleHelper.GetProcessesUsingFile(string)"/>;
+        /// no external executable is run.
         /// </remarks>
         bool KillProcessesUsingFile(string filePath);
     }

@@ -728,7 +728,6 @@ namespace Servy.Core.Security
             var targets = executables
                 .Select(exe => new ExePermissionsTarget(exe, FileSystemRights.ReadAndExecute))
                 .ToList();
-            targets.Add(new ExePermissionsTarget(AppConfig.HandleExeFileName + ".exe", FileSystemRights.ReadAndExecute));
 
             // The service, the CLI service and the restarter load their assemblies from the vault, so every DLL
             // there is as much a binary as the executables are

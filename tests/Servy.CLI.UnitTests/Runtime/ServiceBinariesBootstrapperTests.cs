@@ -36,8 +36,14 @@ namespace Servy.CLI.UnitTests.Runtime
             /// <summary>Gets or sets a value indicating whether <see cref="CopyAllAsync"/> fails.</summary>
             public bool CopyAllFails { get; set; }
 
-            /// <summary>Every single resource ("name.ext") <see cref="CopyAsync"/> was asked for, and "*" for each <see cref="CopyAllAsync"/>, in order.</summary>
+            /// <summary>
+            /// Every single resource ("name.ext") <see cref="CopyAsync"/> was asked for, "*" for each <see cref="CopyAllAsync"/>,
+            /// and <see cref="LegacyHandleDeletion"/> where <see cref="DeleteLegacyHandleExecutables"/> was called, in order.
+            /// </summary>
             public List<string> Copied { get; } = new List<string>();
+
+            /// <summary>What <see cref="DeleteLegacyHandleExecutables"/> reports.</summary>
+            public bool LegacyDeletionSucceeds { get; set; } = true;
 
             /// <summary>The resources ("name.ext") of the last <see cref="CopyAllAsync"/> call.</summary>
             public List<string> CopiedTogether { get; } = new List<string>();
@@ -59,7 +65,16 @@ namespace Servy.CLI.UnitTests.Runtime
                 CopiedTogether.AddRange(resourceItems.Select(i => $"{i.FileNameWithoutExtension}.{i.Extension}"));
                 return Task.FromResult(!CopyAllFails);
             }
+
+            public bool DeleteLegacyHandleExecutables()
+            {
+                Copied.Add(LegacyHandleDeletion);
+                return LegacyDeletionSucceeds;
+            }
         }
+
+        /// <summary>The entry <see cref="FakeExtractor.Copied"/> records for the deletion of the legacy Handle executables.</summary>
+        private const string LegacyHandleDeletion = "<delete legacy handle64>";
 
         private readonly FakeExtractor _extractor = new FakeExtractor();
         private readonly Mock<IServiceHelper> _serviceHelper = new Mock<IServiceHelper>();
@@ -85,7 +100,7 @@ namespace Servy.CLI.UnitTests.Runtime
             => new ServiceBinariesBootstrapper(_extractor, _serviceHelper.Object, _hostInstaller.Object, _repository.Object, _hardener.Object);
 
         [Fact]
-        public async Task EnsureAsync_NothingNeedsExtraction_CopiesHandleThenTheSetThenTheHostWithoutPausing()
+        public async Task EnsureAsync_NothingNeedsExtraction_CopiesTheSetThenTheHostThenDeletesTheLegacyHandleWithoutPausing()
         {
             // Arrange
             var bootstrapper = CreateBootstrapper();
@@ -94,9 +109,10 @@ namespace Servy.CLI.UnitTests.Runtime
             await bootstrapper.EnsureAsync(CancellationToken.None);
 
             // Assert
-            // Sysinternals Handle comes first, before the pause decision; the wrapper set and then the host follow.
+            // The wrapper set and then the host are extracted, then the legacy Sysinternals Handle executables are deleted
+            // from the vault; nothing named handle64 is extracted any more.
             var singles = _extractor.Copied.Where(c => !c.EndsWith(".pdb")).ToList();
-            Assert.Equal(new[] { $"{AppConfig.HandleExeFileName}.exe", "*", $"{AppConfig.ServyHostFileName}.exe" }, singles);
+            Assert.Equal(new[] { "*", $"{AppConfig.ServyHostFileName}.exe", LegacyHandleDeletion }, singles);
             Assert.Equal($"{AppConfig.ServyServiceCLIFileName}.exe", _extractor.CopiedTogether[0]);
             Assert.Equal($"{AppConfig.ServyRestarterFileName}.exe", _extractor.CopiedTogether[1]);
 
@@ -148,6 +164,7 @@ namespace Servy.CLI.UnitTests.Runtime
             // Assert
             Assert.Contains("Failed to extract embedded resources.", ex.Message);
             Assert.Equal("*", _extractor.Copied.Last());
+            Assert.DoesNotContain(LegacyHandleDeletion, _extractor.Copied);
             _hostInstaller.Verify(h => h.StartAsync(It.IsAny<CancellationToken>()), Times.Once);
             _hostInstaller.Verify(h => h.EnsureInstalledAndRunningAsync(It.IsAny<string>(), It.IsAny<IServiceHelper>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -173,8 +190,9 @@ namespace Servy.CLI.UnitTests.Runtime
         public async Task EnsureAsync_OptionalBinariesFailToExtract_ContinuesToTheHostInstall()
         {
             // Arrange
-            // Sysinternals Handle (and, in Debug builds, the three .pdb files) only degrade features when missing.
-            _extractor.FailingCopies.Add($"{AppConfig.HandleExeFileName}.exe");
+            // A legacy Handle executable that cannot be deleted, and in Debug builds the three .pdb files, only
+            // degrade the installation when they fail.
+            _extractor.LegacyDeletionSucceeds = false;
             _extractor.FailingCopies.Add($"{AppConfig.ServyServiceCLIFileName}.pdb");
             _extractor.FailingCopies.Add($"{AppConfig.ServyRestarterFileName}.pdb");
             _extractor.FailingCopies.Add($"{AppConfig.ServyHostFileName}.pdb");

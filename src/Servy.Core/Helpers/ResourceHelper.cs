@@ -705,6 +705,40 @@ namespace Servy.Core.Helpers
             return true;
         }
 
+        /// <summary>
+        /// Deletes the Sysinternals Handle executables (<see cref="AppConfig.LegacyHandleExeFileNames"/>) that earlier
+        /// versions extracted to the ProgramData vault. File locks are found through the Windows Restart Manager now,
+        /// so a copy left behind would only be an unused binary nobody updates any more.
+        /// </summary>
+        /// <param name="directory">The folder to clean. Defaults to <see cref="AppConfig.ProgramDataPath"/>, the vault.</param>
+        /// <returns><see langword="true"/> when none of the files is left in the folder; a file that cannot be deleted is
+        /// logged and makes the result <see langword="false"/>, without failing the extraction.</returns>
+        public bool DeleteLegacyHandleExecutables(string directory = null)
+        {
+            var folder = string.IsNullOrWhiteSpace(directory) ? AppConfig.ProgramDataPath : directory;
+            bool allGone = true;
+
+            foreach (var fileName in AppConfig.LegacyHandleExeFileNames)
+            {
+                var path = Path.Combine(folder, fileName);
+                try
+                {
+                    if (!File.Exists(path))
+                        continue;
+
+                    File.Delete(path);
+                    Logger.Info($"Deleted '{path}': Servy no longer uses the Sysinternals Handle executable.");
+                }
+                catch (Exception ex)
+                {
+                    allGone = false;
+                    Logger.Warn($"Failed to delete the legacy Sysinternals Handle executable '{path}'.", ex);
+                }
+            }
+
+            return allGone;
+        }
+
         #endregion
     }
 }

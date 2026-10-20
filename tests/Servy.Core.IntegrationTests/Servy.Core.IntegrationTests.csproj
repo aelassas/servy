@@ -122,7 +122,6 @@
   <ItemGroup>
     <Compile Include="Config\PowerShellConfigSyncIntegrationTests.cs" />
     <Compile Include="CoreOsIntegrationCollection.cs" />
-    <Compile Include="Helpers\HandleExeIntegrationTestBase.cs" />
     <Compile Include="Helpers\HandleHelperIntegrationTests.cs" />
     <Compile Include="Helpers\ProcessHelperIntegrationTests.cs" />
     <Compile Include="Helpers\SystemEnvironmentHelperIntegrationTests.cs" />

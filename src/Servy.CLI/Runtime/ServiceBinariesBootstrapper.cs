@@ -14,9 +14,9 @@ using System.Threading.Tasks;
 namespace Servy.CLI.Runtime
 {
     /// <summary>
-    /// Puts the binaries the Servy services run in place before a command that needs them: Sysinternals Handle, the
-    /// service wrapper, the restarter, the DLLs they load (Release builds) and the Servy host, then installs and starts
-    /// the Servy host service.
+    /// Puts the binaries the Servy services run in place before a command that needs them: the service wrapper, the
+    /// restarter, the DLLs they load (Release builds) and the Servy host, then installs and starts the Servy host
+    /// service.
     /// </summary>
     /// <remarks>
     /// Replacing the service wrapper, a DLL it loads or the host needs every running Servy service and the host
@@ -83,12 +83,6 @@ namespace Servy.CLI.Runtime
         /// </exception>
         public async Task EnsureAsync(CancellationToken cancellationToken)
         {
-            // Copy Sysinternals from embedded resources
-            if (!await _extractor.CopyAsync(AppConfig.HandleExeFileName, "exe", cancellationToken))
-            {
-                Logger.Warn($"Failed copying embedded resource: {AppConfig.HandleExeFileName}; process-tree handle features may be degraded.");
-            }
-
             var pause = new ServyServicesPause(_serviceHelper, _hostInstaller);
             try
             {
@@ -161,6 +155,10 @@ namespace Servy.CLI.Runtime
                     throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyHostExe}'. " +
                         "CLI cannot start safely - see file log for details.");
                 }
+
+                // File locks are found through the Restart Manager now: remove the Sysinternals Handle executables an
+                // earlier version extracted to the vault. A failure is logged and does not stop the CLI.
+                _extractor.DeleteLegacyHandleExecutables();
 
 #if !DEBUG
                 // Purge every non-administrative entry in the vault, then grant the service accounts their access

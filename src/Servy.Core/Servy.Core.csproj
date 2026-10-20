@@ -159,7 +159,9 @@
     <Compile Include="NamedPipes\ServyHostServerVerifier.cs" />
     <Compile Include="Native\Errors.cs" />
     <Compile Include="Native\FileIdentity.cs" />
+    <Compile Include="Native\IRestartManagerApi.cs" />
     <Compile Include="Native\NativeMethodsHelpers.cs" />
+    <Compile Include="Native\RestartManagerApi.cs" />
     <Compile Include="Native\SafeCloseServiceHandleBase.cs" />
     <Compile Include="Native\SafeScmHandle.cs" />
     <Compile Include="Native\SafeServiceHandle.cs" />

@@ -75,5 +75,11 @@ namespace Servy.CLI.Runtime
         /// <returns><see langword="true"/> when every resource is in place on disk; otherwise <see langword="false"/>.</returns>
         public Task<bool> CopyAllAsync(List<ResourceItem> resourceItems, CancellationToken cancellationToken)
             => _resourceHelper.CopyResources(_assembly, _resourcesNamespace, resourceItems, stopServices: false, cancellationToken: cancellationToken);
+
+        /// <summary>
+        /// Deletes the Sysinternals Handle executables an earlier version extracted to the ProgramData vault.
+        /// </summary>
+        /// <returns><see langword="true"/> when none of them is left; a failure is logged, never thrown.</returns>
+        public bool DeleteLegacyHandleExecutables() => _resourceHelper.DeleteLegacyHandleExecutables();
     }
 }
