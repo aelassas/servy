@@ -41,6 +41,7 @@ namespace Servy.Infrastructure.Data
             (d => d.PreLaunchEnvironmentVariables, (d, v) => d.PreLaunchEnvironmentVariables = v, nameof(ServiceDto.PreLaunchEnvironmentVariables)),
             (d => d.PreStopParameters,              (d, v) => d.PreStopParameters = v,              nameof(ServiceDto.PreStopParameters)),
             (d => d.PostStopParameters,             (d, v) => d.PostStopParameters = v,             nameof(ServiceDto.PostStopParameters)),
+            (d => d.HeartbeatUrl,                   (d, v) => d.HeartbeatUrl = v,                   nameof(ServiceDto.HeartbeatUrl)),
         };
 
         /// <summary>

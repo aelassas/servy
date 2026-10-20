@@ -804,6 +804,8 @@ namespace Servy.CLI.UnitTests.Commands
             dto.PreStopParameters = "--drain";
             dto.PostStopParameters = "--cleanup";
             dto.FailureProgramParameters = "--alert";
+            dto.EnableHealthMonitoring = true;
+            dto.HeartbeatUrl = "https://hc-ping.com/0f9d4c1e-token";
             dto.PreLaunchExecutablePath = @"C:\apps\pre.exe";
             dto.PostLaunchExecutablePath = @"C:\apps\post.exe";
             dto.PreStopExecutablePath = @"C:\apps\prestop.exe";
@@ -823,7 +825,8 @@ namespace Servy.CLI.UnitTests.Commands
             "--notify",
             "--drain",
             "--cleanup",
-            "--alert"
+            "--alert",
+            "https://hc-ping.com/0f9d4c1e-token"
         };
 
         [Fact]
@@ -870,6 +873,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(CliStrings.Msg_Show_Masked, RowValue(result.Message, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal(CliStrings.Msg_Show_Masked, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HeartbeatUrl));
             foreach (var value in EncryptedFieldValues)
             {
                 Assert.DoesNotContain(value, result.Message);
@@ -889,6 +893,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal("--config telegraf.conf", RowValue(result.Message, CliStrings.Msg_Show_Label_Parameters));
+            Assert.Equal("https://hc-ping.com/0f9d4c1e-token", SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Recovery, CliStrings.Msg_Show_Label_HeartbeatUrl));
             foreach (var value in EncryptedFieldValues)
             {
                 Assert.Contains(value, result.Message);
@@ -910,7 +915,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            // --decrypt reveals the other eight; the password is the one column it must not unmask.
+            // --decrypt reveals the other nine; the password is the one column it must not unmask.
             Assert.Equal(CliStrings.Msg_Show_Masked, SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Account, CliStrings.Msg_Show_Label_Password));
             Assert.DoesNotContain("SuperSecret123!", result.Message);
         }

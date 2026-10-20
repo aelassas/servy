@@ -97,9 +97,10 @@ namespace Servy.Host.Bootstrap
         }
 
         /// <summary>
-        /// Creates the <see cref="AppDbContext"/>, initializes the schema through
-        /// <see cref="DatabaseInitializer.InitializeDatabase"/> with <see cref="SQLiteDbInitializer.Initialize"/>,
-        /// and builds the <see cref="ProtectedKeyProvider"/>, the <see cref="SecureData"/> helper and the
+        /// Builds the <see cref="ProtectedKeyProvider"/> and the <see cref="SecureData"/> helper, creates the
+        /// <see cref="AppDbContext"/>, initializes the schema through <see cref="DatabaseInitializer.InitializeDatabase"/>
+        /// with <see cref="SQLiteDbInitializer.Initialize(System.Data.Common.DbConnection, ISecureData)"/>
+        /// (a migration may have to encrypt values stored in clear text, #7579), and builds the
         /// <see cref="ServiceRepository"/> on top of it, in that order.
         /// </summary>
         /// <param name="connectionString">The SQLite connection string to open the database with.</param>
@@ -108,12 +109,13 @@ namespace Servy.Host.Bootstrap
         /// <returns>The four objects the service keeps for its lifetime.</returns>
         public ServiceDataStack CreateDataStack(string connectionString, string aesKeyFilePath, string aesIVFilePath)
         {
-            var dbContext = new AppDbContext(connectionString);
-            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-
-            var dapperExecutor = new DapperExecutor(dbContext);
             var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
             var secureData = new SecureData(protectedKeyProvider);
+
+            var dbContext = new AppDbContext(connectionString);
+            DatabaseInitializer.InitializeDatabase(dbContext, connection => SQLiteDbInitializer.Initialize(connection, secureData));
+
+            var dapperExecutor = new DapperExecutor(dbContext);
             var xmlSerializer = new XmlServiceSerializer();
             var jsonSerializer = new JsonServiceSerializer();
 

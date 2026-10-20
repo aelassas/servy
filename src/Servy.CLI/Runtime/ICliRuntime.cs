@@ -1,4 +1,5 @@
 using Servy.Core.Data;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.Threading;
@@ -38,7 +39,8 @@ namespace Servy.CLI.Runtime
         /// <param name="aesKeyFilePath">The path of the AES key file.</param>
         /// <param name="aesIVFilePath">The path of the AES IV file.</param>
         /// <param name="dbContext">The database context to initialize.</param>
-        void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext);
+        /// <param name="secureData">Encrypts the values a schema migration moves under encryption at rest; read only when there is one.</param>
+        void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext, ISecureData secureData);
 
         /// <summary>
         /// Extracts the embedded service wrapper, restarter and host binaries, removes the legacy Sysinternals Handle

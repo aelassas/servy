@@ -129,6 +129,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\HeartbeatUrlEncryptionMigrationIntegrationTests.cs" />
     <Compile Include="Data\RestartAttemptsMigrationIntegrationTests.cs" />
     <Compile Include="DatabaseTestCollection.cs" />
     <Compile Include="Data\DapperExecutorIntegrationTests.cs" />

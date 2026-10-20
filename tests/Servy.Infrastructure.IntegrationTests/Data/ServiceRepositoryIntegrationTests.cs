@@ -472,7 +472,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Assert
             Assert.NotNull(result);
             Assert.Contains("[DECRYPTION FAILED: CryptographicException]", result.Description);
-            // One corrupt field quarantines the whole record: all nine sensitive fields are scrubbed.
+            // One corrupt field quarantines the whole record: all ten sensitive fields are scrubbed.
             Assert.Null(result.Parameters);
             Assert.Null(result.FailureProgramParameters);
             Assert.Null(result.PreLaunchParameters);
@@ -897,7 +897,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public async Task RefreshTick_CorruptRecord_LeavesTheSensitiveColumnsAsStoredInsteadOfNulling()
         {
             // Arrange: one field the current key cannot decrypt, as after aes_key.dat was replaced. A read with
-            // decrypt: true scrubs all nine sensitive fields, and the old write-back stored those nulls (#7328).
+            // decrypt: true scrubs all ten sensitive fields, and the old write-back stored those nulls (#7328).
             var ct = CancellationToken.None;
             await AddPoisonedAsync("CorruptTick");
             var scrubbed = await _repository.GetByNameAsync("CorruptTick", decrypt: true, ct);

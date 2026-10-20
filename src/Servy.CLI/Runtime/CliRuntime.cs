@@ -68,7 +68,8 @@ namespace Servy.CLI.Runtime
         /// <param name="aesKeyFilePath">The path of the AES key file.</param>
         /// <param name="aesIVFilePath">The path of the AES IV file.</param>
         /// <param name="dbContext">The database context to initialize.</param>
-        public void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext)
+        /// <param name="secureData">Encrypts the values a schema migration moves under encryption at rest; read only when there is one.</param>
+        public void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext, ISecureData secureData)
         {
             // Ensure db and security folders exist
             AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
@@ -77,7 +78,7 @@ namespace Servy.CLI.Runtime
             Core.Helpers.Helper.EnsureEventSourceExists();
 
             // Initialize the database
-            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+            DatabaseInitializer.InitializeDatabase(dbContext, connection => SQLiteDbInitializer.Initialize(connection, secureData));
         }
 
         /// <summary>

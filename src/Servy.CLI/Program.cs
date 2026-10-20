@@ -143,7 +143,8 @@ namespace Servy.CLI
                     protectedKeyProvider = keyProvider;
                     // Built on the first encrypt or decrypt, which every command reaches only after its
                     // EnsureAdministrator check: an eager build created the key on an unelevated --help (#7531).
-                    secureData = new DeferredSecureData(() => new SecureData(keyProvider));
+                    var deferredSecureData = new DeferredSecureData(() => new SecureData(keyProvider));
+                    secureData = deferredSecureData;
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();
                     var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
@@ -195,7 +196,7 @@ namespace Servy.CLI
 
                         async Task BootstrapAsync()
                         {
-                            if (requireDatabase) runtime.EnsureDatabase(connectionString, aesKeyFilePath, aesIVFilePath, appDbContext);
+                            if (requireDatabase) runtime.EnsureDatabase(connectionString, aesKeyFilePath, aesIVFilePath, appDbContext, deferredSecureData);
                             if (requireBinaries) await runtime.EnsureServiceBinariesAsync(serviceRepository, controllerFactory, cts.Token);
                         }
 

@@ -34,7 +34,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             { nameof(ServiceDto.PreLaunchEnvironmentVariables), "pre_env" },
             { nameof(ServiceDto.PostLaunchParameters), "post_args" },
             { nameof(ServiceDto.PreStopParameters), "pre_stop" },
-            { nameof(ServiceDto.PostStopParameters), "post_stop" }
+            { nameof(ServiceDto.PostStopParameters), "post_stop" },
+            { nameof(ServiceDto.HeartbeatUrl), "https://hc-ping.com/token" }
         };
 
         public ServiceRepositoryTests()
@@ -142,7 +143,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         #region Mutator Operations & Auditing
 
         [Fact]
-        public async Task UpsertAsync_FullSecurityAudit_EncryptsAllNineSensitiveFields()
+        public async Task UpsertAsync_FullSecurityAudit_EncryptsAllTenSensitiveFields()
         {
             // Arrange & Act & Assert
             await ExecuteFullSecurityAuditTestAsync(

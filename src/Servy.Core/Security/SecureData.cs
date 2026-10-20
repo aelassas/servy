@@ -28,6 +28,15 @@ namespace Servy.Core.Security
         private const int IvSize = 16;
 
         /// <summary>
+        /// Determines whether a stored value carries the marker every ciphertext <see cref="Encrypt"/> produces, so a
+        /// migration can tell a value already encrypted from one still stored in clear text.
+        /// </summary>
+        /// <param name="value">The stored value.</param>
+        /// <returns><see langword="true"/> when <paramref name="value"/> starts with the encryption marker.</returns>
+        public static bool HasEncryptionMarker(string value)
+            => value != null && value.StartsWith(EncryptMarker, StringComparison.Ordinal);
+
+        /// <summary>
         /// Salt used for HKDF key derivation to provide domain separation.
         /// </summary>
         private static readonly byte[] HkdfSalt = Encoding.UTF8.GetBytes("Servy.Core.Security.v2.Salt");
