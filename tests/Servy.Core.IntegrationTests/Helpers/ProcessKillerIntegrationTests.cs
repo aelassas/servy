@@ -346,6 +346,39 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(deleted, $"Failed to delete '{testFile}' after process termination. The lock was not genuinely released.");
         }
 
+        /// <summary>
+        /// Verifies that a lock holder the killer refuses to terminate (here the test process itself, which is always in the protected ancestor set)
+        /// makes <see cref="ProcessKiller.KillProcessesUsingFile"/> report that the lock was not released.
+        /// </summary>
+        [Fact]
+        public void KillProcessesUsingFile_HolderIsTheCurrentProcess_RefusesToKillItAndReturnsFalse()
+        {
+            // Arrange
+            string testFile = Path.Combine(Path.GetTempPath(), $"self_lock_{Guid.NewGuid()}.tmp");
+            File.WriteAllText(testFile, "Lock Data");
+            _tempFiles.Add(testFile);
+
+            int currentPid = Process.GetCurrentProcess().Id;
+
+            using (var holder = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                // Precondition: the Restart Manager must list this process as the holder. When a runner does not,
+                // the killer sees an empty list and returns true, so there is nothing to assert.
+                var holders = HandleHelper.GetProcessesUsingFile(testFile);
+                if (!holders.Exists(h => h.ProcessId == currentPid))
+                {
+                    return;
+                }
+
+                // Act
+                bool result = _processKiller.KillProcessesUsingFile(testFile);
+
+                // Assert
+                Assert.False(result, "KillProcessesUsingFile should return false when the only lock holder is the current process, which must never be killed.");
+                Assert.True(holder.CanRead, "The current process must still be alive and its handle usable.");
+            }
+        }
+
         #region Helpers & Tool Utilities
 
         /// <summary>
