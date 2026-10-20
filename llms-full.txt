@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-17T18:03:36Z
+> Generated on: 2026-10-20T20:51:43Z
 
 ---
 
@@ -1495,9 +1495,9 @@ The `show` command prints the service configuration held in Servy's database in 
 `show` requires Administrator privileges: the records live under `%ProgramData%\Servy` and describe how privileged processes are launched.
 
 > [!NOTE]
-> **Encrypted fields are masked by default.** Servy encrypts nine columns at rest - the four parameter fields, both pre/post-stop parameter fields, both environment-variable fields, and the password. `show` prints each of them as `********` unless you ask for the values, and without `--decrypt` it does not even decrypt them, so the plaintext is never produced. A masked row still tells you the field is set: an unset column is left out entirely.
+> **Encrypted fields are masked by default.** Servy encrypts ten columns at rest - the four parameter fields, both pre/post-stop parameter fields, both environment-variable fields, the heartbeat URL, and the password. `show` prints each of them as `********` unless you ask for the values, and without `--decrypt` it does not even decrypt them, so the plaintext is never produced. A masked row still tells you the field is set: an unset column is left out entirely.
 >
-> **`--decrypt` (`-d`) reveals eight of the nine.** The stored password is the exception and stays masked even with the flag, exactly as an exported XML or JSON file never contains it.
+> **`--decrypt` (`-d`) reveals nine of the ten.** The stored password is the exception and stays masked even with the flag, exactly as an exported XML or JSON file never contains it.
 >
 > `--decrypt` requires `--name`. The all-services list renders none of the encrypted columns, so there is nothing there to reveal.
 
@@ -1512,9 +1512,9 @@ Copyright © 2026 Akram El Assas. All rights reserved.
   -s, --search    Filter the service list by a keyword matched against the
                   service name or description. Cannot be combined with --name.
 
-  -d, --decrypt   Show the encrypted fields (parameters and environment
-                  variables) in clear text instead of masked. Requires --name.
-                  The stored password stays masked.
+  -d, --decrypt   Show the encrypted fields (parameters, environment variables
+                  and the heartbeat URL) in clear text instead of masked.
+                  Requires --name. The stored password stays masked.
 
   -q, --quiet     Suppress spinner and run in non-interactive mode.
 
@@ -4300,7 +4300,7 @@ The `servy-cli.exe` utility provides complete service configuration, including p
 To include `servy-cli.exe` in your installer package:
 - Extract `servy-cli.exe` directly from the modern (.NET 10.0+) build portable package (`servy-x.x-x64-portable.7z` or `servy-x.x-arm64-portable.7z`), choosing the one that matches the architecture of the target machines. Servy is built for x64 and ARM64 only; there is no 32-bit build.
 - **`servy-cli.exe` is completely self-contained** and does not require any external runtime dependencies or pre-installed frameworks (.NET runtime is embedded), making it ideal for clean, standalone installer distributions. It is a single file: `appsettings.cli.json` is optional and nothing else needs to be shipped next to it.
-- **`servy-cli.exe` carries the rest of Servy inside it.** The first `install`, `start`, `restart` or `import` command extracts the service wrapper (`Servy.Service.CLI.exe`), `Servy.Restarter.exe`, the host service binary (`Servy.Host.exe`) and Sysinternals `handle64.exe` (`handle64a.exe` on ARM64) into `%ProgramData%\Servy`, then installs and starts the `Servy` host service. Do not ship or copy these files yourself, and do not install them to your application folder.
+- **`servy-cli.exe` carries the rest of Servy inside it.** The first `install`, `start`, `restart` or `import` command extracts the service wrapper (`Servy.Service.CLI.exe`), `Servy.Restarter.exe`, and the host service binary (`Servy.Host.exe`) into `%ProgramData%\Servy`, deletes the Sysinternals `handle64.exe` / `handle64a.exe` an earlier version left there (Servy now finds file locks through the Windows Restart Manager), then installs and starts the `Servy` host service. Do not ship or copy these files yourself, and do not install them to your application folder.
 - **.NET Framework 4.8 build:** if you embed the legacy build (`servy-x.x-net48-x64-portable.7z`) instead, its `servy-cli.exe` is not a single file: ship it together with the `*.dll` files from the same package, and make sure .NET Framework 4.8 is installed on the target machine. The binaries it extracts are named `Servy.Service.CLI.Net48.exe`, `Servy.Restarter.Net48.exe` and `Servy.Host.Net48.exe`.
 - **Elevation is required.** `servy-cli install` refuses to run without administrator rights, and creating, starting, stopping or deleting a Windows service needs them anyway. In an MSI, this means a deferred custom action with `Impersonate="no"`, which runs as `LocalSystem`.
 - **The service name `Servy` is reserved** for the Servy host service and is rejected by `install`. Pick any other name for your service.
@@ -6174,7 +6174,7 @@ Starting from v10.2, Servy is built for enterprise use. Every protection below i
 * **Automatic DACL on the named pipe:** the `Servy` service's named pipe is open only to the accounts of the services Servy manages, and the list is rebuilt whenever a service is installed, moved to another account or removed. See [Architectural Design & Runtime Permissions](https://github.com/aelassas/servy/wiki/Security#architectural-design--runtime-permissions).
 * **Signed binaries, SBOM and scanned releases.** See [Supply Chain and Trust](https://github.com/aelassas/servy/wiki/Security#supply-chain-and-trust).
 
-Servy acts as a secure vault for your Windows service configurations. Servy encrypts sensitive data, including passwords, environment variables, and all execution arguments (`Parameters`, `Password`, `EnvironmentVariables`, `FailureProgramParameters`, `PreLaunchParameters`, `PreLaunchEnvironmentVariables`, `PostLaunchParameters`, `PreStopParameters`, and `PostStopParameters`), using industry-standard AES-256 encryption. If the database is compromised, your actual secrets remain unreadable text.
+Servy acts as a secure vault for your Windows service configurations. Servy encrypts sensitive data, including passwords, environment variables, and all execution arguments (`Parameters`, `Password`, `EnvironmentVariables`, `FailureProgramParameters`, `PreLaunchParameters`, `PreLaunchEnvironmentVariables`, `PostLaunchParameters`, `PreStopParameters`, and `PostStopParameters`), and the heartbeat URL (`HeartbeatUrl`, a capability URL that may carry a token; values stored in clear text by an earlier version are encrypted by the database migration on the first start), using industry-standard AES-256 encryption. If the database is compromised, your actual secrets remain unreadable text.
 
 ### The Double-Lock System
 
@@ -6287,7 +6287,7 @@ The following parameters are considered sensitive and should be provided via env
 | `--postLaunchParams` | `SERVY_POST_LAUNCH_PARAMETERS` | Arguments for the post-launch executable. |
 | `--preStopParams` | `SERVY_PRE_STOP_PARAMETERS` | Arguments for the pre-stop executable. |
 | `--postStopParams` | `SERVY_POST_STOP_PARAMETERS` | Arguments for the post-stop executable. |
-| `--heartbeatUrl` | `SERVY_HEARTBEAT_URL` | Heartbeat ping URL. Monitoring endpoints such as `https://hc-ping.com/<uuid>` are capability URLs: anyone who learns the path can fake a "service is alive" ping. Servy masks the URL in its own logs. Available from v10.4; earlier versions ignore the variable, so pass `--heartbeatUrl` there. |
+| `--heartbeatUrl` | `SERVY_HEARTBEAT_URL` | Heartbeat ping URL. Monitoring endpoints such as `https://hc-ping.com/<uuid>` are capability URLs: anyone who learns the path can fake a "service is alive" ping. Servy masks the URL in its own logs and encrypts it at rest in its database. Available from v10.4; earlier versions ignore the variable, so pass `--heartbeatUrl` there. |
 
 ##### PowerShell Example:
 
@@ -6381,7 +6381,7 @@ A service account gets the least privilege its services need: nothing on the vau
 | `logs\` and everything under it, other than the account's own service log folders | **None**. The account cannot list, read, write or delete the logs of Servy, the shared `Servy.Service.log` that versions before v10.2 wrote to `logs\`, or the log folder of any service it does not run. The account's explicit entries on every file and folder under `logs\` are removed. |
 | `logs\services\<ServiceName>\`, for each service the account runs | On the folder: **List** and **Create Files** (creating the log, and the new file of a log rotation), never **Delete** (it cannot rename or delete the folder). On the files in it: **Read, Write, Delete** (log rotation and pruning). The folder is created if missing. |
 | `Servy.Host.exe` / `Servy.Host.Net48.exe` | **None**. The service account cannot read, write or execute the host binaries. |
-| `*.exe` and `*.dll`: `Servy.Service.exe`, `Servy.Service.CLI.exe`, `Servy.Restarter.exe`, `handle64.exe` / `handle64a.exe` (.NET Framework 4.8 build: the `*.Net48.exe` binaries, `handle64.exe` and every `*.dll`) | **Read & Execute** |
+| `*.exe` and `*.dll`: `Servy.Service.exe`, `Servy.Service.CLI.exe`, `Servy.Restarter.exe` (.NET Framework 4.8 build: the `*.Net48.exe` binaries and every `*.dll`) | **Read & Execute** |
 | `appsettings.host.json` / `Servy.Host.Net48.exe.config` | **None**. The service account cannot read the host configuration file. |
 | `*.json` and `*.config`: `appsettings.service.json`, `appsettings.restarter.json` (.NET Framework 4.8 build: the `*.exe.config` files) | **Read** only |
 
