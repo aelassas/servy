@@ -41,7 +41,7 @@ namespace Servy.CLI.Options
         /// Only meaningful with <see cref="ServiceName"/>: the service list renders no encrypted column,
         /// so the flag has nothing to reveal there and is refused rather than silently ignored.
         /// </remarks>
-        [Option('d', "decrypt", Required = false, HelpText = "Show the encrypted fields (parameters and environment variables) in clear text instead of masked. Requires --name. The stored password stays masked.")]
+        [Option('d', "decrypt", Required = false, HelpText = "Show the encrypted fields (parameters, environment variables and the heartbeat URL) in clear text instead of masked. Requires --name. The stored password stays masked.")]
         public bool Decrypt { get; set; }
     }
 }

@@ -25,17 +25,18 @@ namespace Servy.CLI.Commands
     /// and describe how privileged processes are launched.
     /// </para>
     /// <para>
-    /// <b>Encryption, and what the default hides.</b> Nine columns are encrypted at rest (the registry is
+    /// <b>Encryption, and what the default hides.</b> Ten columns are encrypted at rest (the registry is
     /// <c>ServiceRepository.SensitiveFields</c>): the four parameter fields, the two pre/post-stop
-    /// parameter fields, both environment-variable fields, and the password. By default every one of them
+    /// parameter fields, both environment-variable fields, the heartbeat URL (a capability URL that may
+    /// carry a token, #7579) and the password. By default every one of them
     /// renders as <see cref="Strings.Msg_Show_Masked"/>, and the record is read with
     /// <c>decrypt: false</c>, so the plaintext is not merely withheld from the console - it is never
     /// produced in this process at all. A masked row still tells the reader the field is set, because an
     /// unset column is blank in either mode.
     /// </para>
     /// <para>
-    /// <b><c>--decrypt</c> reveals eight of the nine.</b> With the flag the read passes
-    /// <c>decrypt: true</c> and the parameter and environment-variable fields print in clear text - the
+    /// <b><c>--decrypt</c> reveals nine of the ten.</b> With the flag the read passes
+    /// <c>decrypt: true</c> and the parameter, environment-variable and heartbeat URL fields print in clear text - the
     /// same data <c>export</c> has always written for the same elevated caller
     /// (<c>ExportXmlAsync</c> and <c>ExportJsonAsync</c> both read decrypted).
     /// <b><see cref="ServiceDto.Password"/> is the exception and stays masked even then</b>, the same way
@@ -44,7 +45,7 @@ namespace Servy.CLI.Commands
     /// </para>
     /// <para>
     /// The flag is refused without a service name rather than ignored: the list mode renders none of the
-    /// nine columns, so it always reads with <c>decrypt: false</c> and there is nothing there to reveal.
+    /// ten columns, so it always reads with <c>decrypt: false</c> and there is nothing there to reveal.
     /// </para>
     /// <para>
     /// Only labels are localized. Values that form a machine-readable vocabulary - the status token, the
@@ -215,7 +216,7 @@ namespace Servy.CLI.Commands
                 recovery.Always(Strings.Msg_Show_Label_Recovery, FormatEnum(typeof(RecoveryAction), dto.RecoveryAction));
                 recovery.Always(Strings.Msg_Show_Label_OnCleanExit, FormatBoolean(dto.RecoveryOnCleanExit));
                 recovery.Always(Strings.Msg_Show_Label_MaxAttempts, dto.MaxRestartAttempts?.ToString(CultureInfo.InvariantCulture));
-                recovery.Always(Strings.Msg_Show_Label_HeartbeatUrl, dto.HeartbeatUrl);
+                recovery.Always(Strings.Msg_Show_Label_HeartbeatUrl, Secret(dto.HeartbeatUrl, decrypted));
                 recovery.Always(Strings.Msg_Show_Label_UrlTimeout, FormatSeconds(dto.HeartbeatUrlTimeoutSeconds));
                 recovery.Always(Strings.Msg_Show_Label_UrlFlags, FormatBoolean(dto.EnableHeartbeatUrlFlags));
                 sections.Add(recovery);

@@ -361,12 +361,15 @@ namespace Servy.UI.Bootstrapping
 
                     var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
 
-                    DbContext = new AppDbContext(ConnectionString!);
-                    DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
-
-                    var dapperExecutor = new DapperExecutor(DbContext);
+                    // The keys come first: a schema migration may have to encrypt values stored in clear text (#7579)
                     _protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath!, AESIVFilePath!);
                     SecureData = new SecureData(_protectedKeyProvider);
+
+                    DbContext = new AppDbContext(ConnectionString!);
+                    var secureData = SecureData;
+                    DatabaseInitializer.InitializeDatabase(DbContext, connection => SQLiteDbInitializer.Initialize(connection, secureData));
+
+                    var dapperExecutor = new DapperExecutor(DbContext);
 
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();

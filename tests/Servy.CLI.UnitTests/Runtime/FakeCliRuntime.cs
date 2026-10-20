@@ -1,5 +1,6 @@
 using Servy.CLI.Runtime;
 using Servy.Core.Data;
+using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Runtime
@@ -47,7 +48,7 @@ namespace Servy.CLI.UnitTests.Runtime
             return Elevated;
         }
 
-        public void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext)
+        public void EnsureDatabase(string connectionString, string aesKeyFilePath, string aesIVFilePath, IAppDbContext dbContext, ISecureData secureData)
         {
             Calls.Add(nameof(EnsureDatabase));
             if (EnsureDatabaseThrows != null) throw EnsureDatabaseThrows;

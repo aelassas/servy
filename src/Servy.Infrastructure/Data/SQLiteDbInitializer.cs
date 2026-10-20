@@ -2,6 +2,7 @@ using Dapper;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Reflection;
@@ -17,7 +18,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Single Source of Truth for the absolute latest schema migration version sequence.
         /// </summary>
-        public const int LatestSchemaVersion = 11;
+        public const int LatestSchemaVersion = 12;
 
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
@@ -55,8 +56,26 @@ namespace Servy.Infrastructure.Data
         /// <c>recovery\</c> folder this call changes the file system as well as the database.
         /// </remarks>
         /// <param name="connection">An open database connection to execute commands on.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the version 12 migration finds a heartbeat URL stored in clear text: it can only be encrypted with
+        /// the keys, so production callers use <see cref="Initialize(DbConnection, ISecureData)"/>.
+        /// </exception>
         public static void Initialize(DbConnection connection)
             => Initialize(connection, AppConfig.RecoveryFolderPath);
+
+        /// <summary>
+        /// Analyzes the current database state, applies necessary migrations, and ensures all schema requirements match
+        /// the current application version, encrypting the values a migration moves under encryption at rest with
+        /// <paramref name="secureData"/>.
+        /// </summary>
+        /// <remarks>
+        /// The version 12 migration encrypts every heartbeat URL stored in clear text (#7579). <paramref name="secureData"/>
+        /// is used only when there is such a value, so a lazily created instance reads the keys only when needed.
+        /// </remarks>
+        /// <param name="connection">An open database connection to execute commands on.</param>
+        /// <param name="secureData">Encrypts the values a migration moves under encryption at rest.</param>
+        public static void Initialize(DbConnection connection, ISecureData? secureData)
+            => Initialize(connection, AppConfig.RecoveryFolderPath, secureData);
 
         /// <summary>
         /// Analyzes the current database state, applies necessary migrations, imports the restart attempts counters of the
@@ -68,7 +87,11 @@ namespace Servy.Infrastructure.Data
         /// deleted once every file in it was imported; <see langword="null"/> imports nothing. It is read only by the
         /// start that migrates the database to version 10; later starts never scan it.
         /// </param>
-        internal static void Initialize(DbConnection connection, string? legacyRecoveryFolderPath)
+        /// <param name="secureData">
+        /// Encrypts the heartbeat URLs the version 12 migration finds in clear text; <see langword="null"/> makes that
+        /// migration throw, rolling every migration of this start back, when there is one to encrypt.
+        /// </param>
+        internal static void Initialize(DbConnection connection, string? legacyRecoveryFolderPath, ISecureData? secureData = null)
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
@@ -241,8 +264,17 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 11;
                         }
 
+                        // Version 12 Migration to encrypt the heartbeat URLs stored in clear text, now that HeartbeatUrl
+                        // is one of ServiceRepository's sensitive fields (#7579)
+                        if (currentVersion < 12)
+                        {
+                            ApplyVersion12(connection, transaction, secureData);
+                            UpdateSchemaVersion(connection, 12, transaction);
+                            currentVersion = 12;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 12) { ... }
+                        // if (currentVersion < 13) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion > LatestSchemaVersion)
@@ -783,6 +815,62 @@ namespace Servy.Infrastructure.Data
         /// overridden runtime environment variables.
         /// </summary>
         private static void ApplyVersion11(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 11, "AllowOverriddenRuntimeVars");
+
+        /// <summary>
+        /// Applies the Version 12 data migration: re-saves every <c>HeartbeatUrl</c> stored in clear text in encrypted
+        /// form, now that it is encrypted at rest like the other sensitive fields of <c>ServiceRepository</c> (#7579).
+        /// A heartbeat URL is a capability URL: it identifies the check and may carry a token.
+        /// </summary>
+        /// <remarks>
+        /// Blank values stay as they are, the same way the repository leaves them unencrypted, and a value that already
+        /// carries the encryption marker is not encrypted twice. Only the <c>HeartbeatUrl</c> column is written.
+        /// </remarks>
+        /// <param name="connection">The active database connection.</param>
+        /// <param name="transaction">The migration transaction.</param>
+        /// <param name="secureData">Encrypts the values; read only when there is one to encrypt.</param>
+        /// <exception cref="InvalidOperationException">Thrown when a value must be encrypted and <paramref name="secureData"/> is <see langword="null"/>.</exception>
+        private static void ApplyVersion12(DbConnection connection, DbTransaction transaction, ISecureData? secureData)
+        {
+            Logger.Info("Migrating database to Version 12: Encrypting heartbeat URLs stored in clear text.");
+
+            var existingColumns = GetExistingColumnNames(connection, transaction);
+            if (!existingColumns.Contains("HeartbeatUrl"))
+            {
+                Logger.Info("Migration to Version 12 skipped: Column 'HeartbeatUrl' was not found in the table layout.");
+                return;
+            }
+
+            var plaintextRows = connection.Query<(long Id, string HeartbeatUrl)>($@"
+                SELECT Id, HeartbeatUrl
+                FROM {SqlConstants.ServicesTableName}
+                WHERE HeartbeatUrl IS NOT NULL;",
+                transaction: transaction)
+                .Where(row => !string.IsNullOrWhiteSpace(row.HeartbeatUrl) && !SecureData.HasEncryptionMarker(row.HeartbeatUrl))
+                .ToList();
+
+            if (plaintextRows.Count > 0)
+            {
+                if (secureData == null)
+                {
+                    throw new InvalidOperationException(
+                        $"{plaintextRows.Count} heartbeat URL(s) are stored in clear text and must be encrypted, but no encryption service was supplied to the database initializer.");
+                }
+
+                foreach (var row in plaintextRows)
+                {
+                    connection.Execute($@"
+                        UPDATE {SqlConstants.ServicesTableName}
+                        SET HeartbeatUrl = @HeartbeatUrl
+                        WHERE Id = @Id;",
+                        new { HeartbeatUrl = secureData.Encrypt(row.HeartbeatUrl), row.Id },
+                        transaction: transaction);
+                }
+
+                Logger.Info($"Version 12 Migration: Encrypted {plaintextRows.Count} heartbeat URL(s).");
+            }
+
+            Logger.Info("Database successfully migrated to Version 12.");
+        }
 
         #endregion
 
