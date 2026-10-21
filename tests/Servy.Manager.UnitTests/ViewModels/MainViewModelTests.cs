@@ -802,6 +802,53 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_ScmDisplayNameDiffersFromRow_UpdatesTheRowDisplayName()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        DisplayName = "Old display name",
+                        Status = ServiceStatus.Stopped,
+                        Pid = null
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                DisplayName = "New display name",
+                                Status = ServiceStatus.Stopped
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto> { new ServiceDto { Name = "TestService" } });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
+                    await task;
+
+                    // Assert
+                    Assert.Equal("New display name", service.DisplayName);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RefreshAllServicesAsync_MetadataDrift_WritesOnlyTheTwoColumnsAndReadsWithoutDecrypting()
         {
             // Arrange, Act & Assert
