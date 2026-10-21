@@ -5,7 +5,7 @@
     Shared publish utilities for Servy projects.
 
     .DESCRIPTION
-    Provides standard functions to build installer, portable zip, and copy artifacts,
+    Provides standard functions to build installer, portable 7z package, and copy artifacts,
     ensuring DRY compliance across all project scripts.
 #>
 
@@ -185,7 +185,7 @@ function Copy-CommonArtifacts {
     .PARAMETER SevenZipExe
     The resolved path to the 7-Zip executable.
 
-    .PARAMETER OutputZip
+    .PARAMETER OutputArchive
     The absolute path where the final archive should be created.
 
     .PARAMETER PackageFolder
@@ -194,7 +194,7 @@ function Copy-CommonArtifacts {
 function New-PortablePackage {
     param (
         [Parameter(Mandatory=$true)][string]$SevenZipExe,
-        [Parameter(Mandatory=$true)][string]$OutputZip,
+        [Parameter(Mandatory=$true)][string]$OutputArchive,
         [Parameter(Mandatory=$true)][string]$PackageFolder
     )
 
@@ -202,15 +202,15 @@ function New-PortablePackage {
     # preserves the staging directory name as a wrapper.
 
     # ROBUSTNESS: Call operator (&) lets the PowerShell parser quote space-containing paths
-    # (OutputZip, PackageFolder) correctly for the native 7z invocation.
-    & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -mfb=273 -md=128m -ms=on $OutputZip $PackageFolder
+    # (OutputArchive, PackageFolder) correctly for the native 7z invocation.
+    & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -mfb=273 -md=128m -ms=on $OutputArchive $PackageFolder
     $exitCode = $LASTEXITCODE
 
     if ($exitCode -ne 0) {
         throw "7-Zip failed with exit code $exitCode"
     }
 
-    Write-Host "Success: $OutputZip" -ForegroundColor Green
+    Write-Host "Success: $OutputArchive" -ForegroundColor Green
 }
 
 <#

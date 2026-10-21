@@ -69,7 +69,7 @@ $signPath      = Join-Path $rootDir "setup\signpath.ps1"
 $issFile       = Join-Path $scriptDir "servy.iss"
 $arch          = if ($Runtime -eq "win-arm64") { "arm64" } else { "x64" }
 $packageFolder = Join-Path $scriptDir "servy-$Version-$arch-portable"
-$outputZip     = "$packageFolder.7z"
+$outputArchive = "$packageFolder.7z"
 $installerPath = Join-Path $rootDir "setup\servy-$Version-$arch-installer.exe"
 
 # ---------------------------------------------------------
@@ -143,7 +143,7 @@ if (Test-Path -LiteralPath $installerPath) {
 # ========================
 Write-Host "--- Packaging Portable ZIP ---" -ForegroundColor Cyan
 
-Remove-ItemSafely -Path $outputZip
+Remove-ItemSafely -Path $outputArchive
 Remove-ItemSafely -Path $packageFolder
 
 try {
@@ -165,7 +165,7 @@ try {
     }
 
     Copy-CommonArtifacts -ScriptDir $scriptDir -CliDir $cliDir -DestFolder $packageFolder
-    New-PortablePackage -SevenZipExe $sevenZipExe -OutputZip $outputZip -PackageFolder $packageFolder
+    New-PortablePackage -SevenZipExe $sevenZipExe -OutputArchive $outputArchive -PackageFolder $packageFolder
 }
 catch {
     Write-Error "Packaging failed: $_"
