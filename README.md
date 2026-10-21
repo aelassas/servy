@@ -28,7 +28,7 @@ Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt)
 
 ## Acknowledgments
 
-Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=servy) and the [SignPath Foundation](https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for providing free code signing, to [Christophe Rogiers](https://github.com/Christophe-Rogiers) for his valuable contributions, and to everyone who tested Servy, reported issues, or suggested improvements on GitHub and Reddit.
+Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=servy) and the [SignPath Foundation](https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for providing free code signing, to [Christophe Rogiers](https://github.com/Christophe-Rogiers) for his valuable contributions, and to everyone who tested Servy, reported issues, or suggested improvements.
 
 <p>
   <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy">
