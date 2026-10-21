@@ -309,6 +309,41 @@ namespace Servy.Service.UnitTests.CommandLine
         }
 
         [Fact]
+        public void Parse_ResolvePathReturnsNull_MapsEveryPathToEmptyString()
+        {
+            // Arrange
+            // The production ProcessHelper.ResolvePath returns null for a blank input; the fixture's default
+            // identity double never does, so SafeResolvePath's "?? string.Empty" fallback is otherwise unreached.
+            string serviceName = "UnsetPathsService";
+            string[] args = { "Servy.Service.exe", serviceName };
+
+            _mockProcessHelper
+                .Setup(p => p.ResolvePath(It.IsAny<string>()))
+                .Returns((string?)null);
+
+            _mockNamedPipesService
+                .Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(new ServiceDto { Priority = null });
+
+            // Act
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
+
+            // Assert
+            Assert.Equal(string.Empty, result.ExecutablePath);
+            Assert.Equal(string.Empty, result.StartupDirectory);
+            Assert.Equal(string.Empty, result.PreLaunchExecutablePath);
+            Assert.Equal(string.Empty, result.PreLaunchStartupDirectory);
+            Assert.Equal(string.Empty, result.FailureProgramPath);
+            Assert.Equal(string.Empty, result.FailureProgramStartupDirectory);
+            Assert.Equal(string.Empty, result.PostLaunchExecutablePath);
+            Assert.Equal(string.Empty, result.PostLaunchStartupDirectory);
+            Assert.Equal(string.Empty, result.PreStopExecutablePath);
+            Assert.Equal(string.Empty, result.PreStopStartupDirectory);
+            Assert.Equal(string.Empty, result.PostStopExecutablePath);
+            Assert.Equal(string.Empty, result.PostStopStartupDirectory);
+        }
+
+        [Fact]
         public void Parse_HealthMonitoringEnabledWithNullRecoveryAction_AppliesAppConfigDefault()
         {
             // Arrange
