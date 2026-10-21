@@ -1021,7 +1021,7 @@ namespace Servy.Service
             // Pre-Launch is the only hook with dedicated environment variables,
             // all other hooks reuse the main service environment variables.
             // This design is intentional.
-            var vars = options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables;
+            var vars = options.PreLaunchEnvironmentVariables;
             var args = options.PreLaunchExecutableArgs ?? string.Empty;
 
             var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchStartupDirectory)
