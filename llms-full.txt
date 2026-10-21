@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-21T16:35:28Z
+> Generated on: 2026-10-21T21:35:39Z
 
 ---
 
@@ -188,13 +188,13 @@ This creates a service named `NodeApp` that runs a Node.js server in the backgro
 Then start the service:
 
 ```powershell
-servy-cli start --name="MyService"
+servy-cli start --name="NodeApp"
 ```
 
 Or from an **elevated** Command Prompt:
 
 ```cmd
-sc.exe start MyService
+sc.exe start NodeApp
 ```
 
 Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other popular frameworks.
@@ -1470,7 +1470,7 @@ servy-cli install `
   --preLaunchPath="C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" `
   --preLaunchStartupDir="C:\Scripts" `
   --preLaunchParams="-File C:\Scripts\GenerateConfig.ps1 -VaultUrl https://vault.example.com -SecretName AppSecrets" `
-  --preLaunchEnv="ENV=production;API_KEY=abcdef123" `
+  --preLaunchEnv="ENV=production;CONFIG_MODE=strict" `
   --preLaunchStdout="C:\Logs\prelaunch_stdout.log" `
   --preLaunchStderr="C:\Logs\prelaunch_stderr.log" `
   --preLaunchTimeout=60 `
@@ -3680,7 +3680,7 @@ servy-cli install `
   --preLaunchPath="C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" `
   --preLaunchStartupDir="C:\Scripts" `
   --preLaunchParams="-File C:\Scripts\GenerateConfig.ps1 -VaultUrl https://vault.example.com" `
-  --preLaunchEnv="ENV=production;API_KEY=abcdef123" `
+  --preLaunchEnv="ENV=production;CONFIG_MODE=strict" `
   --preLaunchStdout="C:\Logs\prelaunch_stdout.log" `
   --preLaunchStderr="C:\Logs\prelaunch_stderr.log" `
   --preLaunchTimeout="60" `
@@ -3703,7 +3703,7 @@ $installParams = @{
     PreLaunchPath            = "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
     PreLaunchStartupDir      = "C:\Scripts"
     PreLaunchParams          = "-File C:\Scripts\GenerateConfig.ps1 -VaultUrl https://vault.example.com"
-    PreLaunchEnv             = "ENV=production;API_KEY=abcdef123"
+    PreLaunchEnv             = "ENV=production;CONFIG_MODE=strict"
     PreLaunchStdout          = "C:\Logs\prelaunch_stdout.log"
     PreLaunchStderr          = "C:\Logs\prelaunch_stderr.log"
     PreLaunchTimeout         = 60
@@ -6168,7 +6168,7 @@ If it cannot, Servy will not hide the problem. It will surface it clearly throug
 
 Starting from v10.2, Servy is built for enterprise use. Every protection below is applied automatically, with no manual step and no sysadmin intervention:
 
-* **100% per-service isolation between service accounts:** each service account can reach only its own configuration and runtime state (through the `Servy` service, which checks the caller of every request) and only its own log folder (`logs\services\<ServiceName>\`). It cannot read or change the configuration database, the encryption key, Servy's own logs or the logs of any service running under another account. See [The Servy Trust Boundary](https://github.com/aelassas/servy/wiki/Security#the-servy-trust-boundary).
+* **Per-service isolation between unprivileged service accounts:** each service account can reach only its own configuration and runtime state (through the `Servy` service, which checks the caller of every request) and only its own log folder (`logs\services\<ServiceName>\`). It cannot read or change the configuration database, the encryption key, Servy's own logs or the logs of any service running under another account. See [The Servy Trust Boundary](https://github.com/aelassas/servy/wiki/Security#the-servy-trust-boundary).
 * **DPAPI and AES encryption:** sensitive fields are encrypted with AES-256 and authenticated with HMAC-SHA256, under a key protected by DPAPI and bound to the machine. See [How Servy Protects Your Data](https://github.com/aelassas/servy/wiki/Security#how-servy-protects-your-data).
 * **Automatic ACLs:** the vault, its binaries, its configuration files and each service's log folder get least-privilege access lists when a service is installed, and the grants are revoked when it is removed. See [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening).
 * **Automatic DACL on the named pipe:** the `Servy` service's named pipe is open only to the accounts of the services Servy manages, and the list is rebuilt whenever a service is installed, moved to another account or removed. See [Architectural Design & Runtime Permissions](https://github.com/aelassas/servy/wiki/Security#architectural-design--runtime-permissions).
