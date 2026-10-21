@@ -445,8 +445,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Handles the <see cref="DataGridRow.MouseDoubleClick"/> event.
-        /// Toggles the <see cref="ServiceRowViewModel.IsChecked"/> property when a row is double-clicked,
-        /// which visually changes the row background through a style trigger.
+        /// Executes the <see cref="ServiceRowViewModel.ConfigureCommand"/> when a row is double-clicked to open the service configuration.
         /// </summary>
         /// <param name="sender">The source of the event, expected to be a <see cref="DataGridRow"/>.</param>
         /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing event data.</param>
@@ -454,7 +453,10 @@ namespace Servy.Manager.Views
         {
             if (sender is DataGridRow row && row.DataContext is ServiceRowViewModel vm)
             {
-                vm.IsChecked = !vm.IsChecked;
+                if (vm.ConfigureCommand.CanExecute(null))
+                {
+                    vm.ConfigureCommand.Execute(null);
+                }
 
                 // consume the double-click so it does not reach the row's default handling
                 e.Handled = true;
