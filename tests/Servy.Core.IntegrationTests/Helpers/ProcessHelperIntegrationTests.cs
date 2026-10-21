@@ -188,15 +188,21 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // 1. HARDEN STABILIZATION TIMING:
             // Poll until the nested child process initializes, allocates memory, and tree metrics exceed single root metrics.
+            // A freshly started child can report a zero working set for a moment (measured on ARM64), so the
+            // metrics of the iteration that satisfied the condition are the ones asserted on: re-measuring
+            // after the loop could hit that transient zero again.
             var stopwatch = Stopwatch.StartNew();
             var timeout = TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds);
+            var singleMetrics = _sut.GetProcessMetrics(childPid);
+            var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
             while (stopwatch.Elapsed < timeout)
             {
-                var polledSingle = _sut.GetProcessMetrics(childPid);
-                var polledTree = _sut.GetProcessTreeMetrics(childPid);
+                // Act
+                singleMetrics = _sut.GetProcessMetrics(childPid);
+                treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
-                if (polledSingle.RamUsage > 0 && polledTree.RamUsage > polledSingle.RamUsage)
+                if (singleMetrics.RamUsage > 0 && treeMetrics.RamUsage > singleMetrics.RamUsage)
                 {
                     break;
                 }
@@ -204,10 +210,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 Thread.Sleep(TestTimeouts.MetricsPollIntervalMs);
             }
 
-            // 2. CAPTURE METRICS BACK-TO-BACK:
-            // Act
-            var singleMetrics = _sut.GetProcessMetrics(childPid);
-            var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
+            // 2. METRICS ARE THE LAST POLLED PAIR (taken back-to-back above)
 
             // Snapshot of the tree the SUT sees, so a red run (e.g. ARM64) says where the child went:
             // an empty descendant list means the Toolhelp32 map never contained it; a PID with a zero
