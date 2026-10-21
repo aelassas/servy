@@ -643,8 +643,9 @@ namespace Servy.Service.Helpers
         }
 
         /// <summary>
-        /// Masks the dynamic segments of a URL for logging purposes, preserving only the scheme and host.
-        /// Explicitly strips out embedded credentials (UserInfo), query parameters, and down-path segments.
+        /// Masks the dynamic segments of a URL for logging purposes, preserving the scheme, the host and the first
+        /// 5 characters of the path as a hint. Explicitly strips out embedded credentials (UserInfo), query parameters,
+        /// the fragment and the rest of the path.
         /// </summary>
         /// <param name="url">The URL to mask.</param>
         /// <returns>The fully scrubbed and masked URL.</returns>
