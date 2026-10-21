@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-21T16:34:35Z
+> Generated on: 2026-10-21T16:35:28Z
 
 ---
 
@@ -16,8 +16,6 @@ Servy is a Windows tool that lets you run any executable as a Windows service, w
 The modern build supports **Windows 10 (1809+)**, **Windows 11**, and **Windows Server 2016+**. Legacy systems such as Windows 7 SP1 and Windows Server 2008 R2 are also supported via a dedicated **.NET Framework 4.8 build**. See the [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide#version-comparison) to choose the right version for your OS.
 
 Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
-
-Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It allows non-service apps to run in the background and start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, LLMs, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
 > [!TIP]
 > Use the sidebar to browse installation guides, configuration options, and more.
