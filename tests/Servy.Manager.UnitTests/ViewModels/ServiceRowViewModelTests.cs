@@ -656,6 +656,32 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Equal(string.Empty, vm.LogOnAs);
         }
 
+        [Fact]
+        public void DisplayName_ReflectsTheModelValue()
+        {
+            // Arrange
+            var service = new Service { Name = "RowSvc", DisplayName = "Row Service" };
+
+            // Act
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Assert
+            Assert.Equal("Row Service", vm.DisplayName);
+        }
+
+        [Fact]
+        public void DisplayName_WhenTheModelHasNoDisplayName_IsTheEmptyString()
+        {
+            // Arrange
+            var service = new Service { Name = "RowSvc", DisplayName = null };
+
+            // Act
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Assert
+            Assert.Equal(string.Empty, vm.DisplayName);
+        }
+
         #endregion
 
         #region Execution Safety & Disposal Tests
