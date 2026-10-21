@@ -12,7 +12,7 @@ namespace Servy.Core.Security
         /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
         /// </summary>
         /// <remarks>
-        /// Utilizes <see cref="Volatile.Read(ref int)"/> to ensure the disposal state is accurately
+        /// Utilizes <see cref="Volatile.Read(ref readonly int)"/> to ensure the disposal state is accurately
         /// synchronized across CPU caches without the overhead of a full lock.
         /// </remarks>
         /// <exception cref="ObjectDisposedException">Thrown if the provider has been disposed.</exception>
