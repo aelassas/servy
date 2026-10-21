@@ -295,6 +295,8 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Asynchronously retrieves and sets the dependency tree for the current selected service.
         /// </summary>
+        /// <param name="parameter">Optional command parameter (not used).</param>
+        /// <returns>A task that completes when the load has finished, been superseded by a newer load, or failed.</returns>
         public async Task LoadDependencyTreeAsync(object? parameter)
         {
             // 1. Thread-safe atomic swap to cancel any existing load operation
