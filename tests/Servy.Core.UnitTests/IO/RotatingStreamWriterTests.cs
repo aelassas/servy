@@ -1980,6 +1980,55 @@ namespace Servy.Core.UnitTests.IO
             Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
         }
 
+        [Fact]
+        public void Constructor_RefusingReparsePoints_LogFileIsSymbolicLink_ThrowsAndLeavesTargetUntouched()
+        {
+            // Arrange
+            var target = Path.Combine(TempDirectory, "real-target.log");
+            File.WriteAllText(target, "original");
+            try
+            {
+                File.CreateSymbolicLink(_logFilePath, target);
+            }
+            catch (Exception skip) when (skip is IOException || skip is UnauthorizedAccessException)
+            {
+                Assert.Skip("Symlink creation unavailable on this runner");
+            }
+
+            // Act
+            var ex = Assert.Throws<IOException>(() => CreateRefusingWriter(_logFilePath, _ => false, (handle, path) => true));
+
+            // Assert
+            Assert.Contains("the file is a junction, symbolic link, or mount point", ex.Message);
+            Assert.Equal("original", File.ReadAllText(target));
+        }
+
+        [Fact]
+        public void EnforceMaxRotations_RefusingReparsePoints_ExpiredFilePathIsReparsePoint_KeepsFileAndDisablesCapture()
+        {
+            // Arrange
+            var expired = Path.Combine(TempDirectory, "test.20200101_000000.log");
+            File.WriteAllText(expired, "old");
+            File.SetLastWriteTimeUtc(expired, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            // Refuses only the path check made right before the delete handle is opened
+            var expiredFullPath = Path.GetFullPath(expired);
+            var writer = CreateRefusingWriter(
+                _logFilePath,
+                p => string.Equals(p, expiredFullPath, StringComparison.OrdinalIgnoreCase),
+                (_, path) => true,
+                rotationSizeInBytes: 10,
+                maxRotations: 1);
+
+            // Act
+            writer.WriteLine("a line longer than the rotation size");
+            writer.Dispose();
+
+            // Assert
+            Assert.True(File.Exists(expired), "A delete whose path check refuses must leave the file in place.");
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
         #endregion
     }
 
