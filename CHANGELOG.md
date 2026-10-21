@@ -1,5 +1,54 @@
 # Changelog
 
+## [Servy 10.6](https://github.com/aelassas/servy/releases/tag/v10.6)
+
+**Date:** 2026-10-21 | **Tag:** [`v10.6`](https://github.com/aelassas/servy/tree/v10.6)
+
+Servy v10.6 replaces `handle64.exe` / `handle64a.exe` with native P/Invoke, eliminating all third-party executable dependencies and licensing constraints. This release also focuses on hardening security across the database, ACLs, IPC, resource extraction, vault ownership, and service-account grants.
+
+### Full Changelog
+
+* feat(core): replace `handle64.exe` / `handle64a.exe` with native Restart Manager P/Invoke (#7578)
+* fix(security): address security findings across vault hardening, log writing, executable resolution, and host IPC (#7541)
+* fix(core): purge non-admin vault entries and re-grant service account permissions on elevated starts (#7526)
+* fix(core): enforce reparse-point and final-path validation in RotatingStreamWriter (#7527)
+* fix(core): enforce vault binary precedence over application directory lookups in Release builds (#7528)
+* fix(core): improve vault binary extraction security and DACL rebuilding (#7530)
+* fix(core): revoke legacy recovery folder access and sanitize counter file imports (#7532)
+* fix(core): enforce final path equality and hard-link limits in PathSecurityGuard (#7533)
+* fix(core): remove unused HasCopiedResources property from ResourceHelper (#7554)
+* fix(core): remove unused HardenServiceAccountsAsync method from hardener interface (#7551)
+* fix(core,service): align 8.3 short-path validation in ProcessLauncher with PathSecurityGuard (#7553)
+* fix(core): remove unused LocalPipeServer overload and clean up duplicate XML documentation (#7562)
+* fix(infra): encrypt `HeartbeatUrl` in database by marking it as a sensitive field (#7579)
+* fix(host): pin named pipe client process identity at connection time to prevent PID reuse races (#7534)
+* fix(host): enforce 256 KB request payload cap and dynamic buffer growth for host named pipes (#7536)
+* fix(host): add first-instance probing and diagnostic warnings for named pipe creation in LocalPipeServer (#7537)
+* fix(host,manager): validate ActiveStdoutPath and ActiveStderrPath before storage and file inspection (#7535)
+* fix(ui): fix dead tag name fallback logic in update check helper (#7522)
+* fix(manager): prevent full-file enumeration in LogTailer non-UTF-8 history load when maxLines is zero (#7523)
+* fix(manager): clean up unused local variables and redundant conditions in LogTailer UTF-16 history parsing (#7524)
+* fix(cli): enforce owner verification and secure permissions on ProtectedKeyProvider DPAPI keys (#7531)
+* fix(cli): enforce early elevation check before bootstrapping vault database (#7573)
+* fix(dump): create dump archives with hardened ACLs and secure hash sidecar generation (#7538)
+* fix(notifications): retain full bracketed message text in toast notification body
+* fix(notifications): add Event ID filtering and per-run caps to failure notification scheduled tasks (#7539)
+* fix(setup): validate script integrity and file permissions for taskschd scheduled tasks (#7529)
+
+### Downloads
+* [servy-10.6-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-arm64-installer.exe) - 113.27 MB
+* [servy-10.6-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-arm64-portable.7z) - 115.13 MB
+* [servy-10.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-net48-sbom.xml) - 0.03 MB
+* [servy-10.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-net48-x64-installer.exe) - 4.29 MB
+* [servy-10.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-net48-x64-portable.7z) - 2.05 MB
+* [servy-10.6-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-sbom.xml) - 0.04 MB
+* [servy-10.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-x64-installer.exe) - 120.15 MB
+* [servy-10.6-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.6/servy-10.6-x64-portable.7z) - 118.53 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.6.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.6.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.5...v10.6
+
 ## [Servy 10.5](https://github.com/aelassas/servy/releases/tag/v10.5)
 
 **Date:** 2026-10-15 | **Tag:** [`v10.5`](https://github.com/aelassas/servy/tree/v10.5)
