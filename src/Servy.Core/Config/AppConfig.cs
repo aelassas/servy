@@ -1092,11 +1092,13 @@ namespace Servy.Core.Config
         /// operation might inadvertently target a new, unrelated process that has claimed the PID
         /// of a recently terminated child or parent.
         ///
-        /// This constant defines the maximum allowed drift between the creation time of a parent
-        /// and its detected children. If a "child" process has a <see cref="System.Diagnostics.Process.StartTime"/>
-        /// that is significantly older or younger than its parent beyond this threshold (accounting for
-        /// kernel-scheduling jitter), it is flagged as a recycled PID and excluded from the operation
-        /// to prevent "process suicide" or the accidental termination of system-critical infrastructure.
+        /// This constant defines the clock tolerance applied to the creation times of a parent and its
+        /// detected children. A real child can never be created before its parent, so a "child" whose
+        /// <see cref="System.Diagnostics.Process.StartTime"/> predates its parent's by more than this threshold
+        /// (accounting for kernel-scheduling jitter) is flagged as a recycled PID and excluded from the operation;
+        /// a child that started later than its parent is normal and is never flagged. When walking upward, a
+        /// "parent" that started more than this threshold after its child is flagged the same way. This prevents
+        /// "process suicide" or the accidental termination of system-critical infrastructure.
         /// </remarks>
         public const int PidReuseToleranceSeconds = 2;
 
