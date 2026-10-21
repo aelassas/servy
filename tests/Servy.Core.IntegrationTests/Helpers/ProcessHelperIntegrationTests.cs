@@ -209,6 +209,16 @@ namespace Servy.Core.IntegrationTests.Helpers
             var singleMetrics = _sut.GetProcessMetrics(childPid);
             var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
+            // Snapshot of the tree the SUT sees, so a red run (e.g. ARM64) says where the child went:
+            // an empty descendant list means the Toolhelp32 map never contained it; a PID with a zero
+            // working set means it was found but not yet measurable.
+            var treePids = TestReflection.InvokeNonPublic(_sut, "GetProcessTree", childPid) as List<int> ?? new List<int>();
+            string treeDiagnostics = string.Empty;
+            foreach (var treePid in treePids)
+            {
+                treeDiagnostics += $"{(treeDiagnostics.Length == 0 ? string.Empty : ", ")}{treePid}={_sut.GetProcessMetrics(treePid).RamUsage}";
+            }
+
             // Assert
             Assert.True(singleMetrics.RamUsage > 0, "Root process RAM should be captured.");
             Assert.True(treeMetrics.RamUsage > 0, "Tree process RAM aggregation should be captured.");
@@ -217,7 +227,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Verifies that tree metrics accurately sum memory across the nested worker processes.
             // Tree memory must be noticeably larger than the isolated root process node's footprint.
             Assert.True(treeMetrics.RamUsage > singleMetrics.RamUsage,
-                $"Process tree aggregation failed. Tree RAM ({treeMetrics.RamUsage} bytes) should be strictly greater than single root RAM ({singleMetrics.RamUsage} bytes).");
+                $"Process tree aggregation failed. Tree RAM ({treeMetrics.RamUsage} bytes) should be strictly greater than single root RAM ({singleMetrics.RamUsage} bytes). " +
+                $"Root PID {childPid}; tree PIDs with working set in bytes: [{treeDiagnostics}].");
         }
 
         #endregion
