@@ -893,7 +893,7 @@ namespace Servy.Core.Helpers
         /// <remarks>
         /// This validation serves as an infiltration and exfiltration guard across the service
         /// ecosystem. It prevents path traversal and redirection bypasses by checking both
-        /// the modern <see cref="DirectoryInfo.LinkTarget"/> property and the legacy
+        /// the modern <see cref="FileSystemInfo.LinkTarget"/> property and the legacy
         /// <see cref="FileAttributes.ReparsePoint"/> bitmask flag.
         /// </remarks>
         public static bool HasAncestorReparsePoint(string fullPath)
