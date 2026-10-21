@@ -51,7 +51,7 @@ namespace Servy.Core.Security
         /// <item><description>Retrieves the raw master keying material from the <paramref name="protectedKeyProvider"/>.</description></item>
         /// <item><description>Uses HKDF (RFC 5869) to derive independent sub-keys for AES encryption and HMAC authentication.</description></item>
         /// <item><description>Conditionally clones the master key for legacy v1 support if explicitly allowed by configuration.</description></item>
-        /// <item><description>Security Critical: Immediately clears the temporary <c>masterKey</c> buffer using <see cref="CryptographicOperations.ZeroMemory(Array)"/> to ensure the raw secret does not linger in memory.</description></item>
+        /// <item><description>Security Critical: Immediately clears the temporary <c>masterKey</c> buffer using <see cref="CryptographicOperations.ZeroMemory(Span{byte})"/> to ensure the raw secret does not linger in memory.</description></item>
         /// </list>
         /// </remarks>
         /// <param name="protectedKeyProvider">The provider used to retrieve the master keying material and legacy IV.</param>
