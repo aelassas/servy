@@ -15,10 +15,11 @@ namespace Servy.Service.CommandLine
     public static class StartOptionsParser
     {
         /// <summary>
-        /// Resolves the service name from the command-line arguments, loads that service's stored
-        /// configuration from the repository, and projects it into a <see cref="StartOptions"/> instance.
+        /// Resolves the service name from the command-line arguments, fetches that service's stored
+        /// configuration from the Servy host service over its named pipe, and projects it into a
+        /// <see cref="StartOptions"/> instance.
         /// </summary>
-        /// <param name="namedPipesService">The named pipes service used to fetch service-specific configurations.</param>
+        /// <param name="namedPipesService">The named pipes service used to fetch service-specific configurations from the Servy host service.</param>
         /// <param name="processHelper">The process helper used to resolve the stored executable and directory paths (environment-variable expansion and normalisation) via <see cref="IProcessHelper.ResolvePath"/>.</param>
         /// <param name="fullArgs">An array of strings representing the command-line arguments. Element 1 is the service name.</param>
         /// <returns>
@@ -29,7 +30,7 @@ namespace Servy.Service.CommandLine
         /// Thrown when <paramref name="fullArgs"/> is null/empty or carries no service name.
         /// </exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when no service with that name exists in the database.
+        /// Thrown when the Servy host service has no service with that name, or when the host refuses or fails the request.
         /// </exception>
         public static StartOptions Parse(INamedPipesService namedPipesService, IProcessHelper processHelper, string[] fullArgs)
         {
