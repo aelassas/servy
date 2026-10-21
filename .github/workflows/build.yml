@@ -48,6 +48,7 @@ jobs:
             /p:Configuration=Debug `
             /p:Platform=x64 `
             /p:AllowUnsafeBlocks=true `
+            /p:DisableFakes=true `
             /nodeReuse:false `
             /m
           if ($LASTEXITCODE -ne 0) { throw "Debug build failed for Servy.sln (exit $LASTEXITCODE)" }
@@ -59,6 +60,7 @@ jobs:
             /p:Configuration=Release `
             /p:Platform=x64 `
             /p:AllowUnsafeBlocks=true `
+            /p:DisableFakes=true `
             /nodeReuse:false `
             /m
           if ($LASTEXITCODE -ne 0) { throw "Release build failed for Servy.sln (exit $LASTEXITCODE)" }

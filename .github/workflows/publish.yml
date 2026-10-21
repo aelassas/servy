@@ -200,6 +200,7 @@ jobs:
             /t:Clean,Rebuild `
             /p:Configuration=$env:BUILD_CONFIG `
             /p:Platform=$env:PLATFORM `
+            /p:DisableFakes=true `
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
