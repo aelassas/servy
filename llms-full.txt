@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-20T20:51:43Z
+> Generated on: 2026-10-21T10:02:59Z
 
 ---
 
@@ -910,7 +910,7 @@ You can filter logs instantly, pause updates while selecting or copying text, an
 
 ### Dependencies
 
-The Dependencies tab provides a visual representation of a service dependency tree retrieved from the Service Control Manager (SCM). Each dependency is displayed with its current status, where running services are shown in green, stopped services in red, and cycles in orange. The tree can be refreshed at any time using the Refresh button or by pressing **F5**.
+The Dependencies tab provides a visual representation of a service dependency tree retrieved from the Service Control Manager (SCM). Each dependency is displayed with its current status: a green gear for a running service, a red gear for a service that is not running, an orange circular-arrows icon for a dependency that already appears higher in the same branch (a cycle, where the branch stops), and an orange warning icon for a dependency that could not be resolved or accessed, for example a missing service or one the current account cannot query. An unavailable node shows the error in place of the service's display name. The tree can be refreshed at any time using the Refresh button or by pressing **F5**.
 
 This view is especially useful for understanding startup and shutdown order, diagnosing why a service fails to start, and quickly identifying stopped or missing dependencies that may impact service availability.
 
