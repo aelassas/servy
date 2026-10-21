@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -1985,6 +1986,67 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.True(File.Exists(expired), "A delete through an unverified handle must be refused.");
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "CreateSymbolicLinkW")]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static extern bool CreateSymbolicLink(string symlinkFileName, string targetFileName, int flags);
+
+        /// <summary>
+        /// Creates a file symbolic link, allowing unprivileged creation when Developer Mode is on.
+        /// </summary>
+        /// <returns><c>false</c> when the runner cannot create the link.</returns>
+        private static bool CreateFileSymbolicLink(string linkPath, string targetPath)
+        {
+            const int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
+            return CreateSymbolicLink(linkPath, targetPath, SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
+        }
+
+        [Fact]
+        public void Constructor_RefusingReparsePoints_LogFileIsSymbolicLink_ThrowsAndLeavesTargetUntouched()
+        {
+            // Arrange
+            var target = Path.Combine(TempDirectory, "real-target.log");
+            File.WriteAllText(target, "original");
+
+            // net48 has no File.CreateSymbolicLink, and xUnit v2 has no Assert.Skip: return when the runner cannot create the link
+            if (!CreateFileSymbolicLink(_logFilePath, target))
+            {
+                return;
+            }
+
+            // Act
+            var ex = Assert.Throws<IOException>(() => CreateRefusingWriter(_logFilePath, _ => false, (handle, path) => true));
+
+            // Assert
+            Assert.Contains("the file is a junction, symbolic link, or mount point", ex.Message);
+            Assert.Equal("original", File.ReadAllText(target));
+        }
+
+        [Fact]
+        public void EnforceMaxRotations_RefusingReparsePoints_ExpiredFilePathIsReparsePoint_KeepsFileAndDisablesCapture()
+        {
+            // Arrange
+            var expired = Path.Combine(TempDirectory, "test.20200101_000000.log");
+            File.WriteAllText(expired, "old");
+            File.SetLastWriteTimeUtc(expired, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            // Refuses only the path check made right before the delete handle is opened
+            var expiredFullPath = Path.GetFullPath(expired);
+            var writer = CreateRefusingWriter(
+                _logFilePath,
+                p => string.Equals(p, expiredFullPath, StringComparison.OrdinalIgnoreCase),
+                (_, path) => true,
+                rotationSizeInBytes: 10,
+                maxRotations: 1);
+
+            // Act
+            writer.WriteLine("a line longer than the rotation size");
+            writer.Dispose();
+
+            // Assert
+            Assert.True(File.Exists(expired), "A delete whose path check refuses must leave the file in place.");
             Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
         }
 
