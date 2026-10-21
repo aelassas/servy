@@ -1654,6 +1654,31 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public async Task SecureVaultAsync_PurgeThrows_StillGrantsEveryAccountItsAccessBack()
+        {
+            // Arrange: the first resolution (grouping the services) succeeds, the second (inside PurgeVault) throws
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc" },
+            });
+            var calls = 0;
+            var sut = new TestableHardener(TempDirectory)
+            {
+                RecordOnly = true,
+                Resolver = _ => ++calls == 1 ? LocalServiceSid : throw new InvalidOperationException("LSA unavailable"),
+            };
+
+            // Act
+            var log = await LogCapture.RunAsync(() => sut.SecureVaultAsync(repository.Object, CancellationToken.None));
+
+            // Assert: the failure is logged and the account is still granted its access back
+            Assert.Contains("Purging the non-administrative entries of Servy's vault failed.", log);
+            Assert.Equal(new[] { @".\svc" }, sut.HardenedAccounts);
+            Assert.Equal(new[] { ServiceName }, sut.HardenedServiceNames[0]);
+        }
+
+        [Fact]
         public async Task SecureVaultAsync_NotElevated_DoesNotReadTheRepository()
         {
             // Arrange
