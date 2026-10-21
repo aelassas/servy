@@ -42,7 +42,7 @@ namespace Servy.Service.Helpers
         string[] GetArgs();
 
         /// <summary>
-        /// Parses the command-line arguments and loads the service configuration from the repository.
+        /// Parses the command-line arguments and fetches the service configuration from the Servy host service over its named pipe.
         /// </summary>
         /// <param name="namedPipesService">The named pipes service used to fetch service-specific configurations.</param>
         /// <param name="fullArgs">
@@ -56,7 +56,7 @@ namespace Servy.Service.Helpers
         /// Thrown when the command-line arguments are invalid.
         /// </exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the service configuration is missing.
+        /// Thrown when the Servy host service has no configuration for the service, or when the host refuses or fails the request.
         /// </exception>
         StartOptions? ParseOptions(INamedPipesService namedPipesService, string[] fullArgs);
 
