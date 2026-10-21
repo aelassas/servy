@@ -125,7 +125,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>Collapse all nodes in the dependency tree</value>
   </data>
   <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
-    <value>Status: Running (green), Stopped (red), Cycle (orange)</value>
+    <value>Status: Running (green), Stopped (red), Cycle (orange), Unavailable (orange warning icon)</value>
   </data>
   <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
     <value>Press F5 to refresh the dependency tree</value>

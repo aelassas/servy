@@ -1978,7 +1978,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Status: Running (green), Stopped (red), Cycle (orange).
+        ///   Looks up a localized string similar to Status: Running (green), Stopped (red), Cycle (orange), Unavailable (orange warning icon).
         /// </summary>
         public static string Label_Dependencies_Gear_Info {
             get {
