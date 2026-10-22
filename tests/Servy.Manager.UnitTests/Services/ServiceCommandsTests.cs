@@ -224,7 +224,7 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 // Explicit verify constraint ensures that execution actually bypassed the path guard and hit the format validator
                 _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out It.Ref<ServiceDto?>.IsAny), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync("Invalid JSON", UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
             }
@@ -289,7 +289,7 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 // Explicit verify constraint ensures that execution actually bypassed the path guard and hit the format validator
                 _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out It.Ref<ServiceDto?>.IsAny), Times.Once);
-                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync("Malformed XML", UiAppConfig.Caption), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 Assert.False(_refreshCalled);
             }
