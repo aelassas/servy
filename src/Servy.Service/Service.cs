@@ -489,7 +489,9 @@ namespace Servy.Service
                 // Run pre-launch process if configured
                 if (!StartPreLaunchProcess(options))
                 {
-                    // Abort if pre-launch fails and service is not allowed to start
+                    // Abort if pre-launch fails and service is not allowed to start.
+                    // A stop requested during the wait is not a failure and keeps exit code 0.
+                    if (!_isTearingDown) ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                     Stop();
                     return;
                 }
