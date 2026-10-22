@@ -422,12 +422,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // 3. Decoy B: Matches if '_' in "development" is treated as a wildcard (e.g. matching "developmenX")
             await _repository.UpsertAsync(new ServiceDto { Name = "App_DevelopmenX_%_Test", ExecutablePath = "c.exe" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
-            // Act - Search targeting literal "_" and "%" characters using ESCAPE configurations
+            // Act - Search for a keyword containing the literal "_" and "%" characters
             var results = (await _repository.SearchAsync("development_%", decrypt: true, cancellationToken)).ToList();
 
             // Assert
-            // If escaping is broken, "development_%" will match "App_Development_XYZ_Test" (wildcard %)
-            // and return multiple results. Asserting single-result delivery ensures strict literal evaluation.
+            // SearchAsync filters in memory with a case-insensitive substring match, so "_" and "%" carry no
+            // wildcard meaning. A filter that read them as LIKE wildcards would also match the decoys above and
+            // return several results. Asserting a single result ensures strict literal evaluation.
             Assert.Single(results);
             Assert.Equal("App_Development_%_Test", results[0].Name);
         }
