@@ -266,7 +266,7 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange: a folder BESIDE the vault whose name starts with the vault's name.
             // TempDirectory carries no trailing separator, so TempDirectory + "Sibling" is a
             // real sibling and not a child. Only the separator appended to normalizedRoot
-            // (AppFoldersHelper.cs 152) keeps StartsWith from calling it a child.
+            // (the `+ Path.DirectorySeparatorChar` in AppFoldersHelper.EnsureFolders) keeps StartsWith from calling it a child.
             var siblingDir = TempDirectory + "Sibling";
             try
             {
