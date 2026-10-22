@@ -71,5 +71,36 @@ namespace Servy.CLI.UnitTests.Runtime
             inner.Verify(s => s.Dispose(), Times.Once);
             Assert.Throws<ObjectDisposedException>(() => deferred.Decrypt("cipher"));
         }
+
+        [Fact]
+        public void Constructor_NullFactory_ThrowsArgumentNullException()
+        {
+            // Arrange
+            Func<ISecureData> factory = null;
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => new DeferredSecureData(factory));
+
+            // Assert
+            Assert.Equal("factory", ex.ParamName);
+        }
+
+        [Fact]
+        public void Encrypt_FactoryReturnsNull_ThrowsAndBuildsAgainOnTheNextCall()
+        {
+            // Arrange
+            // A null from the factory is rejected and never cached, so the next call asks the factory again.
+            var builds = 0;
+            using (var deferred = new DeferredSecureData(() => { builds++; return null; }))
+            {
+                // Act
+                Assert.Throws<InvalidOperationException>(() => deferred.Encrypt("plain"));
+                Assert.Throws<InvalidOperationException>(() => deferred.Encrypt("plain"));
+
+                // Assert
+                Assert.Equal(2, builds);
+                Assert.False(deferred.IsCreated);
+            }
+        }
     }
 }
