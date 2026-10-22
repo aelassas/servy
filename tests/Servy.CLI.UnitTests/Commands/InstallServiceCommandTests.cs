@@ -269,6 +269,7 @@ namespace Servy.CLI.UnitTests.Commands
                 FailureProgramStartupDir = "C:\\map\\failure-dir",
                 FailureProgramParameters = "--failure-args",
                 EnvironmentVariables = "MAP_ENV=1",
+                AllowOverriddenRuntimeVars = true,
                 ServiceDependencies = "MapDependency",
                 User = "  MapUser  ",
                 Password = "MapPassword",
@@ -351,6 +352,7 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal("--failure-args", captured.FailureProgramExecutableArgs);
 
             Assert.Equal("MAP_ENV=1", captured.EnvironmentVariables);
+            Assert.True(captured.AllowOverriddenRuntimeVars);
             Assert.Equal("MapDependency", captured.ServiceDependencies);
 
             // The account name is trimmed on the way through (#5949)
