@@ -60,7 +60,7 @@ try {
         exit 1
     }
     Write-Host "  [OK] ConvertFrom-ServyEventMessage parses bracketed service message format." -ForegroundColor Gray
-    
+
     $rawMsg = "[MyTestService] [EventID: 3003] Service crashed unexpectedly.`nStack trace line 1"
     $parsedMsg = ConvertFrom-ServyEventMessage -Message $rawMsg
 
