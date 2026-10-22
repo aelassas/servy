@@ -31,6 +31,11 @@ namespace Servy.UI.Helpers
         /// A <see cref="Task{TResult}"/> that completes with <see langword="true"/> once the text
         /// reached the clipboard, or <see langword="false"/> when every attempt failed.
         /// </returns>
+        /// <exception cref="OperationCanceledException">
+        /// <paramref name="cancellationToken"/> was cancelled during the wait between attempts; cancellation
+        /// is thrown rather than reported as <see langword="false"/>, so <see langword="false"/> always means
+        /// that every attempt failed.
+        /// </exception>
         /// <remarks>
         /// Reporting exhaustion is left to the caller: each one logs and notifies in its own terms.
         /// </remarks>
