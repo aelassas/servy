@@ -1018,6 +1018,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.True(stopped);
+            Assert.Equal(AppConfig.ServiceSpecificErrorCode, _service.ExitCode);
             scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("exited with code 1")), null), Times.Once);
             scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("failed after all retry attempts")), null), Times.Once);
             // The exit-code arm is what this test arranges, so a fall-back to the timeout path is a failure.
