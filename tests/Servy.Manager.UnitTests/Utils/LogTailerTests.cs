@@ -128,6 +128,49 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// The UTF-8 history path must tag every line it returns with the stream it was asked for (#7601).
+        /// Every other test passes <see cref="LogType.StdOut"/>, which is also the default, so a hardcoded
+        /// type goes unnoticed there.
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryAsync_StdErrStream_TagsEveryLineAsStdErr()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            {
+                File.WriteAllText(_tempFilePath, "first\nsecond\n");
+
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdErr, 10, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(2, result.Lines.Count);
+                Assert.All(result.Lines, line => Assert.Equal(LogType.StdErr, line.Type));
+            }
+        }
+
+        /// <summary>
+        /// The non-UTF-8 history path builds its lines at a different site than the UTF-8 one, so it gets
+        /// its own check that the requested stream type reaches every line (#7601).
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryAsync_Utf16StdErrStream_TagsEveryLineAsStdErr()
+        {
+            // Arrange
+            using (var tailer = new LogTailer())
+            {
+                File.WriteAllText(_tempFilePath, "first\nsecond\n", EncodingWithByteOrderMark("utf-16le"));
+
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdErr, 10, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(2, result.Lines.Count);
+                Assert.All(result.Lines, line => Assert.Equal(LogType.StdErr, line.Type));
+            }
+        }
+
         [Fact]
         public async Task GetHistoryAsync_ShouldRetrieveExactlyLastNLines()
         {
@@ -387,6 +430,42 @@ namespace Servy.Manager.UnitTests.Utils
                 lock (capturedLines)
                 {
                     Assert.Contains(capturedLines, l => l.Text == "LATE_FILE_LINE");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The live tail must tag every line it publishes with the stream it was started for (#7601).
+        /// </summary>
+        [Fact]
+        public async Task RunFromPosition_StdErrStream_TagsEveryPublishedLineAsStdErr()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "first\nsecond\n");
+            var fileInfo = new FileInfo(_tempFilePath);
+
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
+
+                // Act
+                var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdErr, 0, fileInfo.CreationTimeUtc, cts.Token);
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
+
+                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count >= 2; },
+                    TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
+                    cancellationToken: TestContext.Current.CancellationToken);
+
+                cts.Cancel();
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert
+                lock (capturedLines)
+                {
+                    Assert.Equal(2, capturedLines.Count);
+                    Assert.All(capturedLines, line => Assert.Equal(LogType.StdErr, line.Type));
                 }
             }
         }
