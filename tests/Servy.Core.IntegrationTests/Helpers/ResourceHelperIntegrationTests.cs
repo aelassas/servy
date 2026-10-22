@@ -163,10 +163,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             string filePath = Path.Combine(TempDirectory, "locked_direct_success.exe");
             File.WriteAllText(filePath, "locked content");
 
-            // The Handle executable is written from the embedded resource before it is run
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x4D, 0x5A }));
-
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(true);
 
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
@@ -186,10 +182,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange
             string filePath = Path.Combine(TempDirectory, "locked_direct_fail.exe");
             File.WriteAllText(filePath, "locked content");
-
-            // The Handle executable is written from the embedded resource before it is run
-            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
-                         .Returns(() => new MemoryStream(new byte[] { 0x4D, 0x5A }));
 
             _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(filePath)).Returns(false);
 
