@@ -15,8 +15,8 @@ namespace Servy.Core.UnitTests.Validation
             public string? StartupDirectory { get; set; }
 
             // Undecorated on purpose: the walker inspects every public property and relies on the
-            // attribute lookup to skip the ones it must not validate - 51 of ServiceDto's 63 and
-            // 39 of StartOptions' 51 in production.
+            // attribute lookup to skip the ones it must not validate - most of ServiceDto's and
+            // StartOptions' properties in production, since only 12 of each carry the attribute.
             public string? Description { get; set; }
         }
 
