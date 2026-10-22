@@ -3,7 +3,7 @@
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=9)](https://codecov.io/gh/aelassas/servy)
 [![docs](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
-# Servy
+## Servy
 
 Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
 
