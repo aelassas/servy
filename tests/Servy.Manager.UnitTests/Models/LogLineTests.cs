@@ -40,6 +40,25 @@ namespace Servy.Manager.UnitTests.Models
             Assert.Equal(local.ToUniversalTime(), line.Timestamp);
         }
 
+        /// <summary>
+        /// The stream type is what the console view uses to colour stderr lines (#7601). Only the
+        /// <see cref="LogType.StdErr"/> row is falsifiable: a constructor that drops the assignment leaves
+        /// the property at its default, <see cref="LogType.StdOut"/>, so that row is the control.
+        /// </summary>
+        /// <param name="type">The stream the line is tagged with.</param>
+        [Theory]
+        [InlineData(LogType.StdOut)]
+        [InlineData(LogType.StdErr)]
+        public void Constructor_StoresTheStreamTypeAndText(LogType type)
+        {
+            // Arrange & Act
+            var line = new LogLine("some output", type);
+
+            // Assert
+            Assert.Equal(type, line.Type);
+            Assert.Equal("some output", line.Text);
+        }
+
         [Fact]
         public void Constructor_NoTimestamp_UsesCurrentUtcTime()
         {
