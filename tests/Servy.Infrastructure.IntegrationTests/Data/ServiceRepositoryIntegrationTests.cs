@@ -457,6 +457,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 PreLaunchEnvironmentVariables = "SentinelPreLaunchEnvironmentVariables",
                 PreStopParameters = "SentinelPreStopParameters",
                 PostStopParameters = "SentinelPostStopParameters",
+                HeartbeatUrl = "https://hc-ping.com/SentinelHeartbeatUrl",
             };
             int id = await _repository.UpsertAsync(service, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
 
@@ -482,6 +483,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(result.PreLaunchEnvironmentVariables);
             Assert.Null(result.PreStopParameters);
             Assert.Null(result.PostStopParameters);
+            Assert.Null(result.HeartbeatUrl);
         }
 
         [Fact]
