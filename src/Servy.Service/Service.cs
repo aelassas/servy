@@ -737,6 +737,24 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Gets the total time, in milliseconds, that <see cref="Cleanup"/> spends waiting for a
+        /// tracked hook's process to exit, by reading <see cref="AppConfig.HookCleanupTimeoutMs"/>.
+        /// </summary>
+        /// <returns>The hook cleanup budget, in milliseconds.</returns>
+        /// <remarks>
+        /// This is a seam over <see cref="AppConfig.HookCleanupTimeoutMs"/>; the production
+        /// implementation forwards to it unchanged, so the bounded wait in <see cref="Cleanup"/>
+        /// behaves exactly as it did when it read the constant directly. It is overridable because the
+        /// shipped budget equals <see cref="AppConfig.SafeKillProcessPulseIntervalMs"/>, which leaves
+        /// the loop a single wait and makes its pulse chunking unobservable; a test needs a budget
+        /// that is not a multiple of the pulse interval.
+        /// </remarks>
+        protected virtual int GetHookCleanupTimeoutMs()
+        {
+            return AppConfig.HookCleanupTimeoutMs;
+        }
+
+        /// <summary>
         /// Waits up to <paramref name="timeoutMs"/> milliseconds for a tracked hook's process to exit
         /// by calling <see cref="Process.WaitForExit(int)"/>.
         /// </summary>
@@ -2760,7 +2778,7 @@ namespace Servy.Service
                                 }
 
                                 // 2. Bounded wait with SCM heartbeat pulses
-                                int timeoutMs = AppConfig.HookCleanupTimeoutMs;
+                                int timeoutMs = GetHookCleanupTimeoutMs();
                                 int pulseIntervalMs = AppConfig.SafeKillProcessPulseIntervalMs;
                                 int elapsedMs = 0;
 
