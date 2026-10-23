@@ -826,14 +826,21 @@ namespace Servy.Service
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return 0;
 
-            await _restartAttemptsSemaphore.WaitAsync(ct);
+            var acquired = false;
             try
             {
+                await _restartAttemptsSemaphore.WaitAsync(ct);
+                acquired = true;
                 return (await ReadAttemptsInternalAsync(ct)).Attempts;
             }
             catch (OperationCanceledException)
             {
                 // Graceful exit: the service is likely shutting down
+                return 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                // Teardown disposed the semaphore while we were waiting
                 return 0;
             }
             catch (Exception ex)
@@ -843,7 +850,7 @@ namespace Servy.Service
             }
             finally
             {
-                ReleaseSafe(_restartAttemptsSemaphore);
+                if (acquired) ReleaseSafe(_restartAttemptsSemaphore);
             }
         }
 
@@ -857,15 +864,21 @@ namespace Servy.Service
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return;
 
-            // Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
-            await _restartAttemptsSemaphore.WaitAsync(ct);
+            var acquired = false;
             try
             {
+                // Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
+                await _restartAttemptsSemaphore.WaitAsync(ct);
+                acquired = true;
                 await WriteAttemptsInternalAsync(attempts, ct);
             }
             catch (OperationCanceledException)
             {
                 // Graceful exit if the service is stopping; no logging required
+            }
+            catch (ObjectDisposedException)
+            {
+                // Teardown disposed the semaphore while we were waiting
             }
             catch (Exception ex)
             {
@@ -873,7 +886,7 @@ namespace Servy.Service
             }
             finally
             {
-                ReleaseSafe(_restartAttemptsSemaphore);
+                if (acquired) ReleaseSafe(_restartAttemptsSemaphore);
             }
         }
 
@@ -908,10 +921,13 @@ namespace Servy.Service
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsServiceName)) return;
 
-            // Wait for the lock to secure the entire transaction
-            await _restartAttemptsSemaphore.WaitAsync(cancellationToken);
+            var acquired = false;
             try
             {
+                // Wait for the lock to secure the entire transaction
+                await _restartAttemptsSemaphore.WaitAsync(cancellationToken);
+                acquired = true;
+
                 // 1. Protected Read (Exit early if already 0)
                 var state = await ReadAttemptsInternalAsync(cancellationToken);
                 if (state.Attempts == 0) return;
@@ -976,13 +992,17 @@ namespace Servy.Service
                     await WriteAttemptsInternalAsync(0, cancellationToken);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Graceful exit if the service is stopping; no logging required
+            }
             catch (Exception ex)
             {
                 _logger?.Warn($"Error during conditional reset evaluation: {ex.Message}");
             }
             finally
             {
-                ReleaseSafe(_restartAttemptsSemaphore);
+                if (acquired) ReleaseSafe(_restartAttemptsSemaphore);
             }
         }
 

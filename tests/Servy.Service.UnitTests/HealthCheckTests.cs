@@ -685,6 +685,67 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task GetRestartAttemptsAsync_TokenAlreadyCancelled_ReturnsZeroAndLeavesTheSemaphoreFree()
+        {
+            // Arrange: a token cancelled before the semaphore wait is the teardown race of #7613
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 3);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            // Act
+            var attempts = await (Task<int?>)TestReflection.InvokeNonPublic(service, "GetRestartAttemptsAsync", cts.Token)!;
+
+            // Assert: the cancelled wait takes the documented shutdown value instead of escaping, and the
+            // semaphore it never acquired is not released
+            Assert.Equal(0, attempts);
+            Assert.Equal(1, TestReflection.GetField<SemaphoreSlim>(service, "_restartAttemptsSemaphore").CurrentCount);
+            _ctx.NamedPipesService.Verify(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.Equal(3, store.Attempts);
+        }
+
+        [Fact]
+        public async Task SaveRestartAttemptsAsync_TokenAlreadyCancelled_CompletesWithoutThrowing()
+        {
+            // Arrange: a token cancelled before the semaphore wait is the teardown race of #7613
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 1);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            // Act
+            await (Task)TestReflection.InvokeNonPublic(service, "SaveRestartAttemptsAsync", 2, cts.Token)!;
+
+            // Assert: nothing is written or logged, and the semaphore it never acquired is not released
+            Assert.Empty(store.Writes);
+            Assert.Equal(1, TestReflection.GetField<SemaphoreSlim>(service, "_restartAttemptsSemaphore").CurrentCount);
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Failed to save the restart attempts counter")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ConditionalResetRestartAttemptsAsync_TokenAlreadyCancelled_CompletesSilently()
+        {
+            // Arrange: a token cancelled before the semaphore wait is the teardown race of #7613
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 2);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            // Act
+            await (Task)TestReflection.InvokeNonPublic(service, "ConditionalResetRestartAttemptsAsync", ServiceTestContext.CreateDefaultStartOptions(), cts.Token)!;
+
+            // Assert: a cancelled evaluation is a shutdown, not an evaluation error worth a warning
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Error during conditional reset evaluation")), It.IsAny<Exception>()), Times.Never);
+            Assert.Equal(1, TestReflection.GetField<SemaphoreSlim>(service, "_restartAttemptsSemaphore").CurrentCount);
+            Assert.Empty(store.Writes);
+        }
+
+        [Fact]
         public async Task CheckHealth_ChildExitedAndNoStartOptions_StopsWithoutRecovery()
         {
             // Arrange: _options is still null, as on a service that never finished OnStart

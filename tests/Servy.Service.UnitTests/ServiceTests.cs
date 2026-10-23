@@ -2267,9 +2267,13 @@ namespace Servy.Service.UnitTests
                 .Setup(l => l.Error(It.Is<string>(s => s.Contains("Background restart-attempts reset failed")), It.IsAny<Exception>()))
                 .Callback(() => logged.Set());
 
-            // ConditionalResetRestartAttemptsAsync awaits _restartAttemptsSemaphore outside its own try, and nothing
-            // else on the synchronous start path takes it, so disposing it faults the reset task and only
-            // the reset task
+            // ConditionalResetRestartAttemptsAsync swallows every failure in its own catch arms, so the reset task
+            // only faults when one of those arms throws: disposing _restartAttemptsSemaphore (nothing else on the
+            // synchronous start path takes it) reaches the evaluation-error arm, and its warning is made to throw
+            var warningFailure = new InvalidOperationException("warning failed");
+            scopedLogger
+                .Setup(l => l.Warn(It.Is<string>(s => s.StartsWith("Error during conditional reset evaluation")), It.IsAny<Exception>()))
+                .Throws(warningFailure);
             TestReflection.GetField<SemaphoreSlim>(_service, "_restartAttemptsSemaphore").Dispose();
 
             // Act
@@ -2280,7 +2284,7 @@ namespace Servy.Service.UnitTests
             Assert.True(logged.Wait(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken), "the faulted reset task was never logged");
             scopedLogger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Background restart-attempts reset failed")),
-                It.Is<Exception>(e => e is ObjectDisposedException)), Times.Once);
+                It.Is<Exception>(e => ReferenceEquals(e, warningFailure))), Times.Once);
         }
 
         [Fact]
