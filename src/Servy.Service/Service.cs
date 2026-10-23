@@ -2184,8 +2184,9 @@ namespace Servy.Service
                     var targetUri = baseUri;
                     if (!string.IsNullOrEmpty(suffix))
                     {
-                        var baseStr = baseUrl.EndsWith("/") ? baseUrl : baseUrl + "/";
-                        targetUri = new Uri(baseStr + suffix.TrimStart('/'));
+                        var builder = new UriBuilder(baseUri);
+                        builder.Path = builder.Path.TrimEnd('/') + "/" + suffix.TrimStart('/');
+                        targetUri = builder.Uri;
                     }
 
                     var flagLabel = string.IsNullOrEmpty(suffix) ? "routine" : suffix.TrimStart('/');
