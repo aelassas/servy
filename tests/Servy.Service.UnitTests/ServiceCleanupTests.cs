@@ -416,8 +416,10 @@ namespace Servy.Service.UnitTests
         }
 
         /// <summary>
-        /// A hook that survives the whole budget pulses the SCM, never waits longer than one pulse
-        /// interval at a time, spends exactly the budget and warns instead of reporting success.
+        /// A hook that survives the whole budget pulses the SCM, spends exactly the budget and warns
+        /// instead of reporting success. With the shipped constants the budget equals one pulse
+        /// interval, so this pins a single wait; the pulse chunking is pinned by
+        /// <see cref="Cleanup_TrackedHookSurvivesABudgetThatIsNotAMultipleOfThePulse_WaitsInPulsesAndThenTheRemainder"/>.
         /// </summary>
         [Fact]
         public void Cleanup_TrackedHookSurvivesTheBudget_PulsesTheScmAndWarnsWithTheBudget()
@@ -441,12 +443,41 @@ namespace Servy.Service.UnitTests
             // Assert
             Assert.Equal(1, killed);
 
-            // The waits never exceed one pulse and add up to exactly the budget.
-            Assert.All(waits, ms => Assert.True(ms <= AppConfig.SafeKillProcessPulseIntervalMs));
+            // The waits add up to exactly the budget (with the shipped constants, one wait).
             Assert.Equal(AppConfig.HookCleanupTimeoutMs, waits.Sum());
             _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, It.IsAny<int>(), null), Times.AtLeast(waits.Count));
             scopedLogger.Verify(l => l.Warn($"Tracked hook 'Post-Launch' (PID: 0) did not exit within the {AppConfig.HookCleanupTimeoutMs}ms budget. Proceeding with teardown to avoid SCM hang.", It.IsAny<Exception>()), Times.Once);
             scopedLogger.Verify(l => l.Info(It.Is<string>(m => m.EndsWith("cleaned up successfully.")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        /// <summary>
+        /// A budget that is not a multiple of the pulse interval is waited in whole pulses followed by
+        /// the remainder, never longer than one pulse at a time. The shipped constants cannot show
+        /// this, because the budget equals one pulse, so the budget is supplied through the seam.
+        /// </summary>
+        [Fact]
+        public void Cleanup_TrackedHookSurvivesABudgetThatIsNotAMultipleOfThePulse_WaitsInPulsesAndThenTheRemainder()
+        {
+            // Arrange
+            var options = CreateOptions();
+            SetupStart(options);
+            var waits = new List<int>();
+            var service = BuildHookKillingService(
+                kill: _ => { },
+                hasExited: _ => false,
+                waitForExit: (_, ms) => { waits.Add(ms); return false; },
+                hookCleanupTimeoutMs: 12_000);
+            service.StartForTest();
+            using var hookProcess = new Process();
+            SetTrackedHooks(service, new Hook { OperationName = "Post-Launch", Process = hookProcess });
+
+            // Act
+            service.Stop();
+
+            // Assert
+            // Budget 12_000 with the shipped 5_000 pulse: two whole pulses, then the 2_000 remainder.
+            Assert.Equal(5_000, AppConfig.SafeKillProcessPulseIntervalMs);
+            Assert.Equal(new[] { 5_000, 5_000, 2_000 }, waits);
         }
 
         /// <summary>
@@ -492,15 +523,18 @@ namespace Servy.Service.UnitTests
         /// <param name="kill">The stand-in for the kill request, called with the hook's process.</param>
         /// <param name="hasExited">The stand-in for the exit check, called with the hook's process.</param>
         /// <param name="waitForExit">The stand-in for the bounded wait, called with the hook's process and the wait in milliseconds.</param>
-        /// <returns>A service whose three tracked-hook seams are served by the supplied delegates.</returns>
+        /// <param name="hookCleanupTimeoutMs">The stand-in for the cleanup budget, or <see langword="null"/> to keep the shipped one.</param>
+        /// <returns>A service whose four tracked-hook seams are served by the supplied delegates and value.</returns>
         private HookKillingService BuildHookKillingService(
             Action<Process> kill,
             Func<Process, bool> hasExited,
-            Func<Process, int, bool> waitForExit) =>
+            Func<Process, int, bool> waitForExit,
+            int? hookCleanupTimeoutMs = null) =>
             new HookKillingService(
                 kill,
                 hasExited,
                 waitForExit,
+                hookCleanupTimeoutMs,
                 _ctx.Helper.Object,
                 _ctx.Logger.Object,
                 _ctx.StreamWriterFactory.Object,
@@ -510,7 +544,7 @@ namespace Servy.Service.UnitTests
                 _ctx.NamedPipesService.Object);
 
         /// <summary>
-        /// Serves the tracked-hook kill, exit check and bounded wait from supplied delegates. With a
+        /// Serves the tracked-hook kill, exit check, bounded wait and cleanup budget from supplied delegates and value. With a
         /// real <see cref="Process"/> no user-mode test can make <c>Kill</c> throw on a process it
         /// owns, nor make one survive the kill for the whole cleanup budget, so the kill-failure
         /// warning, the wait loop's pulse and budget arithmetic and the "did not exit within the
@@ -521,6 +555,7 @@ namespace Servy.Service.UnitTests
             private readonly Action<Process> _kill;
             private readonly Func<Process, bool> _hasExited;
             private readonly Func<Process, int, bool> _waitForExit;
+            private readonly int? _hookCleanupTimeoutMs;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="HookKillingService"/> class.
@@ -528,6 +563,7 @@ namespace Servy.Service.UnitTests
             /// <param name="kill">The stand-in for the kill request.</param>
             /// <param name="hasExited">The stand-in for the exit check.</param>
             /// <param name="waitForExit">The stand-in for the bounded wait.</param>
+            /// <param name="hookCleanupTimeoutMs">The stand-in for the cleanup budget, or <see langword="null"/> to keep the shipped one.</param>
             /// <param name="serviceHelper">The SCM helper the base service reports through.</param>
             /// <param name="logger">The logger the base service writes to.</param>
             /// <param name="streamWriterFactory">The factory for the redirected output writers.</param>
@@ -539,6 +575,7 @@ namespace Servy.Service.UnitTests
                 Action<Process> kill,
                 Func<Process, bool> hasExited,
                 Func<Process, int, bool> waitForExit,
+                int? hookCleanupTimeoutMs,
                 Servy.Service.Helpers.IServiceHelper serviceHelper,
                 IServyLogger logger,
                 IStreamWriterFactory streamWriterFactory,
@@ -551,6 +588,7 @@ namespace Servy.Service.UnitTests
                 _kill = kill;
                 _hasExited = hasExited;
                 _waitForExit = waitForExit;
+                _hookCleanupTimeoutMs = hookCleanupTimeoutMs;
             }
 
             /// <summary>
@@ -573,6 +611,12 @@ namespace Servy.Service.UnitTests
             /// <param name="timeoutMs">The maximum time to wait, in milliseconds.</param>
             /// <returns>Whatever the supplied delegate returns.</returns>
             protected override bool WaitForTrackedHookExit(Process process, int timeoutMs) => _waitForExit(process, timeoutMs);
+
+            /// <summary>
+            /// Serves the cleanup budget from the supplied value, or the shipped one when none was supplied.
+            /// </summary>
+            /// <returns>The supplied budget, or <see cref="AppConfig.HookCleanupTimeoutMs"/>.</returns>
+            protected override int GetHookCleanupTimeoutMs() => _hookCleanupTimeoutMs ?? base.GetHookCleanupTimeoutMs();
         }
 
         /// <summary>
