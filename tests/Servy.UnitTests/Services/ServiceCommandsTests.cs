@@ -1761,10 +1761,15 @@ namespace Servy.UnitTests.Services
 
             var sut = CreateSut();
 
-            // Act & Assert (Should complete safely without throwing an unhandled exception)
-            await sut.OpenRuntimeVariablesLinkAsync(cancellationToken: TestContext.Current.CancellationToken);
+            // Act
+            var log = await LogCapture.RunAsync(
+                () => sut.OpenRuntimeVariablesLinkAsync(cancellationToken: TestContext.Current.CancellationToken));
 
+            // Assert
+            // Completing without an exception is the "does not rethrow" half; the log text is the "logs" half.
             _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+            Assert.Contains("Failed to open runtime variables link", log);
+            Assert.Contains("Failed to open browser shell.", log);
         }
 
         #endregion
