@@ -483,7 +483,8 @@ namespace Servy.UnitTests.Services
                 PostStopExecutablePath = @"C:\mapped\poststop.exe",
                 PostStopStartupDirectory = @"C:\mapped\poststop-dir",
                 PostStopParameters = "--poststop-args",
-                EnableDebugLogs = true
+                EnableDebugLogs = true,
+                AllowOverriddenRuntimeVars = true
             };
 
             InstallServiceOptions? captured = null;
@@ -567,6 +568,7 @@ namespace Servy.UnitTests.Services
             Assert.Equal(dto.PostStopParameters, captured.PostStopArgs);
 
             Assert.Equal(dto.EnableDebugLogs, captured.EnableDebugLogs);
+            Assert.Equal(dto.AllowOverriddenRuntimeVars, captured.AllowOverriddenRuntimeVars);
         }
 
         [Theory]

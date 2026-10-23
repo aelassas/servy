@@ -582,6 +582,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PreStopParameters = "pre_stop_args";
             _viewModel.PreStopTimeoutSeconds = "1515";
             _viewModel.PreStopLogAsError = !DefaultPreStopLogAsError;
+            _viewModel.AllowOverriddenRuntimeVars = !DefaultAllowOverriddenRuntimeVars;
             _viewModel.PostStopExecutablePath = "post_stop.exe";
             _viewModel.PostStopStartupDirectory = "post_stop_dir";
             _viewModel.PostStopParameters = "post_stop_args";
@@ -665,6 +666,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(string.Empty, _viewModel.PreStopParameters);
             Assert.Equal(DefaultPreStopTimeoutSeconds.ToString(), _viewModel.PreStopTimeoutSeconds);
             Assert.Equal(DefaultPreStopLogAsError, _viewModel.PreStopLogAsError);
+            Assert.Equal(DefaultAllowOverriddenRuntimeVars, _viewModel.AllowOverriddenRuntimeVars);
 
             // Post-Stop Hooks
             Assert.Equal(string.Empty, _viewModel.PostStopExecutablePath);
@@ -1044,7 +1046,7 @@ namespace Servy.UnitTests.ViewModels
             nameof(ServiceDto.EnableConsoleUI), nameof(ServiceDto.EnableSizeRotation), nameof(ServiceDto.EnableDateRotation),
             nameof(ServiceDto.UseLocalTimeForRotation), nameof(ServiceDto.EnableHealthMonitoring), nameof(ServiceDto.RecoveryOnCleanExit),
             nameof(ServiceDto.EnableHeartbeatUrlFlags), nameof(ServiceDto.PreLaunchIgnoreFailure), nameof(ServiceDto.EnableDebugLogs),
-            nameof(ServiceDto.PreStopLogAsError)
+            nameof(ServiceDto.PreStopLogAsError), nameof(ServiceDto.AllowOverriddenRuntimeVars)
         };
 
         public static IEnumerable<object[]> BoolFlagNames => BoolFlags.Select(flag => new object[] { flag });
@@ -1062,7 +1064,7 @@ namespace Servy.UnitTests.ViewModels
             // Act
             _viewModel.BindServiceDtoToModel(dto);
 
-            // Assert - the DTO and view model properties share their names for all ten flags
+            // Assert - the DTO and view model properties share their names for all eleven flags
             foreach (var name in BoolFlags)
                 Assert.Equal(name == flag, (bool)typeof(MainViewModel).GetProperty(name)!.GetValue(_viewModel)!);
         }
@@ -1229,6 +1231,19 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.PostStopExecutablePath, dto.PostStopExecutablePath);
             Assert.Equal(_viewModel.PostStopStartupDirectory, dto.PostStopStartupDirectory);
             Assert.Equal(_viewModel.PostStopParameters, dto.PostStopParameters);
+        }
+
+        [Fact]
+        public void ModelToServiceDto_AllowOverriddenRuntimeVars_IsCopiedToDto()
+        {
+            // Arrange - the non-default value, so a dropped assignment (null on the DTO) fails
+            _viewModel.AllowOverriddenRuntimeVars = !DefaultAllowOverriddenRuntimeVars;
+
+            // Act
+            var dto = _viewModel.ModelToServiceDto();
+
+            // Assert
+            Assert.Equal(!DefaultAllowOverriddenRuntimeVars, dto.AllowOverriddenRuntimeVars);
         }
 
         [Fact]
