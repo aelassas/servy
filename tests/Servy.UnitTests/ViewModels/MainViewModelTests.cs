@@ -1233,6 +1233,23 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.PostStopParameters, dto.PostStopParameters);
         }
 
+        [Theory]
+        [MemberData(nameof(BoolFlagNames))]
+        public void ModelToServiceDto_OneFlagTrue_MapsOnlyThatFlag(string flag)
+        {
+            // Arrange - every flag false except the one under test, so a swapped or constant
+            // assignment fails at least one row
+            foreach (var name in BoolFlags)
+                typeof(MainViewModel).GetProperty(name)!.SetValue(_viewModel, name == flag);
+
+            // Act
+            var dto = _viewModel.ModelToServiceDto();
+
+            // Assert - the DTO and view model properties share their names for all eleven flags
+            foreach (var name in BoolFlags)
+                Assert.Equal(name == flag, (bool)typeof(ServiceDto).GetProperty(name)!.GetValue(dto)!);
+        }
+
         [Fact]
         public void ModelToServiceDto_AllowOverriddenRuntimeVars_IsCopiedToDto()
         {
