@@ -2168,7 +2168,7 @@ namespace Servy.Service
         /// the method exits immediately without scheduling a background task or making a network request.
         /// </para>
         /// </remarks>
-        /// <param name="baseUrl">The absolute base target destination URL (e.g., "https://hc-ping.com/your-uuid").</param>
+        /// <param name="baseUrl">The absolute base target destination URL (e.g., "https://hc-ping.com/your-uuid" or "https://hc-ping.com/your-uuid?key=val").</param>
         /// <param name="suffix">An optional trailing lifecycle flag state indicator to append to the base URL (e.g., "start" or "fail"). Pass null or empty for a standard health check loop pass.</param>
         /// <param name="timeoutSeconds">The maximum duration in seconds allowed for the HTTP connection handshake and headers transmission before automatic cancellation.</param>
         private void EmitHeartbeatPing(string baseUrl, string suffix, int timeoutSeconds)
@@ -2194,7 +2194,16 @@ namespace Servy.Service
                     if (!string.IsNullOrEmpty(suffix))
                     {
                         var builder = new UriBuilder(baseUri);
-                        builder.Path = builder.Path.TrimEnd('/') + "/" + suffix.TrimStart('/');
+                        string query = builder.Query; // Save existing query params (?key=val)
+
+                        string currentPath = builder.Path.EndsWith("/") ? builder.Path : builder.Path + "/";
+                        builder.Path = currentPath + suffix.TrimStart('/');
+
+                        if (!string.IsNullOrEmpty(query))
+                        {
+                            builder.Query = query.TrimStart('?'); // Re-attach query params
+                        }
+
                         targetUri = builder.Uri;
                     }
 
