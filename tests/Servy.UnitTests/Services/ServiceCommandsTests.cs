@@ -1134,10 +1134,11 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public async Task ImportConfig_SecurityGuardFails_DisplaysGuardErrorMessage()
+        public async Task ImportConfig_SecurityGuardFails_DisplaysGuardErrorMessageAndStops()
         {
             // Arrange
-            var sut = CreateSut();
+            bool bindCalled = false;
+            var sut = CreateSut(dto => { bindCalled = true; });
             // Trigger UNC path block criteria explicitly
             var uncPath = @"\\MaliciousServer\Share\attack.xml";
             _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(uncPath);
@@ -1147,6 +1148,13 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
+
+            // The refusal arm is terminal: exactly one dialog, and neither format validation, domain
+            // validation nor binding ever runs on a refused path.
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Never);
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.False(bindCalled);
         }
 
         [Fact]
