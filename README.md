@@ -11,6 +11,13 @@ Starting from v10.2, Servy provides enterprise-grade per-service isolation betwe
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for monitoring and managing all installed services in real time.
 
+## Quick Links
+
+* [Download](https://github.com/aelassas/servy/releases/latest)
+* [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
+* [Getting Started](https://github.com/aelassas/servy/wiki/Overview)
+* [Full Documentation](https://github.com/aelassas/servy/wiki)
+
 ## Support
 
 Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas) to keep it active, independent, and free for everyone.
