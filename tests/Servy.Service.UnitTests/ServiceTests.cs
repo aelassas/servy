@@ -338,6 +338,34 @@ namespace Servy.Service.UnitTests
             _ctx.ProcessFactory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
+        [Fact]
+        public void OnStart_ChildProcessStartFails_LogsTheFailureOnceAndStillStopsWithServiceSpecificExitCode()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "C:\\missing.exe"
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Start()).Throws(new System.ComponentModel.Win32Exception(2)); // file not found
+            bool stopped = false;
+            _service.OnStoppedForTest += () => stopped = true;
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.True(stopped);
+            Assert.Equal(AppConfig.ServiceSpecificErrorCode, _service.ExitCode);
+
+            // StartProcess logs the failure; OnStart's catch must not log the same exception again.
+            scopedLogger.Verify(l => l.Error(
+                It.Is<string>(s => s.StartsWith("Failed to start process")), It.IsAny<Exception>()), Times.Once);
+            scopedLogger.Verify(l => l.Error("Exception in OnStart.", It.IsAny<Exception>()), Times.Never);
+            _ctx.Logger.Verify(l => l.Error("Exception in OnStart.", It.IsAny<Exception>()), Times.Never);
+        }
+
         [Theory]
         [InlineData(30, 40_000)] // above the 20 s threshold: (30 + 10 s buffer) * 1000 ms
         [InlineData(20, null)]   // at the threshold: no request, the comparison is strictly greater-than
