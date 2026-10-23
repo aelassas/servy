@@ -78,6 +78,13 @@ namespace Servy.Service
         /// </summary>
         public const string TestModeFlag = "servy_test";
 
+        /// <summary>
+        /// The <see cref="Exception.Data"/> key with which <see cref="StartProcess"/> marks a child process
+        /// start failure it has already logged, so that the catch in <see cref="OnStart(string[])"/> does not
+        /// log the same exception a second time. The exception itself is rethrown unchanged.
+        /// </summary>
+        private const string StartFailureLoggedKey = "Servy.StartFailureLogged";
+
         #endregion
 
         #region Static Fields
@@ -573,7 +580,8 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error("Exception in OnStart.", ex);
+                // A child process start failure was already logged by StartProcess.
+                if (!ex.Data.Contains(StartFailureLoggedKey)) _logger?.Error("Exception in OnStart.", ex);
                 if (ExitCode == 0) ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                 Stop();
             }
@@ -1582,6 +1590,7 @@ namespace Servy.Service
             {
                 // Start-up failures are logged here only; OnStart's catch must not log them again.
                 _logger?.Error($"Failed to start process '{_realExePath}': {ex.Message}");
+                ex.Data[StartFailureLoggedKey] = true;
 
                 CleanupFailedProcess();
 
