@@ -917,6 +917,10 @@ namespace Servy.UnitTests.Services
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync($"Service '{serviceName}' was started successfully.", UiAppConfig.Caption), Times.Once);
+            // The constructor defaults every verb to Success, so only a Verify can tell which verb, flag and token the SUT forwarded.
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, true, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
@@ -939,6 +943,10 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceStopped, serviceName), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            // The constructor defaults every verb to Success, so only a Verify can tell which verb, flag and token the SUT forwarded.
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(serviceName, true, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1454,6 +1462,10 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.True(result);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceRestarted, serviceName), UiAppConfig.Caption), Times.Once);
+            // The constructor defaults every verb to Success, so only a Verify can tell which verb, flag and token the SUT forwarded.
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(serviceName, true, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
