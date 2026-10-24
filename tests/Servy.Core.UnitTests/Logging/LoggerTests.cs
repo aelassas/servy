@@ -891,6 +891,26 @@ namespace Servy.Core.UnitTests.Logging
             Assert.False(File.Exists(_fullLogPath), "Log file should not be created for empty or null messages.");
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void Error_WithNullOrEmptyMessageAndException_LogsTheFormattedExceptionAlone(string message)
+        {
+            // Arrange: an exception that was never thrown has no stack trace, so the entry is fully predictable
+            Logger.Initialize(_testFileName);
+            var ex = new InvalidOperationException("boom");
+
+            // Act
+            Logger.Error(message, ex);
+            Logger.Shutdown();
+
+            // Assert: the exception is logged on its own, with no empty message and no " | Exception: " separator
+            Assert.True(File.Exists(_fullLogPath), "Log file should be created when an exception accompanies a null or empty message.");
+            string content = File.ReadAllText(_fullLogPath);
+            Assert.Contains("[ERROR] | InvalidOperationException: boom", content);
+            Assert.DoesNotContain("| Exception:", content);
+        }
+
         [Fact]
         public void Log_WhenReentrantLoggingDetected_WritesToFallbackLogAndShortCircuits()
         {
