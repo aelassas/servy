@@ -136,7 +136,7 @@ namespace Servy.Core.Helpers
                         if (string.IsNullOrEmpty(name))
                             continue;
 
-                        var value = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString();
+                        var value = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
                         if (value != null)
                             variables[name] = value;
                     }

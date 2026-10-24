@@ -1,4 +1,6 @@
+using Microsoft.Win32;
 using Servy.Core.Helpers;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -71,6 +73,38 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.Equal("Windows_NT", system[SystemVariable]);
             Assert.Contains("%SYSTEMROOT%", system["ComSpec"].ToUpperInvariant());
             Assert.NotNull(user);
+        }
+
+        [Fact]
+        public void ReadVariables_NonStringValue_IsSkipped()
+        {
+            // Arrange: a scratch key under HKCU holding the two string kinds and three non-string kinds (#7614)
+            var subKey = $@"Software\ServyTest-{Guid.NewGuid():N}";
+            using (var key = Registry.CurrentUser.CreateSubKey(subKey))
+            {
+                key.SetValue("Text", "plain", RegistryValueKind.String);
+                key.SetValue("Expandable", "%SystemRoot%", RegistryValueKind.ExpandString);
+                key.SetValue("Binary", new byte[] { 1, 2 }, RegistryValueKind.Binary);
+                key.SetValue("Multi", new[] { "a", "b" }, RegistryValueKind.MultiString);
+                key.SetValue("Number", 1, RegistryValueKind.DWord);
+            }
+
+            try
+            {
+                // Act
+                var variables = (IReadOnlyDictionary<string, string>)TestReflection.InvokeNonPublicStatic(
+                    typeof(SystemEnvironmentHelper), "ReadVariables", Registry.CurrentUser, subKey);
+
+                // Assert: only the string kinds are read, REG_EXPAND_SZ still raw, no CLR type name as a value
+                Assert.NotNull(variables);
+                Assert.Equal(2, variables.Count);
+                Assert.Equal("plain", variables["Text"]);
+                Assert.Equal("%SystemRoot%", variables["Expandable"]);
+            }
+            finally
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(subKey, throwOnMissingSubKey: false);
+            }
         }
 
         [Fact]
