@@ -1,4 +1,5 @@
 using Servy.CLI.Helpers;
+using Servy.CLI.Resources;
 using Servy.Testing;
 using System;
 using System.IO;
@@ -288,6 +289,53 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
+        /// The CLI's only caller passes no message, so the default text is what every real run shows.
+        /// Pins that the default is Strings.Msg_PreparingEnvironment, not an empty label.
+        /// </summary>
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenNoMessageIsGiven_ShowsTheDefaultPreparingMessage()
+        {
+            // Arrange
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 80);
+
+            try
+            {
+                using (var writer = new SpinnerFrameCapturingStringWriter())
+                {
+                    // Hold the action open until the spinner has written its first frame.
+                    Func<Task> action = () => Task.Run(() =>
+                    {
+                        Assert.True(
+                            writer.SpinnerFrameWritten.Task.Wait(TimeSpan.FromSeconds(5)),
+                            "The spinner never wrote a frame.");
+                    });
+
+                    var originalOut = Console.Out;
+                    Console.SetOut(writer);
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(action);
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.NotNull(writer.FirstSpinnerFrame);
+                    Assert.Contains(Strings.Msg_PreparingEnvironment, writer.FirstSpinnerFrame);
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
         /// Throws on the spinner frame (which starts with "\r" but does not end with it) and records the
         /// clearing write (which starts and ends with "\r"), so the background-fault catch is the only thing
         /// between the spinner's IOException and the caller. The inverse of
@@ -320,6 +368,37 @@ namespace Servy.CLI.UnitTests.Helpers
                 {
                     SpinnerFrameAttempted.TrySetResult(true);
                     throw new IOException("Simulated console detach on the spinner frame.");
+                }
+
+                base.Write(value);
+            }
+        }
+
+        /// <summary>
+        /// Records the first spinner frame: it starts with "\r" and, unlike the clearing write, does not end with it.
+        /// </summary>
+        private sealed class SpinnerFrameCapturingStringWriter : StringWriter
+        {
+            /// <summary>
+            /// Completes once the spinner has written its first frame.
+            /// </summary>
+            public TaskCompletionSource<bool> SpinnerFrameWritten { get; } = new TaskCompletionSource<bool>();
+
+            /// <summary>
+            /// The text of the first spinner frame, or null if none was written.
+            /// </summary>
+            public string FirstSpinnerFrame { get; private set; }
+
+            /// <summary>
+            /// Captures the first spinner frame, then forwards every write.
+            /// </summary>
+            /// <param name="value">The text being written to the console.</param>
+            public override void Write(string value)
+            {
+                if (FirstSpinnerFrame == null && value != null && value.StartsWith("\r") && !value.EndsWith("\r"))
+                {
+                    FirstSpinnerFrame = value;
+                    SpinnerFrameWritten.TrySetResult(true);
                 }
 
                 base.Write(value);
