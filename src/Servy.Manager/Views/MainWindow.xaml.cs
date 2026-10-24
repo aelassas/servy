@@ -396,25 +396,6 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the PreviewMouseLeftButtonDown event for the DataGrid "Check All" header checkbox.
-        /// Toggles the SelectAll property in the MainViewModel when the user clicks the header checkbox.
-        /// </summary>
-        /// <param name="sender">The DataGridColumnHeader that raised the event.</param>
-        /// <param name="e">Mouse button event arguments.</param>
-        private void ColumnHeader_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is DataGridColumnHeader header &&
-                header.Content is CheckBox cb &&
-                ServicesDataGrid.DataContext is MainViewModel vm)
-            {
-                // Toggle the SelectAll value manually (true if unchecked or indeterminate, false if checked)
-                bool newValue = cb.IsChecked != true;
-                vm.SelectAll = newValue;
-                e.Handled = true;
-            }
-        }
-
-        /// <summary>
         /// Handles the PreviewMouseLeftButtonDown event for cells in the checkbox column.
         /// Toggles the IsChecked property of the corresponding ServiceRowViewModel when the user clicks the checkbox cell.
         /// Also ensures that IsSelected is cleared if the checkbox is checked.
