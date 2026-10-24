@@ -1059,6 +1059,7 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("ARKANSAS=little_rock", "ARKANSAS=little_rock")]
         [InlineData("SECRETARY=john_doe", "SECRETARY=john_doe")]
         [InlineData("SECRETSAUCE=recipe", "SECRETSAUCE=recipe")]
+        [InlineData("SECRETARY2=john", "SECRETARY2=john")]
         public void MaskRawArguments_ShortKeyFalsePositiveGuards_PreservesNonSensitiveInput(string input, string expected)
         {
             // Act
@@ -1084,6 +1085,21 @@ namespace Servy.Service.UnitTests.Helpers
         [InlineData("DB_PASSWORDS_ENC=xx", "DB_PASSWORDS_ENC=********")]
         [InlineData("myapp.exe --api_keys_file secret.json", "myapp.exe --api_keys_file ********")]
         public void MaskRawArguments_PluralKeywords_SuccessfullyMasksSecrets(string input, string expected)
+        {
+            // Act
+            var result = ServiceHelper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("PASSWORD1=hunter2", "PASSWORD1=********")]
+        [InlineData("DB_PASSWORD2=hunter2", "DB_PASSWORD2=********")]
+        [InlineData("SECRET2024=abc", "SECRET2024=********")]
+        [InlineData("myapp.exe --db-token2 abc123", "myapp.exe --db-token2 ********")]
+        [InlineData("TOKEN2=bearer_123", "TOKEN2=********")]
+        public void MaskRawArguments_KeywordFollowedByDigits_SuccessfullyMasksSecrets(string input, string expected)
         {
             // Act
             var result = ServiceHelper.MaskRawArguments(input);

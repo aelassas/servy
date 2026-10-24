@@ -82,7 +82,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         private static readonly string KeywordBoundaryPattern =
             @"(?i)(?:" +
-                @"(?<![a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
+                @"(?<![a-zA-Z0-9])(?<key>[A-Za-z0-9]*(?:" + string.Join("|", LooseKeyWords.Select(Regex.Escape)) + @")S?[0-9]*(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
                 @"|" +
                 @"(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", StrictKeyWords.Select(Regex.Escape)) + @")S?(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
             @")";
