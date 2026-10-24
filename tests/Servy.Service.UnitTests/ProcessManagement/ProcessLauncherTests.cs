@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
         }
 
         private static RegexMatchTimeoutException Timeout(string input) =>
-            new RegexMatchTimeoutException(input, "(pattern)", System.TimeSpan.FromMilliseconds(1));
+            new RegexMatchTimeoutException(input, "(pattern)", TimeSpan.FromMilliseconds(1));
 
         [Fact]
         public void ApplyLanguageFixes_PythonRegexTimesOut_WarnsAndSetsNoPythonVariables()
@@ -124,7 +124,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
             Assert.False(psi.Environment.ContainsKey("PYTHONLEGACYWINDOWSSTDIO"));
             Assert.False(psi.Environment.ContainsKey("PYTHONUNBUFFERED"));
             logger.Verify(
-                l => l.Warn(It.Is<string>(m => m.Contains("Python detection regex timed out")), It.IsAny<System.Exception?>()),
+                l => l.Warn(It.Is<string>(m => m.Contains("Python detection regex timed out")), It.IsAny<Exception?>()),
                 Times.Once);
         }
 
@@ -144,7 +144,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Assert
             Assert.Equal(expectedArgs, psi.Arguments);
             logger.Verify(
-                l => l.Warn(It.Is<string>(m => m.Contains("-Dfile.encoding detection regex timed out")), It.IsAny<System.Exception?>()),
+                l => l.Warn(It.Is<string>(m => m.Contains("-Dfile.encoding detection regex timed out")), It.IsAny<Exception?>()),
                 Times.Once);
         }
 
