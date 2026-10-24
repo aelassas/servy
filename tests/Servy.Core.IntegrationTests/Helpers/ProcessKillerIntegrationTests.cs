@@ -352,17 +352,16 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(testFile, "Lock Data");
             _tempFiles.Add(testFile);
 
-            int currentPid = Process.GetCurrentProcess().Id;
+            int currentPid = Environment.ProcessId;
 
             using (var holder = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 // Precondition: the Restart Manager must list this process as the holder. When a runner does not,
-                // the killer sees an empty list and returns true, so there is nothing to assert.
+                // the killer sees an empty list and returns true, so the case is skipped visibly instead of passing.
                 var holders = HandleHelper.GetProcessesUsingFile(testFile);
-                if (!holders.Exists(h => h.ProcessId == currentPid))
-                {
-                    return;
-                }
+                Assert.SkipUnless(
+                    holders.Exists(h => h.ProcessId == currentPid),
+                    "The Restart Manager did not list this process as the holder of the file, so the refusal path cannot be reached.");
 
                 // Act
                 bool result = _processKiller.KillProcessesUsingFile(testFile);
