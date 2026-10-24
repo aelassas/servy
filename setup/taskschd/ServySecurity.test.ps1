@@ -53,11 +53,19 @@ $testCases = @(
     @{ Name = "Plural composite: TOKENS_PATH="; Input = "TOKENS_PATH=/x"; Expected = "TOKENS_PATH=********" },
     @{ Name = "Plural composite: DB_PASSWORDS_ENC="; Input = "DB_PASSWORDS_ENC=xx"; Expected = "DB_PASSWORDS_ENC=********" },
 
+    # --- Keyword Followed By Digits (Issue #7623) ---
+    @{ Name = "Digit Suffix: PASSWORD1="; Input = "PASSWORD1=hunter2"; Expected = "PASSWORD1=********" },
+    @{ Name = "Digit Suffix: DB_PASSWORD2="; Input = "DB_PASSWORD2=hunter2"; Expected = "DB_PASSWORD2=********" },
+    @{ Name = "Digit Suffix: SECRET2024="; Input = "SECRET2024=abc"; Expected = "SECRET2024=********" },
+    @{ Name = "Digit Suffix: CLI --db-token2"; Input = "myapp.exe --db-token2 abc123"; Expected = "myapp.exe --db-token2 ********" },
+    @{ Name = "Digit Suffix: TOKEN2="; Input = "TOKEN2=bearer_123"; Expected = "TOKEN2=********" },
+
     # --- Short-Key False Positive Guards (Issue #5877 Invariants) ---
     @{ Name = "Short-key false positive stays clean: COMPAT"; Input = "COMPAT=1"; Expected = "COMPAT=1" },
     @{ Name = "Short-key false positive stays clean: CONCERT"; Input = "CONCERT=tonight"; Expected = "CONCERT=tonight" },
     @{ Name = "Short-key false positive stays clean: ARKANSAS"; Input = "ARKANSAS=little_rock"; Expected = "ARKANSAS=little_rock" },
     @{ Name = "Short-key false positive stays clean: SECRETARY"; Input = "SECRETARY=john_doe"; Expected = "SECRETARY=john_doe" },
+    @{ Name = "Short-key false positive stays clean: SECRETARY2"; Input = "SECRETARY2=john"; Expected = "SECRETARY2=john" },
 
     # --- Base Component Separator Branch Verifications ---
     @{ Name = "Branch A: Colon Separator"; Input = "API_KEY: my-secret-token"; Expected = "API_KEY: ********" },
