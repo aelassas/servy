@@ -343,6 +343,39 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Empty(ReadEntries(content));
         }
 
+        [Fact]
+        public void Report_TitleWithEmptyBody_WritesOnlyTheTitleEntry()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Report(LogLevel.Info, "[Only Title]", string.Empty);
+            Logger.Shutdown();
+
+            // Assert
+            string[] entries = ReadEntries(File.ReadAllText(_fullLogPath));
+            Assert.Single(entries);
+            Assert.EndsWith("| [Only Title]", entries[0]);
+        }
+
+        [Fact]
+        public void Report_EmptyTitleWithBody_WritesOnlyTheBodyLines()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Report(LogLevel.Info, string.Empty, "alpha\nbeta");
+            Logger.Shutdown();
+
+            // Assert
+            string[] entries = ReadEntries(File.ReadAllText(_fullLogPath));
+            Assert.Equal(2, entries.Length);
+            Assert.EndsWith("| alpha", entries[0]);
+            Assert.EndsWith("| beta", entries[1]);
+        }
+
         /// <summary>
         /// Splits the captured log text into entries without depending on the host's line
         /// terminator, so the assertions read the same on the Windows runner and here.
