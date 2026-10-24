@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-21T21:35:39Z
+> Generated on: 2026-10-24T09:35:03Z
 
 ---
 
@@ -7077,13 +7077,13 @@ For more information about using Servy, see the main [README](https://github.com
 
 If you have worked in the Windows ecosystem for a while, you know the situation: you have a high-performance Node.js, Python, Java, or Go application that needs to run as a background service. Most developers turn to NSSM or WinSW to get the job done.
 
-These tools have stood the test of time, but their age shows. They lack security, modern monitoring, robust process handling, and flexible automation.
+These tools have stood the test of time, but their age shows. They lack security, modern monitoring, process-tree cleanup, and flexible automation.
 
 ## The Contenders
 
 * **NSSM (Non-Sucking Service Manager):** The "classic." It's incredibly lightweight but hasn't seen a stable update in over a decade. It is not secure for production environments: it keeps the arguments and environment variables of every service in plaintext under `HKLM\SYSTEM\CurrentControlSet\Services\<ServiceName>\Parameters`, where any local user can read them. It also lacks modern observability.
 * **WinSW (Windows Service Wrapper):** A staple for Jenkins users. It's powerful and XML-driven, but it lacks a graphical interface for quick troubleshooting and centralized service management.
-* **Servy:** A secure, actively maintained, open-source alternative. It features a lightweight Desktop UI alongside a robust CLI and PowerShell module for seamless CI/CD automation.
+* **Servy:** A secure, actively maintained, open-source alternative. It features a lightweight Desktop UI alongside a CLI and PowerShell module for CI/CD automation.
 
 ## Why the Wrapper Matters
 
@@ -7124,7 +7124,7 @@ Servy provides enterprise-grade per-service isolation between custom accounts, a
 
 ## The Servy Advantage
 
-Servy was designed to address the limitations of legacy wrappers and provide a robust, reliable solution for modern services. Beyond basic service management, it supports scenarios that NSSM and WinSW cannot handle efficiently:
+Servy was designed to address the limitations of legacy wrappers. Beyond basic service management, it supports scenarios that NSSM and WinSW cannot handle efficiently:
 
 1. **Observability and Diagnostics:** Servy provides live CPU and RAM graphs, while streaming standard output and error logs in real time. NSSM and WinSW require external monitoring tools to achieve this level of visibility.
 2. **Advanced Lifecycle Hooks:** Pre-launch, post-launch, pre-stop, and post-stop hooks with retry logic, timeouts, and failure handling allow complex orchestration. Legacy wrappers either lack hooks or offer only minimal functionality.
