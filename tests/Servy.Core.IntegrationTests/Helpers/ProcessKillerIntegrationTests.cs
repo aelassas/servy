@@ -358,12 +358,14 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(testFile, "Lock Data");
             _tempFiles.Add(testFile);
 
-            int currentPid = Process.GetCurrentProcess().Id;
-
+            using (var self = Process.GetCurrentProcess())
             using (var holder = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
+                int currentPid = self.Id;
+
                 // Precondition: the Restart Manager must list this process as the holder. When a runner does not,
-                // the killer sees an empty list and returns true, so there is nothing to assert.
+                // the killer sees an empty list and returns true, so there is nothing to assert. xUnit 2 on net48 has
+                // no Assert.SkipUnless, so this case ends early (reported as passed) here; main skips it visibly.
                 var holders = HandleHelper.GetProcessesUsingFile(testFile);
                 if (!holders.Exists(h => h.ProcessId == currentPid))
                 {
