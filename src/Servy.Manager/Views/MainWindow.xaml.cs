@@ -421,7 +421,7 @@ namespace Servy.Manager.Views
         /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing event data.</param>
         private void DataGridRow_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is DataGridRow row && row.DataContext is ServiceRowViewModel vm)
+            if (sender is DataGridRow row && row.DataContext is ServiceRowViewModel)
             {
                 ServicesDataGrid.SelectedItems.Clear();
                 row.IsSelected = true;
