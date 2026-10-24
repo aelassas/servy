@@ -55,7 +55,7 @@ namespace Servy.Service.CommandLine
 
             if (serviceDto == null)
             {
-                throw new InvalidOperationException($"Service {serviceName} not found in the database!");
+                throw new InvalidOperationException($"Service {serviceName} was not found by the Servy host service.");
             }
 
             return new StartOptions

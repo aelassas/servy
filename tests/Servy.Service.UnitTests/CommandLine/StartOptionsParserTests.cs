@@ -82,7 +82,7 @@ namespace Servy.Service.UnitTests.CommandLine
         }
 
         [Fact]
-        public void Parse_ServiceNotFoundInDatabase_ThrowsInvalidOperationException()
+        public void Parse_ServiceNotFoundByHost_ThrowsInvalidOperationException()
         {
             // Arrange
             string serviceName = "MissingService";
@@ -98,7 +98,7 @@ namespace Servy.Service.UnitTests.CommandLine
             var ex = Assert.Throws<InvalidOperationException>(() =>
                 StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args));
 
-            Assert.Contains($"Service {serviceName} not found in the database!", ex.Message);
+            Assert.Contains($"Service {serviceName} was not found by the Servy host service.", ex.Message);
         }
 
         [Fact]
