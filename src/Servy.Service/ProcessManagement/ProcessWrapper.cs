@@ -705,9 +705,10 @@ namespace Servy.Service.ProcessManagement
                     return outcome;
                 }
 
-                // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
-                // Passing 'null' as the handler and 'true' as the add flag tells the OS
-                // to ignore CTRL_C_EVENT for this specific process.
+                // CRITICAL: Make sure Ctrl+C is ignored in the calling process (the service) before the signal
+                // is generated. Passing 'null' as the handler and 'true' as the add flag tells the OS to ignore
+                // CTRL_C_EVENT for this specific process. The flag is not undone afterwards: the finally block
+                // below re-asserts it, because ignoring Ctrl+C is the service's steady state (set in OnStart).
                 if (!ConsoleNative.SetConsoleCtrlHandler(IntPtr.Zero, true))
                 {
                     int error = ConsoleNative.GetLastWin32Error();
