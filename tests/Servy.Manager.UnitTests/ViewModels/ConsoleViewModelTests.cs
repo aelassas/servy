@@ -759,6 +759,36 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Theory]
+        [InlineData(typeof(ObjectDisposedException))]
+        [InlineData(typeof(OperationCanceledException))]
+        [InlineData(typeof(InvalidOperationException))]
+        public async Task SwitchServiceAsync_WhenTheConfiguredPathLookupThrows_CompletesWithoutThrowing(Type exceptionType)
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: a UNC path makes SwitchServiceAsync read the configured paths before it opens anything
+                var thrown = Assert.IsAssignableFrom<Exception>(Activator.CreateInstance(exceptionType, "boom"));
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("UncService", false, It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(thrown);
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "UncService" });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", @"\\server\share\out.log", null);
+                    var exception = await Record.ExceptionAsync(() => task);
+
+                    // Assert: the matching catch arm swallowed it (deleting that arm makes the task fault) and the lookup really ran
+                    Assert.Null(exception);
+                    _serviceRepoMock.Verify(r => r.GetByNameAsync("UncService", false, It.IsAny<CancellationToken>()), Times.Once);
+                }
+            });
+        }
+
         [Fact]
         public async Task SwitchServiceAsync_DevicePathThatDiffersFromTheConfiguredPath_IsNotOpened()
         {
