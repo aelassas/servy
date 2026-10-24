@@ -107,9 +107,13 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("  ")]
         public void GetProcessesUsingFile_BlankPath_ThrowsArgumentExceptionWithoutStartingASession(string? path)
         {
+            // Arrange
             var api = new FakeRestartManager();
 
+            // Act
             Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(path!, api));
+
+            // Assert
             Assert.Empty(api.Registered);
             Assert.Equal(0, api.EndCalls);
         }
@@ -117,27 +121,34 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_NullApi_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => HandleHelper.GetProcessesUsingFile(@"C:\x.txt", null!));
         }
 
         [Fact]
         public void GetProcessesUsingFile_RelativePath_RegistersTheFullPath()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, Array.Empty<NativeMethods.RM_PROCESS_INFO>()));
 
+            // Act
             HandleHelper.GetProcessesUsingFile("locked.dll", api);
 
+            // Assert
             Assert.Equal(new[] { Path.GetFullPath("locked.dll") }, api.Registered);
         }
 
         [Fact]
         public void GetProcessesUsingFile_StartSessionFails_ThrowsWin32ExceptionWithItsCodeAndEndsNothing()
         {
+            // Arrange
             var api = new FakeRestartManager { StartResult = 5 };
 
+            // Act
             var ex = Assert.Throws<Win32Exception>(() => HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api));
 
+            // Assert
             Assert.Equal(5, ex.NativeErrorCode);
             Assert.Empty(api.Registered);
             Assert.Equal(0, api.EndCalls);
@@ -146,10 +157,13 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_RegisterFails_ThrowsWin32ExceptionAndEndsTheSession()
         {
+            // Arrange
             var api = new FakeRestartManager { RegisterResult = 87 };
 
+            // Act
             var ex = Assert.Throws<Win32Exception>(() => HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api));
 
+            // Assert
             Assert.Equal(87, ex.NativeErrorCode);
             Assert.Empty(api.BufferLengths);
             Assert.Equal(1, api.EndCalls);
@@ -159,11 +173,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_GetListFails_ThrowsWin32ExceptionAndEndsTheSession()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((Errors.ERROR_ACCESS_DENIED, Array.Empty<NativeMethods.RM_PROCESS_INFO>()));
 
+            // Act
             var ex = Assert.Throws<Win32Exception>(() => HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api));
 
+            // Assert
             Assert.Equal(Errors.ERROR_ACCESS_DENIED, ex.NativeErrorCode);
             Assert.Equal(1, api.EndCalls);
         }
@@ -171,11 +188,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_NothingHoldsTheFile_ReturnsEmptyAfterOneSizeQuery()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, Array.Empty<NativeMethods.RM_PROCESS_INFO>()));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Empty(results);
             Assert.Equal(new int?[] { null }, api.BufferLengths);
             Assert.Equal(1, api.EndCalls);
@@ -184,11 +204,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_ListDoesNotFit_GrowsTheBufferToTheReportedSizeAndReturnsTheHolder()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, new[] { Self() }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             // First call sizes the list (no buffer), the second fills a buffer of exactly the reported size.
             Assert.Equal(new int?[] { null, 1 }, api.BufferLengths);
             var holder = Assert.Single(results);
@@ -200,11 +223,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_ListKeepsGrowing_ThrowsInvalidOperationAfterTheConfiguredAttemptsAndEndsTheSession()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((Errors.ERROR_MORE_DATA, new[] { Self() }));
 
+            // Act
             Assert.Throws<InvalidOperationException>(() => HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api));
 
+            // Assert
             Assert.Equal(AppConfig.RestartManagerGetListMaxAttempts, api.BufferLengths.Count);
             Assert.Equal(1, api.EndCalls);
         }
@@ -212,39 +238,49 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_SameProcessListedTwice_ReturnsItOnce()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, new[] { Self(), Self() }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Single(results);
         }
 
         [Fact]
         public void GetProcessesUsingFile_NonPositivePid_IsSkipped()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, new[] { Entry(0, default), Entry(-4, default), Self() }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Equal(new[] { Environment.ProcessId }, results.Select(r => r.ProcessId));
         }
 
         [Fact]
         public void GetProcessesUsingFile_ProcessExitedSinceTheList_IsSkipped()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, new[] { Entry(UnusedPid(), default), Self() }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Equal(new[] { Environment.ProcessId }, results.Select(r => r.ProcessId));
         }
 
         [Fact]
         public void GetProcessesUsingFile_PidReusedByALaterProcess_IsSkipped()
         {
+            // Arrange
             // The entry claims this PID belonged to a process created an hour before this one: the holder exited and
             // the PID was reused, so killing the current owner would kill the wrong process.
             DateTime started;
@@ -253,30 +289,38 @@ namespace Servy.Core.UnitTests.Helpers
             var api = new FakeRestartManager();
             api.Lists.Add((0, new[] { Entry(Environment.ProcessId, ToFileTime(started.AddHours(-1))) }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Empty(results);
         }
 
         [Fact]
         public void GetProcessesUsingFile_NoStartTimeReported_KeepsTheProcess()
         {
+            // Arrange
             var api = new FakeRestartManager();
             api.Lists.Add((0, new[] { Entry(Environment.ProcessId, default) }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Equal(new[] { Environment.ProcessId }, results.Select(r => r.ProcessId));
         }
 
         [Fact]
         public void GetProcessesUsingFile_EndSessionFails_StillReturnsTheResult()
         {
+            // Arrange
             var api = new FakeRestartManager { EndResult = 6 };
             api.Lists.Add((0, new[] { Self() }));
 
+            // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
 
+            // Assert
             Assert.Single(results);
             Assert.Equal(1, api.EndCalls);
         }
