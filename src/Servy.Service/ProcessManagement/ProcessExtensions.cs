@@ -53,6 +53,12 @@ namespace Servy.Service.ProcessManagement
         /// <br/><strong>Note:</strong> The caller assumes ownership of these objects and
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="parentPid"/> is not positive.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown when <paramref name="parentStartTime"/> is <see cref="DateTime.MinValue"/>, so PID reuse cannot be validated.
+        /// </exception>
         /// <exception cref="Win32Exception">
         /// Thrown when the underlying Toolhelp32 snapshot cannot be created; see <see cref="Toolhelp32Snapshot.BuildSnapshotAndChildMap"/>.
         /// </exception>
@@ -97,6 +103,12 @@ namespace Servy.Service.ProcessManagement
         /// <br/><strong>Note:</strong> The caller assumes full ownership of ALL returned objects and
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="parentPid"/> is not positive.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown when <paramref name="parentStartTime"/> is <see cref="DateTime.MinValue"/>, so PID reuse cannot be validated.
+        /// </exception>
         /// <exception cref="Win32Exception">
         /// Thrown when the underlying Toolhelp32 snapshot cannot be created; see <see cref="Toolhelp32Snapshot.BuildSnapshotAndChildMap"/>.
         /// </exception>
