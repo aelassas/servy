@@ -131,28 +131,28 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Verifies that if a child process exits in the middle of processing (throwing InvalidOperationException),
-        /// WalkAndKillChildren catches the exception cleanly as a benign process exit instead of logging a warning or throwing.
+        /// Verifies that <see cref="ProcessKiller.KillChildren"/> tolerates a parent whose only child has already exited:
+        /// it does not throw and the parent survives. The catch arms for a child that exits during the walk are pinned in
+        /// ProcessKillerTests (WalkAndKillChildren_OneChildFailsToDie_StillKillsItsSiblingAndTheRoot).
         /// </summary>
         [Fact]
-        public void WalkAndKillChildren_WhenChildExitsMidOperation_HandlesInvalidOperationExceptionGracefully()
+        public void KillChildren_ChildAlreadyExited_DoesNotThrowAndLeavesParentAlive()
         {
             // Arrange
             var (parent, child) = SpawnProcessTree();
-            int parentId = parent.Id;
-            int childId = child.Id;
 
             try
             {
-                // Kill the child first so it is already exited when WalkAndKillChildren evaluates it
                 child.Kill();
-                child.WaitForExit(1000);
+                Assert.True(child.WaitForExit(TestTimeouts.CiGenerousMs), "The child must be dead before KillChildren runs.");
 
-                // Act & Assert
-                // WalkAndKillChildren should process the exited child without throwing an unhandled exception or failing
-                Exception ex = Record.Exception(() => _processKiller.KillChildren(parentId));
+                // Act
+                Exception ex = Record.Exception(() => _processKiller.KillChildren(parent.Id));
 
+                // Assert
                 Assert.Null(ex);
+                parent.Refresh();
+                Assert.False(parent.HasExited, "The parent process should remain alive.");
             }
             finally
             {
