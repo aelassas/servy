@@ -649,7 +649,7 @@ namespace Servy.Core.Logging
                     int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
 
                     // Avoid splitting a UTF-16 surrogate pair
-                    if (target > 0 && target < sb.Length && char.IsHighSurrogate(sb[target - 1]))
+                    if (target > 0 && char.IsHighSurrogate(sb[target - 1]))
                     {
                         target--;
                     }
