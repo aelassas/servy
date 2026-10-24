@@ -233,6 +233,7 @@ namespace Servy.Core.UnitTests.Domain
                 FailureProgramStartupDirectory = "C:\\failureProgramDir",
                 FailureProgramParameters = "--failureProgramArg",
                 EnvironmentVariables = "env1=val1;",
+                AllowOverriddenRuntimeVars = true,
                 ServiceDependencies = "SharedService;",
                 PostLaunchExecutablePath = "C:\\post-launch.exe",
                 PostLaunchStartupDirectory = "C:\\postLaunchDir",
@@ -304,6 +305,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.FailureProgramStartupDirectory, captured.FailureProgramStartupDirectory);
             Assert.Equal(service.FailureProgramParameters, captured.FailureProgramExecutableArgs);
             Assert.Equal(service.EnvironmentVariables, captured.EnvironmentVariables);
+            Assert.Equal(service.AllowOverriddenRuntimeVars, captured.AllowOverriddenRuntimeVars);
             Assert.Equal(service.ServiceDependencies, captured.ServiceDependencies);
             Assert.Equal(service.PostLaunchExecutablePath, captured.PostLaunchExePath);
             Assert.Equal(service.PostLaunchStartupDirectory, captured.PostLaunchStartupDirectory);
