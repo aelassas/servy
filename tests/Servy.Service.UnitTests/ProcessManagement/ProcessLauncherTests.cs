@@ -21,7 +21,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
     /// <see cref="ProcessLauncher.Start(ProcessLaunchOptions, IProcessFactory, IServyLogger)"/>'s final exit poll once its
     /// synchronous wait budget has run out, its redirect-handler open and write failures, its best-effort output
     /// drain, its orphaned-child kill and the whole-tree kill of its synchronous timeout, with the error it logs when
-    /// that kill fails.
+    /// that kill fails and the redirect-handler detach that runs before the writers are disposed on that path.
     /// </summary>
     /// <remarks>
     /// The two detection patterns are anchored, compiled and private, so no input can make them time out.
@@ -681,6 +681,64 @@ namespace Servy.Service.UnitTests.ProcessManagement
             _logger.Verify(
                 l => l.Error(It.Is<string>(m => m.Contains("the process tree could not be terminated")), It.IsAny<Exception?>()),
                 Times.Once);
+        }
+
+        /// <summary>
+        /// Verifies that a synchronous timeout detaches both redirect handlers before the finally block disposes the
+        /// writers, so lines the pumps still deliver while the tree is killed and the wrapper disposed reach no closed
+        /// writer and log no write warning (#7624, the failure-path twin of #5628).
+        /// </summary>
+        /// <remarks>
+        /// The wrapper tracks subscriptions through <c>SetupAdd</c>/<c>SetupRemove</c> and raises whatever handler is
+        /// still attached from every <see cref="IProcessWrapper.Kill(bool)"/> and from
+        /// <see cref="IDisposable.Dispose"/>, which is where a real pump keeps delivering buffered lines after a
+        /// timeout. The first kill (the timeout terminator) runs while the writers are open; the orphan kill and the
+        /// dispose run in the finally block, after the writers are gone.
+        /// </remarks>
+        [Fact]
+        public void Start_SynchronousTimeout_LinesAfterTheTimeoutReachNoDisposedWriter()
+        {
+            // Arrange
+            DataReceivedEventHandler? attachedOut = null;
+            DataReceivedEventHandler? attachedErr = null;
+            void RaiseAttached(string line)
+            {
+                attachedOut?.Invoke(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("out-" + line));
+                attachedErr?.Invoke(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("err-" + line));
+            }
+
+            int kills = 0;
+            var wrapper = new Mock<IProcessWrapper>();
+            wrapper.Setup(p => p.Start()).Returns(true);
+            wrapper.SetupAdd(p => p.OutputDataReceived += It.IsAny<DataReceivedEventHandler>())
+                   .Callback<DataReceivedEventHandler>(h => attachedOut = h);
+            wrapper.SetupRemove(p => p.OutputDataReceived -= It.IsAny<DataReceivedEventHandler>())
+                   .Callback<DataReceivedEventHandler>(h => { if (attachedOut == h) attachedOut = null; });
+            wrapper.SetupAdd(p => p.ErrorDataReceived += It.IsAny<DataReceivedEventHandler>())
+                   .Callback<DataReceivedEventHandler>(h => attachedErr = h);
+            wrapper.SetupRemove(p => p.ErrorDataReceived -= It.IsAny<DataReceivedEventHandler>())
+                   .Callback<DataReceivedEventHandler>(h => { if (attachedErr == h) attachedErr = null; });
+            wrapper.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(false);
+            wrapper.Setup(p => p.Kill(It.IsAny<bool>()))
+                   .Returns(() => { RaiseAttached("kill-" + (++kills)); return true; });
+            wrapper.Setup(p => p.Dispose()).Callback(() => RaiseAttached("dispose"));
+            var options = SyncOptions(Path.Combine(_tempDir, "out.log"), Path.Combine(_tempDir, "err.log"));
+            options.TimeoutMs = 1;
+            options.WaitChunkMs = 1;
+
+            // Act
+            Assert.Throws<TimeoutException>(
+                () => ProcessLauncher.Start(options, FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            Assert.Equal(2, kills);   // the timeout terminator, then the orphan cleanup in the finally block
+            Assert.Equal(new[] { "out-kill-1" }, File.ReadAllLines(Path.Combine(_tempDir, "out.log")));
+            Assert.Equal(new[] { "err-kill-1" }, File.ReadAllLines(Path.Combine(_tempDir, "err.log")));
+            _logger.Verify(
+                l => l.Warn(It.Is<string>(m => m.StartsWith("Failed to write")), It.IsAny<Exception?>()),
+                Times.Never);
+            Assert.Null(attachedOut);
+            Assert.Null(attachedErr);
         }
 
         #endregion

@@ -199,6 +199,26 @@ namespace Servy.Service.ProcessManagement
                 && string.Equals(normalizedOut, normalizedErr, StringComparison.OrdinalIgnoreCase);
 
             bool processStarted = false;
+
+            // Stops the async read pumps and unsubscribes the redirect handlers, so no line reaches a writer the
+            // finally block is about to dispose (#5628). Runs on the success path and first in the finally block,
+            // so every failure path (a TimeoutException included) detaches too (#7624). Idempotent.
+            void DetachOutputPumps()
+            {
+                if (outHandler != null)
+                {
+                    try { process.CancelOutputRead(); } catch { /* not reading, or already stopped */ }
+                    try { process.OutputDataReceived -= outHandler; } catch { /* wrapper already disposed */ }
+                    outHandler = null;
+                }
+                if (errHandler != null)
+                {
+                    try { process.CancelErrorRead(); } catch { /* not reading, or already stopped */ }
+                    try { process.ErrorDataReceived -= errHandler; } catch { /* wrapper already disposed */ }
+                    errHandler = null;
+                }
+            }
+
             try
             {
                 // UseShellExecute is false, so Start() cannot return false (there is no process to reuse):
@@ -327,16 +347,7 @@ namespace Servy.Service.ProcessManagement
                 catch { /* fail-silent - drain is best-effort */ }
 
                 // Stop the pumps before the writers they close over are disposed in the finally block (#5628)
-                if (psi.RedirectStandardOutput)
-                {
-                    try { process.CancelOutputRead(); } catch { /* already stopped */ }
-                    if (outHandler != null) process.OutputDataReceived -= outHandler;
-                }
-                if (psi.RedirectStandardError)
-                {
-                    try { process.CancelErrorRead(); } catch { /* already stopped */ }
-                    if (errHandler != null) process.ErrorDataReceived -= errHandler;
-                }
+                DetachOutputPumps();
 
                 returnedOwnership = true;
                 return process;
@@ -355,6 +366,9 @@ namespace Servy.Service.ProcessManagement
             }
             finally
             {
+                // Detach before the writers are disposed and before the orphan kill, on every exit path (#7624)
+                DetachOutputPumps();
+
                 // Dispose writers safely to release file locks.
                 try { stdoutWriter?.Dispose(); }
                 catch (Exception ex) { logger.Warn($"Failed to dispose stdout writer: {ex.Message}"); }
