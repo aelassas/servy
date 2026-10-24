@@ -196,9 +196,10 @@ namespace Servy.Service.CommandLine
         /// </summary>
         private static string SafeResolvePath(IProcessHelper processHelper, string? rawPath, string fieldName, string serviceName)
         {
+            var input = rawPath ?? string.Empty;
             try
             {
-                return processHelper.ResolvePath(rawPath ?? string.Empty) ?? string.Empty;
+                return processHelper.ResolvePath(input) ?? string.Empty;
             }
             catch (Exception ex) when (ex is InvalidOperationException
             || ex is ArgumentException
@@ -209,7 +210,7 @@ namespace Servy.Service.CommandLine
                 Logger.Error(
                     $"Service '{serviceName}': stored {fieldName} location resolution failed or is invalid " +
                     $"({ex.Message}). Proceeding with an unmapped string token path to ensure startup execution.");
-                return rawPath ?? string.Empty;
+                return input;
             }
         }
     }
