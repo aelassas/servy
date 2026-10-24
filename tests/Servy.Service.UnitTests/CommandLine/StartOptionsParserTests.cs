@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests.CommandLine
         }
 
         [Fact]
-        public void Parse_ReadsServiceDefinitionWithDecryptionEnabled()
+        public void Parse_ValidServiceName_RequestsServiceDefinitionFromHostExactlyOnce()
         {
             // Arrange
             string serviceName = "SecretsWorker";
