@@ -586,7 +586,6 @@ namespace Servy.Core.Domain
                 HeartbeatUrlTimeoutSeconds = HeartbeatUrlTimeoutSeconds,
                 EnableHeartbeatUrlFlags = EnableHeartbeatUrlFlags,
                 EnvironmentVariables = EnvironmentVariables,
-                AllowOverriddenRuntimeVars = AllowOverriddenRuntimeVars,
                 ServiceDependencies = ServiceDependencies,
                 Username = RunAsLocalSystem ? null : UserAccount,
                 Password = RunAsLocalSystem ? null : Password,
