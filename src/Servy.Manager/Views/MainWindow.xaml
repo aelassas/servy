@@ -201,7 +201,6 @@
             <DataGrid.ColumnHeaderStyle>
               <Style TargetType="DataGridColumnHeader">
                 <Setter Property="ContextMenu" Value="{StaticResource ColumnHeaderContextMenu}" />
-                <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ColumnHeader_PreviewMouseLeftButtonDown" />
               </Style>
             </DataGrid.ColumnHeaderStyle>
 
