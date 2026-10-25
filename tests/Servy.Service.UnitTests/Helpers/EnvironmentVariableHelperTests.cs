@@ -170,6 +170,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void ExpandEnvironmentVariables_ShouldExpandSystemVariable()
         {
+            // Arrange
             var vars = new List<EnvironmentVariable>();
             string osSystemRoot = Environment.GetEnvironmentVariable("SystemRoot");
             Assert.False(string.IsNullOrEmpty(osSystemRoot), "Precondition failed: SystemRoot OS variable is not set.");
