@@ -26,6 +26,9 @@ namespace Servy.Core.UnitTests.Helpers
         /// <summary>The number of System registry reads.</summary>
         private int _reads;
 
+        /// <summary>The names the refresher asked the setter to change, in call order.</summary>
+        private readonly List<string> _setNames = new List<string>();
+
         /// <summary>Whether setting a process variable throws.</summary>
         private bool _throwOnSet;
 
@@ -60,6 +63,7 @@ namespace Servy.Core.UnitTests.Helpers
                 () => _user,
                 (name, value) =>
                 {
+                    _setNames.Add(name);
                     if (_throwOnSet) throw new InvalidOperationException("set refused");
                     Environment.SetEnvironmentVariable(name, value);
                 },
@@ -279,6 +283,7 @@ namespace Servy.Core.UnitTests.Helpers
             refresher.Refresh();
 
             // Assert
+            Assert.DoesNotContain(empty, _setNames);
             Assert.Null(Environment.GetEnvironmentVariable(empty));
             Assert.Equal(before, Environment.GetEnvironmentVariable("USERNAME"));
         }
@@ -388,6 +393,8 @@ namespace Servy.Core.UnitTests.Helpers
                 refresher.Refresh();
 
                 // Assert
+                Assert.DoesNotContain(empty, _setNames);
+                Assert.DoesNotContain("HOMESHARE", _setNames);
                 Assert.Null(Environment.GetEnvironmentVariable(empty));
                 Assert.Null(Environment.GetEnvironmentVariable("HOMESHARE"));
             }
