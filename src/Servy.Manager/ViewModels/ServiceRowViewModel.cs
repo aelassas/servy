@@ -247,11 +247,11 @@ namespace Servy.Manager.ViewModels
             await ExecuteSafeAsync(nameof(RestartCommand), () => _serviceCommands.RestartServiceAsync(Service));
 
         private async Task ConfigureServiceAsync(object parameter) =>
-           // Bypasses ExecuteSafeAsync to prevent its synchronous finally block from immediately
-           // resetting the wait cursor. ServiceCommands.ConfigureServiceAsync manages its own
-           // cursor lifecycle and applies a delayed reset to keep the loading indicator visible
-           // until the Desktop application window initializes and paints.
-           await ExecuteSafeAsync(nameof(ConfigureCommand), () => _serviceCommands.ConfigureServiceAsync(Service), updateCursor: false);
+            // Bypasses auto cursor management to prevent ExecuteSafeAsync's finally block from
+            // immediately resetting the wait cursor. ServiceCommands.ConfigureServiceAsync manages
+            // its own cursor lifecycle with a delayed reset to keep visual loading feedback active
+            // until the Desktop application window initializes and paints.
+            await ExecuteSafeAsync(nameof(ConfigureCommand), () => _serviceCommands.ConfigureServiceAsync(Service), manageCursor: false);
 
         private async Task InstallServiceAsync(object parameter) =>
             await ExecuteSafeAsync(nameof(InstallCommand), () => _serviceCommands.InstallServiceAsync(Service));
@@ -290,12 +290,15 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="commandName">The name of the command being executed.</param>
         /// <param name="action">The asynchronous action to execute.</param>
-        /// <param name="updateCursor">Whether to update the cursor to a wait cursor during execution.</param>
-        private async Task ExecuteSafeAsync(string commandName, Func<Task> action, bool updateCursor = true)
+        /// <param name="manageCursor">
+        /// <see langword="true"/> to automatically set and reset the wait cursor during execution;
+        /// <see langword="false"/> when the delegate handles its own cursor lifecycle (e.g., delayed reset routines).
+        /// </param>
+        private async Task ExecuteSafeAsync(string commandName, Func<Task> action, bool manageCursor = true)
         {
             try
             {
-                if (updateCursor)
+                if (manageCursor)
                 {
                     _cursorService.SetWaitCursor();
                 }
@@ -311,7 +314,7 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                if (updateCursor)
+                if (manageCursor)
                 {
                     _cursorService.ResetCursor();
                 }
