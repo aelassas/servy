@@ -17,6 +17,7 @@ using Servy.UI.Validation;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Input;
 
 namespace Servy.Manager.Services
 {
@@ -212,6 +213,9 @@ namespace Servy.Manager.Services
         {
             try
             {
+                // Set the loading cursor on the UI thread immediately upon command invocation
+                await _dispatcher.InvokeAsync(() => Mouse.OverrideCursor = Cursors.Wait);
+
                 string? desktopPath = _appConfig.DesktopAppPublishPath;
                 string baseDir = AppFoldersHelper.GetAppDirectory();
 
@@ -293,6 +297,20 @@ namespace Servy.Manager.Services
                 string serviceName = service?.Name ?? "<unknown>";
                 Logger.Error($"Failed to configure {serviceName}.", ex);
                 await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+            }
+            finally
+            {
+                // Give Windows a brief window to let the Desktop window paint before clearing the Wait cursor
+                _ = Task.Delay(AppConfig.DesktopAppLaunchCursorDelayMs).ContinueWith(async _ =>
+                {
+                    await _dispatcher.InvokeAsync(() =>
+                    {
+                        if (Mouse.OverrideCursor == Cursors.Wait)
+                        {
+                            Mouse.OverrideCursor = null;
+                        }
+                    });
+                });
             }
         }
 
