@@ -55,7 +55,7 @@ $configCandidates = @(
     ".signpath.env"
 )
 
-$configPath = $configCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+$configPath = $configCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 
 if (-not $configPath) {
     Write-Host ".signpath not found. Skipping signing."
@@ -68,7 +68,7 @@ Write-Host "Loading config from $configPath"
 # LOAD CONFIG
 # ----------------------------------------------------------
 $config = @{}
-Get-Content $configPath | ForEach-Object {
+Get-Content -LiteralPath $configPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
