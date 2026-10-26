@@ -186,7 +186,7 @@ namespace Servy.Core.Logging
         /// <summary>
         /// Centralized parameterized log pipeline handler to eliminate code duplication across log severity variants.
         /// Orchestrates the conditional flow between the Windows Event Log sink and the secondary file system logger,
-        /// while enforcing thread-local log level thresholds and standardized message formatting.
+        /// while enforcing the log level threshold of the invoking logger scope and standardized message formatting.
         /// </summary>
         /// <param name="currentLevel">The active <see cref="LogLevel"/> threshold configured for the invoking scope.</param>
         /// <param name="targetLevel">The <see cref="LogLevel"/> required for this entry to be processed.</param>
