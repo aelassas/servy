@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-26T11:54:14Z
+> Generated on: 2026-10-26T18:36:06Z
 
 ---
 
@@ -2670,7 +2670,7 @@ The service monitors the child process using a periodic heartbeat timer to filte
 When the failure threshold is reached, the system enters a managed **Recovery State**.
 
 - **The Gatekeeper Pattern:** A thread-safe flag (`_isRecovering`) blocks any further health checks until the recovery action (Restart Process, Service, or Computer) has completely finished.
-- **Quota Management:** Before executing recovery, the service checks a persistent counter kept by the Servy host service. If `MaxRestartAttempts` is reached, the service executes the `FailureProgram` and stops the service to allow for manual intervention.
+- **Quota Management:** Before executing recovery, the service checks a persistent counter kept by the Servy host service. If `MaxRestartAttempts` is reached, the service resets the persistent `restartAttempts` counter to `0`, executes the `FailureProgram` and stops the service to allow for manual intervention. A manual start therefore begins with a full quota again.
 
 The failure program is executed only after the persistent restart counter reaches `MaxRestartAttempts`, never during intermediate recovery attempts.
 
@@ -2763,7 +2763,7 @@ For every heartbeat cycle, Servy follows this decision-making process:
 4. **RECOVERY ORCHESTRATION:**
    - **Failure Signal:** If `EnableHeartbeatUrlFlags` is enabled, Servy sends a `/fail` HTTP GET ping to `HeartbeatUrl`.
    - **Quota Check:** Servy reads the persistent `restartAttempts` counter from the Servy host service.
-   - **Failure State:** If `restartAttempts >= MaxRestartAttempts`, the recovery limit is reached. Servy executes the `FailureProgram` (if configured) and **stops the service** to allow for manual intervention.
+   - **Failure State:** If `restartAttempts >= MaxRestartAttempts`, the recovery limit is reached. Servy resets the persistent `restartAttempts` counter to `0`, executes the `FailureProgram` (if configured) and **stops the service** to allow for manual intervention. A manual start therefore begins with a full quota again.
    - **Action State:** If the limit is not reached:
      - Increment the persistent `restartAttempts` counter. The host stamps the write with the current UTC time.
      - Set `_isRecovering = true`.
@@ -2824,7 +2824,7 @@ Consider a service configured with:
 
 - `restartAttempts` persists across reboots. Each reboot increments it only once per recovery action
 - `MaxRestartAttempts` limit prevents endless reboot loops
-- After reaching the limit, Servy runs the failure program if configured and stops the service
+- After reaching the limit, Servy resets the counter to `0`, runs the failure program if configured and stops the service, so a manual start begins with a full quota again
 - Operators can manually intervene after the fourth crash
 
 ### Service Restart Detection Example
