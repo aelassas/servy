@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-26T11:53:17Z
+> Generated on: 2026-10-26T11:53:33Z
 
 ---
 
@@ -775,7 +775,7 @@ This tab allows you to configure the service account, including support for loca
 
 Servy securely encrypts stored passwords using AES. For more details, see the [Security](https://github.com/aelassas/servy/wiki/Security) page.
 
-<img alt="servy-config-logon" src="https://github.com/user-attachments/assets/e1d8e4cd-dcbb-4126-8928-a0428566a6dc" />
+<img alt="servy-config-logon" src="https://github.com/user-attachments/assets/ecc48683-9744-4156-aa9e-c40ac9368586" />
 
 You can also run the service under:
 
@@ -783,7 +783,7 @@ You can also run the service under:
 - `NT AUTHORITY\LocalService`
 - Passwordless accounts
 
-<img alt="servy-config-logon-builtin-accounts" src="https://github.com/user-attachments/assets/5681b397-6f38-4a19-9754-c5999e670fd7" />
+<img alt="servy-config-logon-builtin-accounts" src="https://github.com/user-attachments/assets/e3470555-b359-4d84-a6f4-e2d16cd76d1b" />
 
 ### Pre-Launch
 
