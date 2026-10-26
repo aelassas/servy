@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-26T11:53:33Z
+> Generated on: 2026-10-26T11:54:14Z
 
 ---
 
@@ -243,8 +243,6 @@ For detailed information about service dependencies, check out the [Service Depe
 ### Log On
 
 Configure service execution accounts including `LocalSystem`, built-in service accounts, domain accounts, and gMSAs. See [Security](https://github.com/aelassas/servy/wiki/Security).
-
-<img alt="servy-config-logon" src="https://github.com/user-attachments/assets/e1d8e4cd-dcbb-4126-8928-a0428566a6dc" />
 
 <img alt="servy-config-logon" src="https://github.com/user-attachments/assets/ecc48683-9744-4156-aa9e-c40ac9368586" />
 
