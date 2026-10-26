@@ -28,7 +28,7 @@ function Invoke-StandardPublish {
     $resSuffix = if ($BuildConfiguration -eq "Debug") { "debug" } else { "release" }
     $publishResScript = Join-Path $ProjectDir "publish-res-$resSuffix.ps1"
 
-    if (Test-Path $publishResScript) {
+    if (Test-Path -LiteralPath $publishResScript) {
         Write-Host "=== Running publish-res-$resSuffix.ps1 ===" -ForegroundColor Cyan
         & $publishResScript -Tfm $Tfm -Runtime $Runtime
         Assert-LastExitCode "publish-res-$resSuffix.ps1 failed"
@@ -37,7 +37,7 @@ function Invoke-StandardPublish {
 
     # Step 1: Build and Publish
     $projectPath = Join-Path $ProjectDir "$ProjectName.csproj"
-    if (-not (Test-Path $projectPath)) {
+    if (-not (Test-Path -LiteralPath $projectPath)) {
         throw "Project file not found: $projectPath"
     }
 
@@ -69,8 +69,8 @@ function Invoke-StandardPublish {
         $publishFolder = Join-Path $ProjectDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
         $exePath       = Join-Path $publishFolder "$ProjectName.exe"
 
-        if (Test-Path $exePath) {
-            if (Test-Path $signPath) {
+        if (Test-Path -LiteralPath $exePath) {
+            if (Test-Path -LiteralPath $signPath) {
                 Write-Host "=== Signing $ProjectName.exe ===" -ForegroundColor Cyan
                 & $signPath $exePath
                 Assert-LastExitCode "Code signing failed"
