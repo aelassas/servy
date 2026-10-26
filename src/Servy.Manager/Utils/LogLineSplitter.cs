@@ -76,8 +76,9 @@ namespace Servy.Manager.Utils
         /// Bytes that do not complete a line stay pending and are prepended to the next call, so a
         /// line split across two reads is returned once, whole, by the call that terminates it. The
         /// caller loops until this returns <c>false</c>, at which point <paramref name="index"/> has
-        /// reached <paramref name="count"/>; <paramref name="index"/> then also marks, relative to
-        /// the buffer, the first byte of the held-back fragment.
+        /// reached <paramref name="count"/>. It does not locate the held-back fragment, which may begin
+        /// in an earlier buffer; callers derive its start by subtracting <see cref="PendingByteCount"/>
+        /// from the position they have read up to.
         /// </remarks>
         /// <param name="buffer">The buffer holding the bytes read from the log file.</param>
         /// <param name="count">The number of valid bytes in <paramref name="buffer"/>, from index 0.</param>
