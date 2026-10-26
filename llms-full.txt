@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-24T19:35:02Z
+> Generated on: 2026-10-26T09:35:57Z
 
 ---
 
@@ -6216,7 +6216,7 @@ In previous versions, Servy relied on Windows defaults for the `%ProgramData%\Se
 
 * **Breaks Inheritance:** Servy disconnects the folder from the open permissions of the parent drive.
 * **Explicit Purge:** Servy removes access for the `Users`, `Authenticated Users`, and `Everyone` groups.
-* **Restricted Entry:** Only broad, unprivileged groups are removed - `Users`, `Authenticated Users` and `Everyone`. `SYSTEM` and `Administrators` are granted Full Control, and every other explicit entry on the folders Servy secures is removed, Allow and Deny alike; the installing user is preserved only in the non-elevated case (see the table below). This prevents Local Privilege Escalation: the risk of a standard user tampering with a service to gain Admin rights.
+* **Restricted Entry:** `SYSTEM` and `Administrators` are granted Full Control, and every other explicit entry on the folders Servy secures is removed, Allow and Deny alike; the installing user is preserved only in the non-elevated case (see the table below). This prevents Local Privilege Escalation: the risk of a standard user tampering with a service to gain Admin rights.
 
 * **Downward Inheritance:** All subfolders and files within `%ProgramData%\Servy` automatically inherit these strict parent ACLs, ensuring new service directories, configurations, and logs remain locked down by default.
 * **Custom Permissions Are Not Preserved:** On every elevated start of the Desktop App, Servy Manager or `servy-cli` (Release builds), Servy removes every explicit entry for a principal other than `Administrators` and `Local System` from the vault and from every file and folder below it, and gives items owned by another principal to `BUILTIN\Administrators`. Service accounts recorded in the Servy database get their grants back straight afterwards (see [What Is Hardened](https://github.com/aelassas/servy/wiki/Security#what-is-hardened)). An ACE you add by hand for any other account is removed at the next elevated start.
