@@ -19,7 +19,7 @@ $manifest = (Resolve-Path .\servy.json).Path
 [System.IO.File]::WriteAllText($manifest, [System.IO.File]::ReadAllText($manifest), (New-Object System.Text.UTF8Encoding($false)))
 ```
 
-## Publish
+## Verify published package
 
 ```powershell
 scoop update
