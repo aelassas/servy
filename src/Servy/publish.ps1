@@ -47,7 +47,7 @@ $P_PublishDir = $PSScriptRoot
 
 # Load central defaults
 $configPath = Join-Path $P_PublishDir "..\..\setup\build-config.ps1"
-if (Test-Path $configPath) {
+if (Test-Path -LiteralPath $configPath) {
     $buildConfig = & $configPath
     if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
 } else {

@@ -39,7 +39,7 @@ $ErrorActionPreference = "Stop"
 
 # Load central defaults
 $configPath = Join-Path $PSScriptRoot "build-config.ps1"
-if (Test-Path $configPath) {
+if (Test-Path -LiteralPath $configPath) {
     $buildConfig = & $configPath
     if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
     if (-not $Version) { $Version = $buildConfig.Version }
