@@ -1,4 +1,3 @@
-using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
@@ -245,25 +244,12 @@ namespace Servy.Manager.ViewModels
         private async Task RestartServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(nameof(RestartCommand), () => _serviceCommands.RestartServiceAsync(Service));
 
-        private async Task ConfigureServiceAsync(object? parameter)
-        {
-            try
-            {
-                // Bypasses ExecuteSafeAsync to prevent its synchronous finally block from immediately
-                // resetting the wait cursor. ServiceCommands.ConfigureServiceAsync manages its own
-                // cursor lifecycle and applies a delayed reset to keep the loading indicator visible
-                // until the Desktop application window initializes and paints.
-                await _serviceCommands.ConfigureServiceAsync(Service);
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected on shutdown / tab switch
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"{nameof(ConfigureCommand)} failed for {Service.Name}.", ex);
-            }
-        }
+        private async Task ConfigureServiceAsync(object? parameter) =>
+            // Bypasses ExecuteSafeAsync to prevent its synchronous finally block from immediately
+            // resetting the wait cursor. ServiceCommands.ConfigureServiceAsync manages its own
+            // cursor lifecycle and applies a delayed reset to keep the loading indicator visible
+            // until the Desktop application window initializes and paints.
+            await ExecuteSafeAsync(nameof(ConfigureCommand), () => _serviceCommands.ConfigureServiceAsync(Service), updateCursor: false);
 
         private async Task InstallServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(nameof(InstallCommand), () => _serviceCommands.InstallServiceAsync(Service));
@@ -302,11 +288,15 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="commandName">The name of the command being executed.</param>
         /// <param name="action">The asynchronous action to execute.</param>
-        private async Task ExecuteSafeAsync(string commandName, Func<Task> action)
+        /// <param name="updateCursor">Whether to update the cursor to a wait cursor during execution.</param>
+        private async Task ExecuteSafeAsync(string commandName, Func<Task> action, bool updateCursor = true)
         {
             try
             {
-                _cursorService.SetWaitCursor();
+                if (updateCursor)
+                {
+                    _cursorService.SetWaitCursor();
+                }
                 await action();
             }
             catch (OperationCanceledException)
@@ -319,7 +309,10 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                _cursorService.ResetCursor();
+                if (updateCursor)
+                {
+                    _cursorService.ResetCursor();
+                }
             }
         }
 

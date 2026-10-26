@@ -704,7 +704,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // catch (Exception) arm does that the cancellation arm deliberately does not, so it is
             // the only assertion that tells the two arms apart.
             var log = await LogCapture.RunAsync(
-                () => (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), faultyAction)!);
+                () => (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), faultyAction, true)!);
 
             // Assert
             Assert.Contains("ConfigureCommand failed for FaultyService.", log);
@@ -726,7 +726,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Act
             var taskResult = Task.CompletedTask;
             var log = await LogCapture.RunAsync(
-                () => taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), cancelledAction)!);
+                () => taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", nameof(vm.ConfigureCommand), cancelledAction, true)!);
 
             // Assert
             // Awaiting without throwing is the proof the cancellation was absorbed, not rethrown.
