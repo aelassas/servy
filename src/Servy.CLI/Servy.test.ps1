@@ -27,9 +27,9 @@ $scriptRoot = if ($PSVersionTable.PSVersion.Major -ge 3) {
 
 $scriptPath = Join-Path $scriptRoot "Servy.psm1"
 
-if (Test-Path $scriptPath) {
+if (Test-Path -LiteralPath $scriptPath) {
     # Extract $script:EnvVarValidationPattern directly from Servy.psm1
-    $patternLine = Get-Content $scriptPath | Where-Object { $_ -match '\$script:EnvVarValidationPattern\s*=' }
+    $patternLine = Get-Content -LiteralPath $scriptPath | Where-Object { $_ -match '\$script:EnvVarValidationPattern\s*=' }
     if ($patternLine) {
         Invoke-Expression ($patternLine -join "`n")
     }
