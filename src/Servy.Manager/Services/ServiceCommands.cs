@@ -22,7 +22,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace Servy.Manager.Services
 {
@@ -52,6 +51,7 @@ namespace Servy.Manager.Services
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
         private readonly IUiDispatcher _dispatcher;
+        private readonly ICursorService _cursorService;
 
         #endregion
 
@@ -72,6 +72,7 @@ namespace Servy.Manager.Services
         /// <param name="appConfig">The application configuration interface.</param>
         /// <param name="processHelper">The process helper used to format process commands and start processes.</param>
         /// <param name="dispatcher">The UI dispatcher used for STA operations like Clipboard access.</param>
+        /// <param name="cursorService">The cursor service used to show the wait cursor while the Desktop application launches.</param>
         /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
         public ServiceCommands(
             IServiceManager serviceManager,
@@ -85,7 +86,8 @@ namespace Servy.Manager.Services
             IJsonServiceValidator jsonServiceValidator,
             IAppConfiguration appConfig,
             IProcessHelper processHelper,
-            IUiDispatcher dispatcher
+            IUiDispatcher dispatcher,
+            ICursorService cursorService
         )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
@@ -100,6 +102,7 @@ namespace Servy.Manager.Services
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
         }
 
         #endregion
@@ -216,17 +219,33 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public async Task ConfigureServiceAsync(Service service, CancellationToken cancellationToken = default)
         {
+            var cursorReset = false;
+
+            // Resets the cursor at most once, before any error dialog is shown so the dialog never opens under a busy cursor
+            void ResetCursorOnce()
+            {
+                if (cursorReset) return;
+                cursorReset = true;
+                _cursorService.ResetCursor();
+            }
+
+            async Task ShowErrorAndResetCursorAsync(string message)
+            {
+                ResetCursorOnce();
+                await _messageBoxService.ShowErrorAsync(message, UiAppConfig.Caption);
+            }
+
             try
             {
-                // Set the loading cursor on the UI thread immediately upon command invocation
-                await _dispatcher.InvokeAsync(() => Mouse.OverrideCursor = Cursors.Wait);
-                
+                // Set the loading cursor immediately upon command invocation
+                _cursorService.SetWaitCursor();
+
                 string desktopPath = _appConfig.DesktopAppPublishPath;
                 string baseDir = AppFoldersHelper.GetAppDirectory();
 
                 if (string.IsNullOrWhiteSpace(desktopPath) || !File.Exists(desktopPath))
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppNotFound, UiAppConfig.Caption);
+                    await ShowErrorAndResetCursorAsync(Strings.Msg_DesktopAppNotFound);
                     return;
                 }
 
@@ -240,7 +259,7 @@ namespace Servy.Manager.Services
                 if (!PathSecurityGuard.IsSafelyContainedWithinAppDirectory(desktopPath, baseDir))
                 {
                     Logger.Error($"Refusing to launch Desktop application: Target path '{desktopPath}' is not contained within application directory '{baseDir}'.");
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption);
+                    await ShowErrorAndResetCursorAsync(Strings.Msg_DesktopAppLaunchFailed);
                     return;
                 }
 #endif
@@ -260,22 +279,26 @@ namespace Servy.Manager.Services
                     {
                         if (process == null)
                         {
-                            await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption);
+                            await ShowErrorAndResetCursorAsync(Strings.Msg_DesktopAppLaunchFailed);
+                            return;
                         }
                     }
+
+                    // Give Windows a brief window to let the Desktop window paint before the finally block clears the Wait cursor
+                    await Task.Delay(AppConfig.DesktopAppLaunchCursorDelayMs, cancellationToken);
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(service.Name))
                 {
-                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_InvalidServiceName, UiAppConfig.Caption);
+                    await ShowErrorAndResetCursorAsync(Core.Resources.Strings.Msg_InvalidServiceName);
                     return;
                 }
 
                 var serviceDto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
                 if (serviceDto == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                    await ShowErrorAndResetCursorAsync(Core.Resources.Strings.Msg_ServiceNotFound);
                     return;
                 }
 
@@ -286,10 +309,13 @@ namespace Servy.Manager.Services
                 {
                     if (process == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppLaunchFailed, UiAppConfig.Caption);
+                        await ShowErrorAndResetCursorAsync(Strings.Msg_DesktopAppLaunchFailed);
                         return;
                     }
                 }
+
+                // Give Windows a brief window to let the Desktop window paint before the finally block clears the Wait cursor
+                await Task.Delay(AppConfig.DesktopAppLaunchCursorDelayMs, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -301,21 +327,12 @@ namespace Servy.Manager.Services
             {
                 string serviceName = service?.Name ?? "<unknown>";
                 Logger.Error($"Failed to configure {serviceName}.", ex);
-                await _messageBoxService.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+                await ShowErrorAndResetCursorAsync(Core.Resources.Strings.Msg_UnexpectedError);
             }
             finally
             {
-                // Give Windows a brief window to let the Desktop window paint before clearing the Wait cursor
-                _ = Task.Delay(AppConfig.DesktopAppLaunchCursorDelayMs).ContinueWith(async _ =>
-                {
-                    await _dispatcher.InvokeAsync(() =>
-                    {
-                        if (Mouse.OverrideCursor == Cursors.Wait)
-                        {
-                            Mouse.OverrideCursor = null;
-                        }
-                    });
-                });
+                // Every exit path resets the cursor: before the dialog on a failure, after the paint delay on a successful launch
+                ResetCursorOnce();
             }
         }
 

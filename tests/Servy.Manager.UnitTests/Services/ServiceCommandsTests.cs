@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -37,6 +38,7 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<IProcessHelper> _processHelperMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
+        private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly List<ServiceCommands> _created = new List<ServiceCommands>();
 
         private bool _refreshCalled;
@@ -56,6 +58,7 @@ namespace Servy.Manager.UnitTests.Services
             _appConfigMock = new Mock<IAppConfiguration>();
             _processHelperMock = new Mock<IProcessHelper>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
+            _cursorServiceMock = new Mock<ICursorService>();
 
             // Default safe returns for ServiceManager to prevent internal NullRefs
             _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
@@ -86,7 +89,8 @@ namespace Servy.Manager.UnitTests.Services
                 _jsonServiceValidatorMock.Object,
                 _appConfigMock.Object,
                 _processHelperMock.Object,
-                _uiDispatcherMock.Object
+                _uiDispatcherMock.Object,
+                _cursorServiceMock.Object
             );
             _created.Add(sut);
             return sut;
@@ -100,7 +104,7 @@ namespace Servy.Manager.UnitTests.Services
         #region Constructor Tests
 
         /// <summary>
-        /// Verifies that passing null for any one of the twelve constructor dependencies throws an
+        /// Verifies that passing null for any one of the thirteen constructor dependencies throws an
         /// <see cref="ArgumentNullException"/> whose <see cref="ArgumentException.ParamName"/> names that dependency.
         /// </summary>
         /// <param name="nullIndex">Zero-based position of the constructor argument passed as null.</param>
@@ -118,6 +122,7 @@ namespace Servy.Manager.UnitTests.Services
         [InlineData(9, "appConfig")]
         [InlineData(10, "processHelper")]
         [InlineData(11, "dispatcher")]
+        [InlineData(12, "cursorService")]
         public void Constructor_NullDependency_ThrowsArgumentNullExceptionNamingIt(int nullIndex, string expectedParamName)
         {
             // Arrange
@@ -133,7 +138,8 @@ namespace Servy.Manager.UnitTests.Services
                 nullIndex == 8 ? null : _jsonServiceValidatorMock.Object,
                 nullIndex == 9 ? null : _appConfigMock.Object,
                 nullIndex == 10 ? null : _processHelperMock.Object,
-                nullIndex == 11 ? null : _uiDispatcherMock.Object);
+                nullIndex == 11 ? null : _uiDispatcherMock.Object,
+                nullIndex == 12 ? null : _cursorServiceMock.Object);
 
             // Act
             var ex = Assert.Throws<ArgumentNullException>(Build);
@@ -734,6 +740,99 @@ namespace Servy.Manager.UnitTests.Services
                 // Assert
                 _serviceRepositoryMock.Verify(r => r.GetByNameAsync("Missing", false, It.IsAny<CancellationToken>()), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_SuccessfulLaunch_SetsWaitCursorOnceAndResetsItOnceAfterTheLaunch()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write("dummy"))
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = service.Name });
+
+                var events = new List<string>();
+                _cursorServiceMock.Setup(c => c.SetWaitCursor()).Callback(() => events.Add("set"));
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(_ => events.Add("start"))
+                    .Returns(() => Process.GetCurrentProcess());
+                _cursorServiceMock.Setup(c => c.ResetCursor()).Callback(() => events.Add("reset"));
+
+                // Act
+                await sut.ConfigureServiceAsync(service, CancellationToken.None);
+
+                // Assert
+                Assert.Equal(new[] { "set", "start", "reset" }, events);
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_ServiceNotFoundInDb_ResetsCursorBeforeTheErrorDialogWithoutTheLaunchDelay()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write("dummy"))
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _serviceRepositoryMock
+                    .Setup(r => r.GetByNameAsync("Missing", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((ServiceDto)null);
+
+                // Captured at the moment the dialog is shown: the cursor must already be back to normal by then
+                bool cursorResetWhileDialogOpen = false;
+                _messageBoxServiceMock
+                    .Setup(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_ServiceNotFound, UiAppConfig.Caption))
+                    .Callback(() => cursorResetWhileDialogOpen = _cursorServiceMock.Invocations.Any(i => i.Method.Name == nameof(ICursorService.ResetCursor)))
+                    .Returns(Task.CompletedTask);
+
+                // Act
+                var stopwatch = Stopwatch.StartNew();
+                await sut.ConfigureServiceAsync(new Service { Name = "Missing" }, CancellationToken.None);
+                stopwatch.Stop();
+
+                // Assert
+                _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                Assert.True(stopwatch.ElapsedMilliseconds < AppConfig.DesktopAppLaunchCursorDelayMs,
+                    $"A failed launch must not wait for the paint delay, took {stopwatch.ElapsedMilliseconds} ms");
+                Assert.True(cursorResetWhileDialogOpen, "The wait cursor must be reset before the error dialog is shown");
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_ProcessStartReturnsNull_ResetsCursorImmediatelyWithoutTheLaunchDelay()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write("dummy"))
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = service.Name });
+                _processHelperMock.Setup(h => h.Start(It.IsAny<ProcessStartInfo>())).Returns((Process)null);
+
+                // Act
+                var stopwatch = Stopwatch.StartNew();
+                await sut.ConfigureServiceAsync(service, CancellationToken.None);
+                stopwatch.Stop();
+
+                // Assert
+                _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                Assert.True(stopwatch.ElapsedMilliseconds < AppConfig.DesktopAppLaunchCursorDelayMs,
+                    $"A failed launch must not wait for the paint delay, took {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
@@ -1694,6 +1793,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
