@@ -277,7 +277,8 @@ namespace Servy.Manager
                         new JsonServiceValidator(serviceValidationRules),
                         this, // IAppConfiguration
                         processHelper,
-                        uiDispatcher // Pass the UI Dispatcher
+                        uiDispatcher, // Pass the UI Dispatcher
+                        cursorService
                     );
 
                     // 2. Initialize Main ViewModel
