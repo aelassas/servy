@@ -720,6 +720,16 @@ namespace Servy.Core.Config
         public const int SplashMinDisplayThresholdMs = 1_000;
 
         /// <summary>
+        /// Defines the delay (in milliseconds) before resetting the wait cursor after launching the Servy Desktop application
+        /// from the Servy Manager (either to open the general application window or to edit a specific service configuration).
+        /// </summary>
+        /// <remarks>
+        /// Spawning the external Desktop process returns asynchronously before its WPF visual tree finishes initializing.
+        /// This delay prevents the cursor from prematurely reverting to default while the Desktop window is painting.
+        /// </remarks>
+        public const int DesktopAppLaunchCursorDelayMs = 3_000;
+
+        /// <summary>
         /// The positional launch argument string passed to indicate whether the splash screen should be bypassed on application startup.
         /// </summary>
         /// <remarks>

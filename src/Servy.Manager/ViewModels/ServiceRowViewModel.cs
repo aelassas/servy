@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
@@ -8,6 +9,7 @@ using Servy.UI.ViewModels;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
 {
@@ -246,8 +248,25 @@ namespace Servy.Manager.ViewModels
         private async Task RestartServiceAsync(object parameter) =>
             await ExecuteSafeAsync(nameof(RestartCommand), () => _serviceCommands.RestartServiceAsync(Service));
 
-        private async Task ConfigureServiceAsync(object parameter) =>
-            await ExecuteSafeAsync(nameof(ConfigureCommand), () => _serviceCommands.ConfigureServiceAsync(Service));
+        private async Task ConfigureServiceAsync(object parameter)
+        {
+            try
+            {
+                // Bypasses ExecuteSafeAsync to prevent its synchronous finally block from immediately
+                // resetting the wait cursor. ServiceCommands.ConfigureServiceAsync manages its own
+                // cursor lifecycle and applies a delayed reset to keep the loading indicator visible
+                // until the Desktop application window initializes and paints.
+                await _serviceCommands.ConfigureServiceAsync(Service);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on shutdown / tab switch
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"{nameof(ConfigureCommand)} failed for {Service.Name}.", ex);
+            }
+        }
 
         private async Task InstallServiceAsync(object parameter) =>
             await ExecuteSafeAsync(nameof(InstallCommand), () => _serviceCommands.InstallServiceAsync(Service));
