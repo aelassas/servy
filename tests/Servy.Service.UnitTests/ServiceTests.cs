@@ -803,6 +803,63 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        /// <summary>
+        /// Verifies that a heartbeat URL carrying a query string keeps the query intact while the lifecycle flag is appended to the URL path, not to the query.
+        /// </summary>
+        [Fact]
+        public async Task EmitHeartbeatPing_UrlWithQuery_PutsFlagInPathAndKeepsQuery()
+        {
+            // Arrange
+            var namedPipesService = new Mock<INamedPipesService>();
+            using (var serviceInstance = _ctx.BuildService(namedPipesService.Object))
+            {
+                var (listener, baseAddress) = CreateAndStartHttpListener();
+
+                var requestReceivedTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var context = await listener.GetContextAsync();
+                        requestReceivedTcs.TrySetResult(context.Request.Url?.PathAndQuery ?? string.Empty);
+                        context.Response.StatusCode = (int)HttpStatusCode.OK;
+                        context.Response.Close();
+                    }
+                    catch
+                    {
+                        // Listener stopped or disposed during test cleanup
+                    }
+                }, CancellationToken.None);
+
+                try
+                {
+                    TestReflection.SetField(serviceInstance, "_options", new StartOptions
+                    {
+                        EnableHealthMonitoring = true,
+                        EnableHeartbeatUrlFlags = true
+                    });
+
+                    object?[] parameters = new object?[] { $"{baseAddress}test-uuid?create=1&rid=abc", "/fail", 2 };
+
+                    // Act
+                    TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
+
+                    // Assert
+                    var completedTask = await Task.WhenAny(requestReceivedTcs.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
+                    Assert.True(completedTask == requestReceivedTcs.Task, "Heartbeat ping request timed out on background thread");
+
+                    string receivedPathAndQuery = await requestReceivedTcs.Task;
+                    Assert.Equal("/test-uuid/fail?create=1&rid=abc", receivedPathAndQuery);
+                }
+                finally
+                {
+                    try { listener.Stop(); } catch { /* Ignore cleanup errors */ }
+                    try { listener.Close(); } catch { /* Ignore cleanup errors */ }
+                }
+            }
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
