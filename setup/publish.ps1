@@ -68,7 +68,7 @@ try {
 
         $fullPath = Join-Path $scriptDir $ScriptPath
 
-        if (-not (Test-Path $fullPath)) {
+        if (-not (Test-Path -LiteralPath $fullPath)) {
             Write-Error "Script not found: $fullPath"
         }
 

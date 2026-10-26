@@ -1,6 +1,6 @@
 # Servy Scoop Package
 
-`servy.json` is the canonical Scoop manifest for Servy. `scoop.yml` updates it on each release and publishes it to the aelassas bucket and to Scoop Extras.
+`servy.json` is the canonical Scoop manifest for Servy. `scoop.yml` updates it in the aelassas bucket on each release, and opens a pull request against Scoop Extras when the workflow is started manually with `run_extras_pr` enabled.
 
 ## Local test
 
