@@ -41,9 +41,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() => new ServiceRowViewModel(
-                nullIndex == 0 ? null : new Service { Name = "RowSvc" },
-                nullIndex == 1 ? null : _serviceCommandsMock.Object,
-                nullIndex == 2 ? null : _cursorServiceMock.Object));
+                nullIndex == 0 ? null! : new Service { Name = "RowSvc" },
+                nullIndex == 1 ? null! : _serviceCommandsMock.Object,
+                nullIndex == 2 ? null! : _cursorServiceMock.Object));
 
             Assert.Equal(expectedParamName, ex.ParamName);
         }
