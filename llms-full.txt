@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-26T09:35:57Z
+> Generated on: 2026-10-26T10:36:21Z
 
 ---
 
@@ -2716,6 +2716,8 @@ When `HeartbeatUrl` is configured and health monitoring is enabled, Servy transm
 - **Health Check Loop Pass (steady state):** When a health check finds the process healthy and the consecutive-failure counter is already `0`, Servy pings the exact base `HeartbeatUrl` (e.g., `https://hc-ping.com/your-uuid`).
 - **Health Check Loop Pass (recovered):** When a health check finds the process healthy after one or more failed checks and extended flags are enabled (`EnableHeartbeatUrlFlags`), Servy sends `/start` instead of the bare URL, signalling that the service came back. With flags disabled, no ping is sent on that check; the bare ping resumes on the next healthy check.
 - **Health Check Loop Fail / Process Crash:** Right before triggering configured recovery actions, upon process crash, or when all restart attempt quotas have been exhausted, if extended flags are enabled (`EnableHeartbeatUrlFlags`), Servy appends `/fail` to the `HeartbeatUrl` and sends the ping (e.g., `https://hc-ping.com/your-uuid/fail`).
+
+If `HeartbeatUrl` has a query string, the `/start` or `/fail` flag is added to the URL path and the query is kept: `https://hc-ping.com/your-uuid?create=1` becomes `https://hc-ping.com/your-uuid/fail?create=1`.
 
 ### Logic Examples & Threshold Scenarios
 
