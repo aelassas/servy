@@ -2194,15 +2194,10 @@ namespace Servy.Service
                     if (!string.IsNullOrEmpty(suffix))
                     {
                         var builder = new UriBuilder(baseUri);
-                        string query = builder.Query; // Save existing query params (?key=val)
 
+                        // UriBuilder keeps the existing query when only the path changes, so the flag lands in the path.
                         string currentPath = builder.Path.EndsWith("/") ? builder.Path : builder.Path + "/";
                         builder.Path = currentPath + suffix.TrimStart('/');
-
-                        if (!string.IsNullOrEmpty(query))
-                        {
-                            builder.Query = query.TrimStart('?'); // Re-attach query params
-                        }
 
                         targetUri = builder.Uri;
                     }
