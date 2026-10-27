@@ -1314,16 +1314,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 {
                     // The detached process is out of reach of both Kill and the class-level teardown, so end
                     // it by PID instead of leaving it to sleep out its 10 seconds as an orphan alongside the
-                    // rest of this non-parallel collection. KillAndDispose kills the tree and disposes the
-                    // handle; ArgumentException means the process had already gone on its own.
-                    try
-                    {
-                        Testing.TestProcessCleanup.KillAndDispose(Process.GetProcessById(pid));
-                    }
-                    catch (ArgumentException)
-                    {
-                        // Already gone.
-                    }
+                    // rest of this non-parallel collection. KillByIdIfRunning kills the tree, disposes the
+                    // handle and treats a process that had already gone on its own as nothing to reap.
+                    KillByIdIfRunning(pid);
                 }
             }
         }
