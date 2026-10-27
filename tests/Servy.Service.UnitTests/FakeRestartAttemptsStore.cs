@@ -7,7 +7,7 @@ namespace Servy.Service.UnitTests
     /// <summary>
     /// An in-memory stand-in for the restart attempts counter the Servy host keeps in <c>Servy.db</c>, wired into a
     /// <see cref="Mock{INamedPipesService}"/>: reads return the stored counter and its timestamp, writes store the value
-    /// and stamp it with <see cref="Clock"/>, as the host does. Either side can be made to fail.
+    /// and stamp it with the current UTC time, as the host does. Either side can be made to fail.
     /// </summary>
     internal sealed class FakeRestartAttemptsStore
     {
@@ -24,9 +24,6 @@ namespace Servy.Service.UnitTests
 
         /// <summary>Gets or sets the exception every write throws; <see langword="null"/> writes normally.</summary>
         public Exception? WriteFailure { get; set; }
-
-        /// <summary>Gets or sets the clock that stamps a write.</summary>
-        public Func<DateTime> Clock { get; set; } = () => DateTime.UtcNow;
 
         /// <summary>Gets the values written, in order.</summary>
         public List<int> Writes { get; } = new List<int>();
@@ -77,7 +74,7 @@ namespace Servy.Service.UnitTests
                     return Task.FromException<int>(WriteFailure);
 
                 Attempts = value;
-                UpdatedAtUtc = Clock();
+                UpdatedAtUtc = DateTime.UtcNow;
                 Writes.Add(value);
                 return Task.FromResult(1);
             }
