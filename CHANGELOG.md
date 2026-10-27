@@ -1,5 +1,44 @@
 # Changelog
 
+## [Servy 10.7](https://github.com/aelassas/servy/releases/tag/v10.7)
+
+**Date:** 2026-10-27 | **Tag:** [`v10.7`](https://github.com/aelassas/servy/tree/v10.7)
+
+Servy v10.7 introduces user experience enhancements in Servy Manager, bug fixes, security patches, code quality improvements, and documentation updates.
+
+### Full Changelog
+* feat(manager): open configuration on service row double-click without checking row checkbox
+* feat(manager): improve cursor loading feedback when launching desktop application
+* fix(core): fix non-string environment variable handling in registry reader (#7614)
+* fix(core): simplify truncation logic in `Logger` exception string formatting (#7616)
+* fix(service): clarify pre-launch environment variable fallback semantics (#7591)
+* fix(service): report failure to SCM when the pre-launch hook fails during service startup (#7594)
+* fix(service): properly append heartbeat query parameters to URLs with existing query strings (#7611)
+* fix(service): eliminate duplicate error logging when process startup fails in `OnStart` (#7612)
+* fix(service): wrap restart attempt semaphore waits inside try-blocks to handle teardown cancellation cleanly (#7613)
+* fix(service): clean up redundant fallback handling in option path resolution (#7621)
+* fix(service): update service lookup error message to reflect IPC named-pipe configuration (#7622)
+* fix(service): expand sensitive data masking rules to cover keys with trailing digits (#7623)
+* fix(service): safely detach process output pumps before disposing stream writers on launch failure (#7624)
+* fix(manager): add missing unavailable dependency icon description to the Dependencies tab legend (#7588)
+* fix(manager): ensure header preview click handler attaches correctly across all grid columns (#7620)
+* fix(manager): remove unused pattern variable in DataGrid row right-click handler (#7626)
+* ci(net48): disable MSBuild Fakes targets to prevent path evaluation errors on Windows runner
+
+### Downloads
+* [servy-10.7-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-arm64-installer.exe) - 113.03 MB
+* [servy-10.7-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-arm64-portable.7z) - 115.16 MB
+* [servy-10.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-net48-sbom.xml) - 0.03 MB
+* [servy-10.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-net48-x64-installer.exe) - 4.30 MB
+* [servy-10.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-net48-x64-portable.7z) - 2.05 MB
+* [servy-10.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-sbom.xml) - 0.04 MB
+* [servy-10.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-x64-installer.exe) - 119.92 MB
+* [servy-10.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.7/servy-10.7-x64-portable.7z) - 118.48 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.7.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.7.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.6...v10.7
+
 ## [Servy 10.6](https://github.com/aelassas/servy/releases/tag/v10.6)
 
 **Date:** 2026-10-21 | **Tag:** [`v10.6`](https://github.com/aelassas/servy/tree/v10.6)
