@@ -57,6 +57,34 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
+        /// A positive <c>Timing:ScmAdditionalTimeMs</c> replaces the default; a non-positive or unparsable one
+        /// leaves it alone.
+        /// </summary>
+        /// <param name="rawValue">The configured value, or <see langword="null"/> when the key is absent.</param>
+        /// <param name="expectDefault"><see langword="true"/> when the default must survive.</param>
+        [Theory]
+        [InlineData(null, true)]
+        [InlineData("", true)]
+        [InlineData("0", true)]
+        [InlineData("-1", true)]
+        [InlineData("not-a-number", true)]
+        [InlineData("2 500", true)]
+        [InlineData("2500", false)]
+        public void Constructor_ScmAdditionalTimeMs_KeepsDefaultUnlessPositiveInteger(string? rawValue, bool expectDefault)
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+            env.Settings["Timing:ScmAdditionalTimeMs"] = rawValue;
+
+            // Act
+            var service = Build(env);
+
+            // Assert
+            var expected = expectDefault ? AppConfig.DefaultScmAdditionalTimeMs : 2500;
+            Assert.Equal(expected, TestReflection.GetField<int>(service, "_scmAdditionalTimeMs"));
+        }
+
+        /// <summary>
         /// The same rule governs <c>Timing:ScmAdditionalTimeMs</c>, and the two keys are independent.
         /// </summary>
         [Fact]
