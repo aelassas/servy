@@ -22,9 +22,8 @@ namespace Servy.Core.IO
     public class RotatingStreamWriter : IDisposable
     {
         /// <summary>
-        /// Validates the rotated filename segment.
-        /// Updated to allow chained collision suffixes (e.g., .20260429_213213.(1).(2))
-        /// produced during high-frequency rotations within a single second.
+        /// Validates the rotated filename segment: a <c>yyyyMMdd_HHmmss</c> timestamp followed by any number of
+        /// collision suffixes (e.g., <c>20260429_213213.(1).(2)</c>) produced during high-frequency rotations within a single second.
         /// </summary>
         private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))*$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
