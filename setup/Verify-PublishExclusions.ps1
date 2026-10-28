@@ -15,7 +15,7 @@ $ScriptDir = $PSScriptRoot
 # Dot-source publish-common.ps1 to import Copy-TaskSchdArtifacts under test
 . (Join-Path $ScriptDir "publish-common.ps1")
 
-Push-Location -Path $ScriptDir
+Push-Location -LiteralPath $ScriptDir
 
 # ---------------------------------------------------------------------
 # SETUP TEMPORARY SANDBOX ENVIRONMENT
@@ -29,7 +29,7 @@ $Passed = 0
 $Failed = 0
 
 try {
-    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $SandboxRoot) { Remove-Item -LiteralPath $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
 
     New-Item -Path $sourcePath -ItemType Directory -Force | Out-Null
     New-Item -Path (Join-Path $sourcePath "SubFolder") -ItemType Directory -Force | Out-Null
@@ -58,7 +58,7 @@ try {
     foreach ($file in $MockFiles) {
         $filePath = Join-Path $sourcePath $file[0]
         $parentDir = Split-Path $filePath -Parent
-        if (-not (Test-Path $parentDir)) { New-Item -Path $parentDir -ItemType Directory -Force | Out-Null }
+        if (-not (Test-Path -LiteralPath $parentDir)) { New-Item -Path $parentDir -ItemType Directory -Force | Out-Null }
         [System.IO.File]::WriteAllText($filePath, "Mock Publish Target Data Payload context.")
     }
 
@@ -67,7 +67,7 @@ try {
     # ---------------------------------------------------------------------
     Write-Host "Executing filter staging copy block..." -ForegroundColor Gray
 
-    if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
+    if (-not (Test-Path -LiteralPath $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
     # Invoke shared function under test
     Copy-TaskSchdArtifacts -SourcePath $sourcePath -DestPath $destPath
@@ -80,7 +80,7 @@ try {
 
     foreach ($file in $MockFiles) {
         $expectedPath = Join-Path $destPath $file[0]
-        $exists = Test-Path $expectedPath
+        $exists = Test-Path -LiteralPath $expectedPath
         $shouldExist = $file[1]
 
         if ($exists -eq $shouldExist) {
@@ -117,7 +117,7 @@ try {
     Write-Host "==========================================================" -ForegroundColor Cyan
 }
 finally {
-    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $SandboxRoot) { Remove-Item -LiteralPath $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
     Pop-Location
 }
 
