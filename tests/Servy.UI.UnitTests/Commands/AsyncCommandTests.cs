@@ -11,6 +11,8 @@ namespace Servy.UI.UnitTests.Commands
         public void Constructor_NullExecute_ThrowsArgumentNullException()
         {
             // Branch: execute ?? throw new ArgumentNullException
+
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => new AsyncCommand(null!));
         }
 
@@ -22,8 +24,15 @@ namespace Servy.UI.UnitTests.Commands
         public void CanExecute_IdleNoPredicate_ReturnsTrue()
         {
             // Branch: Volatile.Read == 0 && (_canExecute?.Invoke ?? true)
+
+            // Arrange
             var command = new AsyncCommand(_ => Task.CompletedTask);
-            Assert.True(command.CanExecute(null));
+
+            // Act
+            var result = command.CanExecute(null);
+
+            // Assert
+            Assert.True(result);
         }
 
         [Theory]
@@ -32,27 +41,40 @@ namespace Servy.UI.UnitTests.Commands
         public void CanExecute_WithPredicate_ReturnsPredicateResult(bool predicateResult, bool expected)
         {
             // Branch: Predicate branch of (_canExecute?.Invoke(parameter) ?? true)
+
+            // Arrange
             var command = new AsyncCommand(_ => Task.CompletedTask, _ => predicateResult);
-            Assert.Equal(expected, command.CanExecute(null));
+
+            // Act
+            var result = command.CanExecute(null);
+
+            // Assert
+            Assert.Equal(expected, result);
         }
 
         [Fact]
         public async Task CanExecute_DuringExecution_ReturnsFalse()
         {
             // Branch: Volatile.Read(ref _isExecuting) == 0 (where it is 1)
+
+            // Arrange
             var tcs = new TaskCompletionSource<bool>();
             var command = new AsyncCommand(_ => tcs.Task);
 
+            // Act
             var executionTask = command.ExecuteAsync(null);
+            var canExecuteWhileRunning = command.CanExecute(null);
 
-            // Command is currently running
-            Assert.False(command.CanExecute(null));
+            // Assert (command is currently running)
+            Assert.False(canExecuteWhileRunning);
 
+            // Act (second call, after the first one completes)
             tcs.SetResult(true);
             await executionTask;
+            var canExecuteWhenIdle = command.CanExecute(null);
 
-            // Command is idle again
-            Assert.True(command.CanExecute(null));
+            // Assert (command is idle again)
+            Assert.True(canExecuteWhenIdle);
         }
 
         #endregion
@@ -63,6 +85,8 @@ namespace Servy.UI.UnitTests.Commands
         public async Task ExecuteAsync_PreventsReentrancy()
         {
             // Branch: if (Interlocked.CompareExchange(...) != 0) return;
+
+            // Arrange
             int callCount = 0;
             var tcs = new TaskCompletionSource<bool>();
 
@@ -72,6 +96,7 @@ namespace Servy.UI.UnitTests.Commands
                 await tcs.Task;
             });
 
+            // Act
             // Trigger first execution
             var task1 = command.ExecuteAsync(null);
 
@@ -81,7 +106,8 @@ namespace Servy.UI.UnitTests.Commands
             tcs.SetResult(true);
             await Task.WhenAll(task1, task2);
 
-            // Assert that the inner logic only ran once
+            // Assert
+            // The inner logic only ran once
             Assert.Equal(1, callCount);
         }
 
@@ -89,11 +115,15 @@ namespace Servy.UI.UnitTests.Commands
         public async Task ExecuteAsync_RespectsPredicate_InsideLock()
         {
             // Branch: if (_canExecute != null && !_canExecute(parameter)) return;
+
+            // Arrange
             bool wasExecuted = false;
             var command = new AsyncCommand(_ => Task.Run(() => wasExecuted = true), _ => false);
 
+            // Act
             await command.ExecuteAsync(null);
 
+            // Assert
             Assert.False(wasExecuted);
         }
 
@@ -109,6 +139,7 @@ namespace Servy.UI.UnitTests.Commands
             // Branch: catch (Exception ex) in Execute(object parameter)
             // This test ensures the 'async void' entry point does not crash the process.
 
+            // Arrange
             var previousContext = SynchronizationContext.Current;
             var testContext = new TestSynchronizationContext();
             try
@@ -119,8 +150,10 @@ namespace Servy.UI.UnitTests.Commands
                     ? Task.FromCanceled(new CancellationToken(true))
                     : throw new Exception("Command Failure"));
 
+                // Act
                 command.Execute(null);
 
+                // Assert
                 // Bound the wait: a change that leaves an operation pending must fail the run
                 // rather than hang it.
                 var completion = testContext.WaitForCompletionAsync();
@@ -147,6 +180,7 @@ namespace Servy.UI.UnitTests.Commands
             // name the thirty production call sites pass is never observed.
             const string commandName = "StartSelectedCommand";
 
+            // Arrange
             var previousContext = SynchronizationContext.Current;
             var testContext = new TestSynchronizationContext();
             try
@@ -157,6 +191,7 @@ namespace Servy.UI.UnitTests.Commands
                     _ => throw new InvalidOperationException("Command Failure"),
                     name: commandName);
 
+                // Act
                 // LogCapture owns the temporary log directory, the flush before the read and the
                 // restore of the static logger's default folder afterwards.
                 var log = await LogCapture.RunAsync(async () =>
@@ -170,6 +205,7 @@ namespace Servy.UI.UnitTests.Commands
                     Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
                 });
 
+                // Assert
                 Assert.Contains($"AsyncCommand '{commandName}' execution failed.", log);
             }
             finally
@@ -184,6 +220,8 @@ namespace Servy.UI.UnitTests.Commands
             // Branch: the success path of the try block in Execute(object parameter). Both existing
             // Execute-level tests deliberately throw or cancel, so the ordinary "the command ran
             // fine" path through the async void entry point was never exercised.
+
+            // Arrange
             var previousContext = SynchronizationContext.Current;
             var testContext = new TestSynchronizationContext();
             try
@@ -197,8 +235,10 @@ namespace Servy.UI.UnitTests.Commands
                     return Task.CompletedTask;
                 });
 
+                // Act
                 command.Execute(null);
 
+                // Assert
                 // Bound the wait: a change that leaves an operation pending must fail the run
                 // rather than hang it.
                 var completion = testContext.WaitForCompletionAsync();
