@@ -20,9 +20,9 @@
 #>
 function Remove-ItemSafely {
     param ([string]$Path)
-    if (Test-Path $Path) {
+    if (Test-Path -LiteralPath $Path) {
         Write-Host "Cleaning: $Path" -ForegroundColor Gray
-        Remove-Item -Recurse -Force $Path
+        Remove-Item -Recurse -Force -LiteralPath $Path
     }
 }
 
@@ -46,18 +46,18 @@ function Copy-TaskSchdArtifacts {
         [Parameter(Mandatory=$true)][string]$DestPath
     )
 
-    Get-ChildItem -Path $SourcePath -Recurse -File |
+    Get-ChildItem -LiteralPath $SourcePath -Recurse -File |
         Where-Object {
             $_.Name -notin @('smtp-cred.xml', 'temp.ps1') -and
             $_.Extension -notin @('.dat', '.log') -and
             $_.Name -notlike '*.test.ps1'
         } |
         ForEach-Object {
-            $rel    = $_.FullName.Substring((Resolve-Path $SourcePath).Path.Length + 1)
+            $rel    = $_.FullName.Substring((Resolve-Path -LiteralPath $SourcePath).Path.Length + 1)
             $target = Join-Path $DestPath $rel
             $parent = Split-Path $target -Parent
-            if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-            Copy-Item -Path $_.FullName -Destination $target -Force
+            if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+            Copy-Item -LiteralPath $_.FullName -Destination $target -Force
         }
 }
 
