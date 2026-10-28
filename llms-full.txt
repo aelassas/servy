@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-28T16:37:52Z
+> Generated on: 2026-10-28T17:35:30Z
 
 ---
 
@@ -2240,6 +2240,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 | `DesktopAppPublishPath` | `.\Servy.exe` | Path to the Servy desktop app launched from the Manager. Resolved relative to the Manager's base directory if not absolute. |
 | `ServicesHiddenColumns` | `""` | Comma-separated list of services-grid column headers hidden in the Manager's Services tab, for example `Description,Log On As`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (Display Name, Description, Status, Startup Type, Log On As, PID, CPU, RAM). The Display Name column is hidden by default: the first start of the Manager adds `Display Name` to this value. |
 | `LogsHiddenColumns` | `""` | Comma-separated list of logs-grid column headers hidden in the Manager's Logs tab, for example `Event ID,Level`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (`Time`, `Level`, `Event ID`). |
+| `IsDisplayNameColumnMigrated` | `false` | One-time migration flag the Manager manages itself. While it is `false`, the next start adds `Display Name` to `ServicesHiddenColumns` and then sets it to `true`. There is no need to edit it; setting it back to `false` hides the Display Name column again on the next start. |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
 > [!NOTE]
