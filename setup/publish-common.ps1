@@ -32,9 +32,9 @@ $script:TaskSchdExcludedPatterns = @('smtp-cred.xml', 'temp.ps1', '*.dat', '*.lo
 #>
 function Remove-ItemSafely {
     param ([string]$Path)
-    if (Test-Path $Path) {
+    if (Test-Path -LiteralPath $Path) {
         Write-Host "Cleaning: $Path" -ForegroundColor Gray
-        Remove-Item -Recurse -Force $Path
+        Remove-Item -Recurse -Force -LiteralPath $Path
     }
 }
 
@@ -58,9 +58,9 @@ function Copy-TaskSchdArtifacts {
         [Parameter(Mandatory=$true)][string]$DestPath
     )
 
-    $root = (Resolve-Path $SourcePath).Path.TrimEnd('\')
+    $root = (Resolve-Path -LiteralPath $SourcePath).Path.TrimEnd('\')
 
-    Get-ChildItem -Path $SourcePath -Recurse -File |
+    Get-ChildItem -LiteralPath $SourcePath -Recurse -File |
         Where-Object {
             $name = $_.Name
             -not ($script:TaskSchdExcludedPatterns | Where-Object { $name -like $_ })
@@ -69,8 +69,8 @@ function Copy-TaskSchdArtifacts {
             $rel    = $_.FullName.Substring($root.Length + 1)
             $target = Join-Path $DestPath $rel
             $parent = Split-Path $target -Parent
-            if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-            Copy-Item -Path $_.FullName -Destination $target -Force
+            if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+            Copy-Item -LiteralPath $_.FullName -Destination $target -Force
         }
 }
 
@@ -151,14 +151,14 @@ function Copy-CommonArtifacts {
 
     # 1. Include Task Scheduler hooks
     $taskSchdSource = Join-Path $ScriptDir "taskschd"
-    if (Test-Path $taskSchdSource) {
+    if (Test-Path -LiteralPath $taskSchdSource) {
         $taskSchdDest = Join-Path $DestFolder "taskschd"
         [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
 
         Copy-TaskSchdArtifacts -SourcePath $taskSchdSource -DestPath $taskSchdDest
 
         # Post-copy verification to ensure no sensitive files leaked into the package
-        $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include $script:TaskSchdExcludedPatterns
+        $leaks = Get-ChildItem -LiteralPath $taskSchdDest -Recurse -Include $script:TaskSchdExcludedPatterns
         if ($leaks) {
             throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
         }
@@ -168,10 +168,10 @@ function Copy-CommonArtifacts {
     $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")
     foreach ($art in $cliArtifacts) {
         $sourcePath = Join-Path $CliDir $art
-        if (-not (Test-Path $sourcePath)) {
+        if (-not (Test-Path -LiteralPath $sourcePath)) {
             throw "Required CLI artifact missing: $sourcePath"
         }
-        Copy-Item -Path $sourcePath -Destination $DestFolder -Force
+        Copy-Item -LiteralPath $sourcePath -Destination $DestFolder -Force
     }
 }
 
