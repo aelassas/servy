@@ -6,6 +6,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using Servy.Testing;
 using System.ServiceProcess;
 using CliStrings = Servy.CLI.Resources.Strings;
 
@@ -1106,6 +1107,65 @@ namespace Servy.CLI.UnitTests.Commands
             var body = result.Message ?? string.Empty;
             Assert.True(body.IndexOf("alpha", StringComparison.Ordinal) < body.IndexOf("Mike", StringComparison.Ordinal));
             Assert.True(body.IndexOf("Mike", StringComparison.Ordinal) < body.IndexOf("Zulu", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_MultilineDescription_KeepsOneRowPerService()
+        {
+            // Arrange
+            // A description is free text, so a line break reaches the record from an import or a
+            // PowerShell here-string; printed raw it would push the Startup Type, Status and PID of
+            // that service onto a line of their own.
+            var first = MinimalDto("alpha");
+            first.Description = "first line\r\nsecond line\tafter a tab";
+            first.Pid = 11;
+            var second = MinimalDto("beta");
+            second.Pid = 22;
+            GivenServices(first, second);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var lines = (result.Message ?? string.Empty).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            var alphaRow = Assert.Single(lines, l => l.StartsWith("alpha", StringComparison.Ordinal));
+            Assert.Contains("first line  second line after a tab", alphaRow);
+            Assert.EndsWith("11", alphaRow);
+            Assert.DoesNotContain(lines, l => l.StartsWith("second line", StringComparison.Ordinal));
+            Assert.DoesNotContain("\t", result.Message ?? string.Empty);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_LongDescription_IsTruncatedAndDoesNotWidenTheColumn()
+        {
+            // Arrange
+            // The Description column is as wide as its longest cell, so one 8,192-character description
+            // used to pad every row, header and separator line with thousands of spaces.
+            var maxLength = TestReflection.GetFieldStatic<int>(typeof(ShowServiceCommand), "ListCellMaxLength");
+            var longDescription = new string('x', 500) + "TAIL";
+            var first = MinimalDto("alpha");
+            first.Description = longDescription;
+            first.Pid = 11;
+            GivenServices(first, MinimalDto("beta"));
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var body = result.Message ?? string.Empty;
+            Assert.DoesNotContain("TAIL", body);
+            Assert.Contains(new string('x', maxLength - 3) + "...", body);
+            var lines = body.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            // The separator line is one run of dashes per column, each exactly as wide as that column.
+            var separatorGroups = lines[1].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            Assert.Equal(6, separatorGroups.Length);
+            Assert.Equal(Math.Max(maxLength, CliStrings.Msg_Show_Column_Description.Length), separatorGroups[2].Length);
         }
 
         [Fact]

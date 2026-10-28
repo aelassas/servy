@@ -59,6 +59,11 @@ namespace Servy.CLI.Commands
         private const int MinLabelColumnWidth = 16;
         private const int ColumnGap = 2;
 
+        /// <summary>
+        /// The longest a free-text cell of the service list may be, ellipsis included, before it is cut.
+        /// </summary>
+        private const int ListCellMaxLength = 40;
+
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceManager _serviceManager;
 
@@ -355,8 +360,8 @@ namespace Servy.CLI.Commands
                 rows.Add(new[]
                 {
                     Display(service.Name, notSet),
-                    Display(service.DisplayName, notSet),
-                    Display(service.Description, notSet),
+                    ListCell(service.DisplayName, notSet),
+                    ListCell(service.Description, notSet),
                     Display(FormatEnum(typeof(ServiceStartType), service.StartupType), notSet),
                     ResolveStatusToken(service.Name, cancellationToken),
                     Display(service.Pid?.ToString(CultureInfo.InvariantCulture), notSet)
@@ -506,6 +511,44 @@ namespace Servy.CLI.Commands
         /// <returns>The value, or the placeholder.</returns>
         private static string Display(string? value, string notSet) =>
             string.IsNullOrWhiteSpace(value) ? notSet : value;
+
+        /// <summary>
+        /// Flattens a free-text value to one bounded line for a cell of the service list.
+        /// </summary>
+        /// <param name="value">The value to display.</param>
+        /// <param name="notSet">The placeholder to use when the value is blank.</param>
+        /// <returns>
+        /// The placeholder for a blank value; otherwise the value with every control character (line
+        /// breaks and tabs included) replaced by a space and its ends trimmed, cut to
+        /// <see cref="ListCellMaxLength"/> characters ending in <c>...</c> when it is longer.
+        /// </returns>
+        /// <remarks>
+        /// <see cref="BuildServiceTable"/> lays out one service per line and sizes each column from its
+        /// longest cell, so a raw line break would split a row and one long description would pad every
+        /// row of the table. The single-service view keeps the full value, so nothing is lost here.
+        /// </remarks>
+        private static string ListCell(string? value, string notSet)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return notSet;
+
+            var chars = value.ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                if (char.IsControl(chars[i])) chars[i] = ' ';
+            }
+
+            var flat = new string(chars).Trim();
+            if (flat.Length == 0) return notSet;
+            if (flat.Length <= ListCellMaxLength) return flat;
+
+            const string ellipsis = "...";
+            var cut = ListCellMaxLength - ellipsis.Length;
+
+            // Never split a surrogate pair, which would leave half a character before the ellipsis.
+            if (char.IsHighSurrogate(flat[cut - 1])) cut--;
+
+            return flat.Substring(0, cut).TrimEnd() + ellipsis;
+        }
 
         #endregion
 
