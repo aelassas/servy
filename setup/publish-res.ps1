@@ -77,13 +77,13 @@ $scriptDir = $PSScriptRoot
 $sourceDir = Join-Path $scriptDir "..\src\$ProjectName"
 
 # Prevent Resolve-Path errors on clean environments
-if (-not (Test-Path $sourceDir)) {
+if (-not (Test-Path -LiteralPath $sourceDir)) {
     Write-Error "CRITICAL: Project directory not found at $sourceDir"
     exit 1
 }
 
 # Ensure the target resources folder exists, but resolve its full path first
-if (-not (Test-Path $TargetResourcesFolder)) {
+if (-not (Test-Path -LiteralPath $TargetResourcesFolder)) {
     Write-Host "Creating missing resources folder: $TargetResourcesFolder" -ForegroundColor Gray
     New-Item -ItemType Directory -Path $TargetResourcesFolder -Force | Out-Null
 }
@@ -92,7 +92,7 @@ if (-not (Test-Path $TargetResourcesFolder)) {
 # Step 1: Build source project
 # ---------------------------------------------------------------------------------
 $publishScript = Join-Path $sourceDir "publish.ps1"
-if (-not (Test-Path $publishScript)) {
+if (-not (Test-Path -LiteralPath $publishScript)) {
     Write-Error "Required script not found: $publishScript"
     exit 1
 }
@@ -123,10 +123,10 @@ $suffix += ".Net48"
 $destExe = Join-Path $TargetResourcesFolder "$ProjectName$suffix.exe"
 $destPdb = Join-Path $TargetResourcesFolder "$ProjectName$suffix.pdb"
 
-Copy-Item -Path $sourceExe -Destination $destExe -Force
+Copy-Item -LiteralPath $sourceExe -Destination $destExe -Force
 Write-Host "Copied $ProjectName.exe -> $destExe"
 
-Copy-Item -Path $sourcePdb -Destination $destPdb -Force
+Copy-Item -LiteralPath $sourcePdb -Destination $destPdb -Force
 Write-Host "Copied $ProjectName.pdb -> $destPdb"
 
 if ($IncludeDlls) {
