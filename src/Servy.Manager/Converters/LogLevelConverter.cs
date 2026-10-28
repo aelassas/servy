@@ -25,7 +25,9 @@ namespace Servy.Manager.Converters
         /// <inheritdoc />
         protected override string GetFallbackValue(object value)
         {
-            // Returns raw string representation or empty string on non-matching or null values
+            // Returns raw string representation or empty string on non-matching or null values.
+            // Unlike StartupTypeConverter there is no 'loading' state to show: the only binding is the level
+            // ComboBox, whose items are the fixed EventLogLevel list, so null is not expected and renders blank.
             return value?.ToString() ?? string.Empty;
         }
     }
