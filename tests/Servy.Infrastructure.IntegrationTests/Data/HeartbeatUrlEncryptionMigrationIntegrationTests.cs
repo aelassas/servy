@@ -76,8 +76,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null, secureData);
 
                 // Assert
-                Assert.Equal(12, SQLiteDbInitializer.LatestSchemaVersion);
-                Assert.Equal(12, ReadVersion(conn));
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, ReadVersion(conn));
 
                 var stored = ReadHeartbeatUrl(conn, "plain");
                 Assert.True(SecureData.HasEncryptionMarker(stored), $"Expected ciphertext, found '{stored}'.");
@@ -155,7 +154,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null, new UnusableSecureData());
 
                 // Assert
-                Assert.Equal(12, ReadVersion(conn));
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, ReadVersion(conn));
             }
         }
 
