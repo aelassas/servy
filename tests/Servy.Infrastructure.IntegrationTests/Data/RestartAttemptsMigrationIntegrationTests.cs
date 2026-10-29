@@ -91,8 +91,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
-                Assert.Equal(12, SQLiteDbInitializer.LatestSchemaVersion);
-                Assert.Equal(12, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
                 var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").ToDictionary(r => (string)r.name, r => (string)r.type);
                 Assert.Equal("INTEGER", columns["RestartAttempts"]);
                 Assert.Equal("INTEGER", columns["RestartAttemptsUpdatedAtTicks"]);
@@ -113,7 +112,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
 
                 // Assert
-                Assert.Equal(12, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
                 Assert.Equal((null, null), ReadCounter(conn, "existing"));
             }
         }
@@ -234,7 +233,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Assert: nothing imported, nothing deleted, and the migration itself did not fail
                 Assert.Equal((null, null), ReadCounter(conn, "Locked"));
                 Assert.True(File.Exists(path));
-                Assert.Equal(12, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
 
                 // Act: the next start, with the file readable
                 SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
@@ -333,7 +332,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Assert: not read, not imported, not deleted, and the migration still committed
                 Assert.Equal((null, null), ReadCounter(conn, "Huge"));
                 Assert.True(File.Exists(path));
-                Assert.Equal(12, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
             }
         }
 
