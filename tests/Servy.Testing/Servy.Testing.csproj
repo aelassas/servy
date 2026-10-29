@@ -125,6 +125,7 @@
     <Compile Include="TempFile.cs" />
     <Compile Include="TestProcessCleanup.cs" />
     <Compile Include="TestProcessIds.cs" />
+    <Compile Include="TestProcessStarter.cs" />
     <Compile Include="TestReflection.cs" />
     <Compile Include="TestTimeouts.cs" />
   </ItemGroup>
