@@ -80,6 +80,25 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// Awaits the first completed tailing pass using a deterministic safety deadline to prevent indefinite test hangs.
+        /// </summary>
+        /// <param name="passCompleted">The signal raised from the tailer's <c>OnLoopCompleted</c> event.</param>
+        /// <param name="cancellationToken">Cancels the wait (propagated to the timeout delay).</param>
+        private static async Task WaitForFirstPassAsync(Task passCompleted, CancellationToken cancellationToken)
+        {
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), cancellationToken);
+            var completedTask = await Task.WhenAny(passCompleted, timeoutTask);
+
+            if (completedTask == timeoutTask)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                throw new TimeoutException(
+                    $"The LogTailer background loop did not complete a pass within {TestTimeouts.LogTailerWaitSeconds} seconds.");
+            }
+        }
+
         #region Path Validation & History Guard Branch Tests
 
         [Fact]
@@ -1050,7 +1069,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 var tailTask = tailer.RunFromPositionAsync(_tempFilePath, LogType.StdOut, 0, fileInfo.CreationTimeUtc, cts.Token);
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
-                await loopCompletedTcs.Task;
+                await WaitForFirstPassAsync(loopCompletedTcs.Task, CancellationToken.None);
 
                 // Act - Append a full batch threshold of complete lines using shared write permissions
                 int threshold = AppConfig.LogTailerBatchFlushThreshold;
@@ -1206,7 +1225,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
 
                 // Ensure the loop completes its initial pass tracking before simulating the file swap
-                await loopCompletedTcs.Task;
+                await WaitForFirstPassAsync(loopCompletedTcs.Task, CancellationToken.None);
 
                 // Simulate Rotation: Truncate and write fresh content
                 using (var fs = new FileStream(initialPath, FileMode.Truncate, FileAccess.Write, FileShare.ReadWrite))
@@ -1266,7 +1285,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
 
                 // Ensure the loop has recorded the original file identity before the rename
-                await loopCompletedTcs.Task;
+                await WaitForFirstPassAsync(loopCompletedTcs.Task, CancellationToken.None);
 
                 // Rename the tailed file away, then create a new, LONGER file at the same path carrying the
                 // SAME creation time, so neither term of LooksRotated can fire and only the EOF identity
@@ -1327,7 +1346,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
-                await loopCompletedTcs.Task;
+                await WaitForFirstPassAsync(loopCompletedTcs.Task, CancellationToken.None);
 
                 await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
                     TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
@@ -1369,7 +1388,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, CancellationToken.None);
-                await loopCompletedTcs.Task;
+                await WaitForFirstPassAsync(loopCompletedTcs.Task, CancellationToken.None);
 
                 await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
                     TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds),
