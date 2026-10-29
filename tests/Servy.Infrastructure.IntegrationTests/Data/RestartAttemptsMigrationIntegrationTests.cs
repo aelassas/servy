@@ -379,6 +379,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void DeleteFolder_MissingFolder_ReturnsTrue()
         {
+            // Arrange, Act & Assert
             Assert.True(LegacyRecoveryImporter.DeleteFolder(Path.Combine(TempDirectory, "absent")));
         }
 

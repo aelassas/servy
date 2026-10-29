@@ -201,7 +201,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public void GetCounterFileName_AppendsTheLegacySuffixToTheSafeName()
         {
-            // Act
+            // Arrange & Act
             string result = LegacyRecoveryImporter.GetCounterFileName("MyService");
 
             // Assert: exactly the name the wrapper used, <safe name>_restartAttempts.dat
@@ -212,6 +212,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public void MakeFilenameSafe_KnownName_ProducesTheSameNameAsTheWrapperDid()
         {
+            // Arrange, Act & Assert
             // The hash is the first three bytes of the UTF-8 SHA-256 of the raw name, as lowercase hex: a change here
             // would make the migration miss every counter file on disk.
             Assert.Equal("MyService_6fe428", LegacyRecoveryImporter.MakeFilenameSafe("MyService"));
@@ -228,6 +229,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [InlineData("99999999999", 0)]
         public void ParseCounter_ReadsANonNegativeIntegerAndTreatsAnythingElseAsZero(string? content, int expected)
         {
+            // Arrange, Act & Assert
             Assert.Equal(expected, LegacyRecoveryImporter.ParseCounter(content));
         }
 
