@@ -194,6 +194,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task GetRestartAttemptsAsync_UnknownService_ReturnsNull()
         {
+            // Arrange, Act & Assert
             Assert.Null(await _repository.GetRestartAttemptsAsync("NoSuchService", CancellationToken.None));
         }
 
