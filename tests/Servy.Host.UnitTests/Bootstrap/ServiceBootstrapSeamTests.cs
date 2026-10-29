@@ -88,11 +88,14 @@ namespace Servy.Host.UnitTests.Bootstrap
         [InlineData(null, AppConfig.DefaultEnableEventLog)]
         public void Constructor_EnableEventLog_DecidesAutoLog(string rawValue, bool expected)
         {
+            // Arrange: the EnableEventLog setting holds the raw value
             var env = new FakeBootstrapEnvironment();
             env.Settings["EnableEventLog"] = rawValue;
 
+            // Act
             var service = Build(env);
 
+            // Assert: AutoLog follows the setting, or the default when it is absent
             Assert.Equal(expected, service.AutoLog);
         }
 
@@ -147,14 +150,17 @@ namespace Servy.Host.UnitTests.Bootstrap
         [Fact]
         public void Constructor_FailingStep_PreservesAnExitCodeAlreadySet()
         {
+            // Arrange: a bootstrap step fails while an exit code is already set
             var env = new FakeBootstrapEnvironment { EventSourceFailure = new InvalidOperationException("boom") };
             var originalExitCode = Environment.ExitCode;
             Environment.ExitCode = 13;
 
             try
             {
+                // Act
                 var termination = Assert.Throws<ProcessTerminatedException>(() => Build(env));
 
+                // Assert: the existing exit code is preserved
                 Assert.Equal(13, termination.ExitCode);
             }
             finally
@@ -166,7 +172,10 @@ namespace Servy.Host.UnitTests.Bootstrap
         [Fact]
         public void Constructor_NullArguments_Throw()
         {
+            // Arrange
             var env = new FakeBootstrapEnvironment();
+
+            // Act & Assert: each missing argument is rejected
             Assert.Throws<ArgumentNullException>(() => new Service(null, _pipes.Object, env));
             Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, null, env));
             Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, _pipes.Object, (IServiceBootstrapEnvironment)null));
