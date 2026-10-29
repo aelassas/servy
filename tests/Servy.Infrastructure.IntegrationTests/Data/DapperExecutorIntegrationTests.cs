@@ -742,23 +742,31 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task QuerySingleOrDefaultAsync_AllBranchesAndVariants_Covered()
         {
+            // Arrange
+            // Rows are seeded by the fixture; each scenario below supplies only its own inputs.
+
+            // Act
             // 1. Valid record variant
             var singleMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
                 "SELECT * FROM TestServices WHERE ServiceName = @Name;",
                 new { Name = "ServyEngine" },
                 cancellationToken: CancellationToken.None);
 
+            // Assert
             Assert.NotNull(singleMatch);
             Assert.Equal("ServyEngine", singleMatch.ServiceName);
 
+            // Act
             // 2. Default/Empty records variant
             var noMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
                 "SELECT * FROM TestServices WHERE ServiceName = @Name;",
                 new { Name = "NonExistent" },
                 cancellationToken: CancellationToken.None);
 
+            // Assert
             Assert.Null(noMatch);
 
+            // Act
             // 3. CommandDefinition/Active Transaction mapping branch variant
             using (var tx = _executor.BeginTransaction())
             {
@@ -768,10 +776,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     transaction: tx,
                     cancellationToken: CancellationToken.None);
 
+                // Assert
                 Assert.NotNull(txMatch);
                 Assert.Equal("ServyWatcher", txMatch.ServiceName);
             }
 
+            // Act & Assert
             // 4. Exception input parameters guard validation branch
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
