@@ -842,23 +842,31 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task QuerySingleOrDefaultAsync_AllBranchesAndVariants_Covered()
         {
+            // Arrange
+            // Rows are seeded by the fixture; each scenario below supplies only its own inputs.
+
+            // Act
             // 1. Query with result variant (Single entry found match)
             var singleMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
                 "SELECT * FROM TestServices WHERE ServiceName = @Name;",
                 new { Name = "ServyEngine" },
                 cancellationToken: TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.NotNull(singleMatch);
             Assert.Equal("ServyEngine", singleMatch.ServiceName);
 
+            // Act
             // 2. Query empty variant (Zero records found returns default / null)
             var noMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
                 "SELECT * FROM TestServices WHERE ServiceName = @Name;",
                 new { Name = "NonExistent" },
                 cancellationToken: TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.Null(noMatch);
 
+            // Act
             // 3. Query with active transaction branch verification path
             using (var tx = await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken))
             {
@@ -868,10 +876,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     transaction: tx,
                     cancellationToken: TestContext.Current.CancellationToken);
 
+                // Assert
                 Assert.NotNull(txMatch);
                 Assert.Equal("ServyWatcher", txMatch.ServiceName);
             }
 
+            // Act & Assert
             // 4. Test validation ArgumentNullException path branch on null query string parameters
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             {
