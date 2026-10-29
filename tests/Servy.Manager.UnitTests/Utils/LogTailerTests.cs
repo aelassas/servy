@@ -592,9 +592,6 @@ namespace Servy.Manager.UnitTests.Utils
                     lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
                 };
 
-                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
-
                 // Query precise FileInfo metadata so CreationTimeUtc matches and doesn't trigger a false rotation reset to offset 0
                 var fileInfo = new FileInfo(_tempFilePath);
                 var startPos = fileInfo.Length;
