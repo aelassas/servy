@@ -63,6 +63,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void Constructor_NullArguments_Throw()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ServyHostInstaller(null!, _errors.Object, _controllers.Object));
             Assert.Throws<ArgumentNullException>(() => new ServyHostInstaller(_api.Object, null!, _controllers.Object));
             Assert.Throws<ArgumentNullException>(() => new ServyHostInstaller(_api.Object, _errors.Object, null!));
@@ -520,12 +521,14 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task EnsureInstalledAndRunningAsync_BlankPath_Throws()
         {
+            // Arrange & Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => Create().EnsureInstalledAndRunningAsync("  ", _serviceHelper.Object, TestContext.Current.CancellationToken));
         }
 
         [Fact]
         public async Task EnsureInstalledAndRunningAsync_NullServiceHelper_Throws()
         {
+            // Arrange & Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() => Create().EnsureInstalledAndRunningAsync(_hostExe, null!, TestContext.Current.CancellationToken));
         }
 
@@ -549,17 +552,27 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("\"C:\\Apps\\MyApp.exe\"", ServyHostServiceState.Foreign)]
         public void GetState_RegisteredService_IsTheHostOnlyWhenItRunsAServyHostExecutable(string commandLine, ServyHostServiceState expected)
         {
+            // Arrange
             RegisteredAs(commandLine);
 
-            Assert.Equal(expected, Create().GetState());
+            // Act
+            var state = Create().GetState();
+
+            // Assert
+            Assert.Equal(expected, state);
         }
 
         [Fact]
         public void GetState_NotInstalled_ReturnsNotInstalled()
         {
+            // Arrange
             NotRegistered();
 
-            Assert.Equal(ServyHostServiceState.NotInstalled, Create().GetState());
+            // Act
+            var state = Create().GetState();
+
+            // Assert
+            Assert.Equal(ServyHostServiceState.NotInstalled, state);
         }
 
         [Fact]
@@ -578,9 +591,14 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void ReadRegistration_Installed_ReturnsTheCommandLine()
         {
+            // Arrange
             RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"");
 
-            Assert.Equal((ServyHostServiceState.ServyHost, "\"C:\\ProgramData\\Servy\\Servy.Host.exe\""), Create().ReadRegistration());
+            // Act
+            var registration = Create().ReadRegistration();
+
+            // Assert
+            Assert.Equal((ServyHostServiceState.ServyHost, "\"C:\\ProgramData\\Servy\\Servy.Host.exe\""), registration);
         }
 
         [Theory]
@@ -593,7 +611,11 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("C:\\Tools\\NotServy.Host.exe", false)]
         public void IsServyHostExecutable_RecognizesBothBuildsOfTheHost(string commandLine, bool expected)
         {
-            Assert.Equal(expected, ServyHostInstaller.IsServyHostExecutable(commandLine));
+            // Arrange & Act
+            var result = ServyHostInstaller.IsServyHostExecutable(commandLine);
+
+            // Assert
+            Assert.Equal(expected, result);
         }
 
         [Theory]
@@ -606,12 +628,17 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
         public void IsSameExecutable_ComparesTheCommandLinesExecutable(string commandLine, string exePath, bool expected)
         {
-            Assert.Equal(expected, ServyHostInstaller.IsSameExecutable(commandLine, exePath));
+            // Arrange & Act
+            var result = ServyHostInstaller.IsSameExecutable(commandLine, exePath);
+
+            // Assert
+            Assert.Equal(expected, result);
         }
 
         [Fact]
         public void IsSameExecutable_PathThatCannotBeResolved_IsNotTheSameExecutable()
         {
+            // Arrange & Act & Assert
             // An embedded NUL makes Path.GetFullPath throw ArgumentException on every runtime
             Assert.False(ServyHostInstaller.IsSameExecutable("\"C:\\ProgramData\\Servy\\Servy\0Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe"));
         }
@@ -688,10 +715,13 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task StopAsync_AlreadyStopped_DoesNothing()
         {
+            // Arrange
             HostStatuses(ServiceControllerStatus.Stopped);
 
+            // Act
             await Create().StopAsync(TestContext.Current.CancellationToken);
 
+            // Assert
             _host.Verify(h => h.Stop(), Times.Never);
         }
 
@@ -723,8 +753,10 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task StopAsync_NeverStops_Throws()
         {
+            // Arrange
             HostStatuses(ServiceControllerStatus.Running);
 
+            // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => Create().StopAsync(TestContext.Current.CancellationToken));
         }
 
@@ -790,7 +822,10 @@ namespace Servy.Core.UnitTests.Services
         {
             using (var cts = new CancellationTokenSource())
             {
+                // Arrange
                 cts.Cancel();
+
+                // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Create().StartAsync(cts.Token));
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Create().StopAsync(cts.Token));
             }
@@ -1084,6 +1119,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task EnsureServicesDependOnHostAsync_NullNames_Throws()
         {
+            // Arrange & Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() => Create().EnsureServicesDependOnHostAsync(null!, TestContext.Current.CancellationToken));
         }
 
