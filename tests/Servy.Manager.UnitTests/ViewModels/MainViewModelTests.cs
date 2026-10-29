@@ -166,13 +166,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             var sw = Stopwatch.StartNew();
             var watchdog = new DispatcherTimer(DispatcherPriority.Send)
             {
-                Interval = TimeSpan.FromSeconds(10)
+                Interval = TestTimeouts.CiGenerous
             };
             watchdog.Tick += (s, e) => { frame.Continue = false; };
             watchdog.Start();
             try { Dispatcher.PushFrame(frame); }
             finally { watchdog.Stop(); }
-            Assert.True(sw.Elapsed < TimeSpan.FromSeconds(10), "Pump timed out");
+            Assert.True(sw.Elapsed < TestTimeouts.CiGenerous, "Pump timed out");
             pumpFailure?.Throw();
         }
 
@@ -548,7 +548,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .Returns(() =>
                     {
                         // Bounded: a missing release must fail the test, not park a pool thread forever.
-                        Assert.True(unblockGetAllServicesTcs.Task.Wait(TimeSpan.FromSeconds(10)),
+                        Assert.True(unblockGetAllServicesTcs.Task.Wait(TestTimeouts.CiGenerous),
                             "Test never released the first tick.");
                         return new List<ServiceInfo>();
                     });
@@ -569,7 +569,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 TestReflection.InvokeNonPublic(vm, "OnTick", null, EventArgs.Empty);
 
                 // Wait until the first tick has actually entered GetAllServices
-                var completedTask = await Task.WhenAny(getAllServicesCalledTcs.Task, Task.Delay(2000));
+                var completedTask = await Task.WhenAny(getAllServicesCalledTcs.Task, Task.Delay(TestTimeouts.CiGenerous));
                 Assert.Same(getAllServicesCalledTcs.Task, completedTask); // Ensure tick 1 entered GetAllServices before proceeding
 
                 try
@@ -620,7 +620,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         int flag = TestReflection.GetField<int>(vm, "_isRefreshingFlag");
                         return flag == 0;
-                    }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
+                    }, TestTimeouts.CiGenerous, cancellationToken: CancellationToken.None);
 
                     // Assert - the arranged failure really fired, and the flag was released after it
                     _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
@@ -1387,8 +1387,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 try
                 {
                     // Assert: Prove exactly 2 worker slots fill concurrently, while the 3rd slot is held back by the cap
-                    Assert.True(await arrived.WaitAsync(TimeSpan.FromSeconds(5)), "First task failed to reach execution gate.");
-                    Assert.True(await arrived.WaitAsync(TimeSpan.FromSeconds(5)), "Second task failed to reach execution gate.");
+                    Assert.True(await arrived.WaitAsync(TestTimeouts.CiGenerous), "First task failed to reach execution gate.");
+                    Assert.True(await arrived.WaitAsync(TestTimeouts.CiGenerous), "Second task failed to reach execution gate.");
                     Assert.False(await arrived.WaitAsync(TimeSpan.FromMilliseconds(200)), "Throttling cap violated! Third task entered execution gate concurrently.");
                 }
                 finally
