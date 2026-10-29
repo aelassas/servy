@@ -11,8 +11,6 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection(ProcessIntegrationTestsCollection.Name)]
     public class HandleHelperIntegrationTests : IDisposable
     {
-        private static readonly string PowerShellPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe");
-
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<Process> _processes = new List<Process>();
 
@@ -62,32 +60,23 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             var psi = new ProcessStartInfo
             {
-                FileName = PowerShellPath,
+                FileName = TestProcessStarter.PowerShellPath,
                 Arguments = $"-NoProfile -NonInteractive -Command \"$fs = [System.IO.File]::Open('{filePath}', 'Open', 'Read', 'None'); Write-Output 'LOCKED'; while ($true) {{ Start-Sleep -Seconds 1 }}\"",
                 RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
 
-            // A cold powershell.exe on a loaded runner occasionally stalls before its first line (#7128): a stalled
-            // instance does not recover with more time, so it is replaced rather than waited on longer.
-            for (int attempt = 1; attempt <= 3; attempt++)
-            {
-                var process = Process.Start(psi)!;
-                _processes.Add(process);
+            // A cold powershell.exe on a loaded runner occasionally stalls before its first line (#7128): the shared
+            // helper replaces a stalled or exited instance rather than waiting longer, and reports every attempt.
+            var (process, _) = TestProcessStarter.StartWithHandshake(
+                psi,
+                line => line.Contains("LOCKED"),
+                TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds),
+                _processes.Add);
 
-                var firstLine = process.StandardOutput.ReadLineAsync();
-                if (firstLine.Wait(TimeSpan.FromSeconds(TestTimeouts.ProcessKillerFileLockTimeoutSeconds))
-                    && firstLine.Result != null
-                    && firstLine.Result.Contains("LOCKED"))
-                {
-                    return process;
-                }
-
-                try { process.Kill(); } catch { /* Already gone */ }
-            }
-
-            throw new InvalidOperationException($"No PowerShell child reported holding '{filePath}' after 3 attempts.");
+            return process;
         }
 
         [Theory]
@@ -211,7 +200,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             var holder = StartFileHolder(testFile);
 
             // Act
-            var results = HandleHelper.GetProcessesUsingFile(PowerShellPath);
+            var results = HandleHelper.GetProcessesUsingFile(TestProcessStarter.PowerShellPath);
 
             // Assert
             Assert.Contains(results, r => r.ProcessId == holder.Id);
