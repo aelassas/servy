@@ -617,9 +617,10 @@ namespace Servy.Manager.UnitTests.Utils
         [Fact]
         public async Task RunFromPosition_ThresholdFlushMidBuffer_DoesNotHoldBackCompleteLines()
         {
-            // Arrange: Reproduce issue #6471 where a burst of lines exceeding threshold sits in the StreamReader's
-            // internal buffer while the underlying FileStream is at EOF and lacks a trailing newline at the end of the file.
-            // Complete lines sitting mid-buffer during a threshold flush must NOT be mistaken for the unterminated tail line.
+            // Arrange: Pins the contract of issue #6471. A burst of lines exceeding the threshold ends in an unterminated
+            // line, and the threshold flush must publish every complete line, holding back only that torn tail. #6471 was
+            // found when the loop read through a StreamReader, whose read-ahead made a complete line look like the file's
+            // tail; the loop now splits the raw bytes with LogLineSplitter, so no read-ahead buffer is involved.
             using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
