@@ -20,7 +20,7 @@ Servy offers a desktop app, a CLI, and a PowerShell module that let you create, 
 
 ## Support
 
-Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/aelassas), [PayPal](https://www.paypal.me/aelassaspp), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas) to keep it active, independent, and free for everyone.
+Servy is free and open source. If it helped you, saved you time, or powered your production workflows, consider supporting the project via [PayPal](https://www.paypal.me/aelassaspp), [GitHub Sponsors](https://github.com/sponsors/aelassas), [Liberapay](https://liberapay.com/aelassas/), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas) to keep it active, independent, and free for everyone.
 
 ## Stats for Nerds
 
