@@ -74,6 +74,7 @@ namespace Servy.Host.UnitTests
         [Fact]
         public void Constructor_NullArguments_Throw()
         {
+            // Arrange, Act & Assert: each missing dependency is rejected by the constructor
             Assert.Throws<ArgumentNullException>(() => new Service(null!, _pipes.Object, _repository.Object, _api.Object, _identifier.Object));
             Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, null!, _repository.Object, _api.Object, _identifier.Object));
             Assert.Throws<ArgumentNullException>(() => new Service(_logger.Object, _pipes.Object, (IServiceRepository)null!, _api.Object, _identifier.Object));
@@ -84,6 +85,7 @@ namespace Servy.Host.UnitTests
         [Fact]
         public void Constructor_RunsAsTheServyService()
         {
+            // Assert: the host runs as the Servy service on the Servy pipe
             Assert.Equal(AppConfig.ServyHostServiceName, _sut.ServiceName);
             Assert.Equal("Servy", _sut.ServiceName);
             Assert.Equal(AppConfig.ServyHostNamedPipeName, _sut.PipeName);
@@ -92,6 +94,7 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task ProcessRequestAsync_NullArguments_Throw()
         {
+            // Arrange, Act & Assert: a null request or caller is rejected
             await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ProcessRequestAsync(null!, TheServiceProcess, CancellationToken.None));
             await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ProcessRequestAsync(new IpcRequestDto(), null!, CancellationToken.None));
         }
@@ -249,8 +252,10 @@ namespace Servy.Host.UnitTests
         [InlineData("getbyname")]
         public async Task ProcessRequestAsync_UnknownAction_Fails(string? action)
         {
+            // Act
             var response = await _sut.ProcessRequestAsync(new IpcRequestDto { Action = action, ServiceName = ServiceName }, Administrator, CancellationToken.None);
 
+            // Assert: an unrecognised action fails without touching the repository
             Assert.False(response.Success);
             Assert.Equal($"Unknown IPC action: {action}", response.ErrorMessage);
             _repository.VerifyNoOtherCalls();
@@ -262,8 +267,10 @@ namespace Servy.Host.UnitTests
         [InlineData("   ")]
         public async Task ProcessRequestAsync_NoServiceName_Fails(string? serviceName)
         {
+            // Act
             var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction, serviceName), Administrator, CancellationToken.None);
 
+            // Assert: a missing or blank service name is refused
             Assert.False(response.Success);
             Assert.Equal("A service name is required.", response.ErrorMessage);
         }
@@ -291,10 +298,13 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task GetByName_NoRow_SucceedsWithNoData()
         {
+            // Arrange: the repository holds no row for the service
             _repository.Setup(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
 
+            // Act
             var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None);
 
+            // Assert: the request succeeds and carries no data
             Assert.True(response.Success);
             Assert.Null(response.Data);
         }
@@ -322,8 +332,10 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task UpdateRuntimeState_NoState_Fails()
         {
+            // Act
             var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostUpdateRuntimeStateAction), TheServiceProcess, CancellationToken.None);
 
+            // Assert: a request without a runtime state is refused
             Assert.False(response.Success);
             Assert.Equal("The runtime state is required.", response.ErrorMessage);
         }
@@ -410,11 +422,14 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task GetRestartAttempts_ReturnsTheStoredCounter()
         {
+            // Arrange: the repository stores two attempts with a timestamp
             var when = new DateTime(2026, 10, 2, 9, 0, 0, DateTimeKind.Utc);
             _repository.Setup(r => r.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync(new RestartAttemptsDto { Attempts = 2, UpdatedAtUtc = when });
 
+            // Act
             var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction), TheServiceProcess, CancellationToken.None);
 
+            // Assert: the stored counter and timestamp are returned
             Assert.True(response.Success);
             Assert.Equal(2, response.RestartAttempts!.Attempts);
             Assert.Equal(when, response.RestartAttempts.UpdatedAtUtc);
@@ -423,10 +438,13 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task GetRestartAttempts_NoRow_ReturnsZero()
         {
+            // Arrange: the repository holds no counter row
             _repository.Setup(r => r.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync((RestartAttemptsDto?)null);
 
+            // Act
             var response = await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction), TheServiceProcess, CancellationToken.None);
 
+            // Assert: the counter defaults to zero with no timestamp
             Assert.True(response.Success);
             Assert.Equal(0, response.RestartAttempts!.Attempts);
             Assert.Null(response.RestartAttempts.UpdatedAtUtc);
@@ -456,11 +474,14 @@ namespace Servy.Host.UnitTests
         [InlineData(-1)]
         public async Task UpdateRestartAttempts_MissingOrNegativeCounter_Fails(int? attempts)
         {
+            // Arrange: the counter is missing or negative
             var request = Request(AppConfig.ServyHostUpdateRestartAttemptsAction);
             request.RestartAttempts = attempts;
 
+            // Act
             var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
 
+            // Assert: the request is refused and nothing is written
             Assert.False(response.Success);
             Assert.Equal("A non-negative restart attempts counter is required.", response.ErrorMessage);
             _repository.Verify(r => r.UpdateRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -485,8 +506,10 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task ProcessRequestAsync_Cancelled_Propagates()
         {
+            // Arrange: the repository call is cancelled
             _repository.Setup(r => r.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
 
+            // Act & Assert: the cancellation propagates instead of becoming a failed response
             await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None));
         }
 
@@ -1003,8 +1026,10 @@ namespace Servy.Host.UnitTests
         [Fact]
         public async Task RefreshPipeSecurityAsync_Cancelled_Propagates()
         {
+            // Arrange: reading the services is cancelled
             _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ThrowsAsync(new OperationCanceledException());
 
+            // Act & Assert: the cancellation propagates
             await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.RefreshPipeSecurityAsync(CancellationToken.None));
         }
 
