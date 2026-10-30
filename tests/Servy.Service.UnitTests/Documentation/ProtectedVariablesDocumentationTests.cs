@@ -34,6 +34,7 @@ namespace Servy.Service.UnitTests.Documentation
                 return; // Skip the test if SERVY_WIKI_PATH is not set, as it indicates the wiki workflow is not running this test.
             }
 
+            // Arrange
             string markdownContent = File.ReadAllText(Path.Combine(WikiPath, WikiPageFileName));
 
             // 1. Strictly bound the scope to the '### Protected Variables' section up to the next heading of level <= 3
@@ -91,10 +92,12 @@ namespace Servy.Service.UnitTests.Documentation
             // 3. Fetch active C# implementation set from EnvironmentVariableHelper
             var actualProtectedVariables = new HashSet<string>(EnvironmentVariableHelper.ProtectedVariableNames, StringComparer.OrdinalIgnoreCase);
 
+            // Act
             // 4. Perform bidirectional set difference validation against the isolated environment variable column
             var missingFromDoc = actualProtectedVariables.Except(documentedVariables, StringComparer.OrdinalIgnoreCase).ToList();
             var missingFromCode = documentedVariables.Except(actualProtectedVariables, StringComparer.OrdinalIgnoreCase).ToList();
 
+            // Assert
             Assert.True(
                 missingFromDoc.Count == 0,
                 $"Protected variables present in code but MISSING from wiki docs ({missingFromDoc.Count}): {string.Join(", ", missingFromDoc)}"
