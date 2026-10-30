@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-28T17:35:30Z
+> Generated on: 2026-10-30T17:35:30Z
 
 ---
 
@@ -1804,8 +1804,8 @@ against the service name or description.
 Both require an elevated session, and neither ever prints the stored password.
 
 > [!NOTE]
-> **Encrypted fields are masked by default.** `Show-ServyService` prints the parameter and
-> environment-variable fields as `********`, and without `-Decrypt` it does not decrypt them at all.
+> **Encrypted fields are masked by default.** `Show-ServyService` prints the parameter,
+> environment-variable and heartbeat URL fields as `********`, and without `-Decrypt` it does not decrypt them at all.
 > Pass `-Decrypt` to read the values. The stored password stays masked either way.
 > `Show-ServyServices` renders no encrypted column, so it has nothing to mask.
 
@@ -1938,7 +1938,7 @@ Uninstall-ServyService @uninstallParams
 | `Stop-ServyService` | `-Name` (string, **required**)<br>`-Quiet` (switch, optional) | **Stops a Windows service.**<br>Sends a termination signal to the service process. It respects the `StopTimeout` value set during installation, allowing the application to shut down gracefully before forcing termination.<br><br>**Example:**<br>- `Stop-ServyService -Name "MyApp" -Quiet` |
 | `Restart-ServyService` | `-Name` (string, **required**)<br>`-Quiet` (switch, optional) | **Restarts a Windows service.**<br>Performs a full stop operation followed by a start operation. This is the recommended way to apply configuration changes after an import.<br><br>**Example:**<br>- `Restart-ServyService -Name "MyApp"` |
 | `Get-ServyServiceStatus` | `-Name` (string, **required**)<br>`-Quiet` (switch, optional) | **Retrieves the current status of the service.**<br>Queries the SCM for the real-time state of the process.<br><br>**Possible Results:** `NotInstalled`, `Stopped`, `StartPending`, `StopPending`, `Running`, `ContinuePending`, `PausePending`, `Paused`, `Unknown`.<br><br>**Example:**<br>- `Get-ServyServiceStatus -Name "MyApp"` |
-| `Show-ServyService` | `-Name` (string, **required**)<br>`-Decrypt` (switch, optional)<br>`-Quiet` (switch, optional) | **Shows the full configuration of one service in a human-readable form.**<br>Wraps the Servy CLI `show` command. Prints the service name, its live status and process id first, then every stored setting grouped by category (`Account`, `Logs`, `Timeouts`, `Recovery`, `Failure Program`, `Environment`, `Pre-Launch`, `Post-Launch`, `Pre-Stop`, `Post-Stop`, `Other`). Categories with nothing configured are omitted. The fields Servy encrypts at rest - parameters and environment variables - are masked as `********` unless `-Decrypt` is passed, and without it they are not decrypted at all. The stored password stays masked either way and is never printed. Requires an elevated session.<br><br>**Examples:**<br>- `Show-ServyService -Name "MyApp"`<br>- `Show-ServyService -Name "MyApp" -Decrypt` |
+| `Show-ServyService` | `-Name` (string, **required**)<br>`-Decrypt` (switch, optional)<br>`-Quiet` (switch, optional) | **Shows the full configuration of one service in a human-readable form.**<br>Wraps the Servy CLI `show` command. Prints the service name, its live status and process id first, then every stored setting grouped by category (`Account`, `Logs`, `Timeouts`, `Recovery`, `Failure Program`, `Environment`, `Pre-Launch`, `Post-Launch`, `Pre-Stop`, `Post-Stop`, `Other`). Categories with nothing configured are omitted. The fields Servy encrypts at rest - parameters, environment variables and the heartbeat URL - are masked as `********` unless `-Decrypt` is passed, and without it they are not decrypted at all. The stored password stays masked either way and is never printed. Requires an elevated session.<br><br>**Examples:**<br>- `Show-ServyService -Name "MyApp"`<br>- `Show-ServyService -Name "MyApp" -Decrypt` |
 | `Show-ServyServices` | `-Search` (string, optional)<br>`-Quiet` (switch, optional) | **Lists every service stored in the Servy database.**<br>Wraps the Servy CLI `show` command with no service name, printing one line per service with its name, display name, description, startup type, status and process id. Use `-Search` to narrow the list by a keyword matched against the service name or description, the same way the Servy Manager search box does. Requires an elevated session.<br><br>**Examples:**<br>- `Show-ServyServices`<br>- `Show-ServyServices -Search "web"` |
 | `Export-ServyServiceConfig` | `-Name` (string, **required**)<br>`-ConfigFileType` (string, **required**: `xml`, `json`)<br>`-Path` (string, **required**)<br>`-Quiet` (switch, optional) | **Exports the service configuration to a file.**<br>Saves all metadata (paths, timeouts, health checks, etc.) to an external file for backup or template creation.<br><br>**Examples:**<br>- `Export-ServyServiceConfig -Name "MyApp" -ConfigFileType "json" -Path "C:\Backups\MyApp.json"`<br>- `Export-ServyServiceConfig -Name "MyApp" -ConfigFileType "xml" -Path "C:\Backups\MyApp.xml"` |
 | `Import-ServyServiceConfig` | `-ConfigFileType` (string, **required**: `xml`, `json`)<br>`-Path` (string, **required**)<br>`-Install` (switch, optional)<br>`-Quiet` (switch, optional) | **Imports a configuration from a file.**<br>Loads settings from a previously exported file into the Servy database. Use the `-Install` switch to register the service with Windows immediately after import.<br><br>**Examples:**<br>- `Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\NewApp.json" -Install`<br>- `Import-ServyServiceConfig -ConfigFileType "xml" -Path "C:\Configs\NewApp.xml"` |
