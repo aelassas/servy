@@ -365,7 +365,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Act
                         var searchTask = vm.SearchCommand.ExecuteAsync(null);
 
-                        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+                        var timeoutTask = Task.Delay(TestTimeouts.CiGenerous);
                         var completedTask = await Task.WhenAny(scrollEventSource.Task, timeoutTask);
 
                         if (completedTask == timeoutTask)
