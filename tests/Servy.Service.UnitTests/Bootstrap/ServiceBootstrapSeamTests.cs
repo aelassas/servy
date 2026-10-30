@@ -93,7 +93,8 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
-        /// The same rule governs <c>Timing:ScmAdditionalTimeMs</c>, and the two keys are independent.
+        /// An invalid <c>Timing:WaitChunkMs</c> leaves its own default alone without affecting a valid
+        /// <c>Timing:ScmAdditionalTimeMs</c>: the two keys are parsed independently.
         /// </summary>
         [Fact]
         public void Constructor_TimingKeys_AreParsedIndependently()
