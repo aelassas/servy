@@ -42,7 +42,7 @@ namespace Servy.CLI.Commands
         /// Executes a synchronous command action with common error handling: <see cref="OperationCanceledException"/>
         /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
-        /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used for logging scopes.</param>
+        /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used in the cancellation message and in the administrator-privileges-required message.</param>
         /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
         /// <param name="suggestion">Actionable advice for the user if the command fails.</param>
         /// <param name="task">The synchronous command logic to execute.</param>
@@ -67,7 +67,7 @@ namespace Servy.CLI.Commands
         /// Executes an asynchronous command action with common error handling: <see cref="OperationCanceledException"/>
         /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
-        /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used for logging scopes.</param>
+        /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used in the cancellation message and in the administrator-privileges-required message.</param>
         /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
         /// <param name="suggestion">Actionable advice for the user if the command fails.</param>
         /// <param name="task">The asynchronous command logic to execute.</param>
@@ -173,7 +173,7 @@ namespace Servy.CLI.Commands
         /// Centralizes exception logging and CommandResult formatting for both synchronous and asynchronous command executions.
         /// </summary>
         /// <param name="ex">The thrown exception to process.</param>
-        /// <param name="commandName">The name of the command executing, used for logging scopes and formatting messages.</param>
+        /// <param name="commandName">The name of the command executing, used to format the administrator-privileges-required message.</param>
         /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
         /// <param name="suggestion">Actionable remediation suggestion provided to the user upon command failure.</param>
         /// <returns>A <see cref="CommandResult"/> detailing the failure.</returns>
