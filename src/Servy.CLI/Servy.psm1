@@ -1777,9 +1777,9 @@ function Show-ServyService {
             process id. Use Export-ServyServiceConfig instead when the configuration is needed
             as XML or JSON.
 
-            The fields Servy encrypts at rest - the parameter and environment-variable fields -
-            are masked by default and are not even decrypted; pass -Decrypt to read them in clear
-            text. The stored password is masked either way and is never printed.
+            The fields Servy encrypts at rest - the parameter, environment-variable and heartbeat
+            URL fields - are masked by default and are not even decrypted; pass -Decrypt to read
+            them in clear text. The stored password is masked either way and is never printed.
 
             Requires Administrator privileges, because the configuration is read from the Servy
             database under %ProgramData%\Servy.
@@ -1791,8 +1791,8 @@ function Show-ServyService {
             The name of the service to show. (Required)
 
         .PARAMETER Decrypt
-            Show the encrypted parameter and environment-variable fields in clear text instead of
-            masked. Optional. The stored password stays masked.
+            Show the encrypted parameter, environment-variable and heartbeat URL fields in clear
+            text instead of masked. Optional. The stored password stays masked.
 
         .EXAMPLE
             Show-ServyService -Name "MyService"
@@ -1800,7 +1800,7 @@ function Show-ServyService {
 
         .EXAMPLE
             Show-ServyService -Name "MyService" -Decrypt
-            # Prints the same configuration with the parameters and environment variables in clear text.
+            # Prints the same configuration with the parameters, environment variables and heartbeat URL in clear text.
 
         .NOTES
             The function calls Assert-Administrator to ensure the session has the
