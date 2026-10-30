@@ -739,11 +739,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                                            {
                                                if (Interlocked.Increment(ref calls) == 1)
                                                {
-                                                   firstGate.Wait(TimeSpan.FromSeconds(5));
+                                                   firstGate.Wait(TestTimeouts.CiGenerous);
                                                    throw new InvalidOperationException("first walk failed");
                                                }
 
-                                               secondGate.Wait(TimeSpan.FromSeconds(5));
+                                               secondGate.Wait(TestTimeouts.CiGenerous);
                                                return new ServiceDependencyNode("ServyCore", "Friendly Core");
                                            });
                         _mockMessageBoxService.Setup(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -811,7 +811,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                                        })
                                        .Returns(() =>
                                        {
-                                           gate.Wait(TimeSpan.FromSeconds(5));
+                                           gate.Wait(TestTimeouts.CiGenerous);
                                            return (ServiceDependencyNode)null;
                                        });
 

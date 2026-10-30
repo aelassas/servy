@@ -12,6 +12,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
+using Servy.Testing;
 using Servy.UI.Services;
 using Servy.UI.Validation;
 using System;
@@ -22,6 +23,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Helper = Servy.Core.Helpers.Helper;
 using TempFile = Servy.Testing.TempFile;
 
 namespace Servy.Manager.UnitTests.Services
@@ -2073,7 +2075,7 @@ namespace Servy.Manager.UnitTests.Services
                     .Returns(() =>
                     {
                         entered.Set();
-                        gate.Wait(TimeSpan.FromSeconds(10));
+                        gate.Wait(TestTimeouts.CiGenerous);
                         return false;
                     });
 
@@ -2084,7 +2086,7 @@ namespace Servy.Manager.UnitTests.Services
                     .ReturnsAsync((ServiceDto)null);
 
                 var install = sut.InstallServiceAsync(service, CancellationToken.None);
-                Assert.True(entered.Wait(TimeSpan.FromSeconds(10)), "the install never reached IsServiceInstalled");
+                Assert.True(entered.Wait(TestTimeouts.CiGenerous), "the install never reached IsServiceInstalled");
 
                 // Act - dispose while the action still holds the per-service semaphore, then let it finish
                 sut.Dispose();
