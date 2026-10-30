@@ -280,13 +280,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public async Task WaitAndCheckStillRunningAsync_ExitsEarly_ReturnsFalse()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
+            // The full path in FileName decides which cmd.exe runs; WorkingDirectory is only the
+            // child's current directory and is not used to find the executable.
+            var cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+            using (var wrapper = CreateWrapper(cmd, "/c exit 0"))
             {
-                // cmd.exe is launched by bare name with UseShellExecute = false, so CreateProcess
-                // searches the working directory before the system directory. Every cmd.exe launch
-                // in this file pins System32 so the writable temp default cannot decide which
-                // cmd.exe runs.
-                wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
                 // Act
@@ -319,10 +317,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void WaitForExit_InfiniteBlock_ExecutesSuccessfullyOnTerminatedProcess()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
+            var cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+            using (var wrapper = CreateWrapper(cmd, "/c exit 0"))
             {
-                // Same bare-name resolution pin as the other two cmd.exe launches in this file.
-                wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
                 // Act
@@ -609,12 +606,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
+                    FileName = Path.Combine(Environment.SystemDirectory, "cmd.exe"),
                     Arguments = "/c exit 0",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    // Same bare-name resolution pin as the other two cmd.exe launches in this file.
-                    WorkingDirectory = Environment.SystemDirectory,
                 };
 
                 // Act
@@ -1529,7 +1524,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             // Arrange
             // Launch cmd.exe with CreateNoWindow = false so Windows allocates a console buffer.
-            using (var wrapper = CreateWrapper("cmd.exe", "/c pause", createNoWindow: false))
+            var cmd = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+            using (var wrapper = CreateWrapper(cmd, "/c pause", createNoWindow: false))
             {
                 wrapper.Start();
                 var process = wrapper.UnderlyingProcess;
