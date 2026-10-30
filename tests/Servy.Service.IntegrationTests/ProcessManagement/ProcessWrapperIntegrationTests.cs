@@ -1837,7 +1837,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [InlineData(Errors.ERROR_INVALID_PARAMETER, null)]
         [InlineData(1234, false)]   // default arm
         public void ClassifyAttachFailure_MapsWin32ErrorToSignalOutcome(int error, bool? expected)
-            => Assert.Equal(expected, ProcessWrapper.ClassifyAttachFailure(error));
+        {
+            // Act
+            var actual = ProcessWrapper.ClassifyAttachFailure(error);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
 
         #endregion
     }
