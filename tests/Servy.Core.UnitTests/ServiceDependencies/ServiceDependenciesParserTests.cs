@@ -89,6 +89,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("SERVY;ServiceA", "SERVY\0ServiceA\0\0")]          // case-insensitive, the configured spelling kept
         public void ParseWithRequired_AlwaysNamesTheRequiredDependencyOnce(string input, string expected)
         {
+            // Arrange, Act & Assert
             Assert.Equal(expected, ServiceDependenciesParser.ParseWithRequired(input, "Servy"));
         }
 
@@ -98,6 +99,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("   ")]
         public void ParseWithRequired_BlankRequiredDependency_Throws(string required)
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentException>(() => ServiceDependenciesParser.ParseWithRequired("ServiceA", required));
         }
 
