@@ -140,14 +140,17 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void ResolveGrantees_AccountResolvingToSystemOrAdministrators_IsSkipped()
         {
+            // Arrange & Act
             var grantees = ServyHostPipeSecurity.ResolveGrantees(new[] { "a", "b" }, a => a == "a" ? LocalSystem : Administrators);
 
+            // Assert
             Assert.Empty(grantees);
         }
 
         [Fact]
         public void CreateAndResolveGrantees_NullResolver_Throw()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => ServyHostPipeSecurity.Create(new[] { "a" }, null!));
             Assert.Throws<ArgumentNullException>(() => ServyHostPipeSecurity.ResolveGrantees(new[] { "a" }, null!));
         }
@@ -155,6 +158,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void AccountSidResolver_BlankOrUnknown_ReturnsNull()
         {
+            // Arrange, Act & Assert
             Assert.Null(AccountSidResolver.Resolve(null));
             Assert.Null(AccountSidResolver.Resolve("   "));
             Assert.Null(AccountSidResolver.Resolve("definitely-not-an-account-7c1f"));
@@ -183,6 +187,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void AccountSidResolver_WellKnownAccount_ResolvesToItsSid()
         {
+            // Arrange, Act & Assert
             Assert.Equal(LocalService, AccountSidResolver.Resolve(@" NT AUTHORITY\LocalService "));
         }
     }
