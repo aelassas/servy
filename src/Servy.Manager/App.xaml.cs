@@ -20,6 +20,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows;
 using AppConfig = Servy.Core.Config.AppConfig;
 
@@ -459,10 +460,28 @@ namespace Servy.Manager
         /// <param name="value">The string value to store.</param>
         private static void PersistSetting(string key, string value)
         {
+            PersistSetting(Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName), key, value);
+        }
+
+        /// <summary>
+        /// Writes a key-value setting into the JSON configuration file at <paramref name="configPath"/>,
+        /// creating the file if needed. The file is replaced atomically through
+        /// <see cref="Helper.WriteFileAtomic(string, Action{Stream}, System.Threading.CancellationToken)"/>, so an
+        /// interrupted write never leaves a truncated or half-written file behind.
+        /// </summary>
+        /// <param name="configPath">The full path of the JSON configuration file to update.</param>
+        /// <param name="key">The JSON property name to set.</param>
+        /// <param name="value">The string value to store.</param>
+        /// <remarks>
+        /// Seam for unit testing: <see cref="PersistSetting(string, string)"/> forwards to this overload unchanged with
+        /// the path of <c>appsettings.manager.json</c> next to the executable. The content is written as UTF-8
+        /// without a byte order mark, as <see cref="File.WriteAllText(string, string)"/> did before. Failures are
+        /// logged as warnings and never thrown.
+        /// </remarks>
+        internal static void PersistSetting(string configPath, string key, string value)
+        {
             try
             {
-                string configPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName);
-
                 JObject jsonObject;
                 if (File.Exists(configPath))
                 {
@@ -476,7 +495,12 @@ namespace Servy.Manager
 
                 jsonObject[key] = value;
 
-                File.WriteAllText(configPath, jsonObject.ToString(Newtonsoft.Json.Formatting.Indented));
+                var content = jsonObject.ToString(Newtonsoft.Json.Formatting.Indented);
+                Helper.WriteFileAtomic(configPath, stream =>
+                {
+                    var bytes = new UTF8Encoding(false).GetBytes(content);
+                    stream.Write(bytes, 0, bytes.Length);
+                });
                 Logger.Info($"Saved {key} setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(value) ? "<empty>" : value)}");
             }
             catch (Exception ex)
