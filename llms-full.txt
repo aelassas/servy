@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-30T17:35:30Z
+> Generated on: 2026-10-31T02:35:09Z
 
 ---
 
@@ -4860,7 +4860,7 @@ When Servy sends a `/fail` signal or stops pinging because the host machine went
 
 ## Tips
 
-* **State Tracking:** The PowerShell scripts maintain a `.dat` timestamp file (e.g., `last-processed-toast.dat`) in the `taskschd` directory to ensure they do not send duplicate alerts for the same error. If you need to test the notification pipeline, delete this file. **Note:** Only the single most recent error will be processed on the next run; older unread errors will be dropped to prevent alert floods. To replay history, set the file's contents to a timestamp older than the events you want to see (in ISO 8601 `o` format, e.g. `2026-01-01T00:00:00.0000000Z`).
+* **State Tracking:** The PowerShell scripts maintain a `.dat` timestamp file (e.g., `last-processed-toast.dat`) in the `taskschd` directory to ensure they do not send duplicate alerts for the same error. If you need to test the notification pipeline, delete this file. **Note:** At most the newest 10 errors are processed on the next run; any older unread errors are skipped (and recorded in `ServyWatermarkErrors.log`) to prevent alert floods. To replay history, set the file's contents to a timestamp older than the events you want to see (in ISO 8601 `o` format, e.g. `2026-01-01T00:00:00.0000000Z`).
 * **Customization:** You can safely edit the `.ps1` scripts to customize the toast notification titles, icons, or email HTML bodies to fit your organization's monitoring standards.
 * **Defense in Depth:** Combine Toasts, Emails, and Heartbeat Ping URLs. Toasts notify developers locally, emails notify sysadmins via inbox, and Heartbeat Ping URLs integrate into automated incident response tools (PagerDuty, Slack).
 
