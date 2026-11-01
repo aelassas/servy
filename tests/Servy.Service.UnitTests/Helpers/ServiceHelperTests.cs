@@ -864,7 +864,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-            // Same shape as the RestartService null-return test one region above: shutdown.exe never
+            // Same shape as the RestartService null-return test in the RestartService Tests region: shutdown.exe never
             // starts, so the using block binds null and the guard inside it is the only thing that
             // can report the failure - no exception is thrown, so the catch below it stays out of it.
             _mockProcessHelper
