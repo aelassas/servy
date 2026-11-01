@@ -114,7 +114,7 @@ function Get-KeywordListFromScript {
     return $keys
 }
 
-$securityScriptText = Get-Content (Join-Path $PSScriptRoot "ServySecurity.ps1") -Raw
+$securityScriptText = Get-Content -LiteralPath (Join-Path $PSScriptRoot "ServySecurity.ps1") -Raw
 $engineLooseKeys  = Get-KeywordListFromScript -Text $securityScriptText -VariableName 'looseKeys'
 $engineStrictKeys = Get-KeywordListFromScript -Text $securityScriptText -VariableName 'strictKeys'
 
