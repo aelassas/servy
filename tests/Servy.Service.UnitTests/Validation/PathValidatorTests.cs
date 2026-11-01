@@ -14,8 +14,14 @@ namespace Servy.Service.UnitTests.Validation
         [InlineData(@"..\Traversal.txt", false)]  // Directory traversal
         public void IsValidPath_EvaluatesCorrectly(string path, bool expected)
         {
+            // Arrange
             var validator = new PathValidator();
-            Assert.Equal(expected, validator.IsValidPath(path));
+
+            // Act
+            var result = validator.IsValidPath(path);
+
+            // Assert
+            Assert.Equal(expected, result);
         }
     }
 }
