@@ -59,5 +59,35 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             Assert.Equal(0, result);
         }
+
+        [Theory]
+        [InlineData("a", "b")]
+        [InlineData("A", "b")]
+        [InlineData("a", "B")]
+        [InlineData("ab", "abc")]
+        public void Compare_DifferentStrings_OrdersConsistentlyAndAntisymmetrically(string lower, string higher)
+        {
+            // Arrange & Act
+            int forward = _collation.Compare(lower, higher);
+            int backward = _collation.Compare(higher, lower);
+
+            // Assert
+            Assert.True(forward < 0);
+            Assert.True(backward > 0);
+        }
+
+        [Fact]
+        public void Compare_PunctuationVersusLetter_UsesOrdinalFoldingNotLinguisticOrder()
+        {
+            // Arrange
+            // OrdinalIgnoreCase folds to upper case, so '_' (0x5F) sorts AFTER 'a' (folded to 'A', 0x41).
+            // A culture-sensitive comparison puts punctuation BEFORE letters, so this pair separates the two.
+
+            // Act
+            int result = _collation.Compare("_", "a");
+
+            // Assert
+            Assert.True(result > 0);
+        }
     }
 }
