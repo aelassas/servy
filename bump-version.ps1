@@ -61,7 +61,7 @@ $baseDir = $PSScriptRoot
 $helperFile = "Get-FileEncoding.ps1"
 $helperPath = Join-Path $baseDir $helperFile
 
-if (Test-Path $helperPath) {
+if (Test-Path -LiteralPath $helperPath) {
     . $helperPath
 } else {
     throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
@@ -86,7 +86,7 @@ function Update-FileContent {
     )
 
     try {
-        if (Test-Path $Path) {
+        if (Test-Path -LiteralPath $Path) {
             $encoding = Get-FileEncoding $Path
             $content = [System.IO.File]::ReadAllText($Path, $encoding)
 

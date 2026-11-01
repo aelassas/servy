@@ -54,14 +54,14 @@ $ErrorActionPreference = "Stop"
 # Anchor execution directly to repository root where the script lives
 $baseDir = $PSScriptRoot
 
-if (-not (Test-Path (Join-Path $baseDir 'Servy.sln'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $baseDir 'Servy.sln'))) {
     throw "Run from the Servy repository root (Servy.sln not found in $baseDir)"
 }
 
 # Parse .gitattributes to ensure all declared binary file types are automatically excluded
 $gitAttributesPath = Join-Path $baseDir '.gitattributes'
-if (Test-Path $gitAttributesPath) {
-    $declaredBinaryExts = Get-Content $gitAttributesPath |
+if (Test-Path -LiteralPath $gitAttributesPath) {
+    $declaredBinaryExts = Get-Content -LiteralPath $gitAttributesPath |
         Where-Object { $_ -match '^\s*\*(\.[A-Za-z0-9.]+)\s+binary\s*$' } |
         ForEach-Object { $Matches[1] }
 
@@ -73,7 +73,7 @@ if (Test-Path $gitAttributesPath) {
 # Dot-source Update-FileHelpers.ps1 for shared exclusion definitions and BOM policy
 $helperFile = "Update-FileHelpers.ps1"
 $helperPath = Join-Path $PSScriptRoot $helperFile
-if (-not (Test-Path $helperPath)) {
+if (-not (Test-Path -LiteralPath $helperPath)) {
     throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
 }
 . $helperPath
@@ -108,7 +108,7 @@ function Get-FilteredFiles {
     )
 
     # 1. Process files in current directory
-    $files = Get-ChildItem -Path $Path -File -ErrorAction SilentlyContinue
+    $files = Get-ChildItem -LiteralPath $Path -File -ErrorAction SilentlyContinue
     foreach ($file in $files) {
         # Skip exact file matches
         if ($FileExclusions -contains $file.Name) {
@@ -131,7 +131,7 @@ function Get-FilteredFiles {
     }
 
     # 2. Inspect subdirectories and skip excluded ones prior to entering
-    $directories = Get-ChildItem -Path $Path -Directory -ErrorAction SilentlyContinue
+    $directories = Get-ChildItem -LiteralPath $Path -Directory -ErrorAction SilentlyContinue
     foreach ($dir in $directories) {
         if ($DirExclusions -notcontains $dir.Name) {
             Get-FilteredFiles -Path $dir.FullName `
