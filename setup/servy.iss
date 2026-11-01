@@ -888,6 +888,12 @@ begin
 
   // Executables and DLLs only: db\, security\, logs\ and the .json / .config files are kept
   DataDir := ExpandConstant('{commonappdata}\Servy');
+  Attributes := GetFileAttributes(DataDir);
+  if (Attributes = INVALID_FILE_ATTRIBUTES) or ((Attributes and FILE_ATTRIBUTE_REPARSE_POINT) <> 0) then
+  begin
+    Log('The service data directory "' + DataDir + '" is missing or a reparse point; its executables and DLLs are left untouched.');
+    Exit;
+  end;  
   DeleteFilesMatching(DataDir, '*.exe');
   DeleteFilesMatching(DataDir, '*.dll');
 end;
