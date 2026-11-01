@@ -54,7 +54,7 @@ $baseDir = $PSScriptRoot
 $helperFile = "Update-FileHelpers.ps1"
 $helperPath = Join-Path $baseDir $helperFile
 
-if (Test-Path $helperPath) {
+if (Test-Path -LiteralPath $helperPath) {
     . $helperPath
 } else {
     throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."

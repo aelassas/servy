@@ -20,7 +20,7 @@ $script:BomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
 # Bootstrap Get-FileEncoding.ps1
 $helperFile = "Get-FileEncoding.ps1"
 $helperPath = Join-Path $PSScriptRoot $helperFile
-if (Test-Path $helperPath) {
+if (Test-Path -LiteralPath $helperPath) {
     . $helperPath
 } else {
     throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
@@ -80,7 +80,7 @@ function Update-FilesContent {
         if ($null -eq $file) { continue }
         $path = if ($file -is [string]) { $file } else { $file.FullName }
 
-        if (-not (Test-Path $path)) {
+        if (-not (Test-Path -LiteralPath $path)) {
             Write-Warning "Skipping missing file: $path"
             if ($ExpectMatch -or $PSBoundParameters.ContainsKey('ExpectMatchCount')) {
                 $script:HadFailure = $true

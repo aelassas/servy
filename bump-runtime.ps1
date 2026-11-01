@@ -70,7 +70,7 @@ $baseDir = $PSScriptRoot
 $helperFile = "Update-FileHelpers.ps1"
 $helperPath = Join-Path $baseDir $helperFile
 
-if (Test-Path $helperPath) {
+if (Test-Path -LiteralPath $helperPath) {
     . $helperPath
 } else {
     throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
@@ -95,7 +95,7 @@ $script:totalReplacements = 0
 # ----------------------------------------------------------------------
 
 # 1. Bulk file updates (PowerShell, Inno, Projects)
-$bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
+$bulkFiles = Get-ChildItem -LiteralPath $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex -and $_.Name -notlike "*.test.ps1" }
 Update-FilesContent -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 

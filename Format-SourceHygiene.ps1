@@ -46,7 +46,7 @@ $baseDir = $PSScriptRoot
 # Dot-source Update-FileHelpers.ps1 for shared exclusion definitions
 $helperFile = "Update-FileHelpers.ps1"
 $helperPath = Join-Path $PSScriptRoot $helperFile
-if (-not (Test-Path $helperPath)) {
+if (-not (Test-Path -LiteralPath $helperPath)) {
     throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
 }
 . $helperPath
@@ -82,7 +82,7 @@ $textExtensions = @(
 )
 
 # Collect repository text files excluding build output, version control, and generated files
-$filesToScan = Get-ChildItem -Path $baseDir -Recurse -File -ErrorAction SilentlyContinue |
+$filesToScan = Get-ChildItem -LiteralPath $baseDir -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object {
         $relativePath = $_.FullName.Replace($baseDir, '')
 
