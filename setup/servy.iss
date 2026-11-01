@@ -862,6 +862,7 @@ end;
 procedure RemoveServyHostWhenUnused();
 var
   ImagePath, DataDir: String;
+  Attributes: Cardinal;
   ResultCode: Integer;
 begin
   if ServyManagedServiceRemains() then
@@ -893,7 +894,7 @@ begin
   begin
     Log('The service data directory "' + DataDir + '" is missing or a reparse point; its executables and DLLs are left untouched.');
     Exit;
-  end;  
+  end;
   DeleteFilesMatching(DataDir, '*.exe');
   DeleteFilesMatching(DataDir, '*.dll');
 end;
