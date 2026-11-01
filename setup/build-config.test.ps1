@@ -13,7 +13,7 @@ Write-Host " Running build-config.ps1 Tests                " -ForegroundColor Cy
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-if (-not (Test-Path $configPath)) {
+if (-not (Test-Path -LiteralPath $configPath)) {
     Write-Host "FAIL: build-config.ps1 was not found at path: $configPath" -ForegroundColor Red
     exit 1
 }
@@ -128,12 +128,12 @@ try {
     )
 
     foreach ($mirror in $mirrors) {
-        if (-not (Test-Path $mirror.Path)) {
+        if (-not (Test-Path -LiteralPath $mirror.Path)) {
             Write-Host "FAIL: $($mirror.Name) was not found at path: $($mirror.Path)" -ForegroundColor Red
             exit 1
         }
 
-        if ((Get-Content $mirror.Path -Raw) -notmatch $mirror.Pattern) {
+        if ((Get-Content -LiteralPath $mirror.Path -Raw) -notmatch $mirror.Pattern) {
             Write-Host "FAIL: $($mirror.Name) does not carry $($mirror.Expected), but build-config.ps1 Version/Tfm is '$($cfg.Version)'/'$($cfg.Tfm)'; bump scripts keep them in step." -ForegroundColor Red
             exit 1
         }
@@ -148,15 +148,15 @@ try {
 
     # Arrange
     $tfmLiteralPattern = '\$Tfm\s*=\s*["'']net'
-    $repoRootFull = (Resolve-Path $repoRoot).Path
-    $tfmScripts = Get-ChildItem -Path $repoRoot -Recurse -Filter *.ps1 |
+    $repoRootFull = (Resolve-Path -LiteralPath $repoRoot).Path
+    $tfmScripts = Get-ChildItem -LiteralPath $repoRoot -Recurse -Filter *.ps1 |
         Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and $_.FullName -ne $PSCommandPath }
 
     # Act
     $tfmCopies = @()
     $tfmConsumers = @()
     foreach ($tfmScript in $tfmScripts) {
-        $tfmLines = Get-Content $tfmScript.FullName
+        $tfmLines = Get-Content -LiteralPath $tfmScript.FullName
         if ($tfmLines -match '\$Tfm') { $tfmConsumers += $tfmScript.FullName }
         foreach ($tfmLine in $tfmLines) {
             if ($tfmLine -match $tfmLiteralPattern) {
@@ -201,12 +201,12 @@ try {
     # Act
     $projectLists = @()
     foreach ($listSource in $projectListSources) {
-        if (-not (Test-Path $listSource.Path)) {
+        if (-not (Test-Path -LiteralPath $listSource.Path)) {
             Write-Host "FAIL: $($listSource.Name) was not found at path: $($listSource.Path)" -ForegroundColor Red
             exit 1
         }
 
-        $listProjects = @([regex]::Matches((Get-Content $listSource.Path -Raw), $projectPathPattern) |
+        $listProjects = @([regex]::Matches((Get-Content -LiteralPath $listSource.Path -Raw), $projectPathPattern) |
             ForEach-Object { $_.Value -replace '\\', '/' } |
             Sort-Object -Unique)
 

@@ -25,7 +25,7 @@ $buildCommonPath = Join-Path $scriptDir "build-common.ps1"
 $buildConfigPath = Join-Path $scriptDir "build-config.ps1"
 
 foreach ($required in @($buildCommonPath, $buildConfigPath)) {
-    if (-not (Test-Path $required)) {
+    if (-not (Test-Path -LiteralPath $required)) {
         Write-Host "FAIL: required script was not found at path: $required" -ForegroundColor Red
         exit 1
     }
@@ -98,8 +98,8 @@ try {
 
     # Arrange
     $repoRoot = Join-Path $scriptDir '..'
-    $repoRootFull = (Resolve-Path $repoRoot).Path
-    $callerScripts = Get-ChildItem -Path $repoRoot -Recurse -Filter *.ps1 |
+    $repoRootFull = (Resolve-Path -LiteralPath $repoRoot).Path
+    $callerScripts = Get-ChildItem -LiteralPath $repoRoot -Recurse -Filter *.ps1 |
         Where-Object {
             $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and
             $_.FullName -ne $PSCommandPath -and
@@ -110,7 +110,7 @@ try {
     $callers = @()
     $unresolvedCallers = @()
     foreach ($callerScript in $callerScripts) {
-        $callerText = Get-Content $callerScript.FullName -Raw
+        $callerText = Get-Content -LiteralPath $callerScript.FullName -Raw
         if ($callerText -notmatch 'Invoke-StandardPublish') { continue }
 
         $callerRelative = if ($callerScript.FullName.StartsWith($repoRootFull)) {

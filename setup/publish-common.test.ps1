@@ -26,7 +26,7 @@ $commonHelpersPath = Join-Path $scriptDir "common-helpers.ps1"
 $buildConfigPath = Join-Path $scriptDir "build-config.ps1"
 
 foreach ($required in @($publishCommonPath, $commonHelpersPath, $buildConfigPath)) {
-    if (-not (Test-Path $required)) {
+    if (-not (Test-Path -LiteralPath $required)) {
         Write-Host "FAIL: required script was not found at path: $required" -ForegroundColor Red
         exit 1
     }
@@ -232,7 +232,7 @@ try {
         Write-Host "FAIL: Invoke-BuildInstaller is not available after dot-sourcing publish-common.ps1." -ForegroundColor Red
         exit 1
     }
-    if (-not (Test-Path $publishScPath)) {
+    if (-not (Test-Path -LiteralPath $publishScPath)) {
         Write-Host "FAIL: the production caller was not found at path: $publishScPath" -ForegroundColor Red
         exit 1
     }
