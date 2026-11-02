@@ -114,7 +114,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void MaintainCache_ForExitedProcess_EvictsTheStaleSample()
         {
             // Arrange: seed a delta sample while the process is alive, then let it exit.
-            var transientProcess = Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 30\"")
+            var transientProcess = Process.Start(new ProcessStartInfo(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 30\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -179,7 +179,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 "Start-Process powershell -ArgumentList '-NoProfile','-Command', '$childAlloc = New-Object byte[] 25MB; Start-Sleep -Seconds 10'; " +
                 "Start-Sleep -Seconds 10";
 
-            var childProcessInfo = new ProcessStartInfo("powershell.exe", $"-NoProfile -Command \"{inlineScript}\"")
+            var childProcessInfo = new ProcessStartInfo(TestProcessStarter.PowerShellPath, $"-NoProfile -Command \"{inlineScript}\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
