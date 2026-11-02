@@ -292,14 +292,20 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetBuiltWithFramework_AttributeMissing_ReturnsUnknown()
         {
+            // Act
             var result = Run(null);
+
+            // Assert
             Assert.Equal("Unknown", result);
         }
 
         [Fact]
         public void GetBuiltWithFramework_TfmIsNull_ReturnsUnknown()
         {
+            // Act
             var result = Run((string?)null);
+
+            // Assert
             Assert.Equal("Unknown", result);
         }
 
@@ -308,21 +314,30 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("    ")]
         public void GetBuiltWithFramework_TfmEmptyOrWhitespace_ReturnsUnknown(string tfm)
         {
+            // Act
             var result = Run(tfm);
+
+            // Assert
             Assert.Equal("Unknown", result);
         }
 
         [Fact]
         public void GetBuiltWithFramework_PlatformSuffix_IsRemoved()
         {
+            // Act
             var result = Run("net8.0-windows");
+
+            // Assert
             Assert.Equal(".NET 8.0", result);
         }
 
         [Fact]
         public void GetBuiltWithFramework_PlainNetTfm_IsFormatted()
         {
+            // Act
             var result = Run("net8.0");
+
+            // Assert
             Assert.Equal(".NET 8.0", result);
         }
 
@@ -333,14 +348,20 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("net472", ".NET Framework 4.7.2")]
         public void GetBuiltWithFramework_LegacyMonikers_AreFormatted(string tfm, string expected)
         {
+            // Act
             var result = Run(tfm);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void GetBuiltWithFramework_NotNetTfm_ReturnsRawValue()
         {
+            // Act
             var result = Run("random");
+
+            // Assert
             Assert.Equal("random", result);
         }
 
