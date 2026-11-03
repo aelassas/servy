@@ -219,12 +219,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Query_With_Unregistered_Collation_Throws_SQLiteException()
         {
+            // Arrange
             SQLiteConnection.ClearAllPools();
 
             using (var conn = new SQLiteConnection("Data Source=:memory:"))
             {
                 conn.Open();
 
+                // Act
                 // Simulates what happens in production when UNICODE_NOCASE auto-discovery fails
                 var ex = Assert.Throws<SQLiteException>(() =>
                 {
@@ -235,6 +237,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     }
                 });
 
+                // Assert
                 Assert.Contains("no such collation sequence", ex.Message, StringComparison.OrdinalIgnoreCase);
             }
         }
@@ -242,6 +245,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void AppDbContext_DeclaresStaticInitializer_RegisteringUnicodeNoCaseCollation()
         {
+            // Arrange, Act & Assert
             // The collation is registered process-wide at three sites (SQLiteDbInitializer,
             // AppDbContext's static constructor, DatabaseInitializer) and registration cannot be undone,
             // so no query-based test can attribute the registration to this one. Assert the two things a
@@ -270,6 +274,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // statement registers UNICODE_NOCASE process-wide, so the query below succeeds even with
             // AppDbContext's registration deleted. What it does verify is that a connection handed out by
             // AppDbContext resolves the collation - see the sibling test above for the constructor itself.
+
+            // Arrange
             var context = new AppDbContext("Data Source=:memory:");
 
             using (var connection = context.CreateConnection())
@@ -279,8 +285,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "SELECT 1 WHERE 'test' = 'TEST' COLLATE UNICODE_NOCASE;";
+
+                    // Act
                     var result = cmd.ExecuteScalar();
 
+                    // Assert
                     Assert.Equal(1L, result);
                 }
             }
