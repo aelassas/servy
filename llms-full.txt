@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-10-31T02:35:09Z
+> Generated on: 2026-11-04T18:36:10Z
 
 ---
 
@@ -745,7 +745,7 @@ This tab lets you configure `stdout` and `stderr` logging, including size-based 
 <img alt="servy-config-logging" src="https://github.com/user-attachments/assets/b79978ec-1740-464d-b9c7-57b2151cc853" />
 
 > [!NOTE]
-> Enabling the debug option will record sensitive information in the local log file at `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. This behavior only occurs when local logging is enabled, which is the default setting. Sensitive data is never recorded in the Windows Event Log. The CLI `show` command and `Show-ServyService` mask the encrypted fields by default; `--decrypt` / `-Decrypt` prints the parameters and environment variables in clear text (the stored password always stays masked). See [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI) and [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
+> Enabling the debug option will record sensitive information in the local log file at `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. This behavior only occurs when local logging is enabled, which is the default setting. Sensitive data is never recorded in the Windows Event Log. The CLI `show` command and `Show-ServyService` mask the encrypted fields by default; `--decrypt` / `-Decrypt` prints the encrypted fields (parameters, environment variables and the heartbeat URL) in clear text (the stored password always stays masked). See [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI) and [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
 For detailed information about logging, check out the [Logging & Log Rotation](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation) documentation.
 
