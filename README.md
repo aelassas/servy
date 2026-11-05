@@ -5,11 +5,15 @@
 
 ## Servy
 
-Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters.
+Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, CPU affinity, logging, health checks, environment variables with expansion, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters. Services can run as Local System, a local or domain account, or a Group Managed Service Account (gMSA).
+
+Servy keeps your apps running with advanced recovery options. Health checks and automatic recovery are optional and run only when enabled and configured. When they are, Servy monitors each process with health checks and heartbeat pings to services such as healthchecks.io, and restarts it according to a configurable recovery policy when it crashes, hangs, or stops. It can send failure alerts through Windows notifications, email, and webhook-based channels. It also stops processes cleanly with `Ctrl+C` or a close-window signal, forwards the stop request to child processes, and terminates the whole process tree so that no orphaned processes remain.
+
+Servy captures stdout and stderr to log files with size-based or date-based rotation, so logs never grow without limit. Servy Manager adds real-time CPU and RAM usage graphs, live stdout and stderr tailing with search, and a dependency tree showing the status of each service.
 
 Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
-Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for monitoring and managing all installed services in real time.
+Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. Service configurations can be exported and imported for backup and migration. Servy runs on Windows 10, Windows 11, and Windows Server 2016 or later on x64 and ARM64, and a .NET Framework 4.8 build also supports Windows 7 SP1 and Windows Server 2008 R2.
 
 ## Quick Links
 
