@@ -4,6 +4,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
+using Servy.Service.UnitTests.Helpers;
 using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -637,30 +638,6 @@ namespace Servy.Service.UnitTests
             /// <returns>Whatever the supplied delegate returns.</returns>
             protected override List<Process> GetProcessDescendants(int parentPid, DateTime parentStartTime) =>
                 _scan(parentPid, parentStartTime);
-        }
-
-        /// <summary>
-        /// A process object that records how often it was disposed. The pre-stop scan's contract is that
-        /// the caller owns every returned process and disposes it, and a real <see cref="Process"/> gives
-        /// a test no way to observe that.
-        /// </summary>
-        private sealed class DisposeRecordingProcess : Process
-        {
-            /// <summary>Gets the number of times this process was disposed.</summary>
-            public int DisposeCount { get; private set; }
-
-            /// <summary>
-            /// Records the disposal and then disposes as the base class does.
-            /// </summary>
-            /// <param name="disposing">
-            /// <see langword="true"/> when called from <see cref="Component.Dispose()"/>;
-            /// <see langword="false"/> when called from the finalizer.
-            /// </param>
-            protected override void Dispose(bool disposing)
-            {
-                DisposeCount++;
-                base.Dispose(disposing);
-            }
         }
 
         public void Dispose() => _ctx.Dispose();
