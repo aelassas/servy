@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-04T18:36:10Z
+> Generated on: 2026-11-05T02:35:35Z
 
 ---
 
@@ -7270,7 +7270,7 @@ This is one of the most common problems when wrapping an app as a Windows servic
 
 Possible causes & fixes:
 
-* **Access Denied / Permissions Issue:** If the service runs under an account other than **LocalSystem**, check the Servy log: since v10.2, Servy hardens the vault for the account automatically when the service is installed, which gives the account access to the database, logs and recovery folders and to the files it reads, and logs why if that did not succeed. Fix the cause and install the service again to re-apply it. On Servy 10.1 and earlier, run `Set-ServyExePermissions.ps1 -TargetAccount "domain\user"` from an elevated PowerShell session (see [Servy 10.1 and Earlier](https://github.com/aelassas/servy/wiki/Security#servy-101-and-earlier)). See [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening).
+* **Access Denied / Permissions Issue:** If the service runs under an account other than **LocalSystem**, check the Servy log: since v10.2, Servy hardens the vault for the account automatically when the service is installed, which gives the account write access to the log folder of its own services (`logs\services\<ServiceName>\`) and read access to the binaries and configuration files it needs, and logs why if that did not succeed. Fix the cause and install the service again to re-apply it. On Servy 10.1 and earlier, run `Set-ServyExePermissions.ps1 -TargetAccount "domain\user"` from an elevated PowerShell session (see [Servy 10.1 and Earlier](https://github.com/aelassas/servy/wiki/Security#servy-101-and-earlier)). See [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening).
 * **Missing working directory:**
   Many apps (Node.js, Python, .NET, Java…) rely on relative paths.
   *Real case:* A user had a Node app that read `./config.json`. It worked manually but failed as a service because Servy launched it from `C:\Program Files\nodejs\`. Setting the working directory fixed it.
@@ -7371,7 +7371,7 @@ If the server is not joined to a domain, you can configure the setting locally u
 
 When this issue occurs, Windows records the failure in Event Viewer (`eventvwr.msc`) under Windows Logs, System, with the source set to Service Control Manager. The log entry typically states that the service could not log on because the user does not have the requested logon type on the computer. This confirms that the issue is related to Windows security policy rather than Servy itself.
 
-Also, check the Servy log for the automatic hardening of the domain account (v10.2+); it is what gives the account access to the database, logs and recovery folders under `%ProgramData%\Servy`. See [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening).
+Also, check the Servy log for the automatic hardening of the domain account (v10.2+); it is what gives the account write access to the log folder of its own services under `%ProgramData%\Servy\logs\services\` and read access to the binaries and configuration files it needs. See [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening).
 
 ## Servy "Check for Updates..." Not Working on Windows 7
 
