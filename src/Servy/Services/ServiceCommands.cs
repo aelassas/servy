@@ -533,7 +533,7 @@ namespace Servy.Services
         /// Standardizes the configuration export pipeline, handling path resolution, security validation,
         /// and formatted logging for both XML and JSON outputs.
         /// </summary>
-        /// <param name="confirmPassword">The password provided by the user to authorize the export of sensitive configuration data.</param>
+        /// <param name="confirmPassword">The service account password confirmation, forwarded to the configuration validator and checked against the configured password; it does not authorize or unlock the export.</param>
         /// <param name="getFilePath">A delegate that triggers a file save dialog and returns the selected destination path.</param>
         /// <param name="exportAction">A delegate that performs the actual serialization and file writing for the specific format.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging and error reporting.</param>
