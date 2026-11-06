@@ -122,9 +122,9 @@ namespace Servy.CLI.UnitTests.Commands
         /// <returns>A DTO carrying only core-block columns.</returns>
         /// <remarks>
         /// Deliberately NOT the record an install produces - <see cref="MinimalDto"/> is that. Its
-        /// widest label today (the indented Local System row) happens to leave the column on the floor
-        /// too, but that changes whenever an always-rendered category gains a longer label. This
-        /// fixture exists only so the floor itself stays observable to the alignment test; no other
+        /// widest label today (the indented Allow Overridden Runtime Vars row of the always-rendered
+        /// Environment category) already pushes the shared label column to 32, well above the floor.
+        /// This fixture exists only so the floor itself stays observable to the alignment test; no other
         /// test should use it, because no user has a service shaped like this.
         /// </remarks>
         private static ServiceDto CoreOnlyDto(string name = ServiceName) => new ServiceDto
@@ -1010,8 +1010,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             // CoreOnlyDto, not MinimalDto: the 16-column floor is only observable while every
-            // label is short, and the grouped categories a record an install produces renders can
-            // gain a longer indented label at any time. The realistic layout is pinned by
+            // label is short, and the grouped categories a record an install produces renders
+            // already carry a longer indented label (Allow Overridden Runtime Vars). The realistic layout is pinned by
             // ExecuteAsync_RecordAnInstallProduces_RendersTheDocumentedSample instead.
             GivenService(CoreOnlyDto());
             GivenStatus(ServiceControllerStatus.Running);
