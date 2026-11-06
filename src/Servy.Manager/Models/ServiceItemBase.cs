@@ -8,7 +8,7 @@ namespace Servy.Manager.Models
     public abstract class ServiceItemBase
     {
         /// <summary>
-        /// Gets or sets the display name or system name of the Windows service.
+        /// Gets or sets the system (SCM) name of the Windows service, as opposed to its display name.
         /// </summary>
         public string? Name { get; set; }
 
