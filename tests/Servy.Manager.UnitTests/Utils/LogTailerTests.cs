@@ -1450,9 +1450,12 @@ namespace Servy.Manager.UnitTests.Utils
                     await WaitForLoopStartAsync(tailer, CancellationToken.None);
 
                     // Act
-                    // Hook the event handler right before disposal to catch any rogue subsequent spins
-                    tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesPostDisposeCount);
                     tailer.Dispose();
+
+                    // Hook the event handler AFTER disposal to catch any rogue subsequent spins:
+                    // Dispose() nulls OnLoopCompleted, so a handler attached before it would be detached
+                    // and could never observe a loop that kept spinning.
+                    tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesPostDisposeCount);
 
                     // Assert 1: Verify prompt task completion (HandlesLinkedCancellation) via a deterministic timeout check
                     var completionDeadlineTask = Task.Delay(TimeSpan.FromSeconds(TestTimeouts.LogTailerWaitSeconds), CancellationToken.None);
