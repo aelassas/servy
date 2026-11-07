@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Serialization;
 using Servy.Core.DTOs;
 using Servy.Testing;
 using Xunit;
@@ -18,7 +19,8 @@ namespace Servy.Core.UnitTests.Services
         /// The identity, runtime and credential properties a serializer round trip is not expected to preserve:
         /// <c>Id</c> and <c>Pid</c> are assigned outside the payload, <c>Password</c> is dropped by
         /// <c>[XmlIgnore]</c>/<c>[JsonIgnore]</c>, <c>UserAccount</c> is written only for a passwordless account
-        /// and is otherwise reset on import together with <c>RunAsLocalSystem</c>, and the remaining three are runtime state. <c>DecryptionFailed</c> is the outcome of one read,
+        /// and is otherwise reset on import together with <c>RunAsLocalSystem</c>, and the remaining five are runtime state (<c>PreviousStopTimeout</c>, <c>ActiveStdoutPath</c>,
+        /// <c>ActiveStderrPath</c>, <c>RestartAttempts</c>, <c>RestartAttemptsUpdatedAtTicks</c>). <c>DecryptionFailed</c> is the outcome of one read,
         /// also dropped by <c>[XmlIgnore]</c>/<c>[JsonIgnore]</c>: an export must not carry a verdict about the key
         /// that read it (#7348). Stated once, so adding a property to
         /// <see cref="ServiceDto"/> means deciding here whether it round trips, rather than in four test bodies.
@@ -33,6 +35,8 @@ namespace Servy.Core.UnitTests.Services
             "PreviousStopTimeout",
             "ActiveStdoutPath",
             "ActiveStderrPath",
+            "RestartAttempts",
+            "RestartAttemptsUpdatedAtTicks",
             "DecryptionFailed"
         };
 
@@ -75,26 +79,36 @@ namespace Servy.Core.UnitTests.Services
         }
 
         /// <summary>
-        /// Asserts that every entry of <see cref="NonRoundTrippedProperties"/> still names a property
-        /// <see cref="ServiceDto"/> actually has. The exclusion is matched by string in
-        /// <c>TestReflection.GetMappedProperties</c>, so a renamed or removed property turns its entry into a
-        /// silent no-op: the property rejoins the "must survive the round trip" set with no diagnostic of any
-        /// kind, leaving either a confusing failure attributed to the wrong cause or a green assertion that
-        /// checks a field it was deliberately meant to skip.
+        /// Asserts that <see cref="NonRoundTrippedProperties"/> and <see cref="ServiceDto"/> agree in both
+        /// directions. Every entry must still name a property <see cref="ServiceDto"/> actually has: the exclusion
+        /// is matched by string in <c>TestReflection.GetMappedProperties</c>, so a renamed or removed property
+        /// turns its entry into a silent no-op, and the property rejoins the "must survive the round trip" set
+        /// with no diagnostic of any kind. Conversely, every property the serializers drop through
+        /// <c>[XmlIgnore]</c> must be listed, so a new runtime-state property cannot be added without deciding here
+        /// that it does not round trip.
         /// </summary>
         private static void AssertExclusionListIsCurrent()
         {
-            var liveNames = typeof(ServiceDto)
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            // Arrange
+            var dtoProperties = typeof(ServiceDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var liveNames = dtoProperties.Select(p => p.Name).ToList();
+
+            // Act
+            var stale = NonRoundTrippedProperties.Where(name => !liveNames.Contains(name)).ToList();
+            var unlisted = dtoProperties
+                .Where(p => p.GetCustomAttribute<XmlIgnoreAttribute>() != null
+                            && !NonRoundTrippedProperties.Contains(p.Name))
                 .Select(p => p.Name)
                 .ToList();
 
-            var stale = NonRoundTrippedProperties.Where(name => !liveNames.Contains(name)).ToList();
-
+            // Assert
             Assert.True(stale.Count == 0,
                 $"NonRoundTrippedProperties names {stale.Count} entr{(stale.Count == 1 ? "y" : "ies")} ServiceDto no longer has "
                 + $"(renamed or removed?): {string.Join(", ", stale)}. The exclusion is matched by name, so a stale "
                 + "entry stops excluding anything instead of failing.");
+            Assert.True(unlisted.Count == 0,
+                $"ServiceDto has [XmlIgnore] properties missing from NonRoundTrippedProperties: {string.Join(", ", unlisted)}. "
+                + "Decide here whether they round trip.");
         }
     }
 }
