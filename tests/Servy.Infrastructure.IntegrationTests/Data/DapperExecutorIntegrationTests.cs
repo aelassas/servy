@@ -755,43 +755,61 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ExecuteScalar_WithActiveTransaction_UsesActiveTxConnection()
         {
-            // Act
+            // Arrange
             using (var tx = _executor.BeginTransaction())
             {
+                _executor.Execute(
+                    "INSERT INTO TestServices (ServiceName, Status) VALUES ('Uncommitted', 1);",
+                    transaction: tx);
+
+                // Act
                 var result = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;", transaction: tx);
 
                 // Assert
-                Assert.Equal(2, result);
+                // 3 = the two seeded rows plus the uncommitted one; a fresh connection would answer 2.
+                Assert.Equal(3, result);
             }
         }
 
         [Fact]
         public void Query_WithActiveTransaction_UsesActiveTxConnection()
         {
-            // Act
+            // Arrange
             using (var tx = _executor.BeginTransaction())
             {
+                _executor.Execute(
+                    "INSERT INTO TestServices (ServiceName, Status) VALUES ('Uncommitted', 1);",
+                    transaction: tx);
+
+                // Act
                 var result = _executor.Query<TestServiceDto>("SELECT * FROM TestServices;", transaction: tx);
 
                 // Assert
-                Assert.Equal(2, result.Count());
+                // 3 = the two seeded rows plus the uncommitted one; a fresh connection would answer 2.
+                Assert.Equal(3, result.Count());
             }
         }
 
         [Fact]
         public void QuerySingleOrDefault_WithActiveTransaction_UsesActiveTxConnection()
         {
-            // Act
+            // Arrange
             using (var tx = _executor.BeginTransaction())
             {
+                _executor.Execute(
+                    "INSERT INTO TestServices (ServiceName, Status) VALUES ('Uncommitted', 1);",
+                    transaction: tx);
+
+                // Act
                 var result = _executor.QuerySingleOrDefault<TestServiceDto>(
                     "SELECT * FROM TestServices WHERE ServiceName = @Name;",
-                    new { Name = "ServyEngine" },
+                    new { Name = "Uncommitted" },
                     transaction: tx);
 
                 // Assert
+                // Only the transaction's own connection sees the uncommitted row; a fresh connection would return null.
                 Assert.NotNull(result);
-                Assert.Equal("ServyEngine", result.ServiceName);
+                Assert.Equal("Uncommitted", result.ServiceName);
             }
         }
 
