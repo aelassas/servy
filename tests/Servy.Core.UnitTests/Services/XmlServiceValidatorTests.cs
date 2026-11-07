@@ -364,7 +364,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_ValidXml_HandsBackHydratedDtoWithIdentityReset()
         {
             // Arrange
-            // RunAsLocalSystem/UserAccount/Password are [XmlIgnore], so the raw parse leaves them null;
+            // RunAsLocalSystem/Password are [XmlIgnore] and a null UserAccount is not written, so the raw parse leaves them null;
             // HeartbeatInterval is absent from the manifest and must come from AppConfig.
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe" };
             var xml = _serializer.Serialize(dto);
@@ -381,6 +381,46 @@ namespace Servy.Core.UnitTests.Services
             // Defaults hydrated, exactly as ServiceDtoSerializer.Deserialize used to do for the caller
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, parsed.HeartbeatInterval);
             // Global Identity Reset on Import
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, parsed.RunAsLocalSystem);
+            Assert.Null(parsed.UserAccount);
+            Assert.Null(parsed.Password);
+        }
+
+        [Fact]
+        public void TryValidate_ValidXmlWithPasswordlessAccount_HandsBackTheAccount()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\TestService" };
+            var content = _serializer.Serialize(dto);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(content, out var error, out var parsed);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+            Assert.NotNull(parsed);
+            Assert.False(parsed.RunAsLocalSystem);
+            Assert.Equal(@"NT SERVICE\TestService", parsed.UserAccount);
+            Assert.Null(parsed.Password);
+        }
+
+        [Fact]
+        public void TryValidate_ValidXmlWithAccountThatNeedsAPassword_HandsBackTheLocalSystemBaseline()
+        {
+            // Arrange: the account is written by hand, because an export never carries one that needs a password
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\TestService" };
+            var content = (_serializer.Serialize(dto) ?? string.Empty).Replace(@"NT SERVICE\", @"DOMAIN\");
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(content, out var error, out var parsed);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+            Assert.NotNull(parsed);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, parsed.RunAsLocalSystem);
             Assert.Null(parsed.UserAccount);
             Assert.Null(parsed.Password);

@@ -50,8 +50,8 @@ namespace Servy.Core.Services
                 var dto = DeserializeCore(input);
 
                 // Hydrate defaults for absent optional fields, then apply the Global Identity Reset on Import
-                // policy: RunAsLocalSystem/UserAccount/Password are forced to the password-less LocalSystem
-                // baseline. Id is kept out of the payload by [JsonIgnore]/[XmlIgnore] on ServiceDto.Id, not here.
+                // policy: a passwordless UserAccount is kept, any other identity is forced to the password-less
+                // LocalSystem baseline, and Password is always cleared. Id is kept out of the payload by [JsonIgnore]/[XmlIgnore] on ServiceDto.Id, not here.
                 if (dto != null)
                 {
                     ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);

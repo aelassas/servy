@@ -6,6 +6,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Services;
+using Servy.Core.Validation;
 using Servy.Services;
 using Servy.Testing;
 using Servy.UI.Services;
@@ -1718,6 +1719,95 @@ namespace Servy.UnitTests.Services
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("xml", @"NT SERVICE\PasswordlessService")]
+        [InlineData("json", @"NT SERVICE\PasswordlessService")]
+        [InlineData("xml", @"NT AUTHORITY\NetworkService")]
+        [InlineData("json", @"DOMAIN\svc_gmsa$")]
+        public async Task ImportConfigAsync_FileNamesPasswordlessAccount_BindsTheAccount(string format, string account)
+        {
+            // Act
+            var bound = await ImportWithRealValidatorsAsync(format, account);
+
+            // Assert
+            Assert.NotNull(bound);
+            Assert.False(bound.RunAsLocalSystem);
+            Assert.Equal(account, bound.UserAccount);
+            Assert.Null(bound.Password);
+        }
+
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ImportConfigAsync_FileNamesAccountThatNeedsAPassword_BindsTheLocalSystemBaseline(string format)
+        {
+            // Act
+            var bound = await ImportWithRealValidatorsAsync(format, @"DOMAIN\User");
+
+            // Assert
+            Assert.NotNull(bound);
+            Assert.True(bound.RunAsLocalSystem);
+            Assert.Null(bound.UserAccount);
+            Assert.Null(bound.Password);
+        }
+
+        /// <summary>
+        /// Imports a manifest naming <paramref name="account"/> through the desktop app's import command wired
+        /// to the production XML and JSON validators, and returns the definition bound to the form.
+        /// </summary>
+        private async Task<ServiceDto?> ImportWithRealValidatorsAsync(string format, string account)
+        {
+            const string exePath = @"C:\Windows\System32\notepad.exe";
+            var content = format == "xml"
+                ? "<ServiceDto><Name>PasswordlessService</Name><ExecutablePath>" + exePath + "</ExecutablePath>" +
+                  "<UserAccount>" + account + "</UserAccount><Password>ignored</Password></ServiceDto>"
+                : "{\"Name\":\"PasswordlessService\",\"ExecutablePath\":\"" + exePath.Replace(@"\", @"\\") + "\"," +
+                  "\"UserAccount\":\"" + account.Replace(@"\", @"\\") + "\",\"Password\":\"ignored\"}";
+
+            var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + "." + format);
+            File.WriteAllText(path, content);
+
+            _processHelperMock.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            ServiceDto? bound = null;
+            var rules = new ServiceValidationRules(_processHelperMock.Object);
+            var sut = new ServiceCommands(
+                modelToServiceDto: _modelToServiceDtoMock.Object,
+                bindServiceDtoToModel: dto => bound = dto,
+                serviceManager: _serviceManagerMock.Object,
+                messageBoxService: _messageBoxServiceMock.Object,
+                dialogService: _dialogServiceMock.Object,
+                serviceConfigurationValidator: _serviceConfigurationValidatorMock.Object,
+                xmlServiceValidator: new XmlServiceValidator(rules),
+                jsonServiceValidator: new JsonServiceValidator(rules),
+                appConfig: _appConfigMock.Object,
+                cursorService: _cursorServiceMock.Object,
+                processHelper: _processHelperMock.Object
+            );
+
+            try
+            {
+                if (format == "xml")
+                {
+                    _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(path);
+                    await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
+                }
+                else
+                {
+                    _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(path);
+                    await sut.ImportJsonConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
+                }
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+
+            return bound;
         }
 
         #endregion

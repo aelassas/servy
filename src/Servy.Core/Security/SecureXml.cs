@@ -47,7 +47,7 @@ namespace Servy.Core.Security
         /// <summary>
         /// Creates an <see cref="XmlSerializer"/> configured with strict unknown element and unknown attribute handlers
         /// to prevent unmapped or unexpected XML payloads from deserializing into a <see cref="ServiceDto"/>.
-        /// Properties decorated with <see cref="XmlIgnoreAttribute"/> (such as credentials and runtime state) are ignored.
+        /// Properties decorated with <see cref="XmlIgnoreAttribute"/> (such as the password and runtime state) are ignored.
         /// </summary>
         /// <returns>A new <see cref="XmlSerializer"/> instance configured with strict parsing rules.</returns>
         public static XmlSerializer CreateStrictServiceDtoSerializer()

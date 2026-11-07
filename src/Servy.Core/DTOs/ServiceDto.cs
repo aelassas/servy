@@ -303,8 +303,10 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional user account name to run the service under.
         /// </summary>
-        [JsonIgnore]
-        [XmlIgnore]
+        /// <remarks>
+        /// Exported only for a passwordless account (see <see cref="ShouldSerializeUserAccount"/>); on import,
+        /// an account that is not passwordless is discarded and the service is reset to LocalSystem.
+        /// </remarks>
         [SqlColumn("TEXT")]
         public string? UserAccount { get; set; }
 
@@ -577,6 +579,17 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeEnvironmentVariables() => !string.IsNullOrWhiteSpace(EnvironmentVariables);
         public bool ShouldSerializeAllowOverriddenRuntimeVars() => AllowOverriddenRuntimeVars.HasValue;
         public bool ShouldSerializeServiceDependencies() => !string.IsNullOrWhiteSpace(ServiceDependencies);
+
+        /// <summary>
+        /// Writes UserAccount only for a passwordless account other than LocalSystem, and only when no
+        /// password is set and the service does not run as LocalSystem. An account that needs a password
+        /// is never written, because the password cannot travel with it.
+        /// </summary>
+        /// <returns><c>true</c> when UserAccount is a passwordless account that may be exported; otherwise, <c>false</c>.</returns>
+        public bool ShouldSerializeUserAccount() =>
+            RunAsLocalSystem != true
+            && string.IsNullOrEmpty(Password)
+            && ServiceAccounts.IsPasswordlessAccount(UserAccount);
         public bool ShouldSerializePreLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PreLaunchExecutablePath);
         public bool ShouldSerializePreLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PreLaunchStartupDirectory);
         public bool ShouldSerializePreLaunchParameters() => !string.IsNullOrWhiteSpace(PreLaunchParameters);

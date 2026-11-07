@@ -273,7 +273,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_ValidJson_HandsBackHydratedDtoWithIdentityReset()
         {
             // Arrange
-            // RunAsLocalSystem/UserAccount/Password are [JsonIgnore], so the raw parse leaves them null;
+            // RunAsLocalSystem/Password are [JsonIgnore] and a null UserAccount is not written, so the raw parse leaves them null;
             // HeartbeatInterval is absent from the manifest and must come from AppConfig.
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe" };
             var json = JsonConvert.SerializeObject(dto);
@@ -288,6 +288,46 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(parsed);
             Assert.Equal("TestService", parsed.Name);
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, parsed.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, parsed.RunAsLocalSystem);
+            Assert.Null(parsed.UserAccount);
+            Assert.Null(parsed.Password);
+        }
+
+        [Fact]
+        public void TryValidate_ValidJsonWithPasswordlessAccount_HandsBackTheAccount()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\TestService" };
+            var json = JsonConvert.SerializeObject(dto);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(json, out var error, out var parsed);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+            Assert.NotNull(parsed);
+            Assert.False(parsed.RunAsLocalSystem);
+            Assert.Equal(@"NT SERVICE\TestService", parsed.UserAccount);
+            Assert.Null(parsed.Password);
+        }
+
+        [Fact]
+        public void TryValidate_ValidJsonWithAccountThatNeedsAPassword_HandsBackTheLocalSystemBaseline()
+        {
+            // Arrange: the account is written by hand, because an export never carries one that needs a password
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = "C:\\path\\to\\exe", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\TestService" };
+            var json = JsonConvert.SerializeObject(dto).Replace(@"NT SERVICE\\", @"DOMAIN\\");
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
+            // Act
+            var result = _validator.TryValidate(json, out var error, out var parsed);
+
+            // Assert
+            Assert.True(result);
+            Assert.Null(error);
+            Assert.NotNull(parsed);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, parsed.RunAsLocalSystem);
             Assert.Null(parsed.UserAccount);
             Assert.Null(parsed.Password);

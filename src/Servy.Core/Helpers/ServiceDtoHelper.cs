@@ -97,8 +97,10 @@ namespace Servy.Core.Helpers
         /// Populates null nullable properties that have production defaults in <see cref="AppConfig"/>
         /// (startup, priority, timeouts, log rotation, health monitoring, pre-launch/pre-stop options).
         /// Optional free-form fields (paths, parameters, hooks, dependencies) without defaults remain null.
-        /// Additionally, unconditionally resets RunAsLocalSystem/UserAccount/Password to a
-        /// password-less LocalSystem baseline (Global Identity Reset on Import policy).
+        /// Additionally, applies the Global Identity Reset on Import policy: Password is always cleared,
+        /// a passwordless UserAccount (see <see cref="ServiceAccounts.IsPasswordlessAccount"/>) is kept with
+        /// RunAsLocalSystem set to <c>false</c>, and any other identity is reset to the password-less
+        /// LocalSystem baseline.
         /// </summary>
         /// <param name="dto">The service DTO to hydrate. The instance is modified in place. If null, the method returns immediately.</param>
         public static void ApplyDefaultsAndResetIdentity(ServiceDto? dto)
@@ -108,20 +110,32 @@ namespace Servy.Core.Helpers
             // Hydrate structural parameters via our unified local template method
             HydrateDefaults(dto);
 
-            // POLICY: Global Identity Reset on Import
-            // To maintain architectural simplicity across all interfaces (UI, CLI, PS),
-            // we do not support importing custom identities. All imported services
-            // are forced to LocalSystem to ensure a valid, password-less baseline.
-            // If you want to set a custom account you must set it manually after import.
-            dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
-            dto.UserAccount = null;
+            // POLICY: Global Identity Reset on Import, except for passwordless accounts
+            // A password is never read from an import file, so an account that needs one cannot be
+            // applied: it is reset to the password-less LocalSystem baseline and must be set manually
+            // after import. A passwordless account (LocalService, NetworkService, NT SERVICE\..., IIS
+            // APPPOOL\..., a gMSA) carries no secret, so it is kept as the file names it.
             dto.Password = null;
 
+            var account = dto.UserAccount?.Trim();
+            if (ServiceAccounts.IsPasswordlessAccount(account))
+            {
+                dto.RunAsLocalSystem = false;
+                dto.UserAccount = account;
+
+                Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The passwordless account '{account}' " +
+                            "named in the imported manifest is kept.");
+                return;
+            }
+
+            dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
+            dto.UserAccount = null;
+
             // Log an informational notice to satisfy operator visibility requirements.
-            // Because serialization attributes strip identity data out of export manifests,
-            // this notice alerts administrators that the service defaults safely to LocalSystem.
+            // An account that needs a password is never exported, so this notice alerts
+            // administrators that the service defaults safely to LocalSystem.
             Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The Global Identity Reset policy enforces " +
-                        "the LocalSystem identity on all imported manifests. A custom account can be configured manually if required.");
+                        "the LocalSystem identity on imported manifests that do not name a passwordless account. A custom account can be configured manually if required.");
         }
     }
 }

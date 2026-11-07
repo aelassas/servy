@@ -8,6 +8,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validation;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
@@ -852,6 +853,101 @@ namespace Servy.Manager.UnitTests.Services
             finally { File.Delete(outside); }
         }
 #endif
+
+        #endregion
+
+        #region Passwordless Account Import (real XML/JSON validators)
+
+        [Theory]
+        [InlineData("xml", @"NT SERVICE\PasswordlessService")]
+        [InlineData("json", @"NT SERVICE\PasswordlessService")]
+        [InlineData("xml", @"NT AUTHORITY\LocalService")]
+        [InlineData("json", @"DOMAIN\svc_gmsa$")]
+        public async Task ImportConfigAsync_FileNamesPasswordlessAccount_UpsertsTheAccount(string format, string account)
+        {
+            // Act
+            var upserted = await ImportWithRealValidatorsAsync(format, account);
+
+            // Assert
+            Assert.NotNull(upserted);
+            Assert.False(upserted.RunAsLocalSystem);
+            Assert.Equal(account, upserted.UserAccount);
+            Assert.Null(upserted.Password);
+        }
+
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ImportConfigAsync_FileNamesAccountThatNeedsAPassword_UpsertsTheLocalSystemBaseline(string format)
+        {
+            // Act
+            var upserted = await ImportWithRealValidatorsAsync(format, @"DOMAIN\User");
+
+            // Assert
+            Assert.NotNull(upserted);
+            Assert.True(upserted.RunAsLocalSystem);
+            Assert.Null(upserted.UserAccount);
+            Assert.Null(upserted.Password);
+        }
+
+        /// <summary>
+        /// Imports a manifest naming <paramref name="account"/> through Manager's import command wired to the
+        /// production XML and JSON validators, and returns the definition handed to the repository.
+        /// </summary>
+        private async Task<ServiceDto?> ImportWithRealValidatorsAsync(string format, string account)
+        {
+            const string exePath = @"C:\Windows\System32\notepad.exe";
+            var content = format == "xml"
+                ? "<ServiceDto><Name>PasswordlessService</Name><ExecutablePath>" + exePath + "</ExecutablePath>" +
+                  "<UserAccount>" + account + "</UserAccount><Password>ignored</Password></ServiceDto>"
+                : "{\"Name\":\"PasswordlessService\",\"ExecutablePath\":\"" + exePath.Replace(@"\", @"\\") + "\"," +
+                  "\"UserAccount\":\"" + account.Replace(@"\", @"\\") + "\",\"Password\":\"ignored\"}";
+
+            _processHelperMock.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+            var rules = new ServiceValidationRules(_processHelperMock.Object);
+            var sut = new ServiceCommands(
+                _serviceManagerMock.Object,
+                _serviceRepositoryMock.Object,
+                _messageBoxServiceMock.Object,
+                _fileDialogServiceMock.Object,
+                name => _removedServiceName = name,
+                () =>
+                {
+                    _refreshCalled = true;
+                    return Task.CompletedTask;
+                },
+                _serviceConfigurationValidatorMock.Object,
+                new XmlServiceValidator(rules),
+                new JsonServiceValidator(rules),
+                _appConfigMock.Object,
+                _processHelperMock.Object,
+                _uiDispatcherMock.Object,
+                _cursorServiceMock.Object);
+            _created.Add(sut);
+
+            ServiceDto? upserted = null;
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceRepositoryMock
+                .Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>()))
+                .Callback<ServiceDto, bool, bool, CancellationToken>((dto, keepState, keepCredentials, token) => upserted = dto)
+                .ReturnsAsync(1);
+
+            using (var tempFile = new TempFile("." + format).Write(content))
+            {
+                if (format == "xml")
+                {
+                    _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string>())).Returns(tempFile.Path);
+                    await sut.ImportXmlConfigAsync(TestContext.Current.CancellationToken);
+                }
+                else
+                {
+                    _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
+                    await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
+                }
+            }
+
+            return upserted;
+        }
 
         #endregion
 

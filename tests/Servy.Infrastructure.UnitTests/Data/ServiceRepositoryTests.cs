@@ -1542,6 +1542,53 @@ namespace Servy.Infrastructure.UnitTests.Data
             }
         }
 
+        [Theory]
+        [InlineData(@"NT SERVICE\Test")]
+        [InlineData(@"NT AUTHORITY\NetworkService")]
+        [InlineData(@"DOMAIN\svc_gmsa$")]
+        public void ApplyRuntimeState_PreserveCredentialsWithIncomingPasswordlessAccount_KeepsTheIncomingAccount(string account)
+        {
+            // Arrange: an import that named a passwordless account, over a stored row with a password account
+            var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = account, Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = "old_user", Password = "old_password" };
+
+            // Act
+            TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                false,
+                true);
+
+            // Assert
+            Assert.False(incoming.RunAsLocalSystem);
+            Assert.Equal(account, incoming.UserAccount);
+            Assert.Null(incoming.Password);
+        }
+
+        [Fact]
+        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalSystemBaseline_KeepsTheStoredAccount()
+        {
+            // Arrange: an import that named no passwordless account comes in as the LocalSystem baseline
+            var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\Test", Password = null };
+
+            // Act
+            TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                false,
+                true);
+
+            // Assert
+            Assert.False(incoming.RunAsLocalSystem);
+            Assert.Equal(@"NT SERVICE\Test", incoming.UserAccount);
+            Assert.Null(incoming.Password);
+        }
+
         [Fact]
         public async Task CreateEncryptedClone_CatchBlock_ThrowsInvalidOperationException()
         {

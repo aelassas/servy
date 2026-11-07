@@ -66,8 +66,8 @@ namespace Servy.Core.UnitTests.Services
             // Reflection-driven comprehensive comparison of all properties mapped across serialization boundaries
             ServiceDtoRoundTrip.AssertPropertiesSurvived(expected, actual);
 
-            // UserAccount and Password (sensitive data) are dropped by [XmlIgnore], while
-            // RunAsLocalSystem is reset to the configured default rather than omitted.
+            // Password (sensitive data) is dropped by [XmlIgnore], the fixture's UserAccount needs a password
+            // and is never written, and RunAsLocalSystem is reset to the configured default rather than omitted.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
@@ -323,6 +323,68 @@ namespace Servy.Core.UnitTests.Services
             Assert.Null(deserialized.UserAccount);
             Assert.Null(deserialized.Password);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, deserialized.RunAsLocalSystem);
+        }
+
+        [Theory]
+        [InlineData(@"NT SERVICE\MyService")]
+        [InlineData(@"NT AUTHORITY\NetworkService")]
+        [InlineData(@"DOMAIN\svc_gmsa$")]
+        public void Deserialize_PasswordlessUserAccount_KeepsTheAccountAndNeverReadsThePassword(string account)
+        {
+            // Arrange
+            string xmlPayload = "<ServiceDto>" +
+                                "<Name>PasswordlessService</Name>" +
+                                "<UserAccount>" + account + "</UserAccount>" +
+                                "<Password>RoguePassword123!</Password>" +
+                                "<RunAsLocalSystem>true</RunAsLocalSystem>" +
+                                "</ServiceDto>";
+
+            // Act
+            var actual = _serializer.Deserialize(xmlPayload);
+
+            // Assert
+            Assert.NotNull(actual);
+            Assert.Equal(account, actual.UserAccount);
+            Assert.False(actual.RunAsLocalSystem);
+            Assert.Null(actual.Password);
+        }
+
+        [Fact]
+        public void Serialize_PasswordlessUserAccount_WritesTheAccountButNeverThePassword()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateFull("Xml");
+            dto.UserAccount = @"NT SERVICE\MyService";
+            dto.Password = string.Empty;
+            dto.RunAsLocalSystem = false;
+
+            // Act
+            var xml = _serializer.Serialize(dto);
+
+            // Assert
+            Assert.NotNull(xml);
+            Assert.Contains(@"<UserAccount>NT SERVICE\MyService</UserAccount>", xml);
+            Assert.DoesNotContain("Password", xml);
+            Assert.DoesNotContain("RunAsLocalSystem", xml);
+        }
+
+        [Fact]
+        public void SerializeAndDeserialize_PasswordlessUserAccount_SurvivesTheRoundTrip()
+        {
+            // Arrange
+            var original = ServiceDtoFactory.CreateFull("Xml");
+            original.UserAccount = @"NT SERVICE\MyService";
+            original.Password = null;
+            original.RunAsLocalSystem = false;
+
+            // Act
+            var recovered = _serializer.Deserialize(_serializer.Serialize(original));
+
+            // Assert
+            Assert.NotNull(recovered);
+            Assert.Equal(@"NT SERVICE\MyService", recovered.UserAccount);
+            Assert.False(recovered.RunAsLocalSystem);
+            Assert.Null(recovered.Password);
         }
 
         [Fact]
