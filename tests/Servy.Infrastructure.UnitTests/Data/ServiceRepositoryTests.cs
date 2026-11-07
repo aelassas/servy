@@ -1546,6 +1546,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [InlineData(@"NT SERVICE\Test")]
         [InlineData(@"NT AUTHORITY\NetworkService")]
         [InlineData(@"DOMAIN\svc_gmsa$")]
+        [InlineData(@".\blank_svc")] // a local account the import kept after a blank-password logon
         public void ApplyRuntimeState_PreserveCredentialsWithIncomingPasswordlessAccount_KeepsTheIncomingAccount(string account)
         {
             // Arrange: an import that named a passwordless account, over a stored row with a password account
@@ -1564,6 +1565,27 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             Assert.False(incoming.RunAsLocalSystem);
             Assert.Equal(account, incoming.UserAccount);
+            Assert.Null(incoming.Password);
+        }
+
+        [Fact]
+        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalAccountAndPassword_KeepsTheStoredAccount()
+        {
+            // Arrange: a local account with a password is never kept by an import, so it is not applied here either
+            var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @".\inc_user", Password = "new_password" };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\Test", Password = null };
+
+            // Act
+            TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                false,
+                true);
+
+            // Assert
+            Assert.Equal(@"NT SERVICE\Test", incoming.UserAccount);
             Assert.Null(incoming.Password);
         }
 

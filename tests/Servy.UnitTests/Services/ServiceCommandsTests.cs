@@ -1753,6 +1753,30 @@ namespace Servy.UnitTests.Services
             Assert.Null(bound.Password);
         }
 
+        [Theory]
+        [InlineData("xml", 0, true)]
+        [InlineData("json", 0, true)]
+        [InlineData("xml", 1, false)]
+        [InlineData("json", 1, false)]
+        public async Task ImportConfigAsync_FileNamesBlankPasswordLocalAccount_IsKeptOnlyWhenBlankPasswordsAreAllowed(string format, int policy, bool kept)
+        {
+            // Arrange: LimitBlankPasswordUse = policy, and the account logs on with a blank password
+            const string account = @".\servy_blank_desktop";
+            ServiceDto? bound;
+
+            // Act
+            using (new BlankPasswordProbe(policy, account))
+            {
+                bound = await ImportWithRealValidatorsAsync(format, account);
+            }
+
+            // Assert
+            Assert.NotNull(bound);
+            Assert.Equal(!kept, bound.RunAsLocalSystem);
+            Assert.Equal(kept ? account : null, bound.UserAccount);
+            Assert.Null(bound.Password);
+        }
+
         /// <summary>
         /// Imports a manifest naming <paramref name="account"/> through the desktop app's import command wired
         /// to the production XML and JSON validators, and returns the definition bound to the form.

@@ -1,3 +1,6 @@
+using Microsoft.Win32;
+using Servy.Core.Logging;
+using Servy.Core.Native;
 using System.Collections.Immutable;
 
 namespace Servy.Core.Config
@@ -174,6 +177,119 @@ namespace Servy.Core.Config
             if (account.EndsWith(@"\", StringComparison.Ordinal)) return false;
 
             return IsBuiltInServiceAccount(account) || IsGmsa(account, null);
+        }
+
+        /// <summary>
+        /// The registry key, under <see cref="Registry.LocalMachine"/>, that holds the LSA policy values.
+        /// </summary>
+        internal const string LsaSubKey = @"SYSTEM\CurrentControlSet\Control\Lsa";
+
+        /// <summary>
+        /// The LSA value behind the security policy "Accounts: Limit local account use of blank passwords to
+        /// console logon only". <c>1</c> (the Windows default, also assumed when the value is absent) restricts
+        /// a local account with a blank password to console logon, so a service cannot log on with it; <c>0</c>
+        /// lifts that restriction for the whole machine.
+        /// </summary>
+        internal const string LimitBlankPasswordUseValueName = "LimitBlankPasswordUse";
+
+        /// <summary>
+        /// Reads <see cref="LimitBlankPasswordUseValueName"/>; <c>null</c> when the value is absent or unreadable.
+        /// A seam for tests, which must not depend on the policy of the machine they run on.
+        /// </summary>
+        internal static Func<int?> LimitBlankPasswordUseReader = ReadLimitBlankPasswordUse;
+
+        /// <summary>
+        /// Validates an account and password, throwing when the logon would fail. A seam for tests, which
+        /// cannot create a local account with a blank password on the machine they run on.
+        /// </summary>
+        internal static Action<string, string> BlankPasswordValidator = NativeMethodsHelpers.ValidateCredentials;
+
+        /// <summary>
+        /// True when the account names a user on this machine (".\name" or "MACHINE\name"), as opposed to a
+        /// domain account, a built-in or virtual service identity, or a gMSA. Such an account can have a blank
+        /// password, which only <see cref="IsBlankPasswordLocalAccount"/> can tell.
+        /// </summary>
+        /// <param name="account">The account name to check.</param>
+        /// <returns><c>true</c> if the account is a local user account; otherwise, <c>false</c>.</returns>
+        public static bool IsLocalAccount(string? account)
+        {
+            if (string.IsNullOrWhiteSpace(account)) return false;
+
+            // Keep trimming for safety
+            account = account.Trim();
+
+            if (IsBuiltInServiceAccount(account) || account.EndsWith("$", StringComparison.Ordinal)) return false;
+
+            var separator = account.IndexOf('\\');
+            if (separator <= 0 || separator != account.LastIndexOf('\\') || separator == account.Length - 1) return false;
+
+            var machine = account.Substring(0, separator);
+            return machine == "." || string.Equals(machine, Environment.MachineName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// True when the account is a local user account whose password is blank and that Windows lets a
+        /// service log on with: <see cref="LimitBlankPasswordUseValueName"/> is <c>0</c> on this machine, and
+        /// validating the account with an empty password succeeds. Such an account is then treated like the
+        /// passwordless accounts of <see cref="IsPasswordlessAccount"/>.
+        /// </summary>
+        /// <remarks>
+        /// This performs a real logon attempt, so it is called once per import of such an account and never
+        /// from a serialization path. Setting <see cref="LimitBlankPasswordUseValueName"/> to <c>0</c> is not
+        /// recommended: it lets every local account with a blank password log on over the network.
+        /// </remarks>
+        /// <param name="account">The account name to check.</param>
+        /// <returns><c>true</c> if the account is a local user that can log on with a blank password; otherwise, <c>false</c>.</returns>
+        public static bool IsBlankPasswordLocalAccount(string? account)
+        {
+            if (!IsLocalAccount(account)) return false;
+
+            if (LimitBlankPasswordUseReader() != 0) return false;
+
+            try
+            {
+                BlankPasswordValidator(account!.Trim(), string.Empty);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // A failed blank-password logon is the normal answer for an account that has a password,
+                // not an error: the account is simply not passwordless, and the import resets it.
+                Logger.Debug($"Account '{account!.Trim()}' cannot log on with a blank password: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when the account may be passwordless without contacting the system: a passwordless account of
+        /// <see cref="IsPasswordlessAccount"/>, or a local user account, which is passwordless when it was
+        /// configured with a blank password. Used where no logon may be attempted - an export, which only
+        /// writes a local account when no password is stored for it, and a re-import, whose account was
+        /// already checked by <see cref="IsBlankPasswordLocalAccount"/>.
+        /// </summary>
+        /// <param name="account">The account name to check.</param>
+        /// <returns><c>true</c> if the account is passwordless or a local user account; otherwise, <c>false</c>.</returns>
+        public static bool CanBePasswordless(string? account) => IsPasswordlessAccount(account) || IsLocalAccount(account);
+
+        /// <summary>
+        /// Reads <see cref="LimitBlankPasswordUseValueName"/> from the registry.
+        /// </summary>
+        /// <returns>The value, or <c>null</c> when it is absent, not a DWORD, or cannot be read.</returns>
+        private static int? ReadLimitBlankPasswordUse()
+        {
+            try
+            {
+                using (var key = Registry.LocalMachine.OpenSubKey(LsaSubKey))
+                {
+                    return key?.GetValue(LimitBlankPasswordUseValueName) as int?;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Unreadable is treated as the Windows default (restricted): no blank-password account is kept.
+                Logger.Debug($"Could not read {LsaSubKey}\\{LimitBlankPasswordUseValueName}: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>

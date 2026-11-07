@@ -98,9 +98,10 @@ namespace Servy.Core.Helpers
         /// (startup, priority, timeouts, log rotation, health monitoring, pre-launch/pre-stop options).
         /// Optional free-form fields (paths, parameters, hooks, dependencies) without defaults remain null.
         /// Additionally, applies the Global Identity Reset on Import policy: Password is always cleared,
-        /// a passwordless UserAccount (see <see cref="ServiceAccounts.IsPasswordlessAccount"/>) is kept with
-        /// RunAsLocalSystem set to <c>false</c>, and any other identity is reset to the password-less
-        /// LocalSystem baseline.
+        /// a passwordless UserAccount (see <see cref="ServiceAccounts.IsPasswordlessAccount"/>), or a local user
+        /// account that can log on with a blank password on this machine (see
+        /// <see cref="ServiceAccounts.IsBlankPasswordLocalAccount"/>), is kept with RunAsLocalSystem set to
+        /// <c>false</c>, and any other identity is reset to the password-less LocalSystem baseline.
         /// </summary>
         /// <param name="dto">The service DTO to hydrate. The instance is modified in place. If null, the method returns immediately.</param>
         public static void ApplyDefaultsAndResetIdentity(ServiceDto? dto)
@@ -114,7 +115,9 @@ namespace Servy.Core.Helpers
             // A password is never read from an import file, so an account that needs one cannot be
             // applied: it is reset to the password-less LocalSystem baseline and must be set manually
             // after import. A passwordless account (LocalService, NetworkService, NT SERVICE\..., IIS
-            // APPPOOL\..., a gMSA) carries no secret, so it is kept as the file names it.
+            // APPPOOL\..., a gMSA) carries no secret, so it is kept as the file names it. So is a local
+            // user account with a blank password, but only when this machine allows a service to log on
+            // with one (LimitBlankPasswordUse = 0) and a blank-password logon for it succeeds.
             dto.Password = null;
 
             var account = dto.UserAccount?.Trim();
@@ -125,6 +128,16 @@ namespace Servy.Core.Helpers
 
                 Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The passwordless account '{account}' " +
                             "named in the imported manifest is kept.");
+                return;
+            }
+
+            if (ServiceAccounts.IsBlankPasswordLocalAccount(account))
+            {
+                dto.RunAsLocalSystem = false;
+                dto.UserAccount = account;
+
+                Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The local account '{account}' named in the " +
+                            "imported manifest has a blank password and LimitBlankPasswordUse is 0 on this machine, so it is kept.");
                 return;
             }
 

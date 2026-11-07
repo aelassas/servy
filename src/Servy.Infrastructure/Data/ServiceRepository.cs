@@ -469,7 +469,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="existing">The row currently stored in the database for the same service name.</param>
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password),
-        /// unless <paramref name="incoming"/> names a passwordless account, which is then kept.</param>
+        /// unless <paramref name="incoming"/> names a passwordless account (a local one with no password included), which is then kept.</param>
         private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
             if (preserveExistingRuntimeState)
@@ -484,8 +484,13 @@ namespace Servy.Infrastructure.Data
             }
 
             // A passwordless account named by the import file is applied as it stands: it carries no secret, so
-            // the file holds the whole identity and keeping the stored one would silently discard it.
-            if (preserveExistingCredentials && !ServiceAccounts.IsPasswordlessAccount(incoming.UserAccount))
+            // the file holds the whole identity and keeping the stored one would silently discard it. The import
+            // keeps a local account only after a blank-password logon for it succeeded, so one that reaches this
+            // point with no password is passwordless too, and no second logon is attempted here.
+            var incomingIsPasswordless = incoming.RunAsLocalSystem == false
+                && string.IsNullOrEmpty(incoming.Password)
+                && ServiceAccounts.CanBePasswordless(incoming.UserAccount);
+            if (preserveExistingCredentials && !incomingIsPasswordless)
             {
                 // Credentials & account - an account that needs a password is excluded from export for
                 // security, so it must be preserved on import so updates do not wipe it.
