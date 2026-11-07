@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-05T02:35:35Z
+> Generated on: 2026-11-07T10:35:06Z
 
 ---
 
@@ -1944,6 +1944,7 @@ Uninstall-ServyService @uninstallParams
 | `Import-ServyServiceConfig` | `-ConfigFileType` (string, **required**: `xml`, `json`)<br>`-Path` (string, **required**)<br>`-Install` (switch, optional)<br>`-Quiet` (switch, optional) | **Imports a configuration from a file.**<br>Loads settings from a previously exported file into the Servy database. Use the `-Install` switch to register the service with Windows immediately after import.<br><br>**Examples:**<br>- `Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\NewApp.json" -Install`<br>- `Import-ServyServiceConfig -ConfigFileType "xml" -Path "C:\Configs\NewApp.xml"` |
 | `Get-ServyHelp` | `-Command` (string, optional)<br>`-Quiet` (switch, optional) | **Displays the Servy CLI help manual.**<br>Provides global usage instructions or detailed parameter explanations for a specific command if requested.<br><br>**Examples:**<br>- `Get-ServyHelp`<br>- `Get-ServyHelp -Command "install"` |
 | `Get-ServyVersion` | `-Quiet` (switch, optional) | **Displays the version of the Servy binary.**<br>Outputs the version string of the `servy-cli.exe` file being utilized by the module.<br><br>**Example:**<br>- `Get-ServyVersion -Quiet` |
+| `Set-ServyHardenedFileAcl` | `-Path` (string, **required**)<br>`-IsDirectory` (switch, optional) | **Helper for the Dump and Restore scripts, not a general-purpose cmdlet.**<br>It is exported by the module only because `Servy-Dump.ps1` and `Servy-Restore.ps1` call it to lock down their staging files and folders. Makes `BUILTIN\Administrators` the owner, removes inheritance and all existing ACEs, and grants Full Control only to `BUILTIN\Administrators` and `NT AUTHORITY\SYSTEM`. |
 
 ### Install-ServyService Parameter Reference
 
