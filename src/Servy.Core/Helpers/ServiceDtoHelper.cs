@@ -36,7 +36,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="dto">The service data transfer object layout to populate. The instance is modified in place.</param>
         /// <remarks>
-        /// ServiceMapper.ToDomain dereferences each property set here with '!.Value'.
+        /// ServiceDtoMapper.ToDomain dereferences each property set here with '!.Value'.
         /// Removing a line from this method, or adding a nullable ServiceDto property without one,
         /// turns that read into a NullReferenceException on the database load path.
         /// </remarks>
