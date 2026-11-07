@@ -37,10 +37,11 @@
     CRITICAL SECURITY NOTICE:
     The dump archive being restored contains highly sensitive information, including unencrypted execution
     parameters, command-line arguments, and process environment variables.
-    Service logon credentials (Usernames and Passwords) are intentionally excluded from configuration exports.
-    Importing configurations resets all service logon accounts to 'LocalSystem' by default.
+    Service logon passwords are never exported, and neither is the username of an account that needs one.
+    Passwordless accounts (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\..., gMSA) are exported
+    and restored as they are; every other service logon account is reset to 'LocalSystem' on import.
     You must manually re-enter Logon Usernames and Passwords via Servy Manager, servy-cli, or the Servy PowerShell
-    module for any services that require specific custom service runner accounts.
+    module for any services that require specific custom service runner accounts with a password.
 
 .PARAMETER DumpArchivePath
     Mandatory path specifying the Servy dump zip archive file to restore (e.g., 'C:\Backups\Servy_Dump.zip').
@@ -556,12 +557,14 @@ The restored dump archive contains highly sensitive information!
 - Ensure the backup zip file is stored securely and access is restricted.
 
 NOTE ON SERVICE RESTORATION & CREDENTIALS:
-- Service logon Usernames and Passwords were NOT exported for security reasons.
-- Restoring configurations via Servy-Restore.ps1 automatically resets all
-  service logon accounts to 'LocalSystem' by default.
+- Service logon Passwords, and the Usernames of accounts that need one, were
+  NOT exported for security reasons.
+- Passwordless accounts (LocalService, NetworkService, NT SERVICE\...,
+  IIS APPPOOL\..., gMSA) were restored as they were exported. Every other
+  service logon account was reset to 'LocalSystem'.
 - You must manually re-enter Logon Usernames and Passwords via Servy Manager,
   servy-cli, or the PowerShell module for any services that require specific
-  custom service runner accounts.
+  custom service runner accounts with a password.
 ================================================================================
 "@ -ForegroundColor Yellow
 

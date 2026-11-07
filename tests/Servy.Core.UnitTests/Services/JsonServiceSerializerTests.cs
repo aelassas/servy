@@ -99,8 +99,8 @@ namespace Servy.Core.UnitTests.Services
             // Reflection-driven comprehensive comparison of all properties mapped across serialization boundaries
             ServiceDtoRoundTrip.AssertPropertiesSurvived(expected, actual);
 
-            // Assert baseline defaults here. Due to [JsonIgnore] decorations,
-            // these properties never hit the serialized string payload loop during SerializeObject passes.
+            // Assert baseline defaults here. Password and RunAsLocalSystem carry [JsonIgnore], and the
+            // fixture's UserAccount needs a password, so none of them reaches the payload.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, actual.RunAsLocalSystem);
@@ -125,8 +125,8 @@ namespace Servy.Core.UnitTests.Services
             var actual = _serializer.Deserialize(maliciousJson);
 
             // Assert
-            // SECURITY CONTRACT BOUNDARY: Verify that incoming credential vectors are completely ignored,
-            // preserving safe system defaults regardless of raw JSON stream content.
+            // SECURITY CONTRACT BOUNDARY: Verify that incoming credential vectors are ignored: the password
+            // is never read, and an account that needs one is reset to the safe system defaults.
             Assert.NotNull(actual);
             Assert.Equal("MaliciousService", actual.Name);
             Assert.Equal("C:\\malicious.exe", actual.ExecutablePath);
@@ -230,8 +230,9 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("\n", json);
             Assert.Contains("  \"Name\":", json);
 
-            // SECURITY CONTRACT BOUNDARY: Verify that sensitive credentials are actively
-            // omitted from the outbound file payload via [JsonIgnore] attributes on ServiceDto.
+            // SECURITY CONTRACT BOUNDARY: Verify that sensitive credentials are actively omitted from the
+            // outbound file payload: Password carries [JsonIgnore], and an account that needs a password is
+            // never written (ServiceDto.ShouldSerializeUserAccount).
             Assert.DoesNotContain("UserAccount", json);
             Assert.DoesNotContain("Password", json);
             Assert.DoesNotContain("Domain\\Admin", json);
@@ -257,10 +258,75 @@ namespace Servy.Core.UnitTests.Services
 
             ServiceDtoRoundTrip.AssertPropertiesSurvived(original, recovered);
 
-            // Confirm structural integrity for unmapped fallback security fields (credentials are dropped by [JsonIgnore] in both directions)
+            // Confirm structural integrity for unmapped fallback security fields (the fixture's account needs a
+            // password, so it is not written and the identity comes back as the LocalSystem baseline)
             Assert.Null(recovered.UserAccount);
             Assert.Null(recovered.Password);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, recovered.RunAsLocalSystem);
+        }
+
+        [Theory]
+        [InlineData(@"NT SERVICE\MyService")]
+        [InlineData(@"NT AUTHORITY\NetworkService")]
+        [InlineData(@"DOMAIN\svc_gmsa$")]
+        public void Deserialize_PasswordlessUserAccount_KeepsTheAccountAndNeverReadsThePassword(string account)
+        {
+            // Arrange
+            var json = JsonConvert.SerializeObject(new
+            {
+                Name = "PasswordlessService",
+                ExecutablePath = "C:\\app.exe",
+                UserAccount = account,
+                Password = "RoguePassword123!",
+                RunAsLocalSystem = true
+            });
+
+            // Act
+            var actual = _serializer.Deserialize(json);
+
+            // Assert
+            Assert.NotNull(actual);
+            Assert.Equal(account, actual.UserAccount);
+            Assert.False(actual.RunAsLocalSystem);
+            Assert.Null(actual.Password);
+        }
+
+        [Fact]
+        public void Serialize_PasswordlessUserAccount_WritesTheAccountButNeverThePassword()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateFull();
+            dto.UserAccount = @"NT SERVICE\MyService";
+            dto.Password = string.Empty;
+            dto.RunAsLocalSystem = false;
+
+            // Act
+            string json = _serializer.Serialize(dto);
+
+            // Assert
+            Assert.NotNull(json);
+            Assert.Contains("\"UserAccount\": \"NT SERVICE\\\\MyService\"", json);
+            Assert.DoesNotContain("Password", json);
+            Assert.DoesNotContain("RunAsLocalSystem", json);
+        }
+
+        [Fact]
+        public void SerializeAndDeserialize_PasswordlessUserAccount_SurvivesTheRoundTrip()
+        {
+            // Arrange
+            var original = ServiceDtoFactory.CreateFull();
+            original.UserAccount = @"NT SERVICE\MyService";
+            original.Password = null;
+            original.RunAsLocalSystem = false;
+
+            // Act
+            var recovered = _serializer.Deserialize(_serializer.Serialize(original));
+
+            // Assert
+            Assert.NotNull(recovered);
+            Assert.Equal(@"NT SERVICE\MyService", recovered.UserAccount);
+            Assert.False(recovered.RunAsLocalSystem);
+            Assert.Null(recovered.Password);
         }
 
         #endregion

@@ -179,7 +179,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ApplyDefaultsAndResetIdentity_WithCustomIdentityPopulated_UnconditionallyResetsToLocalSystemBaseline()
+        public void ApplyDefaultsAndResetIdentity_WithAccountThatNeedsAPassword_ResetsToLocalSystemBaseline()
         {
             // Arrange: Populate an explicit custom user account layout configuration
             var dto = new ServiceDto
@@ -194,8 +194,67 @@ namespace Servy.Core.UnitTests.Helpers
             ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
 
             // Assert
-            // Verify that the Global Identity Reset on Import policy strictly overwrites and purges the account context
+            // Verify that the Global Identity Reset on Import policy overwrites and purges an account that needs a password
             Assert.True(dto.RunAsLocalSystem, "The identity was not securely reset to follow the password-less LocalSystem default state.");
+            Assert.Null(dto.UserAccount);
+            Assert.Null(dto.Password);
+        }
+
+        [Theory]
+        [InlineData(@"NT SERVICE\IdentitySecurityService")]
+        [InlineData(@"NT AUTHORITY\LocalService")]
+        [InlineData(@"NT AUTHORITY\NetworkService")]
+        [InlineData(@"IIS APPPOOL\DefaultAppPool")]
+        [InlineData(@"DOMAIN\svc_gmsa$")]
+        public void ApplyDefaultsAndResetIdentity_WithPasswordlessAccount_KeepsTheAccount(string account)
+        {
+            // Arrange
+            var dto = new ServiceDto
+            {
+                Name = "IdentitySecurityService",
+                RunAsLocalSystem = true,
+                UserAccount = account,
+                Password = "ignored"
+            };
+
+            // Act
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
+
+            // Assert
+            Assert.False(dto.RunAsLocalSystem, "A passwordless account was not kept as the service identity.");
+            Assert.Equal(account, dto.UserAccount);
+            Assert.Null(dto.Password);
+        }
+
+        [Fact]
+        public void ApplyDefaultsAndResetIdentity_WithPasswordlessAccountAndSurroundingWhitespace_KeepsTheTrimmedAccount()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "TrimmedAccountService", UserAccount = @"  NT SERVICE\TrimmedAccountService  " };
+
+            // Act
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
+
+            // Assert
+            Assert.False(dto.RunAsLocalSystem);
+            Assert.Equal(@"NT SERVICE\TrimmedAccountService", dto.UserAccount);
+        }
+
+        [Theory]
+        [InlineData("LocalSystem")]
+        [InlineData(@"NT AUTHORITY\SYSTEM")]
+        [InlineData(@"DOMAIN\User")]
+        [InlineData(@"NT SERVICE\")]
+        public void ApplyDefaultsAndResetIdentity_WithAccountThatIsNotPasswordless_ResetsToLocalSystemBaseline(string account)
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "ResetService", RunAsLocalSystem = false, UserAccount = account };
+
+            // Act
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
+
+            // Assert
+            Assert.True(dto.RunAsLocalSystem);
             Assert.Null(dto.UserAccount);
             Assert.Null(dto.Password);
         }

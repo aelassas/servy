@@ -151,6 +151,33 @@ namespace Servy.Core.Config
         }
 
         /// <summary>
+        /// True when the account is a passwordless service identity other than LocalSystem: LocalService,
+        /// NetworkService, a virtual account (NT SERVICE\...), an IIS AppPool identity or a group Managed
+        /// Service Account (a name ending in '$'). Such an account carries no secret, so its name is the
+        /// whole identity and can be written to an export file and applied again on import.
+        /// </summary>
+        /// <remarks>
+        /// LocalSystem is excluded because it is the import baseline, expressed by RunAsLocalSystem rather
+        /// than by an account name. A bare "NT SERVICE\" or "IIS APPPOOL\" prefix is excluded because it
+        /// names no account.
+        /// </remarks>
+        /// <param name="account">The account name to check.</param>
+        /// <returns><c>true</c> if the account needs no password and is not LocalSystem; otherwise, <c>false</c>.</returns>
+        public static bool IsPasswordlessAccount(string account)
+        {
+            if (string.IsNullOrWhiteSpace(account)) return false;
+
+            // Keep trimming for safety
+            account = account.Trim();
+
+            if (LocalSystemAliases.Contains(account)) return false;
+
+            if (account.EndsWith(@"\", StringComparison.Ordinal)) return false;
+
+            return IsBuiltInServiceAccount(account) || IsGmsa(account, null);
+        }
+
+        /// <summary>
         /// Expands the ".\" local-machine shorthand to "MACHINE\", leaving every other form untouched.
         /// This is the single definition of the rule: the credential validation gate and the
         /// "Log on as a service" grant path are two halves of one install and have to agree on

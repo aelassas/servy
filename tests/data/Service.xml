@@ -35,6 +35,7 @@
   <FailureProgramParameters>/c exit 0 --param 2001</FailureProgramParameters>
   <EnvironmentVariables>var1=val1; var2=val2;</EnvironmentVariables>
   <ServiceDependencies>Tcpip;Dnscache</ServiceDependencies>
+  <UserAccount>NT SERVICE\DummyService</UserAccount>
   <PreLaunchExecutablePath>C:\Windows\System32\cmd.exe</PreLaunchExecutablePath>
   <PreLaunchStartupDirectory>C:\Windows\Temp</PreLaunchStartupDirectory>
   <PreLaunchParameters>/c exit 0 --param 2002</PreLaunchParameters>

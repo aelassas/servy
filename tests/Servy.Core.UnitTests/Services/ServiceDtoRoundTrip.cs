@@ -16,9 +16,9 @@ namespace Servy.Core.UnitTests.Services
     {
         /// <summary>
         /// The identity, runtime and credential properties a serializer round trip is not expected to preserve:
-        /// <c>Id</c> and <c>Pid</c> are assigned outside the payload, <c>UserAccount</c> and <c>Password</c> are
-        /// dropped by <c>[XmlIgnore]</c>/<c>[JsonIgnore]</c>, <c>RunAsLocalSystem</c> is reset to the configured
-        /// default, and the remaining three are runtime state. <c>DecryptionFailed</c> is the outcome of one read,
+        /// <c>Id</c> and <c>Pid</c> are assigned outside the payload, <c>Password</c> is dropped by
+        /// <c>[XmlIgnore]</c>/<c>[JsonIgnore]</c>, <c>UserAccount</c> is written only for a passwordless account
+        /// and is otherwise reset on import together with <c>RunAsLocalSystem</c>, and the remaining three are runtime state. <c>DecryptionFailed</c> is the outcome of one read,
         /// also dropped by <c>[XmlIgnore]</c>/<c>[JsonIgnore]</c>: an export must not carry a verdict about the key
         /// that read it (#7348). Stated once, so adding a property to
         /// <see cref="ServiceDto"/> means deciding here whether it round trips, rather than in four test bodies.

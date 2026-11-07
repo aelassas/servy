@@ -8,6 +8,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validation;
 using Servy.Testing;
 using System;
 using System.IO;
@@ -478,6 +479,80 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Equal(domainError, result.Message);
+        }
+
+        #endregion
+
+        #region Passwordless Account Import (real XML/JSON validators)
+
+        [Theory]
+        [InlineData("xml", @"NT SERVICE\PasswordlessService")]
+        [InlineData("json", @"NT SERVICE\PasswordlessService")]
+        [InlineData("xml", @"NT AUTHORITY\NetworkService")]
+        [InlineData("json", @"DOMAIN\svc_gmsa$")]
+        public async Task ExecuteAsync_FileNamesPasswordlessAccount_UpsertsTheAccount(string format, string account)
+        {
+            // Act
+            var upserted = await ImportWithRealValidatorsAsync(format, account);
+
+            // Assert
+            Assert.NotNull(upserted);
+            Assert.False(upserted.RunAsLocalSystem);
+            Assert.Equal(account, upserted.UserAccount);
+            Assert.Null(upserted.Password);
+        }
+
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ExecuteAsync_FileNamesAccountThatNeedsAPassword_UpsertsTheLocalSystemBaseline(string format)
+        {
+            // Act
+            var upserted = await ImportWithRealValidatorsAsync(format, @"DOMAIN\User");
+
+            // Assert
+            Assert.NotNull(upserted);
+            Assert.True(upserted.RunAsLocalSystem);
+            Assert.Null(upserted.UserAccount);
+            Assert.Null(upserted.Password);
+        }
+
+        /// <summary>
+        /// Imports a manifest naming <paramref name="account"/> through a command wired to the production
+        /// XML and JSON validators, and returns the definition handed to the repository.
+        /// </summary>
+        private async Task<ServiceDto> ImportWithRealValidatorsAsync(string format, string account)
+        {
+            const string exePath = @"C:\Windows\System32\notepad.exe";
+            var path = format == "xml" ? _legalXmlPath : _legalJsonPath;
+            var content = format == "xml"
+                ? "<ServiceDto><Name>PasswordlessService</Name><ExecutablePath>" + exePath + "</ExecutablePath>" +
+                  "<UserAccount>" + account + "</UserAccount><Password>ignored</Password></ServiceDto>"
+                : "{\"Name\":\"PasswordlessService\",\"ExecutablePath\":\"" + exePath.Replace(@"\", @"\\") + "\"," +
+                  "\"UserAccount\":\"" + account.Replace(@"\", @"\\") + "\",\"Password\":\"ignored\"}";
+            File.WriteAllText(path, content);
+
+            _processHelper.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+            var rules = new ServiceValidationRules(_processHelper.Object);
+            var command = new ImportServiceCommand(
+                _serviceRepoMock.Object,
+                _serviceManager.Object,
+                new XmlServiceValidator(rules),
+                new JsonServiceValidator(rules),
+                _processHelper.Object);
+
+            ServiceDto upserted = null;
+            _serviceRepoMock
+                .Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>()))
+                .Callback<ServiceDto, bool, bool, CancellationToken>((dto, keepState, keepCredentials, token) => upserted = dto)
+                .ReturnsAsync(1);
+
+            var opts = new ImportServiceOptions { ConfigFileType = format, Path = path, InstallService = false };
+
+            var result = await command.ExecuteAsync(opts, CancellationToken.None);
+
+            Assert.True(result.IsSuccess, result.Message);
+            return upserted;
         }
 
         #endregion

@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
@@ -472,7 +473,8 @@ namespace Servy.Infrastructure.Data
         /// <param name="incoming">The fresh configuration DTO targeted for database persistence.</param>
         /// <param name="existing">The row currently stored in the database for the same service name.</param>
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
-        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
+        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password),
+        /// unless <paramref name="incoming"/> names a passwordless account, which is then kept.</param>
         private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
             if (preserveExistingRuntimeState)
@@ -486,10 +488,12 @@ namespace Servy.Infrastructure.Data
                 incoming.RestartAttemptsUpdatedAtTicks = existing.RestartAttemptsUpdatedAtTicks;
             }
 
-            if (preserveExistingCredentials)
+            // A passwordless account named by the import file is applied as it stands: it carries no secret, so
+            // the file holds the whole identity and keeping the stored one would silently discard it.
+            if (preserveExistingCredentials && !ServiceAccounts.IsPasswordlessAccount(incoming.UserAccount))
             {
-                // Credentials & account - intentionally excluded from export for security,
-                // but must be preserved on import so updates do not wipe them.
+                // Credentials & account - an account that needs a password is excluded from export for
+                // security, so it must be preserved on import so updates do not wipe it.
                 incoming.RunAsLocalSystem = existing.RunAsLocalSystem;
                 incoming.UserAccount = existing.UserAccount;
                 incoming.Password = existing.Password;

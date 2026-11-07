@@ -67,7 +67,9 @@ namespace Servy.Core.UnitTests.DTOs
             // Arrange
             var expected = new List<string>
             {
-                "Id", "Pid", "RunAsLocalSystem", "UserAccount", "Password",
+                // UserAccount is deliberately absent: it is written for a passwordless account only, which
+                // ServiceDto.ShouldSerializeUserAccount decides (see UserAccount_IsSerializedOnlyForAPasswordlessAccount).
+                "Id", "Pid", "RunAsLocalSystem", "Password",
                 "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath",
                 "RestartAttempts", "RestartAttemptsUpdatedAtTicks",
                 // Not a secret and not a column: one read's decryption outcome, which must never be
@@ -124,6 +126,10 @@ namespace Servy.Core.UnitTests.DTOs
 
                 Assert.NotNull(prop); // Ensure matching target tracking property exists
 
+                // UserAccount has its own rule (passwordless accounts only), covered by
+                // UserAccount_IsSerializedOnlyForAPasswordlessAccount below.
+                if (propName == nameof(ServiceDto.UserAccount)) continue;
+
                 // Case 1: String properties (Serialize only if not null or whitespace)
                 if (prop.PropertyType == typeof(string))
                 {
@@ -149,6 +155,33 @@ namespace Servy.Core.UnitTests.DTOs
                     Assert.True((bool)method.Invoke(dto, null), $"{method.Name}() should be true when populated.");
                 }
             }
+        }
+
+        [Theory]
+        [InlineData(@"NT SERVICE\MyService", null, null, true)]
+        [InlineData(@"NT SERVICE\MyService", false, "", true)]
+        [InlineData(@"NT AUTHORITY\NetworkService", false, null, true)]
+        [InlineData(@"DOMAIN\svc_gmsa$", false, null, true)]
+        // An account that needs a password is never written
+        [InlineData(@"DOMAIN\User", false, null, false)]
+        [InlineData(@".\svc-account", false, "secret", false)]
+        // A passwordless name with a password set, or a service running as LocalSystem, is not written
+        [InlineData(@"NT SERVICE\MyService", false, "secret", false)]
+        [InlineData(@"NT SERVICE\MyService", true, null, false)]
+        // LocalSystem is expressed by RunAsLocalSystem, never by an account name
+        [InlineData("LocalSystem", false, null, false)]
+        [InlineData(null, false, null, false)]
+        [InlineData("   ", false, null, false)]
+        public void UserAccount_IsSerializedOnlyForAPasswordlessAccount(string account, bool? runAsLocalSystem, string password, bool expected)
+        {
+            // Arrange
+            var dto = new ServiceDto { UserAccount = account, RunAsLocalSystem = runAsLocalSystem, Password = password };
+
+            // Act
+            bool result = dto.ShouldSerializeUserAccount();
+
+            // Assert
+            Assert.Equal(expected, result);
         }
 
         #endregion

@@ -38,9 +38,11 @@
     CRITICAL SECURITY NOTICE:
     The generated dump archive is highly sensitive. Exported XML configuration files contain sensitive plain-text
     data including execution parameters, command-line arguments, and process environment variables.
-    Note that Windows Service Account credentials (Usernames and Passwords) are intentionally excluded from exports.
-    When restoring configurations via Servy Manager, servy-cli, or Servy-Restore.ps1, all imported services will
-    default to 'LocalSystem' and passwords must be re-entered manually for security reasons.
+    Note that Windows Service Account passwords, and the usernames of accounts that need one, are intentionally
+    excluded from exports. Passwordless accounts (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\...,
+    gMSA) are exported and restored as they are. When restoring configurations via Servy Manager, servy-cli, or
+    Servy-Restore.ps1, every other imported service will default to 'LocalSystem' and its account and password
+    must be re-entered manually for security reasons.
 
 .PARAMETER DestinationArchivePath
     Mandatory path specifying the target zip archive destination file (e.g., 'C:\Backups\Servy_Dump.zip').
@@ -952,11 +954,14 @@ The generated dump archive contains highly sensitive information!
 - Protect this file accordingly and restrict access to authorized admins.
 
 NOTE ON SERVICE RESTORATION:
-- Service logon Usernames and Passwords are NOT exported for security reasons.
-- Restoring this backup via Servy-Restore.ps1, servy-cli, or Servy Manager will
-  automatically set all service logon accounts to 'LocalSystem' by default.
+- Service logon Passwords, and the Usernames of accounts that need one, are
+  NOT exported for security reasons.
+- Passwordless accounts (LocalService, NetworkService, NT SERVICE\...,
+  IIS APPPOOL\..., gMSA) are exported and restored as they are. Restoring this
+  backup via Servy-Restore.ps1, servy-cli, or Servy Manager sets every other
+  service logon account to 'LocalSystem'.
 - You must manually re-enter Logon Usernames and Passwords for any services that
-  require specific custom service runner accounts.
+  require specific custom service runner accounts with a password.
 ================================================================================
 "@ -ForegroundColor Yellow
 

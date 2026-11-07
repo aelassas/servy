@@ -320,6 +320,56 @@ namespace Servy.Core.UnitTests.Config
 
         #endregion
 
+        #region IsPasswordlessAccount Tests
+
+        [Theory]
+        // Passwordless accounts other than LocalSystem
+        [InlineData(@"NT SERVICE\MyService", true)]
+        [InlineData(@"nt service\MyService", true)]
+        [InlineData(@"  NT SERVICE\MyService  ", true)]
+        [InlineData(@"NT AUTHORITY\LocalService", true)]
+        [InlineData(@"NT AUTHORITY\NetworkService", true)]
+        [InlineData("LocalService", true)]
+        [InlineData("NetworkService", true)]
+        [InlineData(@"IIS APPPOOL\DefaultAppPool", true)]
+        [InlineData(@"DOMAIN\svc_gmsa$", true)]
+        // LocalSystem is the import baseline, not an account name
+        [InlineData("LocalSystem", false)]
+        [InlineData(@"NT AUTHORITY\SYSTEM", false)]
+        [InlineData(@".\LocalSystem", false)]
+        // Accounts that need a password
+        [InlineData(@".\svc-account", false)]
+        [InlineData(@"DOMAIN\User", false)]
+        [InlineData("User", false)]
+        // A bare prefix names no account
+        [InlineData(@"NT SERVICE\", false)]
+        [InlineData(@"IIS APPPOOL\", false)]
+        // Null / empty / whitespace
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        public void IsPasswordlessAccount_EvaluatesCorrectly(string account, bool expected)
+        {
+            // Act
+            bool result = ServiceAccounts.IsPasswordlessAccount(account);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [MemberData(nameof(RunnableAliases))]
+        public void IsPasswordlessAccount_EveryRunnableAlias_IsPasswordlessUnlessItIsLocalSystem(string alias)
+        {
+            // Act
+            bool result = ServiceAccounts.IsPasswordlessAccount(alias);
+
+            // Assert
+            Assert.Equal(!ServiceAccounts.LocalSystemAliases.Contains(alias), result);
+        }
+
+        #endregion
+
         #region ExpandLocalShorthand Tests
 
         [Fact]

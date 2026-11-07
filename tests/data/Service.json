@@ -34,6 +34,7 @@
   "FailureProgramParameters": "/c exit 0 --param 2001",
   "EnvironmentVariables": "var1=val1; var2=val2;",
   "ServiceDependencies": "Tcpip;Dnscache",
+  "UserAccount": "NT SERVICE\\DummyService",
   "PreLaunchExecutablePath": "C:\\Windows\\System32\\cmd.exe",
   "PreLaunchStartupDirectory": "C:\\Windows\\Temp",
   "PreLaunchParameters": "/c exit 0 --param 2002",
