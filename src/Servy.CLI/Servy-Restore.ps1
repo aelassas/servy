@@ -39,7 +39,9 @@
     parameters, command-line arguments, and process environment variables.
     Service logon passwords are never exported, and neither is the username of an account that needs one.
     Passwordless accounts (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\..., gMSA) are exported
-    and restored as they are; every other service logon account is reset to 'LocalSystem' on import.
+    and restored as they are. A local account with a blank password is restored only when the target machine has
+    LimitBlankPasswordUse = 0 and the account can still log on with a blank password (setting it to 0 is not
+    recommended). Every other service logon account is reset to 'LocalSystem' on import.
     You must manually re-enter Logon Usernames and Passwords via Servy Manager, servy-cli, or the Servy PowerShell
     module for any services that require specific custom service runner accounts with a password.
 
@@ -560,8 +562,10 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
 - Service logon Passwords, and the Usernames of accounts that need one, were
   NOT exported for security reasons.
 - Passwordless accounts (LocalService, NetworkService, NT SERVICE\...,
-  IIS APPPOOL\..., gMSA) were restored as they were exported. Every other
-  service logon account was reset to 'LocalSystem'.
+  IIS APPPOOL\..., gMSA) were restored as they were exported. A local account
+  with a blank password was restored only if this machine has
+  LimitBlankPasswordUse = 0 and the account logs on with a blank password.
+  Every other service logon account was reset to 'LocalSystem'.
 - You must manually re-enter Logon Usernames and Passwords via Servy Manager,
   servy-cli, or the PowerShell module for any services that require specific
   custom service runner accounts with a password.

@@ -17,8 +17,9 @@ namespace Servy.Core.Services
         /// <remarks>
         /// Absent optional fields are populated from <see cref="Servy.Core.Config.AppConfig"/> defaults, and the service
         /// identity follows the Global Identity Reset on Import policy: a passwordless <c>UserAccount</c>
-        /// (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\..., a gMSA) is kept; any other account
-        /// is discarded and the service is reset to a password-less LocalSystem baseline. <c>Password</c> is
+        /// (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\..., a gMSA) is kept, and so is a local user
+        /// account that can log on with a blank password on this machine (LimitBlankPasswordUse = 0); any other
+        /// account is discarded and the service is reset to a password-less LocalSystem baseline. <c>Password</c> is
         /// never read from the payload. Configure an account that needs a password after import.
         /// </remarks>
         ServiceDto Deserialize(string xml);

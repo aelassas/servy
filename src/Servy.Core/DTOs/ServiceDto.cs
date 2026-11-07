@@ -582,15 +582,22 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeServiceDependencies() => !string.IsNullOrWhiteSpace(ServiceDependencies);
 
         /// <summary>
-        /// Writes UserAccount only for a passwordless account other than LocalSystem, and only when no
-        /// password is set and the service does not run as LocalSystem. An account that needs a password
+        /// Writes UserAccount only for an account that may be passwordless (see
+        /// <see cref="ServiceAccounts.CanBePasswordless"/>: a passwordless account other than LocalSystem, or a
+        /// local user account), and only when no password is set and the service does not run as LocalSystem.
+        /// A local account is stored with no password only when it was configured with a blank password; the
+        /// import on the target machine checks that it can still log on with one. An account with a password
         /// is never written, because the password cannot travel with it.
         /// </summary>
+        /// <remarks>
+        /// No logon is attempted here: this hook also runs for every named-pipe frame that carries a
+        /// <see cref="ServiceDto"/>, and a logon per frame would flood the Security event log.
+        /// </remarks>
         /// <returns><c>true</c> when UserAccount is a passwordless account that may be exported; otherwise, <c>false</c>.</returns>
         public bool ShouldSerializeUserAccount() =>
             RunAsLocalSystem != true
             && string.IsNullOrEmpty(Password)
-            && ServiceAccounts.IsPasswordlessAccount(UserAccount);
+            && ServiceAccounts.CanBePasswordless(UserAccount);
         public bool ShouldSerializePreLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PreLaunchExecutablePath);
         public bool ShouldSerializePreLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PreLaunchStartupDirectory);
         public bool ShouldSerializePreLaunchParameters() => !string.IsNullOrWhiteSpace(PreLaunchParameters);

@@ -40,7 +40,8 @@
     data including execution parameters, command-line arguments, and process environment variables.
     Note that Windows Service Account passwords, and the usernames of accounts that need one, are intentionally
     excluded from exports. Passwordless accounts (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\...,
-    gMSA) are exported and restored as they are. When restoring configurations via Servy Manager, servy-cli, or
+    gMSA) are exported and restored as they are. A local account with a blank password is exported too, and restored
+    only when the target machine has LimitBlankPasswordUse = 0 (not recommended). When restoring configurations via Servy Manager, servy-cli, or
     Servy-Restore.ps1, every other imported service will default to 'LocalSystem' and its account and password
     must be re-entered manually for security reasons.
 

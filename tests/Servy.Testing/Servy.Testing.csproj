@@ -115,6 +115,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlankPasswordProbe.cs" />
     <Compile Include="CliOptionTypes.cs" />
     <Compile Include="ConsoleCapture.cs" />
     <Compile Include="Helper.cs" />

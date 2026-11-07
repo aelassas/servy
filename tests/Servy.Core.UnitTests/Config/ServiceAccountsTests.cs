@@ -368,6 +368,68 @@ namespace Servy.Core.UnitTests.Config
             Assert.Equal(!ServiceAccounts.LocalSystemAliases.Contains(alias), result);
         }
 
+        [Fact]
+        public void IsPasswordlessAccount_LocalUserAccount_IsNotPasswordlessByName()
+        {
+            // A local account is passwordless only when a blank-password logon proves it
+            // (ServiceAccounts.IsBlankPasswordLocalAccount, covered by BlankPasswordLocalAccountTests).
+            Assert.False(ServiceAccounts.IsPasswordlessAccount(@".\test_svc"));
+        }
+
+        #endregion
+
+        #region IsLocalAccount / CanBePasswordless Tests
+
+        [Theory]
+        [InlineData(@".\test_svc", true)]
+        [InlineData(@"  .\test_svc  ", true)]
+        // Not local user accounts
+        [InlineData(@"DOMAIN\test_svc", false)]
+        [InlineData("test_svc", false)]
+        [InlineData(@".\svc_gmsa$", false)]
+        [InlineData(@".\LocalSystem", false)]
+        [InlineData(@".\NetworkService", false)]
+        [InlineData(@"NT SERVICE\test_svc", false)]
+        [InlineData(@".\", false)]
+        [InlineData(@"\test_svc", false)]
+        [InlineData(@".\a\b", false)]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        public void IsLocalAccount_EvaluatesCorrectly(string account, bool expected)
+        {
+            // Act
+            bool result = ServiceAccounts.IsLocalAccount(account);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void IsLocalAccount_MachineNameForm_ReturnsTrue()
+        {
+            // Act & Assert
+            Assert.True(ServiceAccounts.IsLocalAccount(Environment.MachineName + @"\test_svc"));
+            Assert.True(ServiceAccounts.IsLocalAccount(Environment.MachineName.ToLowerInvariant() + @"\test_svc"));
+        }
+
+        [Theory]
+        [InlineData(@"NT SERVICE\MyService", true)]
+        [InlineData(@"NT AUTHORITY\NetworkService", true)]
+        [InlineData(@"DOMAIN\svc_gmsa$", true)]
+        [InlineData(@".\test_svc", true)]
+        [InlineData(@"DOMAIN\User", false)]
+        [InlineData("LocalSystem", false)]
+        [InlineData(null, false)]
+        public void CanBePasswordless_EvaluatesCorrectly(string account, bool expected)
+        {
+            // Act
+            bool result = ServiceAccounts.CanBePasswordless(account);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         #endregion
 
         #region ExpandLocalShorthand Tests

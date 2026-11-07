@@ -162,6 +162,9 @@ namespace Servy.Core.UnitTests.DTOs
         [InlineData(@"NT SERVICE\MyService", false, "", true)]
         [InlineData(@"NT AUTHORITY\NetworkService", false, null, true)]
         [InlineData(@"DOMAIN\svc_gmsa$", false, null, true)]
+        // A local account is stored with no password only when it was configured with a blank one
+        [InlineData(@".\test_svc", false, null, true)]
+        [InlineData(@".\test_svc", false, "secret", false)]
         // An account that needs a password is never written
         [InlineData(@"DOMAIN\User", false, null, false)]
         [InlineData(@".\svc-account", false, "secret", false)]

@@ -517,6 +517,30 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Null(upserted.Password);
         }
 
+        [Theory]
+        [InlineData("xml", 0, true)]
+        [InlineData("json", 0, true)]
+        [InlineData("xml", 1, false)]
+        [InlineData("json", 1, false)]
+        public async Task ExecuteAsync_FileNamesBlankPasswordLocalAccount_IsKeptOnlyWhenBlankPasswordsAreAllowed(string format, int policy, bool kept)
+        {
+            // Arrange: LimitBlankPasswordUse = policy, and the account logs on with a blank password
+            const string account = @".\servy_blank_cli";
+            ServiceDto upserted;
+
+            // Act
+            using (new BlankPasswordProbe(policy, account))
+            {
+                upserted = await ImportWithRealValidatorsAsync(format, account);
+            }
+
+            // Assert
+            Assert.NotNull(upserted);
+            Assert.Equal(!kept, upserted.RunAsLocalSystem);
+            Assert.Equal(kept ? account : null, upserted.UserAccount);
+            Assert.Null(upserted.Password);
+        }
+
         /// <summary>
         /// Imports a manifest naming <paramref name="account"/> through a command wired to the production
         /// XML and JSON validators, and returns the definition handed to the repository.
