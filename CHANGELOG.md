@@ -1,5 +1,50 @@
 # Changelog
 
+## [Servy 10.8](https://github.com/aelassas/servy/releases/tag/v10.8)
+
+**Date:** 2026-11-07 | **Tag:** [`v10.8`](https://github.com/aelassas/servy/tree/v10.8)
+
+Servy v10.8 adds XML and JSON import/export support for passwordless service logon accounts, alongside bug fixes, security patches, code quality improvements, and documentation updates.
+
+### What's New
+
+You can now import services with passwordless logon accounts (`NT AUTHORITY\LocalService`, `NT AUTHORITY\NetworkService`, `NT SERVICE\...`, `IIS APPPOOL\...`, and `gMSA`) from XML or JSON files, as well as export existing configurations:
+
+**XML:**
+* XML element sample: `<UserAccount>NT SERVICE\MyService</UserAccount>`
+* Command sample: `servy-cli import --config="xml" --path="C:\path\to\MyService.xml" --install`
+
+**JSON:**
+* JSON element sample: `"UserAccount": "NT SERVICE\\MyService"`
+* Command sample: `servy-cli import --config="json" --path="C:\path\to\MyService.json" --install`
+
+### Full Changelog
+* feat(core): import and export the logon account of passwordless services, keep the LocalSystem reset for accounts with a password (#7695)
+* fix(manager): fix config corruption from torn setting writes (#7675)
+* fix(cli): sanitize and truncate service display names and descriptions to prevent multiline breaks and excessive table padding in list mode (#7659)
+* fix(service): remove unused database namespace import (#7690)
+* fix(setup): prevent uninstaller from deleting target files through junction (#7682)
+* fix(scripts): fix path resolution failure in bracketed build directories (#7680)
+* fix(publish): resolved artifact copying and cleanup failures in `publish-common.ps1` when packaging releases from checkout paths containing square brackets (#7656)
+* fix(publish): fixed false build configuration and resource check failures in `publish-res.ps1` when compiling from bracketed directory paths (#7657)
+* fix(publish): resolve wildcard path handling in Task Scheduler leak check
+* chore(dotnet): bump dotnet sdk version from 10.0.402 to 10.0.403
+* chore(deps): update dependencies
+
+### Downloads
+* [servy-10.8-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-arm64-installer.exe) - 112.70 MB
+* [servy-10.8-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-arm64-portable.7z) - 114.85 MB
+* [servy-10.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-net48-sbom.xml) - 0.03 MB
+* [servy-10.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-net48-x64-installer.exe) - 4.30 MB
+* [servy-10.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-net48-x64-portable.7z) - 2.05 MB
+* [servy-10.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-sbom.xml) - 0.04 MB
+* [servy-10.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-x64-installer.exe) - 120.54 MB
+* [servy-10.8-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.8/servy-10.8-x64-portable.7z) - 119.17 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.8.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.8.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.7...v10.8
+
 ## [Servy 10.7](https://github.com/aelassas/servy/releases/tag/v10.7)
 
 **Date:** 2026-10-27 | **Tag:** [`v10.7`](https://github.com/aelassas/servy/tree/v10.7)
