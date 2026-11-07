@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-07T10:35:06Z
+> Generated on: 2026-11-07T16:04:04Z
 
 ---
 
@@ -3222,11 +3222,11 @@ The database is located at:
 Passwords are securely encrypted using AES with a key protected via Windows DPAPI. You can find more details on the [Security](https://github.com/aelassas/servy/wiki/Security) page.
 
 > [!IMPORTANT]
-> Passwords are not included in exports, but other sensitive fields like Parameters and EnvironmentVariables may still be present. Always handle exported files securely. Do not share them publicly, commit them to source control, or leave them in unprotected locations. Consider encrypting these files or restricting access to ensure they remain confidential.
+> Passwords are not included in exports, and neither is the user name of an account that needs one, but other sensitive fields like Parameters and EnvironmentVariables may still be present. Always handle exported files securely. Do not share them publicly, commit them to source control, or leave them in unprotected locations. Consider encrypting these files or restricting access to ensure they remain confidential.
 
 ## Export
 
-Password and UserAccount fields are not exported; re-enter them after import for security reasons.
+Password is never exported. UserAccount is exported only for a passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)); an account that needs a password is not exported, and must be re-entered after import for security reasons.
 
 ### GUI
 * Open Servy
@@ -3278,7 +3278,7 @@ If the specified service is not found in Servy's database, the PowerShell cmdlet
 
 ## Import
 > [!NOTE]
-> If a password and user are needed, they must be re-entered after import.
+> A passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)) in the file is imported as it is, and the service runs under it. Any other account is discarded and the service is reset to **LocalSystem**: if a password and user are needed, they must be re-entered after import.
 
 ### Security Note
 
@@ -3336,6 +3336,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
 | EnvironmentVariables | string? | No | Optional environment variables, in `key=value` format separated by semicolons. |
 | AllowOverriddenRuntimeVars | bool? | No | Whether the environment variables may override protected runtime (Tier 2) variables such as `JAVA_HOME` or `JAVA_OPTS` (see [Protected Variables](https://github.com/aelassas/servy/wiki/Environment-Variables#protected-variables)). Defaults to `false`. |
 | ServiceDependencies | string? | No | Optional names of the services this service depends on, separated by semicolons. |
+| UserAccount | string? | No | Optional logon account. Imported and exported only when it is passwordless: LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`). Any other account is discarded on import and the service runs as LocalSystem. |
 | PreLaunchExecutablePath | string? | No | Optional path to an executable that runs before the service starts. |
 | PreLaunchStartupDirectory | string? | No | Optional startup directory for the pre-launch executable. |
 | PreLaunchParameters | string? | No | Optional parameters for the pre-launch executable. |
@@ -3358,7 +3359,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
 | PostStopParameters | string? | No | Optional parameters for the post-stop executable. |
 
 > [!IMPORTANT]
-> `UserAccount`, `Password`, and `RunAsLocalSystem` are never exported. On import, any custom identity in the file is **discarded** (the service is reset to a password-less **LocalSystem** baseline) and an informational notice is logged; re-enter the account and password manually after import. `Pid`, `PreviousStopTimeout`, `ActiveStdoutPath`, `ActiveStderrPath`, `RestartAttempts` and `RestartAttemptsUpdatedAtTicks` are silently ignored and cannot be set through an import file.
+> `Password` and `RunAsLocalSystem` are never exported or imported. `UserAccount` is exported only for a passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)) on a service that does not run as LocalSystem. On import, a passwordless `UserAccount` is **kept** and the service runs under it; any other account in the file is **discarded** (the service is reset to a password-less **LocalSystem** baseline). Either way an informational notice is logged; re-enter an account that needs a password manually after import. When the service already exists, an imported passwordless account replaces its stored account and password; otherwise the stored account and password are kept. `Pid`, `PreviousStopTimeout`, `ActiveStdoutPath`, `ActiveStderrPath`, `RestartAttempts` and `RestartAttemptsUpdatedAtTicks` are silently ignored and cannot be set through an import file.
 
 #### StartupType
 
@@ -3439,6 +3440,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
   <EnvironmentVariables>APP_ENV=production;APP_CONFIG=C:\Apps\App\config.json</EnvironmentVariables>
   <AllowOverriddenRuntimeVars>false</AllowOverriddenRuntimeVars>
   <ServiceDependencies>ServiceA;ServiceB</ServiceDependencies>
+  <UserAccount>NT SERVICE\TestService</UserAccount>
   <PreLaunchExecutablePath>C:\Program Files\TestService\PreLaunch.exe</PreLaunchExecutablePath>
   <PreLaunchStartupDirectory>C:\Program Files\TestService</PreLaunchStartupDirectory>
   <PreLaunchParameters>-preArg1 -preArg2</PreLaunchParameters>
@@ -3502,6 +3504,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
   "EnvironmentVariables": "APP_ENV=production;APP_CONFIG=C:\\Apps\\App\\config.json",
   "AllowOverriddenRuntimeVars": false,
   "ServiceDependencies": "ServiceA;ServiceB",
+  "UserAccount": "NT SERVICE\\TestService",
   "PreLaunchExecutablePath": "C:\\Program Files\\TestService\\PreLaunch.exe",
   "PreLaunchStartupDirectory": "C:\\Program Files\\TestService",
   "PreLaunchParameters": "-preArg1 -preArg2",
@@ -4989,7 +4992,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 > [!WARNING]
 > **SECURITY & FILE PERMISSIONS NOTICE**
 >
-> Dump archives created by `Servy-Dump.ps1` (`.zip` dumps and `.sha256` sidecars) contain unencrypted, plaintext service configurations. No credentials of any kind are exported (`UserAccount`, `Password`, and `RunAsLocalSystem` are omitted from every export), but sensitive data such as execution parameters, API keys, command-line arguments, environment variables, and pre/post hooks are written in plaintext.
+> Dump archives created by `Servy-Dump.ps1` (`.zip` dumps and `.sha256` sidecars) contain unencrypted, plaintext service configurations. No credentials of any kind are exported (`Password` and `RunAsLocalSystem` are omitted from every export, and `UserAccount` is written only for a passwordless account, which has no secret), but sensitive data such as execution parameters, API keys, command-line arguments, environment variables, and pre/post hooks are written in plaintext.
 >
 > To prevent credential and configuration exposure, `Servy-Dump.ps1` automatically enforces strict Windows Access Control Lists (ACLs) on all generated output files:
 > * Permission inheritance from parent directories is broken.
@@ -5082,8 +5085,9 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 > **CRITICAL SECURITY WARNING: UNENCRYPTED CONFIGURATION**
 >
 > The dump archive generated by `Servy-Dump.ps1` contains **unencrypted
-> plain-text XML files**. No credentials of any kind are exported (`UserAccount`,
-> `Password`, and `RunAsLocalSystem` are omitted from every export), but sensitive
+> plain-text XML files**. No credentials of any kind are exported (`Password` and
+> `RunAsLocalSystem` are omitted from every export, and `UserAccount` is written only
+> for a passwordless account, which has no secret), but sensitive
 > data such as execution parameters, API keys, command-line arguments, environment
 > variables, and pre/post hooks are written in plaintext. Restrict access to
 > generated dump archives to authorized administrative personnel only.
@@ -5094,7 +5098,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 > program, and the pre-launch, post-launch, pre-stop, and post-stop hook executables with their
 > arguments and environment.
 >
-> Because restored services default to `LocalSystem` (see the callout below), anyone able to **modify** a dump archive controls what runs as `LocalSystem` on every machine restored from it. Restrict **write** access as strictly as read access, and store dump archives in a directory whose ACL grants access only to Administrators and SYSTEM, which is the same protection the installer applies to `%ProgramData%\Servy`:
+> Because restored services default to `LocalSystem` unless the file names a passwordless account (see the callout below), anyone able to **modify** a dump archive controls what runs as `LocalSystem` on every machine restored from it. Restrict **write** access as strictly as read access, and store dump archives in a directory whose ACL grants access only to Administrators and SYSTEM, which is the same protection the installer applies to `%ProgramData%\Servy`:
 >
 > ```powershell
 > icacls "C:\Staging" /inheritance:r /grant:r "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F"
@@ -5103,12 +5107,14 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 > [!IMPORTANT]
 > **CREDENTIAL RESET TO LOCALSYSTEM ON RESTORE**
 >
-> For security reasons, Servy does not export Windows Service Account credentials (usernames and passwords). Restoring configurations via `Servy-Restore.ps1`, `servy-cli`, or Servy Manager will automatically reset all service logon identities to `LocalSystem`.
+> For security reasons, Servy does not export Windows Service Account passwords, nor the user name of an account that needs one. Restoring configurations via `Servy-Restore.ps1`, `servy-cli`, or Servy Manager resets those service logon identities to `LocalSystem`.
+>
+> Passwordless accounts (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)) are exported and restored as they are, so a service that ran under one keeps it.
 >
 > **Post-Restore Action Required:**
 >
-> If any restored service runs under a custom account
-> (`.\svc_account`, `DOMAIN\svc_account`, or gMSA), you must manually re-enter the logon
+> If any restored service runs under a custom account with a password
+> (`.\svc_account` or `DOMAIN\svc_account`), you must manually re-enter the logon
 > **username and password** via [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager), [`servy-cli`](https://github.com/aelassas/servy/wiki/Servy-CLI)
 > or the [PowerShell module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module). Reinstalling the service this way re-applies the hardening
 > automatically (v10.2+): the account gets write access to the log folder of the service (`logs\services\<ServiceName>\`) and access to the `Servy` service's named pipe,
@@ -5122,9 +5128,9 @@ before relying on a restored clone being identical to its template:
 
 | Field | Behavior on import | Operational impact |
 | --- | --- | --- |
-| `UserAccount` | Not exported; reset to `LocalSystem` | Re-enter for every service using a custom identity |
+| `UserAccount` | Exported and kept for a passwordless account; otherwise not exported and reset to `LocalSystem` | Re-enter for every service using an account with a password |
 | `Password` | Not exported; reset to empty | Re-enter alongside `UserAccount` |
-| `RunAsLocalSystem` | Not exported; forced to the `LocalSystem` baseline | This is the field that causes the reset above |
+| `RunAsLocalSystem` | Not exported; `false` for a kept passwordless account, otherwise forced to the `LocalSystem` baseline | This is the field that causes the reset above |
 | `Pid` | Silently ignored | Runtime state; expected |
 | `PreviousStopTimeout` | Silently ignored | Recovery tuning is not carried over |
 | `ActiveStdoutPath` | Silently ignored | The resolved log destination is re-derived on the clone |
@@ -5132,7 +5138,8 @@ before relying on a restored clone being identical to its template:
 | `RestartAttempts` | Silently ignored | The restart attempts counter starts empty on the clone; recovery counts from zero |
 | `RestartAttemptsUpdatedAtTicks` | Silently ignored | As above (the time the counter was last written) |
 
-A warning is written to the log when a custom identity is discarded on import. The six
+An informational notice is written to the log on import, saying whether the passwordless account
+was kept or the identity was reset to `LocalSystem`. The six
 silently-ignored fields produce no warning at all, so check them explicitly if your
 template depends on them.
 
@@ -5229,7 +5236,7 @@ To avoid DPAPI decryption failures across cloned virtual machines, do **not** at
          ├── 3. Execute Sysprep / Guest Customization (New IP, Hostname, MachineGuid)
          ├── 4. Purge the stale vault: delete %ProgramData%\Servy\db and %ProgramData%\Servy\security
          ├── 5. Run Servy-Restore.ps1 -DumpArchivePath "C:\Sysprep\Servy_Base_Dump.zip" -Install
-         ├── 6. Re-enter Service Account Passwords
+         ├── 6. Re-enter Service Account Passwords (accounts with a password only)
                 └─> Servy re-applies the hardening automatically (v10.2+)
          └── 7. Remove Staged Dump Archive (C:\Sysprep\Servy_Base_Dump.zip)
 ```
@@ -6503,7 +6510,7 @@ To move Servy to a new PC, use [Servy-Dump.ps1 and Servy-Restore.ps1](https://gi
     1. Do **not** delete or replace `aes_key.dat` or `aes_iv.dat`: a new key can never decrypt the existing database.
     2. Restore `%ProgramData%\Servy\security\aes_key.dat` and `aes_iv.dat` from a backup of **this** machine, then restart Servy.
     3. Otherwise, copy `%ProgramData%\Servy\db\Servy.db` back to the original machine and export the service configurations to XML or JSON there. You can use [`Servy-Dump.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) to perform the batch export.
-    4. Only then, on this machine, back up and delete `%ProgramData%\Servy\security` and `%ProgramData%\Servy\db`, and import the exported configurations (per *Critical Warning: Machine Migration*). Usernames and passwords are not exported and must be re-entered. You can use [`Servy-Restore.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) to perform the batch import.
+    4. Only then, on this machine, back up and delete `%ProgramData%\Servy\security` and `%ProgramData%\Servy\db`, and import the exported configurations (per *Critical Warning: Machine Migration*). Passwords, and the user names of accounts that need one, are not exported and must be re-entered; passwordless accounts (LocalService, NetworkService, `NT SERVICE\...`, `IIS APPPOOL\...`, gMSA) are restored as they were. You can use [`Servy-Restore.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) to perform the batch import.
 
 Servy v7.9+ automates the routine parts of Windows security - Access Control Lists (ACLs) and machine-bound key derivation - so a locked-down setup is the default rather than a manual checklist.
 
