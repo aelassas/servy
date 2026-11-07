@@ -1,4 +1,5 @@
 using Dapper;
+using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System;
@@ -184,6 +185,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Assert
                 Assert.Null(ex);
                 Assert.False(Directory.Exists(_recoveryFolder));
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileOfAnUninstalledService_IsReportedAsBelongingToNoInstalledService()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Installed");
+                DowngradeToVersion9(conn);
+                var installedPath = WriteCounterFile("Installed", "2", DateTime.UtcNow);
+                var orphanPath = WriteCounterFile("RemovedLongAgo", "7", DateTime.UtcNow);
+                var logDirectory = Path.Combine(TempDirectory, "logs");
+                var logFileName = $"OrphanReport_{Guid.NewGuid():N}.log";
+                Directory.CreateDirectory(logDirectory);
+
+                try
+                {
+                    Logger.Initialize(logFileName, LogLevel.Info, logDirectory: logDirectory);
+
+                    // Act
+                    SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+                }
+                finally
+                {
+                    // Flush and release the handle, then hand the process-wide logger back to its default state
+                    Logger.Shutdown();
+                    Logger.Initialize((string)null, logDirectory: string.Empty);
+                }
+
+                // Assert
+                var log = File.ReadAllText(Path.Combine(logDirectory, logFileName));
+                Assert.Contains($"Legacy restart attempts file '{orphanPath}' belongs to no installed service and was not imported.", log);
+                Assert.DoesNotContain($"'{installedPath}' belongs to no installed service", log);
             }
         }
 
