@@ -885,7 +885,7 @@ namespace Servy.Manager.UnitTests.Services
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.StartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
 
-            // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
+            // On success the wrapper flips the UI model's status to match the verb
             Assert.Equal(ServiceStatus.Running, service.Status);
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
@@ -945,7 +945,7 @@ namespace Servy.Manager.UnitTests.Services
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.StopServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
 
-            // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
+            // On success the wrapper flips the UI model's status to match the verb
             Assert.Equal(ServiceStatus.Stopped, service.Status);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceStopped, service.Name), UiAppConfig.Caption), Times.Once);
         }
@@ -969,7 +969,7 @@ namespace Servy.Manager.UnitTests.Services
             Assert.True(result);
             _serviceManagerMock.Verify(m => m.RestartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
 
-            // Pin the two positional arguments the wrapper binds: neither is type-distinguishable at the call site
+            // On success the wrapper flips the UI model's status to match the verb
             Assert.Equal(ServiceStatus.Running, service.Status);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Core.Resources.Strings.Msg_ServiceRestarted, service.Name), UiAppConfig.Caption), Times.Once);
         }
