@@ -617,7 +617,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// The cooperative cancellation timeout for update checks.
-        /// NOTE: This value must be ≤ UpdateCheckHttpTimeoutSeconds.
+        /// NOTE: This value must be strictly less than UpdateCheckHttpTimeoutSeconds.
         /// If this is greater than the HTTP timeout, the user will see a generic
         /// connection error instead of the friendly 'Update check timed out' message.
         /// </summary>
