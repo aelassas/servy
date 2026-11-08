@@ -46,7 +46,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync("install", action, suggestion, async () =>
             {
                 // Install cannot go through ExecuteServiceOperationAsync (the service does not exist yet),
-                // so it performs the elevation pre-flight check itself; this is the only elevation check on this path.
+                // so it performs the elevation pre-flight check itself; this is the only check inside the command (Program.cs also checks before the bootstrap).
                 if (!BypassElevationCheck)
                 {
                     SecurityHelper.EnsureAdministrator();
