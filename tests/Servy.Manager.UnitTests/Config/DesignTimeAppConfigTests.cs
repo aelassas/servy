@@ -35,6 +35,9 @@ namespace Servy.Manager.UnitTests.Config
             // Assert - Column visibility: nothing is hidden at design time
             Assert.Equal(string.Empty, config.ServicesHiddenColumns);
             Assert.Equal(string.Empty, config.LogsHiddenColumns);
+
+            // Assert - Migration flag: the stub reports the display-name column migration as not done
+            Assert.False(config.IsDisplayNameColumnMigrated);
         }
 
         [Fact]
