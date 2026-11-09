@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-07T17:28:36Z
+> Generated on: 2026-11-09T13:59:29Z
 
 ---
 
@@ -53,7 +53,7 @@ Servy covers the basics of running an executable as a service, plus the operatio
 
 **Service configuration**
 
-* Set the name, display name, description, startup type, process priority, CPU affinity, working directory, parameters, environment variables, and dependencies of each service.
+* Set the name, display name, description, startup type, process priority, CPU affinity, working directory, parameters, environment variables with expansion, and dependencies of each service.
 * Use environment variables in parameters, process paths, and startup directories.
 * Run services as Local System, a local or domain account, or a group managed service account (gMSA).
 * Run pre-launch, post-launch, pre-stop, and post-stop hooks, with retries, timeouts, and failure handling.
@@ -75,7 +75,7 @@ Servy covers the basics of running an executable as a service, plus the operatio
 
 **Management tools**
 
-* Manage services with the desktop app, the Manager app, the CLI (`servy-cli`), or the PowerShell module (`Servy.psm1`).
+* Manage services with the desktop app, the Manager app, the CLI (`servy-cli`), the PowerShell module (`Servy.psm1`), or [embedded installers](https://github.com/aelassas/servy/wiki/Embedding-in-Custom-Installers).
 * Script deployments and use Servy in CI/CD pipelines.
 * Export and import service configurations for backup and migration.
 
