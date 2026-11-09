@@ -825,6 +825,46 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SwitchServiceAsync_DevicePathAndConfiguredPathCannotBeResolved_IsNotOpened()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange - a readable log reached through a device path, while the row's configured path
+                // contains a NUL so Path.GetFullPath(configured) throws
+                string logFile = Path.GetTempFileName();
+                File.WriteAllText(logFile, "Reported line" + Environment.NewLine);
+                string devicePath = @"\\?\" + Path.GetFullPath(logFile);
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("DeviceService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "DeviceService", StdoutPath = "bad\0name.log" });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    try
+                    {
+                        TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "DeviceService" });
+
+                        // Act
+                        var log = await LogCapture.RunAsync(async () =>
+                        {
+                            var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", devicePath, null);
+                            await task;
+                        });
+
+                        // Assert - the reported path was refused through the warning, not opened
+                        Assert.Empty(vm.RawLines);
+                        Assert.Contains("Not opening the log path", log);
+                    }
+                    finally
+                    {
+                        try { File.Delete(logFile); } catch { /* fail-silent */ }
+                    }
+                }
+            });
+        }
+
+        [Fact]
         public async Task SwitchServiceAsync_DevicePathThatIsTheConfiguredPath_IsOpened()
         {
             // Arrange, Act & Assert
