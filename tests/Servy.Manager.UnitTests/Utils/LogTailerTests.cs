@@ -102,6 +102,31 @@ namespace Servy.Manager.UnitTests.Utils
         #region Path Validation & History Guard Branch Tests
 
         [Fact]
+        public async Task RunFromPositionAsync_OnDisposedTailerWithNullPath_ThrowsObjectDisposedException()
+        {
+            // Arrange - a null path would otherwise return silently, so only the guard can throw
+            var tailer = new LogTailer();
+            tailer.Dispose();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+                tailer.RunFromPositionAsync(null, LogType.StdOut, 0, DateTime.UtcNow, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetHistoryAsync_OnDisposedTailer_ThrowsObjectDisposedExceptionInsteadOfLoadingHistory()
+        {
+            // Arrange - a readable file, so a missing guard would return its lines
+            File.WriteAllText(_tempFilePath, "line\n");
+            var tailer = new LogTailer();
+            tailer.Dispose();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+                tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, CancellationToken.None));
+        }
+
+        [Fact]
         public async Task GetHistoryAsync_NullOrEmptyPath_ReturnsEmptyHistoryImmediately()
         {
             // Arrange
