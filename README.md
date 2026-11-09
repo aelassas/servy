@@ -43,6 +43,6 @@ Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=githu
 
 <p>
   <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy">
-    <img alt="SignPath Foundation" src="https://aelassas.github.io/content/signpath.png?v=2" width="54" height="51">
+    <img alt="SignPath Foundation" src="https://github.com/user-attachments/assets/f6d0fb02-c2bf-4915-bc7e-dd3273a7927e" height="51">
   </a>
 </p>
