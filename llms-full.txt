@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-09T14:09:56Z
+> Generated on: 2026-11-09T22:35:04Z
 
 ---
 
@@ -5075,7 +5075,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 | `2` | The Servy PowerShell module (`Servy.psm1`) could not be located or imported. |
 | `3` | The specified dump archive does not exist. |
 | `4` | I/O & Extraction Failure. The archive path is invalid, the archive could not be extracted, ACL hardening failed, malformed entries were detected, the `-MaxAllowedEntries` or `-MaxUncompressedBytes` safety limit was exceeded, or an unexpected runtime error occurred. |
-| `5` | Checksum Verification Failure. The `.sha256` sidecar is missing (without `-SkipIntegrityCheck`) or a hash mismatch was detected. |
+| `5` | Checksum Verification Failure. The `.sha256` sidecar is missing (without `-SkipIntegrityCheck`), the sidecar could not be read or the archive could not be hashed, or a hash mismatch was detected. |
 | `6` | Complete Import Failure. No service configurations could be imported from the archive. |
 | `7` | Partial Import Warning. The restore completed, but one or more services failed to import. |
 
