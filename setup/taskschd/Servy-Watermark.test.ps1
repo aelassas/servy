@@ -268,6 +268,25 @@ try {
     }
     Write-Host "  [OK] Get-EventsToProcess caps a run at the newest events and logs the skipped ones." -ForegroundColor Gray
 
+    # ----------------------------------------------------
+    # Test 8b: Get-EventsToProcess at exactly the cap skips nothing (#7539)
+    # ----------------------------------------------------
+    # Arrange: exactly ten genuine events, equal to the default cap, so none may be skipped.
+    $global:WatermarkTestEvents = @(1..10 | Sort-Object -Descending | ForEach-Object {
+        [PSCustomObject]@{ Message = "[Svc$_] Error $_"; TimeCreated = $base.AddMinutes(-20 + $_) }
+    })
+    if (Test-Path -LiteralPath $capLogFile) { Remove-Item -LiteralPath $capLogFile -Force }
+
+    # Act
+    $atCap = @(Get-EventsToProcess -ScriptDir $tempDir -LastProcessed $base.AddMinutes(-30) 3>$null)
+
+    # Assert: all ten are delivered and no skip is recorded (a '-ge' cap would log 'skipping the 0 oldest')
+    if ($atCap.Count -ne 10 -or (Test-Path -LiteralPath $capLogFile)) {
+        Write-Host "FAIL: Get-EventsToProcess with exactly 10 events returned $($atCap.Count) and wrote a skip log; expected all 10 and no skip entry." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Get-EventsToProcess at exactly the cap delivers every event and logs no skip." -ForegroundColor Gray
+
 
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: Servy-Watermark.psm1 validated successfully!" -ForegroundColor Green
