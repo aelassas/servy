@@ -149,8 +149,7 @@ namespace Servy.Restarter.UnitTests
         {
             // Arrange
             // The event source registers, so Step 1's try must ask for a logger with the Windows Event
-            // Log ON. #7262 added the fake and read its request list from the failure test only, which
-            // left the primary arm's argument unpinned.
+            // Log ON; this test pins that primary arm's argument.
             string serviceName = "GhostServiceWithRegisteredEventSource";
             var environment = new FakeRestarterBootstrapEnvironment();
 
