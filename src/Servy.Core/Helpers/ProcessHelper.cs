@@ -342,7 +342,7 @@ namespace Servy.Core.Helpers
                 throw new InvalidOperationException($"Path '{expandedPath}' is relative. Only absolute paths are allowed.");
             }
 
-            // 3. Normalize (removes trailing slashes, resolves ..\ segments)
+            // 3. Normalize (resolves .\ and ..\ segments; a trailing separator is kept, unlike Helper.NormalizePath)
             var normalizedPath = Path.GetFullPath(expandedPath);
 
             return normalizedPath;
