@@ -344,10 +344,10 @@ namespace Servy.Core.Security
                     : (FileSystemSecurity)new FileInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
 
                 var owner = acl.GetOwner(typeof(SecurityIdentifier));
-                var foreignOwner = !IsAdministrativePrincipal(owner);
+                var foreignOwner = !SecurityHelper.IsAdministrativePrincipal(owner);
                 var foreignRules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
                     .Cast<FileSystemAccessRule>()
-                    .Where(rule => !IsAdministrativePrincipal(rule.IdentityReference))
+                    .Where(rule => !SecurityHelper.IsAdministrativePrincipal(rule.IdentityReference))
                     .ToList();
 
                 if (foreignRules.Count == 0 && !foreignOwner)
@@ -390,15 +390,6 @@ namespace Servy.Core.Security
                 return false;
             }
         }
-
-        /// <summary>
-        /// Determines whether a principal is <c>Administrators</c> or <c>Local System</c>, the only principals the vault
-        /// purge keeps.
-        /// </summary>
-        /// <param name="identity">The principal, as a <see cref="SecurityIdentifier"/>.</param>
-        /// <returns><see langword="true"/> for <c>Administrators</c> and <c>Local System</c>.</returns>
-        private static bool IsAdministrativePrincipal(IdentityReference? identity)
-            => identity != null && (AdministratorsSid.Equals(identity) || LocalSystemSid.Equals(identity));
 
         /// <summary>
         /// Logs the outcome of a vault purge at the level it calls for.

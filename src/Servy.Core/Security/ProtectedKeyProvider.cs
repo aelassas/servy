@@ -610,9 +610,8 @@ namespace Servy.Core.Security
                 var security = file.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
                 var owner = security.GetOwner(typeof(SecurityIdentifier));
                 var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-                var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
-                if (owner != null && (owner.Equals(adminSid) || owner.Equals(systemSid)))
+                if (SecurityHelper.IsAdministrativePrincipal(owner))
                     return;
 
                 // An owner keeps an implicit right to rewrite the DACL, so the file is handed over before it is re-hardened
