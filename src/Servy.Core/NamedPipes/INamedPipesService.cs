@@ -16,6 +16,7 @@ namespace Servy.Core.NamedPipes
         /// <param name="dto">The object instance to write.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the serialized object is larger than the frame limit for its type, which the reading end would refuse.</exception>
         Task WriteAsync<T>(Stream stream, T dto, CancellationToken ct = default);
 
         /// <summary>
@@ -34,6 +35,7 @@ namespace Servy.Core.NamedPipes
         /// <param name="stream">The target pipe stream.</param>
         /// <param name="dto">The object instance to write.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the serialized object is larger than the frame limit for its type, which the reading end would refuse.</exception>
         void Write<T>(Stream stream, T dto, CancellationToken ct = default);
 
         /// <summary>
