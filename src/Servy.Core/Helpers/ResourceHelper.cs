@@ -30,7 +30,6 @@ namespace Servy.Core.Helpers
             | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
 
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
         private readonly IServiceHelper _serviceHelper;
         private readonly IProcessKiller _processKiller;
@@ -455,14 +454,14 @@ namespace Servy.Core.Helpers
             {
                 var security = new FileInfo(filePath).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
 
-                if (!IsAdministrativePrincipal(security.GetOwner(typeof(SecurityIdentifier))))
+                if (!SecurityHelper.IsAdministrativePrincipal(security.GetOwner(typeof(SecurityIdentifier))))
                     return true;
 
                 foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
                 {
                     if (rule.AccessControlType == AccessControlType.Allow
                         && (rule.FileSystemRights & WriteRights) != 0
-                        && !IsAdministrativePrincipal(rule.IdentityReference))
+                        && !SecurityHelper.IsAdministrativePrincipal(rule.IdentityReference))
                         return true;
                 }
 
@@ -474,14 +473,6 @@ namespace Servy.Core.Helpers
                 return true;
             }
         }
-
-        /// <summary>
-        /// Determines whether a principal is <c>BUILTIN\Administrators</c> or <c>SYSTEM</c>.
-        /// </summary>
-        /// <param name="identity">The principal, as a security identifier.</param>
-        /// <returns><see langword="true"/> for either of the two.</returns>
-        private static bool IsAdministrativePrincipal(IdentityReference identity)
-            => identity != null && (AdministratorsSid.Equals(identity) || LocalSystemSid.Equals(identity));
 
         /// <summary>
         /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required: based on

@@ -37,6 +37,23 @@ namespace Servy.Core.Security
         public static bool IsBroadUnprivilegedSid(SecurityIdentifier sid)
             => BroadUnprivilegedSids.Any(broad => broad.Equals(sid));
 
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+        /// <summary>
+        /// Determines whether a principal is <c>BUILTIN\Administrators</c> or <c>Local System</c>, the two principals
+        /// Servy's hardening always keeps.
+        /// </summary>
+        /// <remarks>
+        /// The vault purge and the owner checks on secured directories, key material and extracted resources all decide
+        /// with this one test which principal may keep an entry or the ownership, so the set is declared once here.
+        /// </remarks>
+        /// <param name="identity">The principal, as a <see cref="SecurityIdentifier"/>, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> for <c>Administrators</c> and <c>Local System</c>; <see langword="false"/> otherwise,
+        /// <see langword="null"/> included.</returns>
+        public static bool IsAdministrativePrincipal(IdentityReference identity)
+            => identity != null && (AdministratorsSid.Equals(identity) || LocalSystemSid.Equals(identity));
+
         /// <summary>
         /// Ensures a directory exists and applies a restrictive security descriptor to mitigate
         /// local privilege escalation (LPE) risks by limiting access to high-privileged accounts.
@@ -157,8 +174,7 @@ namespace Servy.Core.Security
                 if (isAdmin)
                 {
                     var owner = security.GetOwner(typeof(SecurityIdentifier));
-                    if (owner == null || !(owner.Equals(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null)) ||
-                                           owner.Equals(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null))))
+                    if (!IsAdministrativePrincipal(owner))
                     {
                         security.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
                     }
