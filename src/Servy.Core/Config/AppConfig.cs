@@ -967,7 +967,9 @@ namespace Servy.Core.Config
         public const int LoggerDefaultMaxBackupLogFiles = 10;
 
         /// <summary>
-        /// The maximum number of fallback log writes allowed per process lifetime.
+        /// The maximum number of fallback log writes allowed while the primary log writer is unavailable.
+        /// Initialization failures and write failures each have their own budget of this size, and both
+        /// budgets are reset whenever the primary writer is initialized successfully again.
         /// Prevents unbounded growth of fallback log files if the primary logger continuously fails.
         /// </summary>
         public const int LoggerMaxFallbackWrites = 10;
