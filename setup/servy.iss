@@ -328,27 +328,44 @@ begin
   // Inform ARM64 users that this installer uses x64 emulation (#7481)
   if IsArm64 then
   begin
-    v := MsgBox(
-      'This version of Servy (servy-' + ExpandConstant('{#MyAppVersion}') + '-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device.' + #13#10#13#10 +
-      'For optimal performance, an ARM64-native version (servy-' + ExpandConstant('{#MyAppVersion}') + '-arm64-installer.exe) is available.' + #13#10#13#10 +
-      'Do you want to continue with the x64 installation anyway?',
-      mbInformation,
-      MB_YESNO
-    );
-    if v <> IDYES then
+    if WizardSilent then
     begin
-      Result := False;
-      Exit;
-    end;
+      Log('Running the x64 installer on an ARM64 system; continuing because setup is silent.');
+    end
+    else
+    begin
+      v := MsgBox(
+        'This version of Servy (servy-' + ExpandConstant('{#MyAppVersion}') + '-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device.' + #13#10#13#10 +
+        'For optimal performance, an ARM64-native version (servy-' + ExpandConstant('{#MyAppVersion}') + '-arm64-installer.exe) is available.' + #13#10#13#10 +
+        'Do you want to continue with the x64 installation anyway?',
+        mbInformation,
+        MB_YESNO
+      );
+      if v <> IDYES then
+      begin
+        Result := False;
+        Exit;
+      end;
+    end;  
   end;
 
+  // Check for .NET Framework 4.8 requirement
   if not IsDotNet48Installed then
   begin
-    MsgBox(
-      'Servy requires .NET Framework 4.8 or newer. Please install it and try again.',
-      mbCriticalError,
-      MB_OK
-    );
+    if WizardSilent then
+    begin
+      Log('Error: Servy requires .NET Framework 4.8 or newer, which is not installed.');
+    end
+    else
+    begin
+      MsgBox(
+        'Servy requires .NET Framework 4.8 or newer. Please install it and try again.',
+        mbCriticalError,
+        MB_OK
+      );
+    end;
+
+    // Executed in BOTH silent and interactive modes
     Result := False;
     Exit;
   end;
@@ -359,10 +376,10 @@ begin
   begin
     Log('InitializeSetup.InstalledVersion: ' + sInstalledVersion);
     installedVersion := NumericVersion(sInstalledVersion);
-    myAppVersion :=  NumericVersion(ExpandConstant('{#MyAppVersion}'));
+    myAppVersion := NumericVersion(ExpandConstant('{#MyAppVersion}'));
     message := '';
 
-    if installedVersion < myAppVersion  then
+    if installedVersion < myAppVersion then
     begin
       message := 'An older version of Servy is already installed. Would you like to upgrade to this newer version?';
     end
