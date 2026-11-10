@@ -21,12 +21,12 @@ namespace Servy.Core.Helpers
         /// This method enumerates processes where <c>ParentProcessId</c> matches
         /// the given <paramref name="parentPid"/>.
         ///
-        /// It recursively calls itself to ensure that grandchildren and deeper
-        /// descendants are also terminated before finally killing the child itself,
+        /// The walk recurses through the snapshot's parent-to-children map, so grandchildren and deeper
+        /// descendants are terminated before the child itself,
         /// provided the ancestor lineage remains valid and reachable.
         ///
-        /// Exceptions such as access denied or processes that have already exited are
-        /// caught and ignored to allow cleanup to continue for valid, reachable branches.
+        /// A process that has already exited is skipped silently, and any other failure (access denied included)
+        /// is logged as a warning; either way cleanup continues for the remaining reachable branches.
         /// </remarks>
         void KillChildren(int parentPid);
 
