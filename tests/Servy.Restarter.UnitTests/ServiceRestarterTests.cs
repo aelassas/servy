@@ -847,9 +847,8 @@ namespace Servy.Restarter.UnitTests
         public void RestartService_StopReportsServiceGone_ReturnsServiceNotFoundWithoutStart(bool throwInvalidOperation)
         {
             // Arrange
-            // Closed #6738 added the gone/non-gone pairs for the status-read catches only; the three
-            // command-site catches were left with no "gone" case, so the Stop command itself reporting
-            // the service as uninstalled was unpinned.
+            // The Stop command itself reporting the service as uninstalled (a "gone" error from the
+            // command-site catch) must return ServiceNotFound rather than propagate.
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
 
             var exceptionToThrow = throwInvalidOperation
