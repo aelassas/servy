@@ -205,8 +205,8 @@ namespace Servy.Core.Security
         /// <list type="number">
         /// <item>
         /// <description>
-        /// <b>Inheritance Management:</b> Either blocks inheritance (Root Vault) or enables it (Child Folder)
-        /// to support multi-account setups.
+        /// <b>Inheritance Management:</b> Either blocks inheritance (Root Vault) or enables it (Child Folder),
+        /// so a child folder receives the vault root's entries.
         /// </description>
         /// </item>
         /// <item>
@@ -242,8 +242,9 @@ namespace Servy.Core.Security
             }
             else
             {
-                // Child Folder: Re-enable inheritance to heal folders broken by older versions
-                // and allow custom service accounts to flow down from the root vault.
+                // Child Folder: Re-enable inheritance to heal folders broken by older versions, so the root
+                // vault's entries flow down. Service accounts hold nothing on the root vault (#7526);
+                // their grants are written per item by ServyExePermissionsHardener.
                 security.SetAccessRuleProtection(isProtected: false, preserveInheritance: true);
             }
 
