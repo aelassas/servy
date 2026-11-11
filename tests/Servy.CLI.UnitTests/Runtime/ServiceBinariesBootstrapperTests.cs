@@ -105,6 +105,23 @@ namespace Servy.CLI.UnitTests.Runtime
             _hostInstaller.Verify(h => h.StopAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        [Fact]
+        public async Task EnsureAsync_OnlyTheRestarterNeedsExtraction_CopiesItWithoutPausingTheServices()
+        {
+            // Arrange
+            // No running service holds the restarter open, so a stale restarter alone is not a reason to pause.
+            _extractor.NeedingExtraction.Add($"{AppConfig.ServyRestarterFileName}.exe");
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await bootstrapper.EnsureAsync(CancellationToken.None);
+
+            // Assert
+            Assert.Contains($"{AppConfig.ServyRestarterFileName}.exe", _extractor.Copied);
+            _hostInstaller.Verify(h => h.GetRunningServyServices(It.IsAny<IServiceHelper>()), Times.Never);
+            _hostInstaller.Verify(h => h.StopAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [Theory]
         [InlineData(true, false)]
         [InlineData(false, true)]
