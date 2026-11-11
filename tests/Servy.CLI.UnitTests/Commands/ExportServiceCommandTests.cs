@@ -426,8 +426,8 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             // The sibling rollback test above fails the StreamWriter CONSTRUCTOR (ArgumentException),
             // which the write catch filter deliberately does not match. Hand back a genuinely
-            // writable handle whose forced flush-to-disk fails instead, so the failure lands inside
-            // the try block and reaches the IOException arm of the filter.
+            // writable handle whose first flush fails instead, so the failure lands inside the try
+            // block and reaches the IOException arm of the filter.
             var filePath = Path.Combine(TempDirectory, "throwing_write.json");
             _command.PathValidator = (userPath, mode, access, share) =>
             {
@@ -468,14 +468,17 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             // The file existed before the call, so the failed write must not delete it (#2039).
-            // What it now CONTAINS is a separate question: the stream is opened OpenOrCreate and
-            // truncated before the failing flush, so only existence is asserted here.
+            // What it now CONTAINS is a separate question: the stream is opened OpenOrCreate and the
+            // failing flush is the StreamWriter's, before SetLength runs, so the new bytes overwrite
+            // the head of the old content without truncating it. Only existence is asserted here.
             Assert.True(File.Exists(filePath), "A failed export must not delete a file that existed before the call.");
         }
 
         /// <summary>
-        /// A real, writable file stream whose first forced flush-to-disk fails, standing in for a
-        /// write-time IO failure (disk full, sharing violation) without needing one to occur.
+        /// A real, writable file stream whose first flush fails, standing in for a write-time IO
+        /// failure (disk full, sharing violation) without needing one to occur. <c>FileStream.Flush()</c>
+        /// routes through this override, so in <c>SaveFile</c> the flush that fails is the
+        /// <c>StreamWriter</c>'s, ahead of the <c>SetLength</c> and <c>Flush(true)</c> calls.
         /// Subsequent flushes succeed so the stream still disposes cleanly during unwinding.
         /// </summary>
         private sealed class ThrowingFlushFileStream : FileStream
