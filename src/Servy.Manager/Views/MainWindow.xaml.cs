@@ -156,7 +156,7 @@ namespace Servy.Manager.Views
 
             if (sender is Button btn && btn.Command != null)
             {
-                var parameter = btn.CommandParameter ?? DataContext;
+                var parameter = btn.CommandParameter ?? btn.DataContext;
                 if (btn.Command.CanExecute(parameter))
                     btn.Command.Execute(parameter);
             }
