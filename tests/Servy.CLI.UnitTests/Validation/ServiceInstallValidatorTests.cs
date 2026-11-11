@@ -199,6 +199,55 @@ namespace Servy.CLI.UnitTests.Validation
                 Times.Once);
         }
 
+        [Fact]
+        public void Validate_PaddedUser_MapsTheTrimmedAccountWithItsPasswordAndNotAsLocalSystem()
+        {
+            // Arrange
+            var opts = CreateValidOptions();
+            opts.User = "  .\\svc-user\t";
+            opts.Password = "secret";
+
+            _rulesMock.Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(new ValidationResult { });
+
+            // Act
+            var result = _validator.Validate(opts);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>
+                dto.UserAccount == ".\\svc-user" &&
+                dto.Password == "secret" &&
+                dto.RunAsLocalSystem == false),
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Validate_NoUser_MapsRunAsLocalSystem(string? user)
+        {
+            // Arrange
+            var opts = CreateValidOptions();
+            opts.User = user;
+
+            _rulesMock.Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(new ValidationResult { });
+
+            // Act
+            var result = _validator.Validate(opts);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto => dto.RunAsLocalSystem == true),
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
+        }
+
         #endregion
 
         #region Reflection & Fallback Lookups Tests
