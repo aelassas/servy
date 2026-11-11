@@ -516,16 +516,22 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Determines whether a path is a UNC path (<c>\\server\share</c>) or a device path (<c>\\.\</c>, <c>\\?\</c>):
-        /// any path that starts with two directory separators.
+        /// any path that starts with two directory separators, or with the NT object-manager prefix <c>\??\</c>.
         /// </summary>
         /// <param name="path">The path to check, or <see langword="null"/>.</param>
         /// <returns><see langword="true"/> when <paramref name="path"/> is a UNC or device path.</returns>
         private static bool IsUncOrDevicePath(string? path)
         {
             var trimmed = path?.TrimStart();
-            return trimmed != null
-                && trimmed.Length >= 2
-                && (trimmed[0] == '\\' || trimmed[0] == '/')
+            if (trimmed == null || trimmed.Length < 2)
+                return false;
+
+            // \??\ is the object-manager prefix: .NET and Win32 pass it through unchanged,
+            // so \??\UNC\server\share reaches a share without two leading separators.
+            if (trimmed.StartsWith(@"\??\", StringComparison.Ordinal))
+                return true;
+
+            return (trimmed[0] == '\\' || trimmed[0] == '/')
                 && (trimmed[1] == '\\' || trimmed[1] == '/');
         }
 
