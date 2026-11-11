@@ -42,14 +42,10 @@ jobs:
       - name: Install cloc
         shell: bash
         run: |
-          for i in {1..3}; do
-            sudo apt-get update && sudo apt-get install -y cloc && exit 0
-            echo "apt install failed (attempt $i), retrying in 5 seconds..."
-            sleep 5
-          done
-          
-          echo "apt-get failed due to DNS/network issues. Falling back to npm install..."
-          sudo npm install -g cloc
+          sudo apt-get update && sudo apt-get install -y cloc || {
+            echo "apt install failed. Falling back to npm install..."
+            sudo npm install -g cloc
+          }
 
       # ------------------------------------------------------------------------------------
       # Step 1: Calculate Production Lines of Code
