@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-11T13:35:59Z
+> Generated on: 2026-11-11T15:52:46Z
 
 ---
 
@@ -5473,7 +5473,7 @@ Or open **Servy Manager** to:
 
 * Start / stop the service
 * View logs
-* Adjust restart and failure policies
+* Open the service in the Servy Desktop App (**Open Configuration**) to adjust restart and failure policies
 * View CPU / RAM live performance graphs
 * Preview service `stdout`/`stderr`
 * Preview service dependencies
@@ -6132,7 +6132,7 @@ If your application can be started from the command line, Servy can run it as a 
 If it cannot, Servy will not hide the problem. It will surface it clearly through logs and exit codes.
 
 * **Environment Variables:** If your application relies on specific environment variables (like `JAVA_HOME`), ensure they are set as System variables, as services run under the SYSTEM account by default.
-* **Logging:** Use Servy Manager to configure log rotation and capture `stdout`/`stderr` for debugging background services.
+* **Logging:** Use the Servy Desktop App (or `--stdout`, `--stderr` and the rotation options of `servy-cli install`) to capture `stdout`/`stderr` and configure log rotation, and the Console tab of Servy Manager to follow the output live. See [Logging & Log Rotation](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation).
 * **Permissions:** Ensure the service account has NTFS **Modify** permissions for the application's startup directory. Servy gives it the access it needs under `%ProgramData%\Servy` automatically when the service is installed (v10.2+). See [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening).
 
 ## See Also
