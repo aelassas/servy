@@ -430,7 +430,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to View status color indicators for tree nodes: green for running, red for stopped, orange for cycle..
+        ///   Looks up a localized string similar to View status color indicators for tree nodes: green for running, red for stopped, orange for cycle, and an orange warning icon for an unavailable dependency..
         /// </summary>
         public static string Automation_DependenciesUsageInfo_HelpText {
             get {
