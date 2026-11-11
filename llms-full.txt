@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-11T12:36:30Z
+> Generated on: 2026-11-11T13:35:59Z
 
 ---
 
@@ -7004,11 +7004,11 @@ For the trust model this enforces, see [The Servy Trust Boundary](https://github
 Out-of-process utility component dedicated to orchestrating service restarts. A running Windows service cannot safely manage its own stop-and-start cycle through the Service Control Manager (SCM), so `ServiceHelper.RestartService` launches `Servy.Restarter.exe` as an independent process to handle the lifecycle transition cleanly without deadlocking.
 
 **Key Responsibilities:**
-* **Out-of-Process Execution:** Takes the target service name and optional log directory override via command-line arguments (`args[0]` and `args[1]`), decoupling the restart sequence from the stopping host process.
+* **Out-of-Process Execution:** Takes the target service name and optional log directory override via command-line arguments (`args[0]` and `args[1]`), decoupling the restart sequence from the stopping service wrapper.
 * **SCM Lifecycle Orchestration:** Drives the SCM through Servy.Core's `IServiceControllerWrapper` (the `ServiceControllerWrapper` adapter over `System.ServiceProcess.ServiceController`), behind the `IServiceRestarter` interface, to issue stop commands, wait for complete service teardown, and execute a fresh start.
 * **Bootstrapping:** Initializes an isolated event-log source, loads `appsettings.restarter.json` (configuring properties like `RestartTimeoutSeconds`), and sets up dedicated service-scoped logging. It then asks the Service Control Manager for the service's executable and refuses a service that does not run a Servy wrapper (`Servy.Service.exe` or `Servy.Service.CLI.exe`).
 * **Exit Code Signaling:** Returns a non-zero exit code to report failure back to `ServiceHelper` if the service fails to transition within the configured timeout threshold.
-* **Bounded Lifespan:** Operates under a strict execution window - the host process force-kills the restarter if the orchestration exceeds 240 seconds.
+* **Bounded Lifespan:** Operates under a strict execution window - the service wrapper (`Servy.Service.exe`) force-kills the restarter if the orchestration exceeds 240 seconds.
 
 ## Integration Flow
 
