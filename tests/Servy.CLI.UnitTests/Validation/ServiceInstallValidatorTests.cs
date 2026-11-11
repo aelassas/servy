@@ -250,6 +250,141 @@ namespace Servy.CLI.UnitTests.Validation
                 Times.Once);
         }
 
+        [Fact]
+        public void Validate_EveryOptionSet_MapsEachOptionToItsOwnDtoProperty()
+        {
+            // Arrange
+            // Every string and number is unique, so a cross-wired assignment cannot pass. User and Password are pinned by the
+            // two tests above. AllowOverriddenRuntimeVars is left out on purpose: TryMapToDto does not map it today (#7745).
+            var opts = new InstallServiceOptions
+            {
+                ServiceName = "Svc",
+                ServiceDisplayName = "Svc Display",
+                ServiceDescription = "Svc Description",
+                ProcessPath = @"C:\App\app.exe",
+                StartupDirectory = @"C:\App\start",
+                ProcessParameters = "--run",
+                ServiceStartType = "Manual",
+                ProcessPriority = "High",
+                CpuAffinity = "0-1",
+                StdoutPath = @"C:\Logs\out.log",
+                StderrPath = @"C:\Logs\err.log",
+                EnableConsoleUI = true,
+                EnableSizeRotation = true,
+                RotationSize = "11",
+                EnableDateRotation = true,
+                DateRotationType = "Weekly",
+                MaxRotations = "12",
+                UseLocalTimeForRotation = true,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = "13",
+                MaxFailedChecks = "14",
+                RecoveryAction = "RestartService",
+                RecoveryOnCleanExit = true,
+                MaxRestartAttempts = "15",
+                HeartbeatUrl = "https://example.com/hb",
+                HeartbeatUrlTimeoutSeconds = "16",
+                EnableHeartbeatUrlFlags = true,
+                FailureProgramPath = @"C:\App\fail.exe",
+                FailureProgramStartupDir = @"C:\App\fail",
+                FailureProgramParameters = "--fail",
+                EnvironmentVariables = "A=1",
+                ServiceDependencies = "Dep1",
+                PreLaunchPath = @"C:\App\pre.exe",
+                PreLaunchStartupDir = @"C:\App\pre",
+                PreLaunchParameters = "--pre",
+                PreLaunchEnvironmentVariables = "B=2",
+                PreLaunchStdoutPath = @"C:\Logs\pre-out.log",
+                PreLaunchStderrPath = @"C:\Logs\pre-err.log",
+                PreLaunchTimeout = "17",
+                PreLaunchRetryAttempts = "18",
+                PreLaunchIgnoreFailure = true,
+                PostLaunchPath = @"C:\App\post.exe",
+                PostLaunchStartupDir = @"C:\App\post",
+                PostLaunchParameters = "--post",
+                EnableDebugLogs = true,
+                StartTimeout = "19",
+                StopTimeout = "20",
+                PreStopPath = @"C:\App\prestop.exe",
+                PreStopStartupDir = @"C:\App\prestop",
+                PreStopParameters = "--prestop",
+                PreStopTimeout = "21",
+                PreStopLogAsError = true,
+                PostStopPath = @"C:\App\poststop.exe",
+                PostStopStartupDir = @"C:\App\poststop",
+                PostStopParameters = "--poststop",
+            };
+
+            ServiceDto dto = null;
+            _rulesMock
+                .Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Callback<ServiceDto, string, string, bool>((d, wrapperPath, confirmPassword, importMode) => dto = d)
+                .Returns(new ValidationResult { });
+
+            // Act
+            var result = _validator.Validate(opts);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(dto);
+            var mapped = dto;
+            Assert.Equal("Svc", mapped.Name);
+            Assert.Equal("Svc Display", mapped.DisplayName);
+            Assert.Equal("Svc Description", mapped.Description);
+            Assert.Equal(@"C:\App\app.exe", mapped.ExecutablePath);
+            Assert.Equal(@"C:\App\start", mapped.StartupDirectory);
+            Assert.Equal("--run", mapped.Parameters);
+            Assert.Equal((int)ServiceStartType.Manual, mapped.StartupType);
+            Assert.Equal((int)ProcessPriority.High, mapped.Priority);
+            Assert.Equal("0-1", mapped.CpuAffinity);
+            Assert.Equal(@"C:\Logs\out.log", mapped.StdoutPath);
+            Assert.Equal(@"C:\Logs\err.log", mapped.StderrPath);
+            Assert.True(mapped.EnableConsoleUI);
+            Assert.True(mapped.EnableSizeRotation);
+            Assert.Equal(11, mapped.RotationSize);
+            Assert.True(mapped.EnableDateRotation);
+            Assert.Equal((int)DateRotationType.Weekly, mapped.DateRotationType);
+            Assert.Equal(12, mapped.MaxRotations);
+            Assert.True(mapped.UseLocalTimeForRotation);
+            Assert.True(mapped.EnableHealthMonitoring);
+            Assert.Equal(13, mapped.HeartbeatInterval);
+            Assert.Equal(14, mapped.MaxFailedChecks);
+            Assert.Equal((int)RecoveryAction.RestartService, mapped.RecoveryAction);
+            Assert.True(mapped.RecoveryOnCleanExit);
+            Assert.Equal(15, mapped.MaxRestartAttempts);
+            Assert.Equal("https://example.com/hb", mapped.HeartbeatUrl);
+            Assert.Equal(16, mapped.HeartbeatUrlTimeoutSeconds);
+            Assert.True(mapped.EnableHeartbeatUrlFlags);
+            Assert.Equal(@"C:\App\fail.exe", mapped.FailureProgramPath);
+            Assert.Equal(@"C:\App\fail", mapped.FailureProgramStartupDirectory);
+            Assert.Equal("--fail", mapped.FailureProgramParameters);
+            Assert.Equal("A=1", mapped.EnvironmentVariables);
+            Assert.Equal("Dep1", mapped.ServiceDependencies);
+            Assert.Equal(@"C:\App\pre.exe", mapped.PreLaunchExecutablePath);
+            Assert.Equal(@"C:\App\pre", mapped.PreLaunchStartupDirectory);
+            Assert.Equal("--pre", mapped.PreLaunchParameters);
+            Assert.Equal("B=2", mapped.PreLaunchEnvironmentVariables);
+            Assert.Equal(@"C:\Logs\pre-out.log", mapped.PreLaunchStdoutPath);
+            Assert.Equal(@"C:\Logs\pre-err.log", mapped.PreLaunchStderrPath);
+            Assert.Equal(17, mapped.PreLaunchTimeoutSeconds);
+            Assert.Equal(18, mapped.PreLaunchRetryAttempts);
+            Assert.True(mapped.PreLaunchIgnoreFailure);
+            Assert.Equal(@"C:\App\post.exe", mapped.PostLaunchExecutablePath);
+            Assert.Equal(@"C:\App\post", mapped.PostLaunchStartupDirectory);
+            Assert.Equal("--post", mapped.PostLaunchParameters);
+            Assert.True(mapped.EnableDebugLogs);
+            Assert.Equal(19, mapped.StartTimeout);
+            Assert.Equal(20, mapped.StopTimeout);
+            Assert.Equal(@"C:\App\prestop.exe", mapped.PreStopExecutablePath);
+            Assert.Equal(@"C:\App\prestop", mapped.PreStopStartupDirectory);
+            Assert.Equal("--prestop", mapped.PreStopParameters);
+            Assert.Equal(21, mapped.PreStopTimeoutSeconds);
+            Assert.True(mapped.PreStopLogAsError);
+            Assert.Equal(@"C:\App\poststop.exe", mapped.PostStopExecutablePath);
+            Assert.Equal(@"C:\App\poststop", mapped.PostStopStartupDirectory);
+            Assert.Equal("--poststop", mapped.PostStopParameters);
+        }
+
         #endregion
 
         #region Reflection & Fallback Lookups Tests
