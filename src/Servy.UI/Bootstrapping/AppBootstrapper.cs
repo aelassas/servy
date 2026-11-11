@@ -61,7 +61,7 @@ namespace Servy.UI.Bootstrapping
         /// <summary>
         /// Gets the initialized application database context.
         /// </summary>
-        public AppDbContext DbContext { get; private set; }
+        private AppDbContext DbContext { get; set; }
 
         /// <summary>
         /// Gets the repository responsible for managing service data.
@@ -71,22 +71,22 @@ namespace Servy.UI.Bootstrapping
         /// <summary>
         /// Gets the provider for managing sensitive encrypted data.
         /// </summary>
-        public ISecureData SecureData { get; private set; }
+        private ISecureData SecureData { get; set; }
 
         /// <summary>
         /// Gets the connection string used for database operations.
         /// </summary>
-        public string ConnectionString { get; private set; }
+        private string ConnectionString { get; set; }
 
         /// <summary>
         /// Gets the file path where the AES encryption key is stored.
         /// </summary>
-        public string AESKeyFilePath { get; private set; }
+        private string AESKeyFilePath { get; set; }
 
         /// <summary>
         /// Gets the file path where the AES initialization vector (IV) is stored.
         /// </summary>
-        public string AESIVFilePath { get; private set; }
+        private string AESIVFilePath { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether software rendering has been forced due to environment constraints or manual override.
