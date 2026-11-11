@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-11T15:52:46Z
+> Generated on: 2026-11-11T16:09:32Z
 
 ---
 
@@ -2782,6 +2782,8 @@ Consider a service configured with:
 - **Recovery Action**: `RestartComputer`
 - **Failure Program**: `C:\Apps\FailureHandler.exe`
 
+With these settings the Adaptive Stability Window is 60 seconds (`D` = 30 s plus a 30 s buffer). The timeline below shows a service that fails again within that window each time. If it stayed healthy for more than 60 seconds between two crashes, `restartAttempts` would be reset to `0` and the limit would not be reached.
+
 #### Timeline
 
 **Session 1: First crash sequence**
@@ -2795,28 +2797,28 @@ Consider a service configured with:
 
 **Session 2: Second crash sequence**
 
-4. **12:10** Windows finishes reboot. Servy starts automatically
+4. **12:10:00** Windows finishes reboot. Servy starts automatically
    - Loads `restartAttempts = 1`
-   - The counter was last written before the current OS boot time, reboot detection prevents reset
-5. **12:15** Service crashes again
+   - The counter was last written before the current OS boot time, so it is kept and its timestamp is re-anchored to this session
+5. **12:10:40** Service crashes again, inside the 60-second window
    - Servy triggers `RestartComputer`
    - `restartAttempts` increments to 2
-6. **12:16** System reboots again
+6. **12:11** System reboots again
 
 **Session 3: Third crash sequence**
 
-7. **12:20** Windows finishes reboot. Servy starts automatically
+7. **12:15:00** Windows finishes reboot. Servy starts automatically
    - Loads `restartAttempts = 2`
-8. **12:25** Service crashes
+8. **12:15:40** Service crashes
    - Servy triggers `RestartComputer`
    - `restartAttempts` increments to 3
-9. **12:26** System reboots again
+9. **12:16** System reboots again
 
 **Session 4: Fourth crash sequence**
 
-10. **12:30** Windows finishes reboot. Servy starts automatically
+10. **12:20:00** Windows finishes reboot. Servy starts automatically
     - Loads `restartAttempts = 3` (already reached `MaxRestartAttempts`)
-11. **12:35** Service crashes again
+11. **12:20:40** Service crashes again
     - Servy sees that `restartAttempts` has reached the `MaxRestartAttempts` limit
     - Recovery action is not executed
     - Configured failure program is executed (`C:\Apps\FailureHandler.exe`)
@@ -2839,6 +2841,8 @@ Consider a service configured with:
 - **Recovery Action**: `RestartService`
 - **Failure Program**: `C:\Apps\FailureHandler.exe`
 
+With these settings the Adaptive Stability Window is 60 seconds (`D` = 30 s plus a 30 s buffer). The timeline below shows a service that fails again within that window each time. If it stayed healthy for more than 60 seconds between two crashes, `restartAttempts` would be reset to `0` and the limit would not be reached.
+
 #### Timeline
 
 **Session 1: First crash sequence**
@@ -2848,25 +2852,25 @@ Consider a service configured with:
    - Servy triggers `RestartService`
    - `restartAttempts` is incremented to 1 and persisted
    - `restartAttempts` increments before attempting the recovery action
-3. **12:06** Service successfully restarts
+3. **12:05:10** Service successfully restarts
 
 **Session 2: Second crash sequence**
 
-4. **12:10** Service crashes again
+4. **12:05:40** Service crashes again, inside the 60-second window
    - Servy triggers `RestartService`
    - `restartAttempts` increments to 2
-5. **12:11** Service successfully restarts
+5. **12:05:50** Service successfully restarts
 
 **Session 3: Third crash sequence**
 
-6. **12:15** Service crashes again
+6. **12:06:20** Service crashes again
    - Servy triggers `RestartService`
    - `restartAttempts` increments to 3
-7. **12:16** Service successfully restarts
+7. **12:06:30** Service successfully restarts
 
 **Session 4: Fourth crash sequence**
 
-8. **12:20** Service crashes again
+8. **12:07:00** Service crashes again
    - Servy sees that `restartAttempts` has reached the `MaxRestartAttempts` limit
    - Recovery action is **not** executed
    - Configured failure program is executed (`C:\Apps\FailureHandler.exe`)
