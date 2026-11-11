@@ -55,6 +55,7 @@ namespace Servy.Core.Validation
         /// Resolves the localized message named by <see cref="ServicePathAttribute.ErrorResourceKey"/>,
         /// falling back to the generic in-configuration message when no key is declared or it does not resolve.
         /// </summary>
+        /// <returns>The localized error message for this violation; the same message whether the path is missing or invalid.</returns>
         public string ResolveErrorMessage()
         {
             if (!string.IsNullOrEmpty(Attribute.ErrorResourceKey))
