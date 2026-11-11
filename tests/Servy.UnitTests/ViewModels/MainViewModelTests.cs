@@ -1270,6 +1270,33 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
+        public void ModelToServiceDto_PaddedUserAccount_IsTrimmed()
+        {
+            // Arrange
+            _viewModel.RunAsLocalSystem = false;
+            _viewModel.UserAccount = "  .\\svc-user\t";
+
+            // Act
+            var dto = _viewModel.ModelToServiceDto();
+
+            // Assert
+            Assert.Equal(".\\svc-user", dto.UserAccount);
+        }
+
+        [Fact]
+        public void ModelToServiceDto_NullUserAccount_StaysNull()
+        {
+            // Arrange
+            _viewModel.UserAccount = null;
+
+            // Act
+            var dto = _viewModel.ModelToServiceDto();
+
+            // Assert
+            Assert.Null(dto.UserAccount);
+        }
+
+        [Fact]
         public void ModelToServiceDto_WithInvalidNumericInputs_EmitsUnparseableSentinel()
         {
             // Arrange
