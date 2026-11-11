@@ -478,12 +478,20 @@ namespace Servy.UI.Bootstrapping
                     if (deferredWarnings.Count > 0)
                     {
                         var (message, title) = CombineWarnings(deferredWarnings);
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window?)app.MainWindow,
-                            message,
-                            title,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
+                        await app.Dispatcher.InvokeAsync(() =>
+                        {
+                            Window? owner = splash ?? app.MainWindow;
+                            if (owner != null)
+                            {
+                                MessageBox.Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+                            }
+                            else
+                            {
+                                // No splash and no main window yet (started with "false"): MessageBox.Show(Window, ...)
+                                // throws on a null owner, and an owner-less dialog is safe - nothing Topmost can cover it.
+                                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+                            }
+                        });
                     }
 
                     stopwatch.Stop();
