@@ -1233,6 +1233,75 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task ExecuteAsync_NoName_DescriptionExactlyAtTheLimit_IsShownWhole()
+        {
+            // Arrange
+            // A value of exactly ListCellMaxLength characters fits the column, so it is shown whole.
+            var maxLength = TestReflection.GetFieldStatic<int>(typeof(ShowServiceCommand), "ListCellMaxLength");
+            var atLimit = new string('x', maxLength);
+            var dto = MinimalDto("alpha");
+            dto.Description = atLimit;
+            dto.Pid = 11;
+            GivenServices(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            var body = result.Message ?? string.Empty;
+            Assert.Contains(atLimit, body);
+            Assert.DoesNotContain("x...", body);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_DescriptionOneOverTheLimit_IsCut()
+        {
+            // Arrange
+            // One character past ListCellMaxLength is cut to maxLength - 3 characters plus the ellipsis.
+            var maxLength = TestReflection.GetFieldStatic<int>(typeof(ShowServiceCommand), "ListCellMaxLength");
+            var dto = MinimalDto("alpha");
+            dto.Description = new string('x', maxLength + 1);
+            dto.Pid = 11;
+            GivenServices(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            var body = result.Message ?? string.Empty;
+            Assert.Contains(new string('x', maxLength - 3) + "...", body);
+            Assert.DoesNotContain(new string('x', maxLength - 2), body);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_SpaceAtTheCut_IsTrimmedBeforeTheEllipsis()
+        {
+            // Arrange
+            // The cut falls at maxLength - 3. A space as the last character before the cut would
+            // otherwise be kept and render as "xxx ...".
+            var maxLength = TestReflection.GetFieldStatic<int>(typeof(ShowServiceCommand), "ListCellMaxLength");
+            var prefix = new string('x', maxLength - 4);
+            var dto = MinimalDto("alpha");
+            dto.Description = prefix + " " + new string('y', 20);
+            dto.Pid = 11;
+            GivenServices(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            var body = result.Message ?? string.Empty;
+            Assert.Contains(prefix + "...", body);
+            Assert.DoesNotContain(" ...", body);
+        }
+
+        [Fact]
         public async Task ExecuteAsync_NoServicesStored_ReturnsTheEmptyListMessage()
         {
             // Arrange
