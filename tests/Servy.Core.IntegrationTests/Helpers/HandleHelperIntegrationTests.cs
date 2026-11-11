@@ -93,6 +93,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         [InlineData("   ")]
         public void GetProcessesUsingFile_NullOrBlankPath_ThrowsArgumentException(string filePath)
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(filePath));
         }
 
