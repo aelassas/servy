@@ -82,8 +82,9 @@ namespace Servy.Host.Bootstrap
         bool IsSqliteVersionSafe(out string? detectedVersion);
 
         /// <summary>
-        /// Creates the database context, initializes the database schema, and builds the protected key
-        /// provider, the secure-data helper and the service repository on top of it.
+        /// Builds the protected key provider and the secure-data helper, creates the database context,
+        /// initializes the database schema with that helper (a migration may have to encrypt values stored
+        /// in clear text), and builds the service repository on top of them, in that order.
         /// </summary>
         /// <param name="connectionString">The SQLite connection string to open the database with.</param>
         /// <param name="aesKeyFilePath">The file path of the AES key used to protect stored secrets.</param>
