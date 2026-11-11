@@ -231,15 +231,17 @@ jobs:
       - name: Import Codecov Public GPG Key
         if: ${{ env.UPLOAD_COVERAGE == 'true' }}
         continue-on-error: true
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p ~/.gnupg
-          # Fetch public key directly over HTTPS and import into GPG keyring
-          curl -sSL https://keybase.io/codecov/pgp_keys.asc | gpg --batch --import || \
-          curl -sSL https://keyserver.ubuntu.com/pks/lookup?op=get\&search=0x27034E7FDB850E0BBC2C62FF806BB28AED779869 | gpg --batch --import
+          $gnupgDir = Join-Path $env:USERPROFILE ".gnupg"
+          if (-not (Test-Path $gnupgDir)) { New-Item -ItemType Directory -Path $gnupgDir | Out-Null }
           
-          # Verify the key is registered locally
-          gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
+          $keyUrl = "https://keybase.io/codecov/pgp_keys.asc"
+          $keyPath = Join-Path $env:RUNNER_TEMP "codecov.asc"
+          
+          Invoke-WebRequest -Uri $keyUrl -OutFile $keyPath -UseBasicParsing
+          & gpg --batch --import $keyPath
+          & gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
 
       - name: Upload coverage to Codecov
         id: codecov
