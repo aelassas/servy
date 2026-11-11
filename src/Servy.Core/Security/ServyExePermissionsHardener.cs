@@ -1141,7 +1141,7 @@ namespace Servy.Core.Security
                 case ExePermissionsHardeningStatus.Failed:
                     Logger.Error($"Revoking the access of '{account}' to Servy's vault failed on: {string.Join(", ", result.Failed)}. " +
                         "Its entries on those items are removed on the next elevated start of the desktop app, the Manager or the CLI (Release builds), " +
-                        "except on the vault root and on a link, where they stay until they are removed by hand.");
+                        "except on a link (a reparse point, or a file with more than one hard link), where they stay until they are removed by hand.");
                     return false;
                 default:
                     Logger.Error($"The access of '{account}' to Servy's vault was not revoked: {result.Reason}.");
