@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-11T16:09:32Z
+> Generated on: 2026-11-11T17:41:55Z
 
 ---
 
@@ -218,7 +218,7 @@ Configure `stdout` and `stderr` log file redirection, size-based and date-based 
 <img alt="servy-config-logging" src="https://github.com/user-attachments/assets/b79978ec-1740-464d-b9c7-57b2151cc853" />
 
 > [!NOTE]
-> Enabling the debug option will record sensitive information in the local log file at `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. This behavior only occurs when local logging is enabled, which is the default setting. Sensitive data is never recorded in the Windows Event Log. The CLI `show` command and `Show-ServyService` mask the encrypted fields by default; `--decrypt` / `-Decrypt` prints the parameters and environment variables in clear text (the stored password always stays masked). See [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI) and [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
+> Enabling the debug option will record sensitive information in the local log file at `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. This behavior only occurs when local logging is enabled, which is the default setting. Sensitive data is never recorded in the Windows Event Log. The CLI `show` command and `Show-ServyService` mask the encrypted fields by default; `--decrypt` / `-Decrypt` prints the encrypted fields (parameters, environment variables and the heartbeat URL) in clear text (the stored password always stays masked). See [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI) and [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
 For detailed information about logging, check out the [Logging & Log Rotation](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation) documentation.
 
@@ -332,7 +332,7 @@ Execute service operations directly via command-line arguments or configuration 
 
 ### PowerShell
 
-Manage services natively using PowerShell cmdlets and pipeline objects. See [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
+Manage services from PowerShell with the functions of the Servy module, which wrap `servy-cli` and print its output as text. See [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
 <img alt="servy-powershell" src="https://github.com/user-attachments/assets/7c3684ee-7337-4967-bf70-d3056a54d8c7" />
 
@@ -1813,7 +1813,7 @@ Both require an elevated session, and neither ever prints the stored password.
 # One service, full configuration - encrypted fields masked
 Show-ServyService -Name "WexflowServer"
 
-# Same, with the parameters and environment variables in clear text
+# Same, with the parameters, environment variables and heartbeat URL in clear text
 Show-ServyService -Name "WexflowServer" -Decrypt
 
 # Every service in the Servy database
@@ -2398,7 +2398,7 @@ The "Logging" tab in the desktop app lets you configure `stdout` and `stderr` lo
 > If both size-based and date-based rotation are enabled, size-based rotation takes precedence.
 
 > [!NOTE]
-> Enabling the debug option will record sensitive information in the local log file at `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. This behavior only occurs when local logging is enabled, which is the default setting. Sensitive data is never recorded in the Windows Event Log. The CLI `show` command and `Show-ServyService` mask the encrypted fields by default; `--decrypt` / `-Decrypt` prints the parameters and environment variables in clear text (the stored password always stays masked). See [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI) and [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
+> Enabling the debug option will record sensitive information in the local log file at `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. This behavior only occurs when local logging is enabled, which is the default setting. Sensitive data is never recorded in the Windows Event Log. The CLI `show` command and `Show-ServyService` mask the encrypted fields by default; `--decrypt` / `-Decrypt` prints the encrypted fields (parameters, environment variables and the heartbeat URL) in clear text (the stored password always stays masked). See [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI) and [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
 > [!NOTE]
 > Enabling **Console UI** (`--enableConsoleUI`) disables stdout/stderr redirection at the OS level - the child process keeps an attached console handle instead of pipes. Servy cannot capture or rotate the output in that mode, so the configured `--stdout` / `--stderr` paths will remain empty. Use one or the other, not both.
@@ -3655,7 +3655,7 @@ Additionally, Servy supports running an optional script or executable after the 
 *Servy tracks processes launched during startup to ensure that if the main service crashes, all setup scripts are also terminated.*
 
 > [!NOTE]
-> While a synchronous hook is running, Servy periodically notifies the Windows Service Control Manager that the service is still active, so the SCM's own start timeout does not kill the service while a long-running hook is still within its configured timeout. See `Timing:ScmAdditionalTimeMs` in [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration#servy-service).
+> While a synchronous hook is running, Servy periodically notifies the Windows Service Control Manager that the service is still active, so the SCM's own start timeout does not kill the service while a long-running hook is still within its configured timeout. See `Timing:ScmAdditionalTimeMs` in [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration#servy-windows-service).
 
 ## Pre-Launch
 ### Pre-Launch Settings
@@ -3837,7 +3837,7 @@ Servy also supports running an optional script or executable after the service p
 *Servy tracks processes launched during startup to ensure that if the main service crashes, all setup scripts are also terminated. For Stop hooks, cleanup is disabled because these processes are intended to finish their work as the service environment itself is being torn down.*
 
 > [!NOTE]
-> While a synchronous hook is running, Servy periodically notifies the Windows Service Control Manager that the service is still active, so the SCM's own stop timeout does not kill the service while a long-running hook is still within its configured timeout. See `Timing:ScmAdditionalTimeMs` in [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration#servy-service).
+> While a synchronous hook is running, Servy periodically notifies the Windows Service Control Manager that the service is still active, so the SCM's own stop timeout does not kill the service while a long-running hook is still within its configured timeout. See `Timing:ScmAdditionalTimeMs` in [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration#servy-windows-service).
 
 ## Pre-Stop
 
@@ -6402,7 +6402,7 @@ v10.2 adds a background Windows service, **`Servy`** (`Servy.Host.exe`). It runs
 
 The `Servy` service checks every request:
 
-* **Who may connect:** the pipe is created with a protected access list that grants `NT AUTHORITY\SYSTEM` and `BUILTIN\Administrators` Full Control, grants the accounts of the services Servy manages **Read/Write** only. Network logons are supported: a local process whose token comes from a network logon (for example `servy-cli` in a PowerShell remoting or WinRM session) is checked like any other. The pipe is local only: it is created with `PIPE_REJECT_REMOTE_CLIENTS`, so a client on another computer cannot open it, and the `Servy` service also refuses any request from one. The list is rebuilt whenever a service is installed, reinstalled under another account or removed, and is applied to the pipe immediately, without restarting the `Servy` service. An account loses access to the pipe when its last service is removed or reinstalled under another account and no process of a service still runs under it: a service reinstalled under another account keeps running under the old one until it restarts, so the old account keeps Read/Write on the pipe, to report that process's state when it stops, until that process exits.
+* **Who may connect:** the pipe is created with a protected access list that grants `NT AUTHORITY\SYSTEM` and `BUILTIN\Administrators` Full Control and grants the accounts of the services Servy manages **Read/Write** only. Network logons are supported: a local process whose token comes from a network logon (for example `servy-cli` in a PowerShell remoting or WinRM session) is checked like any other. The pipe is local only: it is created with `PIPE_REJECT_REMOTE_CLIENTS`, so a client on another computer cannot open it, and the `Servy` service also refuses any request from one. The list is rebuilt whenever a service is installed, reinstalled under another account or removed, and is applied to the pipe immediately, without restarting the `Servy` service. An account loses access to the pipe when its last service is removed or reinstalled under another account and no process of a service still runs under it: a service reinstalled under another account keeps running under the old one until it restarts, so the old account keeps Read/Write on the pipe, to report that process's state when it stops, until that process exits.
 * **What a caller may ask for:** a service account may only read or update the service it is running. The `Servy` service compares the process ID of the caller (`GetNamedPipeClientProcessId`) with the process ID the Service Control Manager reports for the service named in the request, and refuses the request when they differ. Administrators and `SYSTEM` are not restricted.
 * **Who the client talks to:** before sending anything, `Servy.Service.exe` checks that the process serving the pipe is the one the Service Control Manager reports for the `Servy` service, so another process cannot squat the pipe name and serve a forged configuration.
 
@@ -6547,7 +6547,7 @@ To move Servy to a new PC, use [Servy-Dump.ps1 and Servy-Restore.ps1](https://gi
 
   * **Access Denied on Startup:** This usually means the account running the service does not have permissions to the `%ProgramData%\Servy` folder. Refer to the Permissions Table above.
   * **Service Cannot Load Its Configuration (v10.2+):** Check that the `Servy` service is installed and running (`sc.exe query Servy`), then read `%ProgramData%\Servy\logs\Servy.Host.log` and `%ProgramData%\Servy\logs\services\<ServiceName>\Servy.Service.log`. Running the Desktop App, Servy Manager or any `servy-cli` command reinstalls and starts the `Servy` service if needed; reinstalling the service re-grants its account access to the named pipe. The one exception is a service named `Servy` that does not run `Servy.Host.exe` or `Servy.Host.Net48.exe`, for example one installed under that name by an earlier version: Servy leaves it untouched and reports an error that names it, so the host service is not installed and the Servy services cannot load their configuration. Export that service, uninstall it, and import it under another name, then run any Servy command again. The same happens when the executable of the existing `Servy` service cannot be read.
-  * **Decryption Error:** This happens if the `.dat` files were moved from another computer, restored from an image, corrupted, or if the Windows `MachineGuid` was altered. Servy then refuses to save any service whose encrypted fields (`Password`, `Parameters`, `EnvironmentVariables`, `PreLaunchEnvironmentVariables` and the hook parameters `PreLaunchParameters`, `PostLaunchParameters`, `PreStopParameters`, `PostStopParameters`, `FailureProgramParameters`) cannot be decrypted, so they cannot be re-entered in place, and it never replaces an existing `aes_key.dat`. To recover:
+  * **Decryption Error:** This happens if the `.dat` files were moved from another computer, restored from an image, corrupted, or if the Windows `MachineGuid` was altered. Servy then refuses to save any service whose encrypted fields (`Password`, `Parameters`, `EnvironmentVariables`, `PreLaunchEnvironmentVariables`, `HeartbeatUrl` and the hook parameters `PreLaunchParameters`, `PostLaunchParameters`, `PreStopParameters`, `PostStopParameters`, `FailureProgramParameters`) cannot be decrypted, so they cannot be re-entered in place, and it never replaces an existing `aes_key.dat`. To recover:
     1. Do **not** delete or replace `aes_key.dat` or `aes_iv.dat`: a new key can never decrypt the existing database.
     2. Restore `%ProgramData%\Servy\security\aes_key.dat` and `aes_iv.dat` from a backup of **this** machine, then restart Servy.
     3. Otherwise, copy `%ProgramData%\Servy\db\Servy.db` back to the original machine and export the service configurations to XML or JSON there. You can use [`Servy-Dump.ps1`](https://github.com/aelassas/servy/wiki/Backup-Restore-&-VM-Cloning) to perform the batch export.
