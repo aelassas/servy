@@ -28,7 +28,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override async Task<CommandResult> ExecuteCommandAsync(ServiceStatusCommand command, ServiceStatusOptions options)
         {
-            // Override mapping explicitly to bypass async conversion paths for sync execution.
+            // ServiceStatusCommand exposes a synchronous Execute, so call it directly rather than
+            // the ExecuteAsync the base class reaches through dynamic dispatch.
             return await Task.FromResult(command.Execute(options, TestContext.Current.CancellationToken));
         }
 
@@ -39,8 +40,9 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            // Triggers CommandResult mapping fallback pathways natively.
-            // Note: errorMsg parameter is unused because ServiceStatusCommand catches SCM exceptions and maps them via Msg_ServiceStatusAction.
+            // GetServiceStatus returns a status, not an OperationResult, so the only failure it can
+            // report is an exception. errorMsg is unused: ExecuteWithHandling catches the exception
+            // and formats its own message from Msg_ServiceStatusAction.
             mockManager.Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>())).Throws(new InvalidOperationException("SCM operational failure"));
         }
 
