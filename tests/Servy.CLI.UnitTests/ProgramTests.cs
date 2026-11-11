@@ -1,3 +1,4 @@
+using Servy.CLI.Resources;
 using Servy.CLI.Runtime;
 using Servy.CLI.UnitTests.Runtime;
 using Servy.Core.Config;
@@ -399,6 +400,50 @@ namespace Servy.CLI.UnitTests
             Assert.Contains("An unexpected error occurred: binaries step reached", result.StdErr);
             Assert.Equal(
                 new[] { nameof(ICliRuntime.IsSqliteVersionSafe), nameof(ICliRuntime.EnsureDatabase), nameof(ICliRuntime.EnsureServiceBinariesAsync) },
+                runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_BootstrapCompletesForAVerbWithoutBinaries_ReachesTheHandlerAndSkipsTheBinariesStep()
+        {
+            // Arrange
+            // Nothing throws, so the bootstrap completes. The export handler rejects the file type before its
+            // elevation check and before any repository call, so the outcome does not depend on the host.
+            var runtime = new FakeCliRuntime();
+            string[] args = { "export", "-n", "NonExistentServiceForTestingOnly", "-c", "bogus", "-p", "C:\\NonExistent\\out.xml", "--quiet" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains(string.Format(Strings.Msg_UnsupportedFileType, "bogus"), result.StdErr);
+            Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe), nameof(ICliRuntime.EnsureDatabase) }, runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_BootstrapCompletesBehindTheLoadingAnimation_ReachesTheHandlerAfterBothSteps()
+        {
+            // Arrange
+            // import is mapped with requireBinaries: true, and a real console sends the bootstrap through the animation.
+            var runtime = new FakeCliRuntime { RealConsole = true };
+            string[] args = { "import", "-c", "bogus", "-p", "C:\\NonExistent\\in.xml" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, result.Result);
+            Assert.Contains(string.Format(Strings.Msg_UnsupportedFileType, "bogus"), result.StdErr);
+            Assert.Equal(
+                new[]
+                {
+                    nameof(ICliRuntime.IsSqliteVersionSafe),
+                    nameof(ICliRuntime.IsRealConsole),
+                    nameof(ICliRuntime.RunWithLoadingAnimationAsync),
+                    nameof(ICliRuntime.EnsureDatabase),
+                    nameof(ICliRuntime.EnsureServiceBinariesAsync),
+                },
                 runtime.Calls);
         }
 
