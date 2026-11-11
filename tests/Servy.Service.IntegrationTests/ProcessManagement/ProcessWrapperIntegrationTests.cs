@@ -693,20 +693,33 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                var compilePsi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ var f = new Form {{ ShowInTaskbar = true }}; var h = f.Handle; f.Show(); Application.Run(f); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
+                // powershell.exe can die within milliseconds on a loaded CI host (observed on net48 CI:
+                // "Failed to compile temporary test executable." after ~15 ms, no output), so retry the compile
+                // and keep each attempt's exit code and output for the assertion message.
+                string compileLog = string.Empty;
 
-                using (var compileProc = Process.Start(compilePsi))
+                for (int attempt = 1; attempt <= 3 && !File.Exists(tempExe); attempt++)
                 {
-                    compileProc?.WaitForExit();
+                    var compilePsi = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ var f = new Form {{ ShowInTaskbar = true }}; var h = f.Handle; f.Show(); Application.Run(f); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    };
+
+                    using (var compileProc = Process.Start(compilePsi))
+                    {
+                        var stdout = compileProc.StandardOutput.ReadToEndAsync();
+                        var stderr = compileProc.StandardError.ReadToEndAsync();
+                        compileProc.WaitForExit();
+                        compileLog += $" [attempt {attempt}: exit code {compileProc.ExitCode}; stdout: {stdout.Result}; stderr: {stderr.Result}]";
+                    }
                 }
 
-                Assert.True(File.Exists(tempExe), "Failed to compile temporary test executable.");
+                Assert.True(File.Exists(tempExe), "Failed to compile temporary test executable." + compileLog);
 
                 var psi = new ProcessStartInfo
                 {
