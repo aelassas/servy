@@ -333,6 +333,9 @@ jobs:
           $gnupgDir = Join-Path $env:USERPROFILE ".gnupg"
           if (-not (Test-Path $gnupgDir)) { New-Item -ItemType Directory -Path $gnupgDir | Out-Null }
           
+          $expected = '27034E7FDB850E0BBC2C62FF806BB28AED779869'
+          $imported = $false
+          
           $keyUrls = @(
               "https://keybase.io/codecovsecops/pgp_keys.asc",
               "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x27034E7FDB850E0BBC2C62FF806BB28AED779869"
@@ -347,19 +350,32 @@ jobs:
               try {
                   Invoke-WebRequest -Uri $url -Headers $headers -OutFile $keyPath -UseBasicParsing
                   $content = Get-Content $keyPath -Raw
-                  if ($content -match "BEGIN PGP PUBLIC KEY BLOCK") {
-                      & gpg --batch --import $keyPath
-                      
-                      # Set ultimate trust for the imported key to suppress the uncertified signature warning
-                      "27034E7FDB850E0BBC2C62FF806BB28AED779869:6:" | & gpg --batch --import-ownertrust
-                      
-                      & gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
-                      break
+                  if ($content -notmatch "BEGIN PGP PUBLIC KEY BLOCK") { Write-Warning "No armored key at ${url}"; continue }
+
+                  # The first fpr record after pub is the primary key fingerprint
+                  $primary = @(& gpg --batch --show-keys --with-colons $keyPath 2>$null | Where-Object { $_ -like 'fpr:*' })[0]
+                  if (-not $primary -or ($primary -split ':')[9] -ne $expected) {
+                      Write-Warning "Key from ${url} is not $expected - not imported"
+                      continue
                   }
+
+                  & gpg --batch --import $keyPath
+                  
+                  # Set ultimate trust for the imported key to suppress the uncertified signature warning
+                  "${expected}:6:" | & gpg --batch --import-ownertrust
+                  
+                  & gpg --list-keys $expected
+                  if ($LASTEXITCODE -ne 0) { Write-Warning "Key $expected is not in the keyring after importing ${url}"; continue }
+
+                  $imported = $true
+                  Write-Host "Codecov GPG key $expected imported and verified successfully from ${url}." -ForegroundColor Green
+                  break
               } catch {
                   Write-Warning "Could not import Codecov GPG key from ${url}: ${_}"
               }
           }
+
+          if (-not $imported) { Write-Warning "Codecov GPG key $expected was not imported from any source" }
 
       - name: Upload coverage to Codecov
         id: codecov
