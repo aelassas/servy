@@ -152,7 +152,6 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             const string serviceName = "TestService";
             var probe = new OnSuccessProbeCommand();
-            SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
             var result = await probe.RunAsync(
