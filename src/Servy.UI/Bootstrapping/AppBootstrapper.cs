@@ -399,34 +399,28 @@ namespace Servy.UI.Bootstrapping
                         {
                             string resourceName = $"{AppConfig.ServyServiceUIFileName}.pdb";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " + "File-lock diagnostics will be unavailable this session.");
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window)app.MainWindow,
+                            await app.Dispatcher.InvokeAsync(() => ShowStartupWarning(
+                                splash ?? app.MainWindow,
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
 
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyRestarterFileName, "pdb", cancellationToken: ct))
                         {
                             string resourceName = $"{AppConfig.ServyRestarterFileName}.pdb";
                             Logger.Warn($"Failed to extract embedded resource '{resourceName}'.");
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window)app.MainWindow,
+                            await app.Dispatcher.InvokeAsync(() => ShowStartupWarning(
+                                splash ?? app.MainWindow,
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, resourceName),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
 
                         if (!await resourceHelper.CopyEmbeddedResourceAsync(asm, _options.ResourcesNamespace, AppConfig.ServyHostFileName, "pdb", cancellationToken: ct))
                         {
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                                splash ?? (Window)app.MainWindow,
+                            await app.Dispatcher.InvokeAsync(() => ShowStartupWarning(
+                                splash ?? app.MainWindow,
                                 string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource, $"{AppConfig.ServyHostFileName}.pdb"),
-                                _options.ResourceExtractionWarningTitle,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning));
+                                _options.ResourceExtractionWarningTitle));
                         }
 #else
                         // Runtime DLL requirements
@@ -507,12 +501,7 @@ namespace Servy.UI.Bootstrapping
                     if (deferredWarnings.Count > 0)
                     {
                         var (message, title) = CombineWarnings(deferredWarnings);
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(
-                            splash ?? (Window)app.MainWindow,
-                            message,
-                            title,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning));
+                        await app.Dispatcher.InvokeAsync(() => ShowStartupWarning(splash ?? app.MainWindow, message, title));
                     }
 
                     stopwatch.Stop();
@@ -742,6 +731,32 @@ namespace Servy.UI.Bootstrapping
 
             var message = string.Join(Environment.NewLine + Environment.NewLine, warnings.Select(w => w.Message));
             return (message, Resources.Strings.Msg_StartupWarningsTitle);
+        }
+
+        /// <summary>
+        /// Shows a non-critical start-up warning, owned by <paramref name="owner"/> when there is one. Must run on the UI thread.
+        /// </summary>
+        /// <param name="owner">
+        /// The splash screen, or else the main window; <c>null</c> when the app was started without a splash ("false") and the
+        /// main window is not created yet.
+        /// </param>
+        /// <param name="message">The warning text.</param>
+        /// <param name="title">The dialog caption.</param>
+        /// <remarks>
+        /// <see cref="MessageBox.Show(Window, string, string, MessageBoxButton, MessageBoxImage)"/> throws
+        /// <see cref="ArgumentNullException"/> on a <c>null</c> owner, which would turn the warning into a fatal start-up error,
+        /// so the owner-less overload is used then - nothing Topmost can cover it.
+        /// </remarks>
+        private static void ShowStartupWarning(Window owner, string message, string title)
+        {
+            if (owner != null)
+            {
+                MessageBox.Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
     }
 }
