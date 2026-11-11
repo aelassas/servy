@@ -10,6 +10,7 @@ using Servy.Testing;
 using System;
 using System.Linq;
 using System.ServiceProcess;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -1171,6 +1172,69 @@ namespace Servy.CLI.UnitTests.Commands
             var separatorGroups = lines[1].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(6, separatorGroups.Length);
             Assert.Equal(Math.Max(maxLength, CliStrings.Msg_Show_Column_Description.Length), separatorGroups[2].Length);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("\u0001\u0002")]
+        public async Task ExecuteAsync_NoName_BlankDisplayNameOrDescription_RendersTheNotSetPlaceholder(string blank)
+        {
+            // Arrange
+            // null, empty and spaces take the IsNullOrWhiteSpace guard; the control characters pass it and
+            // are only recognised as empty after they have been flattened and trimmed.
+            var dto = MinimalDto("alpha");
+            dto.DisplayName = blank;
+            dto.Description = blank;
+            dto.Pid = 11;
+            GivenServices(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var lines = (result.Message ?? string.Empty).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            var alphaRow = Assert.Single(lines, l => l.StartsWith("alpha", StringComparison.Ordinal));
+            var cells = Regex.Split(alphaRow, " {2,}");
+            Assert.Equal(
+                new[]
+                {
+                    "alpha",
+                    CliStrings.Msg_Show_ValueNotSet,
+                    CliStrings.Msg_Show_ValueNotSet,
+                    nameof(ServiceStartType.AutomaticDelayedStart),
+                    nameof(ServiceControllerStatus.Running),
+                    "11"
+                },
+                cells);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_SurrogatePairAtTheCut_IsNotSplit()
+        {
+            // Arrange
+            // The cut falls at maxLength - 3. Placing an emoji (two UTF-16 units) so that its high
+            // surrogate is the last unit before the cut means an unguarded Substring keeps half of it.
+            var maxLength = TestReflection.GetFieldStatic<int>(typeof(ShowServiceCommand), "ListCellMaxLength");
+            var prefix = new string('x', maxLength - 4);
+            var dto = MinimalDto("alpha");
+            dto.Description = prefix + "\U0001F600" + new string('y', 20);
+            dto.Pid = 11;
+            GivenServices(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            var body = result.Message ?? string.Empty;
+            Assert.Contains(prefix + "...", body);
+            Assert.DoesNotContain(body, char.IsSurrogate);
         }
 
         [Fact]
