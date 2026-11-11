@@ -9,7 +9,7 @@ namespace Servy.UI.Services
         /// Opens the documentation for the application.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed if the documentation cannot be opened.</param>
-        /// <param name="cancellationToken">A token that cancels the operation, typically the application lifetime token.</param>
+        /// <param name="cancellationToken">Reserved for implementations that have something to cancel; <see cref="HelpService"/> does not observe it.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenDocumentationAsync(string caption, CancellationToken cancellationToken = default);
 
@@ -19,7 +19,7 @@ namespace Servy.UI.Services
         /// a newer release exists, or an error dialog when the check fails or times out.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed during the update check.</param>
-        /// <param name="cancellationToken">A token that cancels the update check, typically the application lifetime token.</param>
+        /// <param name="cancellationToken">A token that cancels the update check. <see cref="HelpService"/> also cancels it on the application lifetime token it is constructed with.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task CheckUpdatesAsync(string caption, CancellationToken cancellationToken = default);
 
@@ -28,7 +28,7 @@ namespace Servy.UI.Services
         /// </summary>
         /// <param name="about">The content to display in the About dialog.</param>
         /// <param name="caption">The caption of the About dialog window.</param>
-        /// <param name="cancellationToken">A token that cancels the operation, typically the application lifetime token.</param>
+        /// <param name="cancellationToken">Reserved for implementations that have something to cancel; <see cref="HelpService"/> does not observe it.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenAboutDialogAsync(string about, string caption, CancellationToken cancellationToken = default);
     }
