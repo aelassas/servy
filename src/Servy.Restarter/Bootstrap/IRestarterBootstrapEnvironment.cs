@@ -8,11 +8,11 @@ namespace Servy.Restarter.Bootstrap
     /// Service Control Manager lookup of the executable a service runs.
     /// </summary>
     /// <remarks>
-    /// The production implementation is <see cref="RestarterBootstrapEnvironment"/>. Every member forwards
-    /// unchanged to the call it replaced, with the same arguments, on the calling thread, and
-    /// <see cref="Program.Run"/> creates that implementation when no seam is supplied, so a restarter
-    /// launched the way the Service Control Manager launches it behaves exactly as it did when the calls
-    /// were inline.
+    /// The production implementation is <see cref="RestarterBootstrapEnvironment"/>, which
+    /// <see cref="Program.Run"/> creates when no seam is supplied. <see cref="EnsureEventSourceExists"/> and
+    /// <see cref="CreateEventLogLogger"/> forward unchanged to the calls they replaced, with the same
+    /// arguments, on the calling thread. <see cref="GetServiceImagePath"/> replaced no inline call: it is a
+    /// registry read that took over from the <c>Servy.db</c> lookup the restarter no longer makes.
     /// <para>
     /// The pure logic deliberately stays in <see cref="Program"/>: the argument guards, the best-effort
     /// fallback to file-only logging, the refusal of a service that does not run a Servy wrapper and the

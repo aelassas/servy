@@ -7,13 +7,15 @@ using System.Diagnostics.CodeAnalysis;
 namespace Servy.Restarter.Bootstrap
 {
     /// <summary>
-    /// The production <see cref="IRestarterBootstrapEnvironment"/>: every member is a forward to the call
-    /// <see cref="Program.Run"/> made inline before the seam existed.
+    /// The production <see cref="IRestarterBootstrapEnvironment"/>: <see cref="EnsureEventSourceExists"/> and
+    /// <see cref="CreateEventLogLogger"/> forward to the calls <see cref="Program.Run"/> made inline before the
+    /// seam existed; <see cref="GetServiceImagePath"/> has no inline predecessor and reads the registry itself.
     /// </summary>
     /// <remarks>
-    /// Nothing here holds state and nothing here decides anything. The arguments, the order and the
-    /// exception behaviour are those of the inline calls, so an unconfigured
-    /// <see cref="Program.Run"/> starts up exactly as it did before.
+    /// Nothing here holds state. The two forwarding members keep the arguments, the order and the exception
+    /// behaviour of the inline calls. <see cref="GetServiceImagePath"/> is the one member that decides
+    /// something: it returns <see langword="null"/> for a name containing a path separator, and for a
+    /// registry read that is denied or fails, instead of letting the exception propagate.
     /// </remarks>
     internal sealed class RestarterBootstrapEnvironment : IRestarterBootstrapEnvironment
     {

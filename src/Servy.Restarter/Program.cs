@@ -35,8 +35,9 @@ namespace Servy.Restarter
         /// <param name="environment">
         /// Optional seam over the machine-touching start-up calls (the Windows event source, the event-log
         /// logger and the Service Control Manager lookup of the service's executable), used for testing. When <see langword="null"/> the
-        /// production <see cref="RestarterBootstrapEnvironment"/> is created, and it forwards every call
-        /// unchanged to what this method ran inline before the seam existed.
+        /// production <see cref="RestarterBootstrapEnvironment"/> is created: it forwards the event-source and
+        /// logger calls unchanged to what this method ran inline before the seam existed, and reads the
+        /// service's <c>ImagePath</c> from the registry.
         /// </param>
         internal static void Run(string[] args, IServiceRestarter? restarter, IRestarterBootstrapEnvironment? environment = null)
         {
