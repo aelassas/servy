@@ -13,7 +13,7 @@ namespace Servy.Core.Security
         /// <summary>Every file that exists was hardened; some required files are not present yet.</summary>
         Incomplete,
 
-        /// <summary>The vault is a link or its access could not be revoked, or a writable folder or at least one present file could not be hardened; for a revocation, the vault is a link or the account's entries could not be removed from at least one item.</summary>
+        /// <summary>The vault is a link or its access could not be revoked, or a writable folder or at least one present file could not be hardened; for a revocation, the vault is a link or the account's entries could not be removed from at least one item; for a vault purge, at least one item below the vault root could not be listed or rewritten, or the purge threw.</summary>
         Failed,
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Servy.Core.Security
         /// <summary>Nothing was changed: the vault directory does not exist.</summary>
         VaultNotFound,
 
-        /// <summary>Nothing was changed: the account cannot be resolved, or is a broad group such as Everyone.</summary>
+        /// <summary>Nothing was changed: the account cannot be resolved, or is a broad group such as Everyone; for a vault purge, one of the service accounts cannot be resolved.</summary>
         InvalidAccount,
 
         /// <summary>Every explicit entry the account held in the vault was removed (revocation only); for a vault purge, every non-administrative entry below the vault root was removed.</summary>
@@ -55,7 +55,7 @@ namespace Servy.Core.Security
         /// <summary>
         /// Initializes a new instance of the <see cref="ExePermissionsHardeningResult"/> class.
         /// </summary>
-        /// <param name="account">The account the hardening or revocation was run for.</param>
+        /// <param name="account">The account the hardening or revocation was run for, or the vault directory for a vault purge.</param>
         public ExePermissionsHardeningResult(string account)
         {
             Account = account;
@@ -79,7 +79,7 @@ namespace Servy.Core.Security
         /// <summary>Gets the required files (relative to the vault) that are not present.</summary>
         public IReadOnlyList<string> Missing => _missing;
 
-        /// <summary>Gets the files and folders (relative to the vault), or the vault itself, that could not be hardened, or from which a revocation could not remove the account's entries.</summary>
+        /// <summary>Gets the files and folders (relative to the vault), or the vault itself, that could not be hardened, or from which a revocation or a vault purge could not remove the entries.</summary>
         public IReadOnlyList<string> Failed => _failed;
 
         /// <summary>Gets the optional files (relative to the vault) that are not present and were skipped.</summary>
@@ -87,7 +87,8 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Gets the files and folders, relative to the vault (the vault itself by its full path), from which a
-        /// revocation removed the account's explicit entries.
+        /// revocation removed the account's explicit entries, or on which a vault purge removed the non-administrative
+        /// entries or replaced the owner.
         /// </summary>
         public IReadOnlyList<string> Revoked => _revoked;
 
@@ -101,7 +102,7 @@ namespace Servy.Core.Security
 
         internal void AddGrantedFolder(string name) => _grantedFolders.Add(name);
 
-        /// <summary>Records an item a revocation removed the account's entries from.</summary>
+        /// <summary>Records an item a revocation removed the account's entries from, or that a vault purge rewrote.</summary>
         /// <param name="name">The item, relative to the vault, or the vault itself by its full path.</param>
         internal void AddRevoked(string name) => _revoked.Add(name);
 
