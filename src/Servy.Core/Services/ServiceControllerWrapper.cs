@@ -209,7 +209,7 @@ namespace Servy.Core.Services
         /// <param name="serviceFactory">
         /// Optional internal factory used to construct child wrappers; falls back to live SCM wrapper instantiation if <c>null</c>.
         /// </param>
-        /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+        /// <param name="cancellationToken">A token checked before each service is resolved and before each child is added.</param>
         /// <returns>
         /// A <see cref="ServiceDependencyNode"/> representing the service and its dependencies.
         /// If a cycle is detected, a placeholder node is returned.
