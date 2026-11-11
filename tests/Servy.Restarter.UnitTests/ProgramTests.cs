@@ -322,7 +322,7 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
-        public void Main_RestartTimeoutExceedsHostWaitLimit_LogsWarning()
+        public void Main_RestartTimeoutExceedsWrapperWaitLimit_LogsWarning()
         {
             // Arrange
             // 300s is above the 240s service wrapper wait limit
