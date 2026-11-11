@@ -41,11 +41,7 @@ jobs:
 
       - name: Install cloc
         shell: bash
-        run: |
-          sudo apt-get update && sudo apt-get install -y cloc || {
-            echo "apt install failed. Falling back to npm install..."
-            sudo npm install -g cloc
-          }
+        run: sudo npm install -g cloc
 
       # ------------------------------------------------------------------------------------
       # Step 1: Calculate Production Lines of Code
