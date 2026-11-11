@@ -305,30 +305,8 @@ namespace Servy.Core.Services
         /// </remarks>
         private List<string>? QueryDependencies(SafeServiceHandle service, string name)
         {
-            // Pass 1 reports the size; pass 2 fills the buffer
-            _windowsServiceApi.QueryServiceConfig(service, IntPtr.Zero, 0, out int bytesNeeded);
-            if (bytesNeeded <= 0)
-            {
-                Logger.Warn($"Could not read the configuration of service '{name}' to add the '{AppConfig.ServyHostServiceName}' dependency. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
-                return null;
-            }
-
-            IntPtr buffer = Marshal.AllocHGlobal(bytesNeeded);
-            try
-            {
-                if (!_windowsServiceApi.QueryServiceConfig(service, buffer, bytesNeeded, out _))
-                {
-                    Logger.Warn($"Could not read the configuration of service '{name}' to add the '{AppConfig.ServyHostServiceName}' dependency. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
-                    return null;
-                }
-
-                var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(buffer);
-                return ReadMultiSz(config.lpDependencies);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(buffer);
-            }
+            var failure = $"Could not read the configuration of service '{name}' to add the '{AppConfig.ServyHostServiceName}' dependency.";
+            return QueryConfig(service, failure, config => ReadMultiSz(config.lpDependencies));
         }
 
         /// <summary>
@@ -363,11 +341,25 @@ namespace Servy.Core.Services
         /// <returns>The command line, or <see langword="null"/> when it cannot be read (logged).</returns>
         private string? QueryCommandLine(SafeServiceHandle service)
         {
+            var failure = $"Could not read the '{AppConfig.ServyHostServiceName}' service's configuration.";
+            return QueryConfig(service, failure, config => Marshal.PtrToStringUni(config.lpBinaryPathName));
+        }
+
+        /// <summary>
+        /// Reads a service's configuration with the two-pass <c>QueryServiceConfig</c> and extracts one value from it.
+        /// </summary>
+        /// <typeparam name="T">The type of the extracted value.</typeparam>
+        /// <param name="service">A handle opened with <c>SERVICE_QUERY_CONFIG</c>.</param>
+        /// <param name="failureMessage">The warning logged, followed by the Win32 error, when either pass fails.</param>
+        /// <param name="read">Extracts the value from the configuration while its buffer is still allocated.</param>
+        /// <returns>The extracted value, or <see langword="null"/> when the configuration cannot be read (logged).</returns>
+        private T? QueryConfig<T>(SafeServiceHandle service, string failureMessage, Func<QUERY_SERVICE_CONFIG, T?> read) where T : class
+        {
             // Pass 1 reports the size; pass 2 fills the buffer
             _windowsServiceApi.QueryServiceConfig(service, IntPtr.Zero, 0, out int bytesNeeded);
             if (bytesNeeded <= 0)
             {
-                Logger.Warn($"Could not read the '{AppConfig.ServyHostServiceName}' service's configuration. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                Logger.Warn($"{failureMessage} Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
                 return null;
             }
 
@@ -376,12 +368,11 @@ namespace Servy.Core.Services
             {
                 if (!_windowsServiceApi.QueryServiceConfig(service, buffer, bytesNeeded, out _))
                 {
-                    Logger.Warn($"Could not read the '{AppConfig.ServyHostServiceName}' service's configuration. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                    Logger.Warn($"{failureMessage} Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
                     return null;
                 }
 
-                var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(buffer);
-                return Marshal.PtrToStringUni(config.lpBinaryPathName);
+                return read(Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(buffer));
             }
             finally
             {
