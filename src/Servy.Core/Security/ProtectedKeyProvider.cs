@@ -248,8 +248,8 @@ namespace Servy.Core.Security
                 // Both the Session 0 service account (LocalSystem, LocalService, NetworkService or a custom
                 // service account) and the elevated Manager/CLI are authenticated principals, so
                 // AuthenticatedUsers covers every participant while excluding ANONYMOUS LOGON and Guest,
-                // which Everyone would admit. Matches the group policy SecurityHelper.ApplySecurityRules
-                // enforces on the key files this lock guards.
+                // which Everyone would admit. The key files this lock guards are narrower: SecurityHelper.ApplySecurityRules
+                // grants only Administrators and Local System on them (plus the current user of an unelevated run).
                 var accessRule = new MutexAccessRule(
                     new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
                     MutexRights.Synchronize | MutexRights.Modify,
