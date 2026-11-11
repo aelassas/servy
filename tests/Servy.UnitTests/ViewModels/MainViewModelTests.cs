@@ -418,39 +418,62 @@ namespace Servy.UnitTests.ViewModels
         [Fact]
         public async Task StartCommand_Calls_StartService()
         {
+            // Arrange
             _viewModel.ServiceName = "MyService";
+
+            // Act
             await _viewModel.StartCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(s => s.StartServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task StopCommand_Calls_StopService()
         {
+            // Arrange
             _viewModel.ServiceName = "MyService";
+
+            // Act
             await _viewModel.StopCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(s => s.StopServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task RestartCommand_Calls_RestartService()
         {
+            // Arrange
             _viewModel.ServiceName = "MyService";
+
+            // Act
             await _viewModel.RestartCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(s => s.RestartServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task UninstallCommand_Calls_UninstallService()
         {
+            // Arrange
             _viewModel.ServiceName = "MyService";
+
+            // Act
             await _viewModel.UninstallCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(s => s.UninstallServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ManagerCommand_Calls_OpenManager()
         {
+            // Act
             await _viewModel.ManagerCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(s => s.OpenManagerAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -708,30 +731,46 @@ namespace Servy.UnitTests.ViewModels
         [Fact]
         public async Task ExportXmlCommand_Calls_ExportXmlConfig_With_ConfirmPassword()
         {
+            // Arrange
             _viewModel.ConfirmPassword = "SecretPassword123";
+
+            // Act
             await _viewModel.ExportXmlCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(m => m.ExportXmlConfigAsync("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ExportJsonCommand_Calls_ExportJsonConfig_With_ConfirmPassword()
         {
+            // Arrange
             _viewModel.ConfirmPassword = "SecretPassword123";
+
+            // Act
             await _viewModel.ExportJsonCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(m => m.ExportJsonConfigAsync("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ImportXmlCommand_Calls_ImportXmlConfig()
         {
+            // Act
             await _viewModel.ImportXmlCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(m => m.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ImportJsonCommand_Calls_ImportJsonConfig()
         {
+            // Act
             await _viewModel.ImportJsonCommand.ExecuteAsync(null);
+
+            // Assert
             _serviceCommandsMock.Verify(m => m.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -742,14 +781,20 @@ namespace Servy.UnitTests.ViewModels
         [Fact]
         public async Task OpenDocumentation_Calls_HelpService_With_Caption()
         {
+            // Act
             await _viewModel.OpenDocumentationCommand.ExecuteAsync(null);
+
+            // Assert
             _helpService.Verify(h => h.OpenDocumentationAsync(UiAppConfig.Caption, CancellationToken.None), Times.Once);
         }
 
         [Fact]
         public async Task CheckUpdatesAsync_Calls_HelpService_With_Caption()
         {
+            // Act
             await _viewModel.CheckUpdatesCommand.ExecuteAsync(null);
+
+            // Assert
             _helpService.Verify(h => h.CheckUpdatesAsync(UiAppConfig.Caption, CancellationToken.None), Times.Once);
         }
 
@@ -788,7 +833,10 @@ namespace Servy.UnitTests.ViewModels
         [Fact]
         public async Task ShowRecoveryActionHelpAsync_Calls_MessageBoxService()
         {
+            // Act
             await _viewModel.ShowRecoveryActionHelpCommand.ExecuteAsync(null);
+
+            // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(Strings.Info_RecoveryAction, UiAppConfig.Caption), Times.Once);
         }
 
