@@ -104,11 +104,11 @@ namespace Servy.Restarter
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
                 CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.restarter.json", scopedLogger);
 
-                var maxHostWaitSeconds = AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond;
-                if (restartTimeout > maxHostWaitSeconds)
+                var maxWrapperWaitSeconds = AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond;
+                if (restartTimeout > maxWrapperWaitSeconds)
                 {
-                    scopedLogger.Warn($"Configured RestartTimeoutSeconds ({restartTimeout}s) exceeds the host service execution wait limit ({maxHostWaitSeconds}s). " +
-                                      $"If this restart is driven by the Servy host service recovery path, it will be force-killed after {maxHostWaitSeconds} seconds.");
+                    scopedLogger.Warn($"Configured RestartTimeoutSeconds ({restartTimeout}s) exceeds the service wrapper's wait limit ({maxWrapperWaitSeconds}s). " +
+                                      $"If this restart is driven by the wrapper's recovery path, the wrapper force-kills the restarter after {maxWrapperWaitSeconds} seconds.");
                 }
 
                 // 7. Validation. The restarter runs under the service account, which has no access to Servy.db, so the
