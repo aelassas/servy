@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-11T17:41:55Z
+> Generated on: 2026-11-11T18:35:48Z
 
 ---
 
@@ -4270,7 +4270,7 @@ servy-cli start --name="MyApp"
   $status = servy-cli status --name="MyApp" --quiet | Select-Object -Last 1
   if ($status -notmatch '\bRunning$') { Write-Error "MyApp is not running: $status"; exit 1 }
   ```
-  The token is invariant (`Running`, `Stopped`, `NotInstalled`, `Unknown`); only the surrounding message is localized.
+  The token is invariant (`NotInstalled`, `Stopped`, `StartPending`, `StopPending`, `Running`, `ContinuePending`, `PausePending`, `Paused` or `Unknown`); only the surrounding message is localized.
 - **Exit Codes:** Servy CLI returns standard exit codes (`0` for success, non-zero for failure). Ensure your CI/CD platform is configured to fail the build on non-zero returns. A non-zero exit from `status` means the query itself failed, not that the service is down.
 - **Shutdown Handling:** For CI/CD environments that use ephemeral runners or auto-scaling groups, ensure your services are installed with **Servy v6.2+** to take advantage of `SERVICE_CONTROL_PRESHUTDOWN` for graceful teardowns.
 - **Quote Parameters:** In PowerShell, double-quoted strings expand `$variable` and `$(...)` before the CLI receives them. Use single quotes (`'...'`) when you need the CLI to receive the literal `$`/`` ` ``/`"` characters - for example: `--params='Set-Item Env:Foo "$bar"'`. Use double quotes when you actually want PowerShell to substitute, e.g. `--path="$env:ProgramFiles\MyApp\app.exe"`.
@@ -4742,7 +4742,7 @@ You can test or run the notification script manually in a PowerShell window:
 The script will automatically parse the Event Log for the latest Servy errors and display a toast containing the service name and the specific error message.
 
 > [!NOTE]
-> The scheduled tasks are unaffected by the machine's PowerShell execution policy - they run through `ServyFailureNotification.vbs`, which invokes PowerShell with `-ExecutionPolicy Bypass`. Only this manual invocation is subject to it. If it is blocked, run the script the same way the task does rather than changing the machine policy:
+> The scheduled tasks are unaffected by the machine's PowerShell execution policy - each runs through its own launcher (`ServyFailureNotification.vbs` for toasts, `ServyFailureEmail.vbs` for email), which invokes PowerShell with `-ExecutionPolicy Bypass`. Only this manual invocation is subject to it. If it is blocked, run the script the same way the task does rather than changing the machine policy:
 > ```powershell
 > powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Program Files\Servy\taskschd\ServyFailureNotification.ps1"
 > ```
