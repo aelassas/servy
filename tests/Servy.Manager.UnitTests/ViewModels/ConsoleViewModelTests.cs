@@ -865,6 +865,70 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SwitchServiceAsync_NtPrefixUncPathThatDiffersFromTheConfiguredPath_ConsultsTheRepositoryAndIsNotOpened()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: a stored active path that reaches a share through the \??\UNC\ object-manager prefix,
+                // while the row configures a local file
+                string ntUncPath = @"\??\UNC\server\share\out.log";
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("NtUncService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "NtUncService", StdoutPath = Path.Combine(Path.GetTempPath(), "configured-stdout.log") });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "NtUncService" });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", ntUncPath, null);
+                    await task;
+
+                    // Assert: the path was treated as UNC (the configured paths were read) and nothing was read from it
+                    _serviceRepoMock.Verify(r => r.GetByNameAsync("NtUncService", false, It.IsAny<CancellationToken>()), Times.Once);
+                    Assert.Empty(vm.RawLines);
+                }
+            });
+        }
+
+        [Fact]
+        public async Task SwitchServiceAsync_NtPrefixPathThatDiffersFromTheConfiguredPath_IsNotOpened()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: a readable log reached through the \??\ object-manager prefix, while the row configures another file
+                string logFile = Path.GetTempFileName();
+                File.WriteAllText(logFile, "Reported line" + Environment.NewLine);
+                string ntPath = @"\??\" + Path.GetFullPath(logFile);
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("NtService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "NtService", StdoutPath = Path.Combine(Path.GetTempPath(), "configured-stdout.log") });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    try
+                    {
+                        TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "NtService" });
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", ntPath, null);
+                        await task;
+
+                        // Assert: the configured paths were consulted and the reported path was not read
+                        _serviceRepoMock.Verify(r => r.GetByNameAsync("NtService", false, It.IsAny<CancellationToken>()), Times.Once);
+                        Assert.Empty(vm.RawLines);
+                    }
+                    finally
+                    {
+                        try { File.Delete(logFile); } catch { /* fail-silent */ }
+                    }
+                }
+            });
+        }
+
+        [Fact]
         public async Task SwitchServiceAsync_DevicePathThatIsTheConfiguredPath_IsOpened()
         {
             // Arrange, Act & Assert
