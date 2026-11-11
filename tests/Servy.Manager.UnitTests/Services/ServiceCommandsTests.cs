@@ -1281,7 +1281,63 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             Assert.False(result);
+            _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ServiceAlreadyExists, service.Name), UiAppConfig.Caption), Times.Once);
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()), Times.Never);
             _serviceRepositoryMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallServiceAsync_ServiceAlreadyInstalledAndUserConfirmsOverwrite_ProceedsWithInstall()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "AlreadyHereService" };
+
+            string debugDir = null;
+            bool directoryCreatedByTest = false;
+
+#if DEBUG
+            // Ensure the debug directory exists to satisfy the #if DEBUG validation check in InstallServiceAsync
+            debugDir = Path.GetFullPath(AppConfig.ServyServiceManagerDebugFolder);
+
+            try
+            {
+                if (!Directory.Exists(debugDir))
+                {
+                    Directory.CreateDirectory(debugDir);
+                    directoryCreatedByTest = true;
+                }
+            }
+            catch { /* Ignore creation errors if running in restricted environments */ }
+#endif
+
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(true);
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ServiceAlreadyExists, service.Name), UiAppConfig.Caption)).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = service.Name, ExecutablePath = "C:\\test.exe" });
+
+            try
+            {
+                // Act
+                var result = await sut.InstallServiceAsync(service, CancellationToken.None);
+
+                // Assert
+                Assert.True(result, "InstallServiceAsync returned false. The Directory.Exists validation likely failed.");
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(string.Format(Strings.Msg_ServiceAlreadyExists, service.Name), UiAppConfig.Caption), Times.Once);
+                _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == service.Name), It.IsAny<CancellationToken>()), Times.Once);
+            }
+            finally
+            {
+                // Teardown - Clean up created diagnostic folder artifacts explicitly to maintain sandbox safety boundaries
+                if (directoryCreatedByTest && !string.IsNullOrEmpty(debugDir) && Directory.Exists(debugDir))
+                {
+                    try
+                    {
+                        Directory.Delete(debugDir, recursive: true);
+                    }
+                    catch { /* Prevent teardown exceptions from hiding primary assertion faults */ }
+                }
+            }
         }
 
         [Fact]
