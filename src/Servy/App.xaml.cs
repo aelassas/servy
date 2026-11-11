@@ -83,21 +83,6 @@ namespace Servy
 
         #region Properties
 
-        /// <summary>
-        /// Connection string.
-        /// </summary>
-        public string? ConnectionString => _bootstrapper.ConnectionString;
-
-        /// <summary>
-        /// Gets the file path for the AES encryption key.
-        /// </summary>
-        public string? AESKeyFilePath => _bootstrapper.AESKeyFilePath;
-
-        /// <summary>
-        /// Gets the file path for the AES initialization vector (IV).
-        /// </summary>
-        public string? AESIVFilePath => _bootstrapper.AESIVFilePath;
-
         /// <inheritdoc />
         public string? ManagerAppPublishPath { get; private set; }
 
