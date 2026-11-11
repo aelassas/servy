@@ -11,7 +11,7 @@ namespace Servy.Core.Services
     /// </summary>
     /// <remarks>
     /// Apart from <see cref="EnsureLogOnAsServiceRight"/>, <see cref="GrantServiceControlRights"/>,
-    /// <see cref="RevokeServiceControlRights"/> and <see cref="GetServices"/>, the members mirror the Win32
+    /// <see cref="RevokeServiceControlRights"/>, <see cref="GetServices"/> and <see cref="GetServiceProcessId"/>, the members mirror the Win32
     /// service control manager functions and do not throw on failure: a <see langword="bool"/>-returning member
     /// returns <see langword="false"/>, and a handle-returning member returns a handle whose <c>IsInvalid</c> is
     /// <see langword="true"/>. The reason is available only from <see cref="IWin32ErrorProvider.GetLastWin32Error"/>,
