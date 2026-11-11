@@ -1861,6 +1861,46 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task OpenRuntimeVariablesLink_ProcessReturned_DisposesIt()
+        {
+            // Arrange
+            using (var process = new DisposeCountingProcess())
+            {
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns(process);
+
+                var sut = CreateSut();
+
+                // Act
+                await sut.OpenRuntimeVariablesLinkAsync(cancellationToken: CancellationToken.None);
+
+                // Assert
+                // Read inside the using block, so the count excludes the test's own disposal.
+                Assert.Equal(1, process.DisposeCount);
+            }
+        }
+
+        /// <summary>
+        /// A never-started <see cref="Process"/> that counts explicit disposals.
+        /// <see cref="Process.Disposed"/> is not raised by <see cref="Process.Dispose()"/> on .NET,
+        /// so overriding <c>Dispose(bool)</c> is the only way to observe it.
+        /// </summary>
+        private sealed class DisposeCountingProcess : Process
+        {
+            /// <summary>Gets the number of explicit <see cref="Process.Dispose()"/> calls seen.</summary>
+            public int DisposeCount { get; private set; }
+
+            /// <summary>Counts an explicit disposal, then releases the process resources through the base class.</summary>
+            /// <param name="disposing"><see langword="true"/> when called from <see cref="Process.Dispose()"/>; <see langword="false"/> from the finalizer.</param>
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing) DisposeCount++;
+                base.Dispose(disposing);
+            }
+        }
+
+        [Fact]
         public async Task OpenRuntimeVariablesLink_OperationCanceled_PropagatesInsteadOfMasking()
         {
             // Arrange
