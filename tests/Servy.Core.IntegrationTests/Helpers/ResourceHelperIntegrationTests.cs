@@ -524,6 +524,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void IsExtractionNeeded_FileMissing_ReturnsTrue()
         {
+            // Arrange, Act & Assert
             Assert.True(_resourceHelper.IsExtractionNeeded("Servy.Resources", "missing", "exe"));
         }
 
@@ -974,6 +975,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void DeleteLegacyHandleExecutables_NonePresent_ReturnsTrue()
         {
+            // Arrange, Act & Assert
             Assert.True(_resourceHelper.DeleteLegacyHandleExecutables(TempDirectory));
         }
 
