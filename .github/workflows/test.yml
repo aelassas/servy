@@ -233,15 +233,34 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
+          $env:PATH += ";C:\Program Files\Git\usr\bin"
+          
           $gnupgDir = Join-Path $env:USERPROFILE ".gnupg"
           if (-not (Test-Path $gnupgDir)) { New-Item -ItemType Directory -Path $gnupgDir | Out-Null }
           
-          $keyUrl = "https://keybase.io/codecov/pgp_keys.asc"
-          $keyPath = Join-Path $env:RUNNER_TEMP "codecov.asc"
+          $keyUrls = @(
+              "https://keybase.io/codecovsecops/pgp_keys.asc",
+              "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x27034E7FDB850E0BBC2C62FF806BB28AED779869"
+          )
           
-          Invoke-WebRequest -Uri $keyUrl -OutFile $keyPath -UseBasicParsing
-          & gpg --batch --import $keyPath
-          & gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
+          $keyPath = Join-Path $env:RUNNER_TEMP "codecov.asc"
+          $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+          
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
+          
+          foreach ($url in $keyUrls) {
+              try {
+                  Invoke-WebRequest -Uri $url -Headers $headers -OutFile $keyPath -UseBasicParsing
+                  $content = Get-Content $keyPath -Raw
+                  if ($content -match "BEGIN PGP PUBLIC KEY BLOCK") {
+                      & gpg --batch --import $keyPath
+                      & gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
+                      break
+                  }
+              } catch {
+                  Write-Warning "Could not import Codecov GPG key from ${url}: ${_}"
+              }
+          }
 
       - name: Upload coverage to Codecov
         id: codecov
