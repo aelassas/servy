@@ -684,8 +684,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             // Arrange
             // Dynamically compile a Win32 GUI executable (WindowsApplication).
-            // Explicitly set ShowInTaskbar = true and Application.DoEvents() to ensure USER32
-            // registers a top-level MainWindowHandle on headless CI hosts (ARM64/x64).
+            // Explicitly set ShowInTaskbar = true and create the window handle before Show() to ensure
+            // USER32 registers a top-level MainWindowHandle on headless CI hosts.
             string tempExe = Path.Combine(Path.GetTempPath(), $"ServyTestWin_{Guid.NewGuid():N}.exe");
 
             try
