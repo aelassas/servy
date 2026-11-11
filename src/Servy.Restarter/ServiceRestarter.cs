@@ -86,7 +86,7 @@ namespace Servy.Restarter
                     {
                         if (IsGone(ex))
                         {
-                            // ROBUSTNESS: Service was uninstalled, marked for deletion, or native SCM handle was dropped.
+                            // ROBUSTNESS: Service was uninstalled or marked for deletion.
                             _logger?.Warn($"Settle-phase status read failed for '{serviceName}'; treating as uninstalled.", ex);
                             return RestartResult.ServiceNotFound;
                         }
@@ -111,7 +111,7 @@ namespace Servy.Restarter
                     {
                         if (IsGone(ex))
                         {
-                            // ROBUSTNESS: Handle disappearance or native SCM teardown during the refresh cycle.
+                            // ROBUSTNESS: Handle the service being uninstalled or marked for deletion during the refresh cycle.
                             _logger?.Warn($"Settle-phase controller refresh failed for '{serviceName}'; treating as uninstalled.", ex);
                             return RestartResult.ServiceNotFound;
                         }
@@ -131,7 +131,7 @@ namespace Servy.Restarter
                 {
                     if (IsGone(ex))
                     {
-                        // Clean exit if the service vanished or SCM handle dropped between the settle phase and this query
+                        // Clean exit if the service was uninstalled or marked for deletion between the settle phase and this query
                         _logger?.Warn($"Stop-phase entry status check failed for '{serviceName}'; treating as uninstalled.", ex);
                         return RestartResult.ServiceNotFound;
                     }
@@ -343,7 +343,7 @@ namespace Servy.Restarter
                     last = ex;
                     _logger?.Warn($"Transitional error poll encountered exception while targeting '{targetStatus}' for '{serviceName}'.", ex);
 
-                    // ROBUSTNESS: Re-probe status to detect mid-flight uninstalls or dropped SCM handles
+                    // ROBUSTNESS: Re-probe status to detect a mid-flight uninstall or deletion mark
                     try
                     {
                         controller.Refresh();
