@@ -21,6 +21,7 @@ permissions:
   contents: write  # Required to push generated badges to the `loc` branch
 
 env:
+  CLOC_VERSION: "2.10.0-cloc"
   LOC_BADGE_COLOR: green
   # Path to production and test source directories
   PROD_DIR: "./src"
@@ -41,7 +42,7 @@ jobs:
 
       - name: Install cloc
         shell: bash
-        run: sudo npm install -g cloc
+        run: sudo npm install -g --ignore-scripts "cloc@${CLOC_VERSION}"
 
       # ------------------------------------------------------------------------------------
       # Step 1: Calculate Production Lines of Code
