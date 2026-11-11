@@ -123,7 +123,7 @@ namespace Servy.Core.Security
                 }
 
                 // 2. GENERATE: Materialize and cache the keys.
-                // GetOrGenerate handles its own internal migration/rotation logic.
+                // GetOrGenerate handles its own legacy-entropy migration; it never replaces an existing key file.
                 byte[] decrypted = GetOrGenerate(path, length, materialName);
 
                 // Take ownership of the buffer instead of copying it, so no un-zeroed
@@ -220,6 +220,10 @@ namespace Servy.Core.Security
         /// Safely executes an action delegate within a cross-process system mutex mapped to a specific filesystem path.
         /// Ensures synchronization between Session 0 System processes and Interactive user instances.
         /// </summary>
+        /// <param name="path">The full filesystem path of the protected file; the mutex name is derived from it.</param>
+        /// <param name="action">The work to run while the mutex is held.</param>
+        /// <exception cref="System.Security.SecurityException">Thrown when the global mutex cannot be created or opened.</exception>
+        /// <exception cref="TimeoutException">Thrown when the mutex is not acquired within <see cref="AppConfig.KeyProviderMutexTimeoutSeconds"/>.</exception>
         private void RunUnderMutex(string path, Action action)
         {
             // Compute a deterministic FNV-1a stable hash of the path to avoid process-randomized string.GetHashCode() anomalies
