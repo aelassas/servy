@@ -21,7 +21,9 @@ namespace Servy.Core.Services
     /// <see cref="System.ComponentModel.Win32Exception"/>) from the underlying service enumeration instead of
     /// returning an empty sequence or an invalid handle. <see cref="GrantServiceControlRights"/> and
     /// <see cref="RevokeServiceControlRights"/> return nothing: each throws an <see cref="ArgumentException"/> for an
-    /// unusable handle and logs every later failure without surfacing it.
+    /// unusable handle and logs every later failure without surfacing it. <see cref="GetServiceProcessId"/> mirrors no
+    /// single Win32 function either: it opens the service by name and returns 0 on every failure, a blank name, a
+    /// stopped service and a missing one alike, so <see cref="IWin32ErrorProvider.GetLastWin32Error"/> does not explain a 0.
     /// </remarks>
     public interface IWindowsServiceApi
     {
