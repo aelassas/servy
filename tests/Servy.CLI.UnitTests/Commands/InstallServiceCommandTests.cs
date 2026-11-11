@@ -388,6 +388,53 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal("--post-stop-args", captured.PostStopArgs);
         }
 
+        [Fact]
+        public async Task Execute_OptionalOptionsOmitted_FallsBackToTheAppConfigDefaults()
+        {
+            // Arrange
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "DefaultsService",
+                ProcessPath = "C:\\path\\to\\app.exe"
+            };
+
+            InstallServiceOptions? captured = null;
+
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(captured);
+
+            Assert.Equal(AppConfig.DefaultStartupType, captured!.StartType);
+            Assert.Equal(AppConfig.DefaultProcessPriority, captured.ProcessPriority);
+            Assert.Equal(AppConfig.DefaultDateRotationType, captured.DateRotationType);
+            Assert.Equal(AppConfig.DefaultRecoveryAction, captured.RecoveryAction);
+
+            Assert.Equal(AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB), captured.RotationSizeInBytes);
+            Assert.Equal(AppConfig.DefaultMaxRotations, captured.MaxRotations);
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, captured.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultMaxFailedChecks, captured.MaxFailedChecks);
+            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, captured.MaxRestartAttempts);
+            Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, captured.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, captured.PreLaunchTimeout);
+            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
+            Assert.Equal(AppConfig.DefaultStartTimeout, captured.StartTimeout);
+            Assert.Equal(AppConfig.DefaultStopTimeout, captured.StopTimeout);
+            Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, captured.PreStopTimeout);
+
+            Assert.Equal(string.Empty, captured.Description);
+            Assert.Equal(string.Empty, captured.StartupDirectory);
+            Assert.Equal(string.Empty, captured.RealArgs);
+        }
+
         [Theory]
         [InlineData(false, false, false)]
         [InlineData(true, false, true)]
