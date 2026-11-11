@@ -325,7 +325,7 @@ namespace Servy.Restarter.UnitTests
         public void Main_RestartTimeoutExceedsHostWaitLimit_LogsWarning()
         {
             // Arrange
-            // 300s is above the 240s host service execution wait limit
+            // 300s is above the 240s service wrapper wait limit
             // (AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond) and well inside
             // AppConfig.MaxRestarterTimeoutSeconds, so ConfigParser.GetConfigInt passes it through
             // unclamped and the over-budget warning branch is taken.
@@ -345,7 +345,7 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(0, Environment.ExitCode);
-            AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the host service execution wait limit (240s).");
+            AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the service wrapper's wait limit (240s).");
         }
 
         #endregion
