@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-09T22:35:04Z
+> Generated on: 2026-11-11T12:36:30Z
 
 ---
 
@@ -2158,11 +2158,11 @@ Determines how often a new log file is created. Available from Servy v7.8+.
 
 ## Settings Reference
 
-The settings below apply to the Windows service wrapper, restarter, desktop app, manager app, and CLI. Use them when you need to fine-tune logging, refresh behavior, or operational limits for a specific component.
+The settings below apply to the Windows service wrapper, the Servy host service, the restarter, the desktop app, the manager app, and the CLI. Use them when you need to fine-tune logging, refresh behavior, or operational limits for a specific component.
 
 ### Shared Core Settings
 
-Every Servy component (the Windows service wrapper, the restarter, the desktop app, the manager app and the CLI) uses the same configuration database and the same encryption key. Starting from v10.2 their locations are **fixed and read-only**: they always live in the Servy vault, `%ProgramData%\Servy`, which is the only folder whose permissions Servy hardens (see [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening)). A database or key stored anywhere else would not get those permissions.
+Servy keeps one configuration database and one encryption key for all its components. The Servy host service, the desktop app, the manager app and the CLI open them; since v10.2 the Windows service wrapper and the restarter do not, and get what they need from the Servy host service. Starting from v10.2 their locations are **fixed and read-only**: they always live in the Servy vault, `%ProgramData%\Servy`, which is the only folder whose permissions Servy hardens (see [Executable Permission Hardening](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening)). A database or key stored anywhere else would not get those permissions.
 
 The keys below were configurable up to v10.1. Since v10.2 Servy **ignores** them if they are present in a settings file (`appsettings.*.json` in the .NET 10 build, `*.exe.config` in the .NET Framework 4.8 build), and logs a warning naming the key and the settings file when one of them is still set. Remove the entry to silence the warning.
 
@@ -2216,7 +2216,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 
 | Setting | Default | Description |
 | :--- | :--- | :--- |
-| `RestartTimeoutSeconds` | `120` | Maximum time, in seconds, that the Restarter waits for the service to stop and start again before giving up. Bounded to `[1, 86400]`. **Values above 240 are not reachable in practice:** the Servy host service force-kills `Servy.Restarter.exe` after 240 seconds (4 minutes), and the Restarter logs a warning at startup when the configured value exceeds it. |
+| `RestartTimeoutSeconds` | `120` | Maximum time, in seconds, that the Restarter waits for the service to stop and start again before giving up. Bounded to `[1, 86400]`. **Values above 240 are not reachable in practice:** the service wrapper (`Servy.Service.exe`) that starts `Servy.Restarter.exe` force-kills it after 240 seconds (4 minutes), and the Restarter logs a warning at startup when the configured value exceeds it. |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
 ### Desktop App Settings
