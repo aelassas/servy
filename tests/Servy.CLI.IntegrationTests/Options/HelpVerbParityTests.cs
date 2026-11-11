@@ -31,8 +31,8 @@ namespace Servy.CLI.IntegrationTests.Options
             var psm1Content = File.ReadAllText(psm1Path);
 
             // Extract the elements inside Get-ServyHelp's [ValidateSet(...)] using Regex. The lazy
-            // [\s\S]*? keeps the match inside that function, so another function's ValidateSet cannot
-            // be picked up instead.
+            // [\s\S]*? stops at the first ValidateSet after the function header, which is
+            // Get-ServyHelp's own -Command set for as long as the function declares one.
             var validateSetRegex = new Regex(@"function\s+Get-ServyHelp\s*\{[\s\S]*?\[ValidateSet\(([^)]*)\)\]");
 
             // Act
