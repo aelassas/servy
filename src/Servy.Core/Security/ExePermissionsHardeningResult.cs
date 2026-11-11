@@ -18,7 +18,8 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// Nothing was changed: the account is Local System, the Administrators group or a member of it,
-        /// all of which keep Full Control and are outside the boundary the hardening establishes.
+        /// all of which keep Full Control and are outside the boundary the hardening establishes. For a vault
+        /// purge, the vault directory is a link.
         /// </summary>
         Skipped,
 
@@ -31,7 +32,7 @@ namespace Servy.Core.Security
         /// <summary>Nothing was changed: the account cannot be resolved, or is a broad group such as Everyone.</summary>
         InvalidAccount,
 
-        /// <summary>Every explicit entry the account held in the vault was removed (revocation only).</summary>
+        /// <summary>Every explicit entry the account held in the vault was removed (revocation only); for a vault purge, every non-administrative entry below the vault root was removed.</summary>
         Revoked,
 
         /// <summary>Nothing was changed: another service still runs under the account (revocation only).</summary>
@@ -60,7 +61,7 @@ namespace Servy.Core.Security
             Account = account;
         }
 
-        /// <summary>Gets the account the hardening or revocation was run for.</summary>
+        /// <summary>Gets the account the hardening or revocation was run for, or the vault directory for a vault purge.</summary>
         public string Account { get; }
 
         /// <summary>Gets the overall outcome.</summary>
