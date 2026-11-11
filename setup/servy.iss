@@ -346,7 +346,7 @@ begin
         Result := False;
         Exit;
       end;
-    end;  
+    end;
   end;
 
   // Check for .NET Framework 4.8 requirement

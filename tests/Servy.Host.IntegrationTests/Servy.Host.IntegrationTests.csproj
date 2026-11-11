@@ -62,13 +62,13 @@
       <HintPath>..\..\packages\Dapper.2.1.89\lib\net461\Dapper.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.TestPlatform.CoreUtilities, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.11.0\lib\net462\Microsoft.TestPlatform.CoreUtilities.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.11.1\lib\net462\Microsoft.TestPlatform.CoreUtilities.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.TestPlatform.PlatformAbstractions, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.11.0\lib\net462\Microsoft.TestPlatform.PlatformAbstractions.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.11.1\lib\net462\Microsoft.TestPlatform.PlatformAbstractions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.ObjectModel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.11.0\lib\net462\Microsoft.VisualStudio.TestPlatform.ObjectModel.dll</HintPath>
+      <HintPath>..\..\packages\Microsoft.TestPlatform.ObjectModel.18.11.1\lib\net462\Microsoft.VisualStudio.TestPlatform.ObjectModel.dll</HintPath>
     </Reference>
     <Reference Include="Moq, Version=4.21.0.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Moq.4.21.0\lib\net462\Moq.dll</HintPath>
@@ -77,13 +77,13 @@
     <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
     </Reference>
-    <Reference Include="System.Collections.Immutable, Version=10.0.0.14, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\System.Collections.Immutable.10.0.14\lib\net462\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="System.Collections.Immutable, Version=10.0.0.15, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Collections.Immutable.10.0.15\lib\net462\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Reflection.Metadata, Version=10.0.0.14, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\System.Reflection.Metadata.10.0.14\lib\net462\System.Reflection.Metadata.dll</HintPath>
+    <Reference Include="System.Reflection.Metadata, Version=10.0.0.15, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\System.Reflection.Metadata.10.0.15\lib\net462\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Data.SQLite, Version=2.0.4.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
@@ -152,8 +152,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="..\..\packages\xunit.analyzers.2.2.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
-    <Analyzer Include="..\..\packages\xunit.analyzers.2.2.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
+    <Analyzer Include="..\..\packages\xunit.analyzers.2.3.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
+    <Analyzer Include="..\..\packages\xunit.analyzers.2.3.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
