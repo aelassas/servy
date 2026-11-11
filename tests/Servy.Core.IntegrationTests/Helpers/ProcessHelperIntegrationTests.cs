@@ -234,6 +234,28 @@ namespace Servy.Core.IntegrationTests.Helpers
                 $"Root PID {childPid}; tree PIDs with working set in bytes: [{treeDiagnostics}].");
         }
 
+        [Fact]
+        public void GetProcessTreeMetrics_ForARootThatIsNotRunning_ReturnsZeroesFromARootOnlyTree()
+        {
+            // Arrange
+            // A PID no process can hold (see TestProcessIds.NeverValid), so Process.GetProcessById throws
+            // ArgumentException on the root before any snapshot is taken.
+            int deadRootPid = TestProcessIds.NeverValid;
+
+            // Act
+            // InvokeNonPublic unwraps TargetInvocationException, so a missing catch would surface here as the
+            // original ArgumentException rather than as a wrapper.
+            var tree = TestReflection.InvokeNonPublic(_sut, "GetProcessTree", deadRootPid) as List<int>;
+            var metrics = _sut.GetProcessTreeMetrics(deadRootPid);
+
+            // Assert
+            // The tree keeps the root and nothing else, and the aggregation over it is neutral instead of throwing.
+            Assert.NotNull(tree);
+            Assert.Equal(new[] { deadRootPid }, tree);
+            Assert.Equal(0, metrics.CpuUsage);
+            Assert.Equal(0, metrics.RamUsage);
+        }
+
         #endregion
 
         public void Dispose()
