@@ -224,6 +224,48 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
+        /// A zero window width has no line to clear. The width guard must skip the clearing write, because
+        /// "new string(' ', width - 1)" throws for a width of 0 and the catch would then print a stray fallback newline.
+        /// </summary>
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenWindowWidthIsZero_SkipsTheClearingWriteWithoutTheFallbackNewline()
+        {
+            // Arrange
+            Func<Task> dummyAction = () => Task.Delay(50);
+
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 0);
+
+            try
+            {
+                using (var writer = new ClearingRecordingStringWriter())
+                {
+                    var originalOut = Console.Out;
+                    Console.SetOut(writer);
+
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Zero Width...");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.False(writer.ClearingWriteSeen, "A zero-width window has no line to clear.");
+                    Assert.False(writer.FallbackWriteLineCalled, "The width guard must keep a zero width out of the fallback path.");
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
         /// A write failure on the spinner frame faults the background spinner task, and the catch around
         /// "await spinnerTask" in RunWithLoadingAnimation's finally is the only thing that keeps that fault
         /// from replacing the result of the caller's action. Without this case the catch can be deleted, or
@@ -423,6 +465,32 @@ namespace Servy.CLI.UnitTests.Helpers
             public override void WriteLine()
             {
                 IsFallbackWriteLineCalled = true;
+                base.WriteLine();
+            }
+        }
+
+        /// <summary>
+        /// Records the clearing write (starts and ends with "\r") and the fallback WriteLine().
+        /// </summary>
+        private sealed class ClearingRecordingStringWriter : StringWriter
+        {
+            public bool ClearingWriteSeen { get; private set; }
+
+            public bool FallbackWriteLineCalled { get; private set; }
+
+            public override void Write(string? value)
+            {
+                if (value != null && value.StartsWith("\r") && value.EndsWith("\r") && value.Contains(" "))
+                {
+                    ClearingWriteSeen = true;
+                }
+
+                base.Write(value);
+            }
+
+            public override void WriteLine()
+            {
+                FallbackWriteLineCalled = true;
                 base.WriteLine();
             }
         }
