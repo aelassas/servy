@@ -441,7 +441,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the environment variables for the service, in KEY=VALUE form separated by semicolons.
+        /// Gets or sets the environment variables for the service, in KEY=VALUE form, one per line or separated by semicolons.
         /// </summary>
         public string? EnvironmentVariables
         {
@@ -531,7 +531,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the environment variables for the pre-launch process, in KEY=VALUE form separated by semicolons.
+        /// Gets or sets the environment variables for the pre-launch process, in KEY=VALUE form, one per line or separated by semicolons.
         /// </summary>
         public string? PreLaunchEnvironmentVariables
         {
@@ -1502,7 +1502,8 @@ namespace Servy.ViewModels
         /// <remarks>
         /// This method performs the inverse operation of <see cref="BindServiceDtoToModel(ServiceDto)"/>.
         /// It maps all ViewModel properties back into the DTO, utilizing <see cref="ConfigParser.ParseInt"/>
-        /// to ensure malformed numeric inputs are logged as warnings before applying defaults.
+        /// with a fallback of <c>-1</c>: a malformed numeric input is logged as a warning, and a malformed or empty
+        /// one is emitted as <c>-1</c>, which the range checks reject, so no default is applied here.
         /// </remarks>
         public ServiceDto ModelToServiceDto()
         {
