@@ -1133,6 +1133,34 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public void GetServiceUpdateInfo_TokenAlreadyCancelled_RethrowsInsteadOfReturningNulls()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_processKillerMock.Object)))
+                {
+                    // Arrange
+                    var vm = CreateViewModel();
+                    var service = new Service { Name = "CancelledService", Pid = 1234, Status = ServiceStatus.Running };
+                    var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "CancelledService", new ServiceInfo { Name = "CancelledService", Status = ServiceStatus.Running } }
+                    };
+                    var serviceDto = new ServiceDto { Name = "CancelledService", Pid = 1234 };
+                    var cancelled = new CancellationToken(canceled: true);
+
+                    // Act & Assert
+                    Assert.Throws<OperationCanceledException>(() =>
+                        TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, cancelled));
+
+                    // Assert - the method stopped at the entry check, before any metric collection
+                    _processHelperMock.Verify(p => p.MaintainCache(), Times.Never);
+                    _processHelperMock.Verify(p => p.GetProcessTreeMetrics(It.IsAny<int>()), Times.Never);
+                }
+            }, createApp: true);
+        }
+
         #endregion
 
         #region Bulk Operations (ExecuteBulkOperationAsync)
