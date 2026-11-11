@@ -1105,7 +1105,8 @@ namespace Servy.Core.Security
                     return true;
                 case ExePermissionsHardeningStatus.Failed:
                     Logger.Error($"Executable permission hardening for '{account}' failed on: {string.Join(", ", result.Failed)}. " +
-                        "Check file locks and the vault's permissions; the hardening is re-applied the next time the service is installed.");
+                        "Check file locks and the vault's permissions; the hardening is re-applied the next time the service is installed " +
+                        "and on the next elevated start of the desktop app, the Manager or the CLI (Release builds).");
                     return false;
                 default:
                     Logger.Error($"Executable permission hardening for '{account}' was not applied: {result.Reason}.");
