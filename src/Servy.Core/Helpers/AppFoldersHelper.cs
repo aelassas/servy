@@ -64,7 +64,8 @@ namespace Servy.Core.Helpers
         /// <item>
         /// <description>
         /// <b>Operational Folders:</b> Subfolders (db, security, logs, logs\services) are processed. If they reside within the Root Vault,
-        /// inheritance is preserved to allow manually granted service account permissions to cascade down.
+        /// inheritance is preserved so the Root Vault's own entries flow down. Service accounts hold nothing on the Root Vault
+        /// (#7526); their grants are written per item by <see cref="Servy.Core.Security.ServyExePermissionsHardener"/>.
         /// </description>
         /// </item>
         /// <item>
@@ -163,7 +164,7 @@ namespace Servy.Core.Helpers
                 if (folder.Equals(canonicalRoot, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                // If a folder is nested inside the master vault, we KEEP inheritance so custom service accounts cascade down.
+                // If a folder is nested inside the master vault, we KEEP inheritance so the vault's own entries flow down.
                 // If a folder is stored externally (e.g., D:\CustomDb), it acts as its own root vault and MUST break inheritance.
                 bool isChildOfRoot = folder.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
 
