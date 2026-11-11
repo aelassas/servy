@@ -254,6 +254,10 @@ jobs:
                   $content = Get-Content $keyPath -Raw
                   if ($content -match "BEGIN PGP PUBLIC KEY BLOCK") {
                       & gpg --batch --import $keyPath
+                      
+                      # Set ultimate trust for the imported key to suppress the uncertified signature warning
+                      "27034E7FDB850E0BBC2C62FF806BB28AED779869:6:" | & gpg --batch --import-ownertrust
+                      
                       & gpg --list-keys 27034E7FDB850E0BBC2C62FF806BB28AED779869
                       break
                   }
