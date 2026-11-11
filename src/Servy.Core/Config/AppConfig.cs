@@ -486,7 +486,7 @@ namespace Servy.Core.Config
         public const bool DefaultAllowOverriddenRuntimeVars = false;
 
         /// <summary>
-        /// The maximum time, in milliseconds, that the Servy service will wait for a launched
+        /// The maximum time, in milliseconds, that the service wrapper (<c>Servy.Service.exe</c>) will wait for a launched
         /// Servy.Restarter.exe process to exit before force-terminating it.
         /// </summary>
         /// <remarks>
