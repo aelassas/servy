@@ -906,7 +906,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Usage Information</value>
   </data>
   <data name="Automation_DependenciesUsageInfo_HelpText" xml:space="preserve">
-    <value>View status color indicators for tree nodes: green for running, red for stopped, orange for cycle.</value>
+    <value>View status color indicators for tree nodes: green for running, red for stopped, orange for cycle, and an orange warning icon for an unavailable dependency.</value>
   </data>
 
   <data name="Automation_DependenciesShortcutInfo_Name" xml:space="preserve">
