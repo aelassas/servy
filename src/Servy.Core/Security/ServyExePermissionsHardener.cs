@@ -474,7 +474,7 @@ namespace Servy.Core.Security
             if (SecurityHelper.IsBroadUnprivilegedSid(targetSid))
                 return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "it is a broad group (Everyone, Users or Authenticated Users)");
 
-            if (targetSid.Equals(AdministratorsSid) || targetSid.Equals(LocalSystemSid))
+            if (SecurityHelper.IsAdministrativePrincipal(targetSid))
                 return result.Complete(ExePermissionsHardeningStatus.Skipped, "it is a protected administrative principal that keeps Full Control");
 
             // The same account can be written two ways (.\user and MACHINE\user), so the SIDs decide
@@ -656,7 +656,7 @@ namespace Servy.Core.Security
             if (SecurityHelper.IsBroadUnprivilegedSid(targetSid))
                 return result.Complete(ExePermissionsHardeningStatus.InvalidAccount, "it is a broad group (Everyone, Users or Authenticated Users) that the hardening exists to remove");
 
-            if (targetSid.Equals(AdministratorsSid) || targetSid.Equals(LocalSystemSid))
+            if (SecurityHelper.IsAdministrativePrincipal(targetSid))
                 return result.Complete(ExePermissionsHardeningStatus.Skipped, "it is a protected administrative principal that keeps Full Control");
 
             var isAdministrator = IsAdministratorsMember(targetSid);
