@@ -294,6 +294,9 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
             _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+
+            // Local System holds no grant of its own on the service object, so there is nothing to take back
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
