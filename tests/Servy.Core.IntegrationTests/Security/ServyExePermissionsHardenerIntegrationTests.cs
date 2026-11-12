@@ -463,10 +463,7 @@ namespace Servy.Core.IntegrationTests.Security
             var exe = Path.Combine(_vault, AppConfig.ServyServiceUIExe);
             using (var identity = WindowsIdentity.GetCurrent())
             {
-                var acl = new FileInfo(exe).GetAccessControl();
-                acl.SetOwner(identity.User);
-                new FileInfo(exe).SetAccessControl(acl);
-                Assert.Equal(identity.User, new FileInfo(exe).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                SetOwnerAndConfirm(exe, identity.User);
 
                 // Act
                 var result = _sut.Harden(TargetAccount, Services, CancellationToken.None);
@@ -926,14 +923,8 @@ namespace Servy.Core.IntegrationTests.Security
             File.WriteAllText(log, "one");
             using (var identity = WindowsIdentity.GetCurrent())
             {
-                var folderAcl = new DirectoryInfo(folder).GetAccessControl();
-                folderAcl.SetOwner(identity.User);
-                new DirectoryInfo(folder).SetAccessControl(folderAcl);
-                var logAcl = new FileInfo(log).GetAccessControl();
-                logAcl.SetOwner(identity.User);
-                new FileInfo(log).SetAccessControl(logAcl);
-                Assert.Equal(identity.User, new DirectoryInfo(folder).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
-                Assert.Equal(identity.User, new FileInfo(log).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                SetOwnerAndConfirm(folder, identity.User);
+                SetOwnerAndConfirm(log, identity.User);
 
                 // Act
                 var result = _sut.RevokeIfUnused(identity.Name, ServiceName, new List<ServiceDto>(), CancellationToken.None);
@@ -964,14 +955,8 @@ namespace Servy.Core.IntegrationTests.Security
             File.WriteAllText(counter, "2");
             using (var identity = WindowsIdentity.GetCurrent())
             {
-                var folderAcl = new DirectoryInfo(recovery).GetAccessControl();
-                folderAcl.SetOwner(identity.User);
-                new DirectoryInfo(recovery).SetAccessControl(folderAcl);
-                var counterAcl = new FileInfo(counter).GetAccessControl();
-                counterAcl.SetOwner(identity.User);
-                new FileInfo(counter).SetAccessControl(counterAcl);
-                Assert.Equal(identity.User, new DirectoryInfo(recovery).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
-                Assert.Equal(identity.User, new FileInfo(counter).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+                SetOwnerAndConfirm(recovery, identity.User);
+                SetOwnerAndConfirm(counter, identity.User);
 
                 // Act
                 var result = _sut.RevokeIfUnused(identity.Name, ServiceName, new List<ServiceDto>(), CancellationToken.None);
@@ -1236,6 +1221,30 @@ namespace Servy.Core.IntegrationTests.Security
             acl.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), FileSystemRights.FullControl, AccessControlType.Allow));
             acl.AddAccessRule(new FileSystemAccessRule(TargetSid, rights, AccessControlType.Allow));
             info.SetAccessControl(acl);
+        }
+
+        /// <summary>
+        /// Hands a file or folder to <paramref name="owner"/> and confirms the owner changed, so a test starts from an
+        /// item that BUILTIN\Administrators does not own.
+        /// </summary>
+        private static void SetOwnerAndConfirm(string path, SecurityIdentifier owner)
+        {
+            if (Directory.Exists(path))
+            {
+                var info = new DirectoryInfo(path);
+                var acl = info.GetAccessControl();
+                acl.SetOwner(owner);
+                info.SetAccessControl(acl);
+                Assert.Equal(owner, info.GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+            }
+            else
+            {
+                var info = new FileInfo(path);
+                var acl = info.GetAccessControl();
+                acl.SetOwner(owner);
+                info.SetAccessControl(acl);
+                Assert.Equal(owner, info.GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+            }
         }
 
         /// <summary>
