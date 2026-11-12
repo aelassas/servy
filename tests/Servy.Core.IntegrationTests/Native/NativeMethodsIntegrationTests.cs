@@ -373,6 +373,7 @@ namespace Servy.Core.IntegrationTests.Native
             int sizePreshutdown = Marshal.SizeOf<NativeMethods.SERVICE_PRE_SHUTDOWN_INFO>();
             int sizeStatus = Marshal.SizeOf<NativeMethods.SERVICE_STATUS>();
             int sizeRmProcessInfo = Marshal.SizeOf<NativeMethods.RM_PROCESS_INFO>();
+            int sizeStatusProcess = Marshal.SizeOf<NativeMethods.SERVICE_STATUS_PROCESS>();
 
             // Assert
             // WIN32 ABI MARSHALING: Pin exact structure byte lengths required by the OS kernel.
@@ -397,6 +398,10 @@ namespace Servy.Core.IntegrationTests.Native
             // + four 4-byte fields (16) -> 668 bytes.
             const int ExpectedRmProcessInfoSize = 668;
             Assert.Equal(ExpectedRmProcessInfoSize, sizeRmProcessInfo);
+
+            // SERVICE_STATUS_PROCESS contains 9 DWORD fields (9 * 4 bytes) -> 36 bytes total
+            const int ExpectedStatusProcessSize = 36;
+            Assert.Equal(ExpectedStatusProcessSize, sizeStatusProcess);
         }
 
         #endregion
