@@ -633,9 +633,10 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Arrange: logs\ refuses List Folder to Administrators, so the walk cannot enumerate it. The Deny is an
             // administrative entry, so the purge keeps it and it is still there when the walk lists the folder.
+            // security\ is listed after logs\, so its key file is only reached when the walk goes on.
             CreateVault();
-            var exe = Path.Combine(_vault, AppConfig.ServyServiceUIExe);
-            ProtectWithGrant(exe, FileSystemRights.Read);
+            var key = Path.Combine(_vault, KeyFile);
+            ProtectWithGrant(key, FileSystemRights.Read);
             var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
             Directory.CreateDirectory(logs);
             SetListingDenied(logs, true);
@@ -645,10 +646,10 @@ namespace Servy.Core.IntegrationTests.Security
                 // Act
                 var result = _sut.PurgeVault(new List<ServiceAccountGroup>());
 
-                // Assert: the folder is named as failed, and the walk went on to purge a file outside it
+                // Assert: the folder is named as failed, and the walk went on to purge a file in a folder after it
                 Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
                 Assert.Contains(AppConfig.LogsFolderName, result.Failed);
-                Assert.Empty(ExplicitRules(exe, TargetSid, AccessControlType.Allow));
+                Assert.Empty(ExplicitRules(key, TargetSid, AccessControlType.Allow));
             }
             finally
             {
@@ -878,6 +879,12 @@ namespace Servy.Core.IntegrationTests.Security
             // removes the target's entries, so the Deny is still there when the walk lists the folder.
             CreateVault();
             _sut.Harden(TargetAccount, Services, CancellationToken.None);
+            // recovery\ is walked after logs\, so a grant written now is only revoked when the walk goes on
+            var recovery = Path.Combine(_vault, AppConfig.RecoveryFolderName);
+            Directory.CreateDirectory(recovery);
+            var counter = Path.Combine(recovery, "svc-one_restartAttempts.dat");
+            File.WriteAllText(counter, "2");
+            ProtectWithGrant(counter, FileSystemRights.Read);
             var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
             SetListingDenied(logs, true);
 
@@ -890,7 +897,7 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
                 Assert.Contains(AppConfig.LogsFolderName, result.Failed);
                 Assert.Empty(ExplicitRules(Path.Combine(_vault, AppConfig.ServyServiceUIExe), TargetSid, AccessControlType.Allow));
-                Assert.Empty(ExplicitRules(Path.Combine(_vault, DbFile), TargetSid, AccessControlType.Allow));
+                Assert.Empty(ExplicitRules(counter, TargetSid, AccessControlType.Allow));
             }
             finally
             {
