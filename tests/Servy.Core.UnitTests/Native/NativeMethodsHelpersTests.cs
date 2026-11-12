@@ -304,6 +304,64 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
+        public void GetFileIdentity_SameLengthDifferentContent_ProducesDifferentDigests()
+        {
+            // Arrange
+            string firstPath = Path.Combine(_testDir, "same-length-1.log");
+            string secondPath = Path.Combine(_testDir, "same-length-2.log");
+            File.WriteAllText(firstPath, "2026-01-01 service started");
+            File.WriteAllText(secondPath, "2026-01-02 service stopped");
+            Assert.Equal(new FileInfo(firstPath).Length, new FileInfo(secondPath).Length);
+
+            // Act
+            string? first, second;
+            using (var fs = new FileStream(firstPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                first = NativeMethodsHelpers.GetFileIdentity(fs).PrefixDigest;
+            }
+            using (var fs = new FileStream(secondPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                second = NativeMethodsHelpers.GetFileIdentity(fs).PrefixDigest;
+            }
+
+            // Assert
+            Assert.False(string.IsNullOrEmpty(first));
+            Assert.NotEqual(first, second);
+        }
+
+        [Fact]
+        public void GetFileIdentity_SameContentInTwoFiles_ProducesTheSameDigest()
+        {
+            // Arrange
+            string firstPath = Path.Combine(_testDir, "twin-1.log");
+            string secondPath = Path.Combine(_testDir, "twin-2.log");
+            File.WriteAllText(firstPath, "identical content");
+            File.WriteAllText(secondPath, "identical content");
+
+            // Act
+            string? first, second;
+            using (var fs = new FileStream(firstPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                first = NativeMethodsHelpers.GetFileIdentity(fs).PrefixDigest;
+            }
+            using (var fs = new FileStream(secondPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                second = NativeMethodsHelpers.GetFileIdentity(fs).PrefixDigest;
+            }
+
+            // Assert
+            Assert.False(string.IsNullOrEmpty(first));
+            Assert.Equal(first, second);
+        }
+
+        [Fact]
+        public void GetFileIdentity_NullStream_ThrowsArgumentNullException()
+        {
+            // Arrange, Act & Assert
+            Assert.Throws<ArgumentNullException>("fs", () => NativeMethodsHelpers.GetFileIdentity(null!));
+        }
+
+        [Fact]
         public void GetFileIdentity_ClosedStream_HandlesGracefullyAndLeavesPrefixDigestNull()
         {
             // Arrange
