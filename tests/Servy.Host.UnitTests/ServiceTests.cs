@@ -469,6 +469,25 @@ namespace Servy.Host.UnitTests
             _repository.Verify(r => r.UpdateRestartAttemptsAsync(ServiceName, 3, now, It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Fact]
+        public async Task UpdateRestartAttempts_ZeroCounter_IsWrittenAsTheReset()
+        {
+            // Arrange: zero is what the wrapper sends once the service is healthy again
+            var now = new DateTime(2026, 10, 2, 10, 0, 0, DateTimeKind.Utc);
+            _sut.UtcNow = () => now;
+            _repository.Setup(r => r.UpdateRestartAttemptsAsync(ServiceName, 0, now, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            var request = Request(AppConfig.ServyHostUpdateRestartAttemptsAction);
+            request.RestartAttempts = 0;
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert
+            Assert.True(response.Success, response.ErrorMessage);
+            Assert.Equal(1, response.UpdateData);
+            _repository.Verify(r => r.UpdateRestartAttemptsAsync(ServiceName, 0, now, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData(-1)]
