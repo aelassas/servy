@@ -100,6 +100,20 @@ namespace Servy.Host.UnitTests.Bootstrap
         }
 
         [Fact]
+        public void Constructor_SettingsFileStillRelocatesTheDatabase_WarnsThroughTheInstanceLoggerNamingTheHostSettingsFile()
+        {
+            // Arrange: a pre-10.2 Servy.Host.Net48.exe.config that still points the database elsewhere
+            var env = new FakeBootstrapEnvironment();
+            env.Settings["DefaultConnection"] = @"Data Source=D:\old\Servy.db";
+
+            // Act
+            Build(env);
+
+            // Assert: the host, the one process that opens the database, says the setting has no effect
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.StartsWith("Servy.Host.Net48.exe.config sets DefaultConnection, which Servy ignores since v10.2")), null), Times.Once);
+        }
+
+        [Fact]
         public void Constructor_VulnerableSqlite_TerminatesAndNeverOpensTheDatabase()
         {
             // Arrange
