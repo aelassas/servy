@@ -3,6 +3,7 @@ using Servy.Core.Config;
 using Servy.Core.Security;
 using Servy.Testing;
 using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Xunit;
@@ -93,6 +94,30 @@ namespace Servy.Core.UnitTests.Security
                 // Assert
                 Assert.Equal(original, decrypted);
                 Assert.Contains("SERVY_ENC:v2:", encrypted);
+            }
+        }
+
+        [Fact]
+        public void Encrypt_SamePlaintextTwice_UsesAFreshIvEachTime()
+        {
+            // Arrange
+            const string marker = "SERVY_ENC:v2:";
+            const string secret = "MySecret123";
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act
+                var first = sp.Encrypt(secret);
+                var second = sp.Encrypt(secret);
+
+                // Assert
+                var firstIv = Convert.FromBase64String(first.Substring(marker.Length)).Take(16).ToArray();
+                var secondIv = Convert.FromBase64String(second.Substring(marker.Length)).Take(16).ToArray();
+
+                Assert.NotEqual(first, second);
+                Assert.NotEqual(firstIv, secondIv);
+                Assert.Contains(firstIv, b => b != 0);
+                Assert.Equal(secret, sp.Decrypt(first));
+                Assert.Equal(secret, sp.Decrypt(second));
             }
         }
 
