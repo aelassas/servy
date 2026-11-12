@@ -96,6 +96,20 @@ namespace Servy.Host.UnitTests.Bootstrap
         }
 
         [Fact]
+        public void Constructor_SettingsFileStillRelocatesTheDatabase_WarnsThroughTheInstanceLoggerNamingTheHostSettingsFile()
+        {
+            // Arrange: a pre-10.2 appsettings.host.json that still points the database elsewhere
+            var env = new FakeBootstrapEnvironment();
+            env.Settings["ConnectionStrings:DefaultConnection"] = @"Data Source=D:\old\Servy.db";
+
+            // Act
+            Build(env);
+
+            // Assert: the host, the one process that opens the database, says the setting has no effect
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.StartsWith("appsettings.host.json sets ConnectionStrings:DefaultConnection, which Servy ignores since v10.2")), null), Times.Once);
+        }
+
+        [Fact]
         public void Constructor_VulnerableSqlite_TerminatesAndNeverOpensTheDatabase()
         {
             // Arrange
