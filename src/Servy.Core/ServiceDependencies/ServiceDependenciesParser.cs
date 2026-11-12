@@ -31,49 +31,8 @@ namespace Servy.Core.ServiceDependencies
         }
 
         /// <summary>
-        /// Parses a textual dependency list into the Windows MULTI_SZ format required by the Service Control Manager.
-        /// </summary>
-        /// <param name="input">
-        /// A string containing service names separated by semicolons (;) or newlines.
-        /// If the input is <c>null</c>, empty, or contains no valid entries, the service is configured with no dependencies.
-        /// </param>
-        /// <returns>
-        /// A MULTI_SZ string suitable for the <c>lpDependencies</c> parameter of
-        /// <c>ChangeServiceConfig</c>. The format is:
-        /// <list type="bullet">
-        /// <item><description>Each dependency is followed by a null character ('\0').</description></item>
-        /// <item><description>A final null character closes the list, so the result always ends in "\0\0".</description></item>
-        /// <item><description>If no dependencies are specified, returns <c>"\0\0"</c> to explicitly clear dependencies.</description></item>
-        /// </list>
-        /// </returns>
-        /// <remarks>
-        /// <list type="bullet">
-        /// <item><description>Duplicate dependency names are removed (case-insensitive).</description></item>
-        /// <item><description>Passing <c>null</c> or an empty string will clear all dependencies.</description></item>
-        /// </list>
-        /// </remarks>
-        public static string Parse(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return NoDependencies;
-
-            // Tokenize, and drop case-insensitive duplicate dependency names.
-            var parts = Tokenize(input).ToArray();
-
-            if (parts.Length == 0)
-                return NoDependencies;
-
-            // Windows API compatibility: When working with Windows service dependencies,
-            // the Service Control Manager expects dependency lists as a multi-string (MULTI_SZ),
-            // which is a sequence of null-terminated strings ending with an additional null
-            // terminator (i.e., strings separated by \0 and double \0 at the end).
-            // "no dependencies" vs "list terminator" are the same SCM construct.
-            return string.Join("\0", parts) + NoDependencies;
-        }
-
-        /// <summary>
-        /// Parses a textual dependency list into the MULTI_SZ format, like <see cref="Parse(string?)"/>, and makes sure
-        /// <paramref name="requiredDependency"/> is part of it.
+        /// Parses a textual dependency list into the Windows MULTI_SZ format required by the Service Control Manager,
+        /// and makes sure <paramref name="requiredDependency"/> is part of it.
         /// </summary>
         /// <param name="input">The configured dependencies, separated by semicolons or newlines.</param>
         /// <param name="requiredDependency">A dependency every service must have, appended when the list does not
