@@ -358,6 +358,7 @@ namespace Servy.Core.UnitTests.Services
                 FailureProgramStartupDirectory = "failure-program-startup-directory",
                 FailureProgramExecutableArgs = "failure-program-args-value",
                 EnvironmentVariables = "envVar1=envVal1;envVar2=envVal2;",
+                AllowOverriddenRuntimeVars = true,
                 ServiceDependencies = "DependencyA;DependencyB",
                 Username = @".\username-value",
                 Password = "password-value",
@@ -504,6 +505,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal("failure-program-startup-directory", dto.FailureProgramStartupDirectory);
             Assert.Equal("failure-program-args-value", dto.FailureProgramParameters);
             Assert.Equal("envVar1=envVal1;envVar2=envVal2;", dto.EnvironmentVariables);
+            Assert.True(dto.AllowOverriddenRuntimeVars);
             Assert.Equal("DependencyA;DependencyB", dto.ServiceDependencies);
             Assert.False(dto.RunAsLocalSystem);
             Assert.Equal(@".\username-value", dto.UserAccount);
