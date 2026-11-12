@@ -389,6 +389,59 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task Execute_OneBooleanOptionSet_SetsOnlyItsOwnInstallServiceOptionsFlag()
+        {
+            // Arrange
+            // One flag at a time: a cross-wired boolean lights up the wrong InstallServiceOptions property. The all-true test above
+            // cannot see a cross-wire between two booleans. Every flag starts false because all the AppConfig defaults are false.
+            var flags = new (string Name, Action<CLI.Options.InstallServiceOptions> Set, Func<InstallServiceOptions, bool> Get)[]
+            {
+                (nameof(InstallServiceOptions.EnableConsoleUI), o => o.EnableConsoleUI = true, c => c.EnableConsoleUI),
+                (nameof(InstallServiceOptions.EnableSizeRotation), o => o.EnableSizeRotation = true, c => c.EnableSizeRotation),
+                (nameof(InstallServiceOptions.EnableDateRotation), o => o.EnableDateRotation = true, c => c.EnableDateRotation),
+                (nameof(InstallServiceOptions.UseLocalTimeForRotation), o => o.UseLocalTimeForRotation = true, c => c.UseLocalTimeForRotation),
+                (nameof(InstallServiceOptions.EnableDebugLogs), o => o.EnableDebugLogs = true, c => c.EnableDebugLogs),
+                (nameof(InstallServiceOptions.EnableHealthMonitoring), o => o.EnableHealthMonitoring = true, c => c.EnableHealthMonitoring),
+                (nameof(InstallServiceOptions.RecoveryOnCleanExit), o => o.RecoveryOnCleanExit = true, c => c.RecoveryOnCleanExit),
+                (nameof(InstallServiceOptions.EnableHeartbeatUrlFlags), o => o.EnableHeartbeatUrlFlags = true, c => c.EnableHeartbeatUrlFlags),
+                (nameof(InstallServiceOptions.AllowOverriddenRuntimeVars), o => o.AllowOverriddenRuntimeVars = true, c => c.AllowOverriddenRuntimeVars),
+                (nameof(InstallServiceOptions.PreLaunchIgnoreFailure), o => o.PreLaunchIgnoreFailure = true, c => c.PreLaunchIgnoreFailure),
+                (nameof(InstallServiceOptions.PreStopLogAsError), o => o.PreStopLogAsError = true, c => c.PreStopLogAsError),
+            };
+
+            InstallServiceOptions? captured = null;
+
+            _mockValidator
+                .Setup(v => v.Validate(It.IsAny<CLI.Options.InstallServiceOptions>()))
+                .Returns(CommandResult.Ok(""));
+
+            _mockServiceManager
+                .Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            foreach (var flag in flags)
+            {
+                var options = new CLI.Options.InstallServiceOptions
+                {
+                    ServiceName = "FlagService",
+                    ProcessPath = "C:\\path\\to\\app.exe"
+                };
+                flag.Set(options);
+                captured = null;
+
+                // Act
+                var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.True(result.IsSuccess);
+                Assert.NotNull(captured);
+                var lit = flags.Where(f => f.Get(captured!)).Select(f => f.Name).ToArray();
+                Assert.Equal(new[] { flag.Name }, lit);
+            }
+        }
+
+        [Fact]
         public async Task Execute_OptionalOptionsOmitted_FallsBackToTheAppConfigDefaults()
         {
             // Arrange
