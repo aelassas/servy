@@ -63,7 +63,7 @@ namespace Servy.Core.UnitTests.Logging
         [Fact]
         public void SafeToOffset_WhenNearMinValue_ReturnsDateTimeOffsetMinValue()
         {
-            // Arrange - Any timestamp within 1 day of DateTime.MinValue would overflow on negative local offset shifts
+            // Arrange - Any timestamp within 1 day of DateTime.MinValue would overflow on east-of-UTC (positive offset) shifts
             var nearMinTime = DateTime.MinValue.AddHours(12);
 
             // Act
