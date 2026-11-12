@@ -30,11 +30,11 @@ namespace Servy.Core.Services
         protected abstract string SerializeCore(ServiceDto dto);
 
         /// <summary>
-        /// Extracts and formats line, index, or position metadata from a format-specific processing exception.
+        /// When overridden in a derived class, extracts and formats line, index, or position metadata from a format-specific processing exception.
         /// </summary>
         /// <param name="ex">The thrown format runtime exception.</param>
         /// <returns>A formatted string detailing the exact exception location context, or an empty string if unavailable.</returns>
-        protected virtual string FormatLineInfo(Exception ex) => string.Empty;
+        protected abstract string FormatLineInfo(Exception ex);
 
         /// <summary>
         /// Deserializes a format-specific textual stream representation into a structured <see cref="ServiceDto"/>.
