@@ -380,7 +380,7 @@ namespace Servy.Core.UnitTests.Services
             var log = await LogCapture.RunAsync(() => CreateManager(_pipes.Object).RevokeVaultAccessIfUnusedAsync(record, CancellationToken.None));
 
             // Assert
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", It.IsAny<string>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
             _pipes.Verify(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>()), Times.Once);
             Assert.Contains("the account keeps it only while another service runs under it", log);
         }
