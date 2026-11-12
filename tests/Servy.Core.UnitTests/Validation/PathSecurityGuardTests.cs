@@ -187,6 +187,42 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData("CON.backup.json", "CON")]   // the first dot ends the segment, not the last
+        [InlineData("NUL.tar.xml", "NUL")]
+        [InlineData("CON .json", "CON")]         // padded segment: blocked, and the message names the bare device
+        public void ValidatePathOnly_ReservedDeviceNameWithExtraSegmentOrPadding_ReturnsFailNamingTheDevice(string fileName, string device)
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, fileName);
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, FileMode.OpenOrCreate);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.Equal(string.Format(Strings.Msg_SecurityReservedDeviceName, device), result.ErrorMessage);
+        }
+
+        [Theory]
+        [InlineData(FileMode.Open)]
+        [InlineData(FileMode.OpenOrCreate)]
+        public void ValidatePathOnly_FileNameWithoutExtension_ReturnsInvalidFileType(FileMode mode)
+        {
+            // Arrange: an existing file, so the import row cannot be rejected as missing
+            string filePath = Path.Combine(TempDirectory, "export_without_extension");
+            File.WriteAllText(filePath, "{}");
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.Equal(string.Format(Strings.Msg_SecurityInvalidFileType, string.Empty), result.ErrorMessage);
+        }
+
+        [Theory]
         [InlineData("config.txt", FileMode.Open, FileAccess.Read, FileShare.Read)]
         [InlineData("export.exe", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         [InlineData("config.yaml", FileMode.Open, FileAccess.Read, FileShare.Read)]
