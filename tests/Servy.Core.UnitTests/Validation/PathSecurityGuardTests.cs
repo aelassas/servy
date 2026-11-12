@@ -196,6 +196,24 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData(FileMode.Open)]
+        [InlineData(FileMode.OpenOrCreate)]
+        public void ValidatePathOnly_FileNameWithoutExtension_ReturnsInvalidFileType(FileMode mode)
+        {
+            // Arrange: an existing file, so the import row cannot be rejected as missing
+            string filePath = Path.Combine(TempDirectory, "export_without_extension");
+            File.WriteAllText(filePath, "{}");
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.InvalidArgument, result.FailureKind);
+            Assert.Equal(string.Format(Strings.Msg_SecurityInvalidFileType, string.Empty), result.ErrorMessage);
+        }
+
+        [Theory]
         [InlineData("config.txt", FileMode.Open, FileAccess.Read, FileShare.Read)]
         [InlineData("export.exe", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         [InlineData("config.yaml", FileMode.Open, FileAccess.Read, FileShare.Read)]
