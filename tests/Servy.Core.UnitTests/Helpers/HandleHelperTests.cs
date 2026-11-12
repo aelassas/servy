@@ -221,6 +221,25 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void GetProcessesUsingFile_ListGrowsBetweenCalls_SizesTheBufferAgain()
+        {
+            // Arrange
+            // Call 1 sizes for one entry. By call 2 the list has two entries, so a one-entry buffer no
+            // longer fits and the buffer has to be sized again before call 3 can succeed.
+            var api = new FakeRestartManager();
+            api.Lists.Add((0, new[] { Self() }));
+            api.Lists.Add((0, new[] { Self(), Self() }));
+
+            // Act
+            var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
+
+            // Assert
+            Assert.Equal(new int?[] { null, 1, 2 }, api.BufferLengths);
+            Assert.Single(results); // the two entries name the same process
+            Assert.Equal(1, api.EndCalls);
+        }
+
+        [Fact]
         public void GetProcessesUsingFile_ListKeepsGrowing_ThrowsInvalidOperationAfterTheConfiguredAttemptsAndEndsTheSession()
         {
             // Arrange
