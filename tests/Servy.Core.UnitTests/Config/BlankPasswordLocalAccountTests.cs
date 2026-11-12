@@ -6,8 +6,6 @@ using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Testing;
-using System;
-using Xunit;
 
 namespace Servy.Core.UnitTests.Config
 {
