@@ -256,7 +256,7 @@ namespace Servy.CLI.UnitTests.Validation
         {
             // Arrange
             // Every string and number is unique, so a cross-wired assignment cannot pass. User and Password are pinned by the
-            // two tests above. AllowOverriddenRuntimeVars is left out on purpose: TryMapToDto does not map it today (#7745).
+            // two tests above.
             var opts = new InstallServiceOptions
             {
                 ServiceName = "Svc",
@@ -290,6 +290,7 @@ namespace Servy.CLI.UnitTests.Validation
                 FailureProgramStartupDir = @"C:\App\fail",
                 FailureProgramParameters = "--fail",
                 EnvironmentVariables = "A=1",
+                AllowOverriddenRuntimeVars = true,
                 ServiceDependencies = "Dep1",
                 PreLaunchPath = @"C:\App\pre.exe",
                 PreLaunchStartupDir = @"C:\App\pre",
@@ -360,6 +361,7 @@ namespace Servy.CLI.UnitTests.Validation
             Assert.Equal(@"C:\App\fail", mapped.FailureProgramStartupDirectory);
             Assert.Equal("--fail", mapped.FailureProgramParameters);
             Assert.Equal("A=1", mapped.EnvironmentVariables);
+            Assert.True(mapped.AllowOverriddenRuntimeVars);
             Assert.Equal("Dep1", mapped.ServiceDependencies);
             Assert.Equal(@"C:\App\pre.exe", mapped.PreLaunchExecutablePath);
             Assert.Equal(@"C:\App\pre", mapped.PreLaunchStartupDirectory);
@@ -405,6 +407,7 @@ namespace Servy.CLI.UnitTests.Validation
                 (nameof(ServiceDto.PreLaunchIgnoreFailure), o => o.PreLaunchIgnoreFailure = true, d => d.PreLaunchIgnoreFailure),
                 (nameof(ServiceDto.EnableDebugLogs), o => o.EnableDebugLogs = true, d => d.EnableDebugLogs),
                 (nameof(ServiceDto.PreStopLogAsError), o => o.PreStopLogAsError = true, d => d.PreStopLogAsError),
+                (nameof(ServiceDto.AllowOverriddenRuntimeVars), o => o.AllowOverriddenRuntimeVars = true, d => d.AllowOverriddenRuntimeVars),
             };
 
             ServiceDto dto = null;
