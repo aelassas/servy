@@ -82,7 +82,7 @@ namespace Servy.Core.UnitTests.DTOs
             // Act
             // Enumerate by attribute rather than by name, the shape ServicePathAttributeAntiDriftTests
             // uses: walking the hand-maintained list could only catch an attribute removed from a
-            // listed property, never one of ServiceDto's other 55 properties - or a newly added
+            // listed property, never one of ServiceDto's other 57 properties - or a newly added
             // secret - that should be ignored and is not.
             var jsonIgnored = props.Where(p => p.GetCustomAttribute<JsonIgnoreAttribute>() != null)
                 .Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList();
