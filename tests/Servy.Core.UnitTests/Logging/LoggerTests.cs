@@ -154,6 +154,21 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("Failed to initialize logger", fallbackContent);
         }
 
+        [Theory]
+        [InlineData(AppConfig.LoggerMaxFallbackWrites - 1, true)]  // the last write the budget allows
+        [InlineData(AppConfig.LoggerMaxFallbackWrites, false)]     // budget spent
+        public void Initialize_FailureFallback_StopsWritingOnceTheBudgetIsSpent(int writesAlreadyMade, bool expectWritten)
+        {
+            // Arrange
+            TestReflection.SetFieldStatic(typeof(Logger), "_initFallbackWriteCount", writesAlreadyMade);
+
+            // Act
+            Logger.Initialize("Invalid\0Char.log");
+
+            // Assert
+            Assert.Equal(expectWritten, File.Exists(_initFallbackPath));
+        }
+
         [Fact]
         public void Log_WhenWriteFails_WritesToFallbackLog()
         {
@@ -178,6 +193,53 @@ namespace Servy.Core.UnitTests.Logging
             Assert.True(File.Exists(_writeFallbackPath), "Write fallback log should have been created.");
             string fallbackContent = File.ReadAllText(_writeFallbackPath);
             Assert.Contains("Failed to write log entry", fallbackContent);
+        }
+
+        [Theory]
+        [InlineData(AppConfig.LoggerMaxFallbackWrites - 1, true)]  // the last write the budget allows
+        [InlineData(AppConfig.LoggerMaxFallbackWrites, false)]     // budget spent
+        public void Log_ReentrantFallback_StopsWritingOnceTheBudgetIsSpent(int writesAlreadyMade, bool expectWritten)
+        {
+            // Arrange
+            Logger.Initialize(_testFileName); // resets both counters, so the sentinel is set afterwards
+            TestReflection.SetFieldStatic(typeof(Logger), "_logFallbackWriteCount", writesAlreadyMade);
+
+            try
+            {
+                TestReflection.SetFieldStatic(typeof(Logger), "_isLogging", true);
+
+                // Act
+                Logger.Warn("Fallback budget probe");
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(Logger), "_isLogging", false);
+            }
+
+            // Assert
+            Assert.Equal(expectWritten, File.Exists(_writeFallbackPath));
+        }
+
+        [Theory]
+        [InlineData(AppConfig.LoggerMaxFallbackWrites - 1, true)]  // the last write the budget allows
+        [InlineData(AppConfig.LoggerMaxFallbackWrites, false)]     // budget spent
+        public void Log_WriteFailureFallback_StopsWritingOnceTheBudgetIsSpent(int writesAlreadyMade, bool expectWritten)
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+            Logger.Info("Establishing file context on disk");
+            Logger.Shutdown(); // Flush and release the handle so the test can lock it
+            Logger.Initialize(_testFileName); // resets both counters, so the sentinel is set afterwards
+            TestReflection.SetFieldStatic(typeof(Logger), "_logFallbackWriteCount", writesAlreadyMade);
+
+            // Act
+            using (var lockStream = new FileStream(_fullLogPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                Logger.Info("This write should fail on the lock.");
+            }
+
+            // Assert
+            Assert.Equal(expectWritten, File.Exists(_writeFallbackPath));
         }
 
         #endregion
@@ -803,6 +865,21 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert
             Assert.Equal(0, TestReflection.GetFieldStatic<int>(typeof(Logger), "_initFallbackWriteCount"));
+        }
+
+        [Fact]
+        public void Reinitialization_GrantsANewWriteFallbackBudget()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+            Logger.Info("Live writer");
+            TestReflection.SetFieldStatic(typeof(Logger), "_logFallbackWriteCount", 99);
+
+            // Act
+            Logger.SetLogRotationSize(20); // a new value on a live writer recreates it
+
+            // Assert
+            Assert.Equal(0, TestReflection.GetFieldStatic<int>(typeof(Logger), "_logFallbackWriteCount"));
         }
 
         [Fact]
