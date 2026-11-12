@@ -248,6 +248,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [Theory]
         [InlineData(@"KEY\=NOEQUAL", 1)]
         [InlineData(@"KEY\\\=NOEQUAL", 1)]
+        [InlineData("A=1;;NOEQUAL", 3)]
         public void Parse_NoUnescapedEquals_ThrowsFormatException(string input, int recordPosition)
         {
             // Arrange & Act
