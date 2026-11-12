@@ -217,6 +217,70 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void Refresh_Application_RemovedVariableWithAUserPart_IsKept()
+        {
+            // Arrange: like Path, the process value is the System value followed by the user's
+            var name = UniqueName();
+            _system[name] = @"C:\Sys1";
+            Environment.SetEnvironmentVariable(name, @"C:\Sys1;C:\User1");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system.Remove(name);
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.DoesNotContain(name, _setNames);
+            Assert.Equal(@"C:\Sys1;C:\User1", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_VariableEmptiedInTheRegistry_IsRemovedLikeADeletedOne()
+        {
+            // Arrange: the value is still listed in the registry, but empty
+            var name = UniqueName();
+            _system[name] = "system";
+            Environment.SetEnvironmentVariable(name, "system");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = string.Empty;
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Contains(name, _setNames);
+            Assert.Null(Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_RemovedPerAccountVariable_IsKept()
+        {
+            // Arrange: HOMESHARE is a per-account name; the process holds exactly the baseline value
+            var original = Environment.GetEnvironmentVariable("HOMESHARE");
+            try
+            {
+                Environment.SetEnvironmentVariable("HOMESHARE", @"\\server\share");
+                _system["HOMESHARE"] = @"\\server\share";
+                var refresher = CreateRefresher();
+                refresher.CaptureBaseline();
+                _system.Remove("HOMESHARE");
+
+                // Act
+                refresher.Refresh();
+
+                // Assert
+                Assert.DoesNotContain("HOMESHARE", _setNames);
+                Assert.Equal(@"\\server\share", Environment.GetEnvironmentVariable("HOMESHARE"));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("HOMESHARE", original);
+            }
+        }
+
+        [Fact]
         public void Refresh_Application_UpdatesTheBaseline_SoAKeptOverrideIsNeverRevisited()
         {
             // Arrange: a first refresh applies a change and moves the baseline to v2
