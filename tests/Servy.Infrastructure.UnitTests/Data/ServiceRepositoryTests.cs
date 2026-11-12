@@ -710,6 +710,25 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public async Task UpdateRestartAttemptsAsync_ZeroAttempts_IsWrittenAsTheReset()
+        {
+            // Arrange: zero is what the wrapper sends once the service is healthy again
+            object parameters = null;
+            _mockDapper
+                .Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, IDbTransaction, CancellationToken>((s, p, d1, d2) => parameters = p)
+                .ReturnsAsync(1);
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpdateRestartAttemptsAsync("svc", 0, DateTime.UtcNow, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, result);
+            Assert.Equal(0, parameters.GetType().GetProperty("RestartAttempts").GetValue(parameters));
+        }
+
+        [Fact]
         public async Task UpdateRestartAttemptsAsync_LocalTime_IsStoredAsUtc()
         {
             // Arrange

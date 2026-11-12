@@ -180,18 +180,23 @@ namespace Servy.Core.IntegrationTests.NamedPipes
             await served;
         }
 
-        [Fact(Timeout = IntegrationTestTimeoutMs)]
-        public async Task UpdateRestartAttemptsAsync_SendsTheCounter()
+        [Theory(Timeout = IntegrationTestTimeoutMs)]
+        [InlineData(5)]
+        [InlineData(0)]
+        public async Task UpdateRestartAttemptsAsync_SendsTheCounter(int attempts)
         {
+            // Arrange: five is a running count, zero is the reset the wrapper sends once the service is healthy again
             var ct = CancellationToken.None;
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true, UpdateData = 1 }, ct);
 
-            var updated = await CreateClient().UpdateRestartAttemptsAsync("svc", 5, ct);
+            // Act
+            var updated = await CreateClient().UpdateRestartAttemptsAsync("svc", attempts, ct);
 
+            // Assert
             Assert.Equal(1, updated);
             var request = await served;
             Assert.Equal(AppConfig.ServyHostUpdateRestartAttemptsAction, request.Action);
-            Assert.Equal(5, request.RestartAttempts);
+            Assert.Equal(attempts, request.RestartAttempts);
         }
 
         [Theory(Timeout = IntegrationTestTimeoutMs)]
