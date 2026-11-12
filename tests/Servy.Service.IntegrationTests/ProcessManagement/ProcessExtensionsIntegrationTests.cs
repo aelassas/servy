@@ -412,7 +412,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         /// <summary>
         /// Orchestrates a guaranteed strict PPID native tree using PowerShell.
         /// Uses Base64 EncodedCommands to allow infinite nesting depth without quote-escaping bugs.
-        /// Starts the root process up to <c>maxRetries</c> (5) times to withstand transient runner DLL loading failures (e.g. STATUS_DLL_INIT_FAILED / 0xC0000142).
+        /// Starts the root process up to <c>maxRetries</c> (8) times, with a linear 500 ms * attempt backoff (about 14 s in total), to withstand runner DLL loading failures (e.g. STATUS_DLL_INIT_FAILED / 0xC0000142) that persist for several seconds.
         /// </summary>
         private Process SpawnProcessTree(int depth)
         {
@@ -447,7 +447,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             };
 
             const int StatusDllInitFailed = unchecked((int)0xC0000142);
-            const int maxRetries = 5;
+            const int maxRetries = 8;
             Process? rootProcess = null;
             int? lastDllInitExitCode = null;
 
@@ -456,8 +456,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 rootProcess = Process.Start(psi);
                 Assert.NotNull(rootProcess);
 
-                // Give the process a brief window to ensure it doesn't immediately exit due to runner DLL initialization failures (0xC0000142)
-                Thread.Sleep(100);
+                // Give the process a brief window to ensure it doesn't immediately exit due to runner DLL initialization failures (0xC0000142).
+                // WaitForExit returns as soon as the process dies and only costs the full window for a healthy start.
+                rootProcess.WaitForExit(250);
 
                 if (rootProcess.HasExited && rootProcess.ExitCode == StatusDllInitFailed)
                 {
@@ -467,7 +468,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                     if (attempt < maxRetries)
                     {
-                        Thread.Sleep(200 * attempt);
+                        Thread.Sleep(500 * attempt);
                         continue;
                     }
                 }
