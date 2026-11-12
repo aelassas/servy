@@ -92,6 +92,19 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         }
 
         [Theory]
+        [InlineData("ServiceA", " Servy ", "ServiceA\0Servy\0\0")]   // the appended entry is the trimmed name
+        [InlineData("ServiceA", "\tServy", "ServiceA\0Servy\0\0")]
+        [InlineData("Servy", " Servy ", "Servy\0\0")]                // a padded required name still matches the configured one
+        public void ParseWithRequired_PaddedRequiredDependency_IsTrimmedBeforeCompareAndAppend(string input, string required, string expected)
+        {
+            // Arrange & Act
+            var result = ServiceDependenciesParser.ParseWithRequired(input, required);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
