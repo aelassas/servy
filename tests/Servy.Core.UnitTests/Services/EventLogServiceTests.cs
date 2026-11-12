@@ -110,6 +110,48 @@ namespace Servy.Core.UnitTests.Services
 
         #region Explicit Branch Coverage Tests for Query String Generation
 
+        [Theory]
+        [InlineData("   ")]
+        [InlineData("\t")]
+        public async Task SearchAsync_WhenSourceNameIsWhitespaceOnly_UsesWildcardQuery(string source)
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            string capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) => capturedQuery = xpathQuery)
+                      .Returns(Array.Empty<ServyEventLogEntry>());
+
+            var service = new EventLogService(mockReader.Object, source);
+
+            // Act
+            await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert: a blank source name is the wildcard mode, never a provider filter on blanks
+            Assert.Equal("*", capturedQuery);
+        }
+
+        [Fact]
+        public async Task SearchAsync_WhenSourceNameIsPadded_QueriesTheTrimmedProvider()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            string capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                      .Callback<string, string, bool, int>((logName, xpathQuery, newestFirst, limit) => capturedQuery = xpathQuery)
+                      .Returns(Array.Empty<ServyEventLogEntry>());
+
+            var service = new EventLogService(mockReader.Object, "  MyCustomSource  ");
+
+            // Act
+            await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert
+            Assert.Equal("*[System[Provider[@Name='MyCustomSource']]]", capturedQuery);
+        }
+
         [Fact]
         public async Task SearchAsync_WithNoExplicitFilters_BuildsDefaultSourceSystemQuery()
         {
@@ -472,12 +514,15 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(2, result.Count());
         }
 
-        [Fact]
-        public async Task Search_MessageWithoutBracketFormat_IsExcluded()
+        [Theory]
+        [InlineData("servy failed")]
+        [InlineData("[service servy failed")]
+        [InlineData("service] servy failed")]
+        public async Task Search_MessageWithoutBracketFormat_IsExcluded(string message)
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
+            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, message);
             mockReader.Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
