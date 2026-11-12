@@ -3602,6 +3602,45 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void GetAllServices_SeveralServices_ReturnsThemSortedByNameWithDisplayNamesAndDisposesEveryWrapper()
+        {
+            // Arrange
+            // Neither this order nor its reverse is sorted, so a missing OrderBy cannot pass by accident
+            // on the single-threaded path.
+            var wrappers = new[] { "Mike", "Zulu", "Alpha" }.Select(name =>
+            {
+                var wrapper = new Mock<IServiceControllerWrapper>();
+                wrapper.Setup(s => s.ServiceName).Returns(name);
+                wrapper.Setup(s => s.DisplayName).Returns(name + " display");
+                wrapper.Setup(s => s.Status).Returns(ServiceControllerStatus.Running);
+                wrapper.Setup(s => s.StartType).Returns(ServiceStartMode.Manual);
+                return wrapper;
+            }).ToList();
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices())
+                .Returns(wrappers.Select(w => w.Object).ToArray());
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(() => _handles.Scm(1));
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()))
+                .Returns(() => _handles.Service(2));
+
+            // Act
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(new[] { "Alpha", "Mike", "Zulu" }, result.Select(s => s.Name));
+            Assert.Equal(new[] { "Alpha display", "Mike display", "Zulu display" }, result.Select(s => s.DisplayName));
+            foreach (var wrapper in wrappers)
+            {
+                wrapper.Verify(s => s.Dispose(), Times.Once);
+            }
+        }
+
+        [Fact]
         public void GetAllServices_ShouldFallbackToUnknown_WhenStartTypeThrows()
         {
             // Arrange
