@@ -573,7 +573,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 Id = 200,
                 ProcessName = "svchost.exe",
-                ExecutablePath = @"C:\Windows\System32\svchost.exe",
+                ExecutablePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "svchost.exe"),
                 StartTime = now.AddMinutes(-5)
             };
 
@@ -640,7 +640,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 Id = 200,
                 ProcessName = "services",
-                ExecutablePath = @"C:\Windows\System32\services.exe",
+                ExecutablePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32", "services.exe"),
                 StartTime = now.AddMinutes(-10)
             };
 
