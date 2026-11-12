@@ -227,6 +227,84 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public async Task StartServicesAsync_StartPendingPastTheGracePeriod_KeepsWaitingUntilRunning()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Stopped;
+            var started = false;
+            int refreshesAfterStart = 0;
+
+            // Three polls after Start() still report StartPending, so at least one of them is evaluated
+            // after the fast-fail grace period (one ScmPollIntervalMs) has passed; the fourth reports Running.
+            const int pendingPolls = 3;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Start()).Callback(() =>
+            {
+                started = true;
+                currentStatus = ServiceControllerStatus.StartPending;
+            });
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (started && ++refreshesAfterStart > pendingPolls)
+                    currentStatus = ServiceControllerStatus.Running;
+            });
+
+            var serviceDto = new ServiceDto { Name = "SlowService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("SlowService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("SlowService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act - no AggregateException: StartPending past the grace period is a slow start, not a crash
+            await serviceHelper.StartServicesAsync(new[] { "SlowService" }, TestContext.Current.CancellationToken);
+
+            // Assert
+            scMock.Verify(x => x.Start(), Times.Once);
+            Assert.Equal(pendingPolls + 1, refreshesAfterStart);
+        }
+
+        [Fact]
+        public async Task StartServicesAsync_ContinueThrowsInvalidOperationException_RethrowsIfStillPaused()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            // Paused throughout: the catch's own Refresh() still sees Paused, so the rethrow arm must fire.
+            scMock.Setup(x => x.Status).Returns(ServiceControllerStatus.Paused);
+            scMock.Setup(x => x.Continue()).Throws(new InvalidOperationException("Access denied."));
+
+            var serviceDto = new ServiceDto { Name = "PausedService", StartTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("PausedService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("PausedService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                // A swallow would enter the start-wait loop; with the deadline already passed it reports a
+                // timeout at once instead of holding the test for the whole start timeout.
+                ElapsedSourceFactory = () => () => TimeSpan.FromDays(1)
+            };
+
+            // Act
+            var aggEx = await Assert.ThrowsAsync<AggregateException>(
+                () => serviceHelper.StartServicesAsync(new[] { "PausedService" }, TestContext.Current.CancellationToken));
+
+            // Assert - the command's own exception is the inner one; the timeout arm has no inner exception
+            scMock.Verify(x => x.Continue(), Times.Once);
+            scMock.Verify(x => x.Start(), Times.Never);
+            var inner = Assert.IsType<InvalidOperationException>(Assert.Single(aggEx.InnerExceptions).InnerException);
+            Assert.Equal("Access denied.", inner.Message);
+        }
+
+        [Fact]
         public async Task StartServicesAsync_StartThrowsInvalidOperationException_SwallowsIfStatusMovedOn()
         {
             // Arrange
