@@ -629,6 +629,37 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.NotEmpty(ExplicitRules(outsideFile, TargetSid, AccessControlType.Allow));
         }
 
+        [Fact]
+        public void PurgeVault_FolderCannotBeListed_IsReportedAsFailedAndTheRestIsStillPurged()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: logs\ refuses List Folder to Administrators, so the walk cannot enumerate it. The Deny is an
+            // administrative entry, so the purge keeps it and it is still there when the walk lists the folder.
+            CreateVault();
+            var exe = Path.Combine(_vault, AppConfig.ServyServiceUIExe);
+            ProtectWithGrant(exe, FileSystemRights.Read);
+            var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
+            Directory.CreateDirectory(logs);
+            SetListingDenied(logs, true);
+
+            try
+            {
+                // Act
+                var result = _sut.PurgeVault(new List<ServiceAccountGroup>());
+
+                // Assert: the folder is named as failed, and the walk went on to purge a file outside it
+                Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+                Assert.Contains(AppConfig.LogsFolderName, result.Failed);
+                Assert.Empty(ExplicitRules(exe, TargetSid, AccessControlType.Allow));
+            }
+            finally
+            {
+                // The Deny would also stop the temporary directory from being cleaned up
+                SetListingDenied(logs, false);
+            }
+        }
+
         #endregion
 
         #region Accounts that are not hardened
@@ -839,6 +870,36 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.True(File.Exists(removedLog));
             AssertWritableFolder(Path.Combine(_vault, OtherServiceLogsFolder));
             Assert.Equal(exeBefore, Sddl(Path.Combine(_vault, AppConfig.ServyServiceUIExe)));
+        }
+
+        [Fact]
+        public void RevokeIfUnused_FolderCannotBeListed_IsReportedAsFailedAndTheRestIsStillRevoked()
+        {
+            Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
+
+            // Arrange: logs\ refuses List Folder to Administrators, so the walk cannot enumerate it. Revoking only
+            // removes the target's entries, so the Deny is still there when the walk lists the folder.
+            CreateVault();
+            _sut.Harden(TargetAccount, Services, CancellationToken.None);
+            var logs = Path.Combine(_vault, AppConfig.LogsFolderName);
+            SetListingDenied(logs, true);
+
+            try
+            {
+                // Act
+                var result = _sut.RevokeIfUnused(TargetAccount, ServiceName, new List<ServiceDto>(), CancellationToken.None);
+
+                // Assert: the folder is named as failed, and the walk went on to revoke a file outside it
+                Assert.Equal(ExePermissionsHardeningStatus.Failed, result.Status);
+                Assert.Contains(AppConfig.LogsFolderName, result.Failed);
+                Assert.Empty(ExplicitRules(Path.Combine(_vault, AppConfig.ServyServiceUIExe), TargetSid, AccessControlType.Allow));
+                Assert.Empty(ExplicitRules(Path.Combine(_vault, DbFile), TargetSid, AccessControlType.Allow));
+            }
+            finally
+            {
+                // The Deny would also stop the temporary directory from being cleaned up
+                SetListingDenied(logs, false);
+            }
         }
 
         [Fact]
@@ -1156,6 +1217,22 @@ namespace Servy.Core.IntegrationTests.Security
             acl.AddAccessRule(new FileSystemAccessRule(AdministratorsSid, FileSystemRights.FullControl, AccessControlType.Allow));
             acl.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), FileSystemRights.FullControl, AccessControlType.Allow));
             acl.AddAccessRule(new FileSystemAccessRule(TargetSid, rights, AccessControlType.Allow));
+            info.SetAccessControl(acl);
+        }
+
+        /// <summary>
+        /// Adds or removes a Deny of List Folder for <c>BUILTIN\Administrators</c> on a folder, so that enumerating it
+        /// throws <see cref="UnauthorizedAccessException"/> even in an elevated process.
+        /// </summary>
+        private static void SetListingDenied(string folder, bool denied)
+        {
+            var info = new DirectoryInfo(folder);
+            var acl = info.GetAccessControl(AccessControlSections.Access);
+            var deny = new FileSystemAccessRule(AdministratorsSid, FileSystemRights.ListDirectory, AccessControlType.Deny);
+            if (denied)
+                acl.AddAccessRule(deny);
+            else
+                acl.RemoveAccessRuleSpecific(deny);
             info.SetAccessControl(acl);
         }
 
