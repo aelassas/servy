@@ -97,6 +97,27 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(new[] { "stop A+B", "start A+B" }, _calls);
         }
 
+        [Theory]
+        [InlineData(ServyHostServiceState.Foreign)]
+        [InlineData(ServyHostServiceState.Unknown)]
+        [InlineData(ServyHostServiceState.NotInstalled)]
+        public async Task Resume_NameNoLongerHeldByTheServyHost_DoesNotStartThatService(ServyHostServiceState stateAtResume)
+        {
+            // Arrange: the host is Servy's when the pause stops it, and is not when the resume runs
+            _host.SetupSequence(h => h.GetState())
+                .Returns(ServyHostServiceState.ServyHost)
+                .Returns(stateAtResume);
+            var pause = Create();
+
+            // Act
+            await pause.PauseAsync(CancellationToken.None);
+            await pause.ResumeAsync();
+
+            // Assert: the host was stopped, is not started again, and the services still are
+            Assert.Equal(new[] { "stop A+B", "stop host", "start A+B" }, _calls);
+            _host.Verify(h => h.StartAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [Fact]
         public async Task Pause_NoServiceRunning_StopsOnlyTheHost()
         {
