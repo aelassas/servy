@@ -252,6 +252,8 @@ namespace Servy.Core.UnitTests.Services
             service.PreviousStopTimeout = 10;
             service.ActiveStdoutPath = @"C:\logs\stdout.log";
             service.ActiveStderrPath = @"C:\logs\stderr.log";
+            service.RestartAttempts = 3;
+            service.RestartAttemptsUpdatedAtTicks = 638000000000000000L;
         }
 
         /// <summary>
