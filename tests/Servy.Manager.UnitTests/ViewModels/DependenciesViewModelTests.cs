@@ -1079,6 +1079,46 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public async Task SearchCommand_SearchThrows_LogsTheFailureShowsNoDialogAndRestoresTheIdleState()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        _mockUiDispatcher.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
+                        _mockServiceCommands
+                            .Setup(c => c.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                            .ThrowsAsync(new InvalidOperationException("database unavailable"));
+
+                        viewModel = CreateViewModel();
+                        _mockMessageBoxService.Invocations.Clear();
+                        _mockCursorService.Invocations.Clear();
+
+                        // Act
+                        var log = await LogCapture.RunAsync(() => viewModel.SearchCommand.ExecuteAsync(null));
+
+                        // Assert: the failure is logged, no dialog is shown, and the search UI is idle again
+                        Assert.Contains("Search pipeline failed in DependenciesViewModel.", log);
+                        Assert.Contains("database unavailable", log);
+                        Assert.Empty(_mockMessageBoxService.Invocations);
+                        _mockCursorService.Verify(c => c.ResetCursor(), Times.Once);
+                        Assert.False(viewModel.IsBusy);
+                        Assert.Equal(Strings.Button_Search, viewModel.SearchButtonText);
+                        Assert.Empty(viewModel.Services);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
         #endregion
     }
 }
