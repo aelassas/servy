@@ -648,7 +648,7 @@ namespace Servy.Core.UnitTests.Services
             await _serviceManager.RevokeVaultAccessIfUnusedAsync(record, TestContext.Current.CancellationToken);
 
             // Assert
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(expected, It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(expected, ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
             _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
