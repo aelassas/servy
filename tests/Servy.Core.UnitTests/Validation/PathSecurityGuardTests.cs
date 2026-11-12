@@ -214,6 +214,49 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData(Environment.SpecialFolder.Windows, FileMode.Open)]
+        [InlineData(Environment.SpecialFolder.Windows, FileMode.OpenOrCreate)]
+        [InlineData(Environment.SpecialFolder.ProgramFiles, FileMode.Open)]
+        [InlineData(Environment.SpecialFolder.ProgramFiles, FileMode.OpenOrCreate)]
+        [InlineData(Environment.SpecialFolder.ProgramFilesX86, FileMode.Open)]
+        [InlineData(Environment.SpecialFolder.ProgramFilesX86, FileMode.OpenOrCreate)]
+        public void ValidatePathOnly_EachProtectedRoot_ReturnsTheMessageOfItsMode(Environment.SpecialFolder root, FileMode mode)
+        {
+            // Arrange
+            string protectedDir = Environment.GetFolderPath(root);
+            // xUnit v2 has no Assert.Skip: return early when the root is not defined on this host (32-bit process on 32-bit Windows)
+            if (string.IsNullOrEmpty(protectedDir))
+                return;
+
+            string filePath = Path.Combine(protectedDir, "servy_config.json");
+            string expectedFormat = mode == FileMode.Open
+                ? Strings.Msg_SecurityProtectedDirectory
+                : Strings.Msg_SecurityProtectedDirectoryExport;
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, mode);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Equal(string.Format(expectedFormat, protectedDir), result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ValidatePathOnly_SiblingFolderSharingAProtectedPrefix_IsNotTreatedAsProtected()
+        {
+            // Arrange: "<WINDIR>_backup" starts with the Windows directory's text but is not under it
+            string siblingDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows) + "_backup";
+            string filePath = Path.Combine(siblingDir, "export.json");
+
+            // Act: export mode, so a file that does not exist is not a reason to fail
+            var result = PathSecurityGuard.ValidatePathOnly(filePath, FileMode.OpenOrCreate);
+
+            // Assert
+            Assert.True(result.IsValid, result.ErrorMessage);
+        }
+
+        [Theory]
         [InlineData("config.txt", FileMode.Open, FileAccess.Read, FileShare.Read)]
         [InlineData("export.exe", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         [InlineData("config.yaml", FileMode.Open, FileAccess.Read, FileShare.Read)]
