@@ -156,6 +156,22 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
+        public void Validate_EmptySegmentBeforeABadRecord_StillCountsTowardItsPosition()
+        {
+            // Arrange
+            // The split yields "A=1", "" and "NOEQUALS", so the bad record is the third.
+            string input = "A=1;;NOEQUALS";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out List<string> errorMessages);
+
+            // Assert
+            Assert.False(isValid);
+            var error = Assert.Single(errorMessages);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableMissingEquals, 3), error);
+        }
+
+        [Fact]
         public void Validate_IgnoresEmptySegments()
         {
             // Arrange
@@ -290,6 +306,21 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         #region Key Formatting and Security Robustness Rule Tests
+
+        [Fact]
+        public void Validate_VariableWithEscapedCarriageReturnInKey_ReturnsFalse()
+        {
+            // Arrange
+            string input = "KEY_START\\\rKEY_END=Value";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(input, out List<string> errorMessages);
+
+            // Assert
+            Assert.False(isValid);
+            var error = Assert.Single(errorMessages);
+            Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, "KEY_START\rKEY_END"), error);
+        }
 
         [Fact]
         public void Validate_VariableWithEscapedNewlineInKey_ReturnsFalse()
