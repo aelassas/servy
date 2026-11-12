@@ -723,8 +723,8 @@ namespace Servy.Core.UnitTests.Services
             // Act: an exception out of the revocation would fail the test on its own, so no Record wrapper
             var log = await LogCapture.RunAsync(() => manager.RevokeVaultAccessIfUnusedAsync(record, CancellationToken.None));
 
-            // Assert: the null guard returns before the former account is even resolved, so the swallowed
-            // NullReferenceException's error line is the only observable difference if it is removed.
+            // Assert: the null guard skips the hardener call after the former account is resolved, so the
+            // swallowed NullReferenceException's error line is the only observable difference if it is removed.
             Assert.DoesNotContain("Revoking the vault access", log);
         }
 
