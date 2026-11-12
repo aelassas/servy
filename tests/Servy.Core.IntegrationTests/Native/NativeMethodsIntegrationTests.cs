@@ -93,6 +93,20 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(2, NativeMethods.SidTypeGroup);
             Assert.Equal(4, NativeMethods.SidTypeAlias);
             Assert.Equal(5, NativeMethods.SidTypeWellKnownGroup);
+
+            // FILE_INFO_BY_HANDLE_CLASS.FileDispositionInfo, which the verified-handle log delete passes
+            // to SetFileInformationByHandle.
+            Assert.Equal(4, NativeMethods.FileDispositionInfoClass);
+
+            // QueryServiceStatusEx's only info level. A wrong value makes GetServiceProcessId return 0,
+            // which reads as "the host service is not running".
+            Assert.Equal(0, NativeMethods.SC_STATUS_PROCESS_INFO);
+
+            // Restart Manager buffer sizes (RestartManager.h). The two name lengths size the inline
+            // strings of RM_PROCESS_INFO, so a wrong value shifts every field after them.
+            Assert.Equal(32, NativeMethods.CCH_RM_SESSION_KEY);
+            Assert.Equal(255, NativeMethods.CCH_RM_MAX_APP_NAME);
+            Assert.Equal(63, NativeMethods.CCH_RM_MAX_SVC_NAME);
         }
 
         [Fact]
@@ -370,6 +384,7 @@ namespace Servy.Core.IntegrationTests.Native
             int sizeAutoStart = Marshal.SizeOf<NativeMethods.SERVICE_DELAYED_AUTO_START_INFO>();
             int sizePreshutdown = Marshal.SizeOf<NativeMethods.SERVICE_PRE_SHUTDOWN_INFO>();
             int sizeStatus = Marshal.SizeOf<NativeMethods.SERVICE_STATUS>();
+            int sizeRmProcessInfo = Marshal.SizeOf<NativeMethods.RM_PROCESS_INFO>();
 
             // Assert
             // WIN32 ABI MARSHALING: Pin exact structure byte lengths required by the OS kernel.
@@ -389,6 +404,11 @@ namespace Servy.Core.IntegrationTests.Native
             // SERVICE_STATUS contains 7 DWORD fields (7 * 4 bytes) -> 28 bytes total
             const int ExpectedStatusSize = 28;
             Assert.Equal(ExpectedStatusSize, sizeStatus);
+
+            // RM_PROCESS_INFO: RM_UNIQUE_PROCESS (DWORD + FILETIME = 12) + WCHAR[256] (512) + WCHAR[64] (128)
+            // + four 4-byte fields (16) -> 668 bytes.
+            const int ExpectedRmProcessInfoSize = 668;
+            Assert.Equal(ExpectedRmProcessInfoSize, sizeRmProcessInfo);
         }
 
         #endregion
