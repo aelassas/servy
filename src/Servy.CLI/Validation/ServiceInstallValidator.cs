@@ -136,6 +136,7 @@ namespace Servy.CLI.Validation
                 FailureProgramStartupDirectory = opts.FailureProgramStartupDir,
                 FailureProgramParameters = opts.FailureProgramParameters,
                 EnvironmentVariables = opts.EnvironmentVariables,
+                AllowOverriddenRuntimeVars = opts.AllowOverriddenRuntimeVars,
                 ServiceDependencies = opts.ServiceDependencies,
                 UserAccount = opts.User?.Trim(),
                 Password = opts.Password,
