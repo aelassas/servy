@@ -4,13 +4,11 @@ using Servy.Core.Logging;
 using Servy.Core.Validation;
 using Servy.Service.ProcessManagement;
 using Servy.Service.UnitTests.Helpers;
-using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Xunit;
 
 namespace Servy.Service.UnitTests.ProcessManagement
 {

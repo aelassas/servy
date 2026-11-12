@@ -1,6 +1,4 @@
 using Servy.Infrastructure.Data;
-using System;
-using Xunit;
 
 namespace Servy.Infrastructure.UnitTests.Data
 {
