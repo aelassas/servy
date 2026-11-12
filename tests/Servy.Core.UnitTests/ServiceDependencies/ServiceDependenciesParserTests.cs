@@ -28,10 +28,10 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             Assert.Equal("\0\0", result);
         }
 
-        // Tokenize is public and the validator consumes it as a shared tokenizer, but both production
-        // callers re-check IsNullOrWhiteSpace and return before calling it, so its own guard is only
-        // reachable through a direct call. This pins the empty-sequence contract the validator's
-        // foreach relies on.
+        // Tokenize is public and shared by the validator and the parser. Validate re-checks
+        // IsNullOrWhiteSpace and returns before calling it, but ParseWithRequired passes its input
+        // straight through, so this guard is what turns a null or blank dependency list into an
+        // empty sequence there. This pins that empty-sequence contract with a direct call.
         [Theory]
         [InlineData(null)]
         [InlineData("")]
