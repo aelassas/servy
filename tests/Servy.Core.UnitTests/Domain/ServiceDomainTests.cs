@@ -189,7 +189,7 @@ namespace Servy.Core.UnitTests.Domain
             // equal values either way. The two false values are pinned with true by
             // Install_ShouldCallServiceManagerWithCorrectArguments_NoWrapperExe instead.
             // DisplayName and StopTimeout are also distinct from Name and HeartbeatInterval, so a crossed
-            // assignment between those pairs fails; the booleans are crossed-checked one at a time by
+            // assignment between those pairs fails; the booleans are cross-checked one at a time by
             // Install_ForwardsEachBooleanOnItsOwn.
             var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
