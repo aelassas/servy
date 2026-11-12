@@ -7,6 +7,7 @@ using Servy.Core.Enums;
 using Servy.Core.Validation;
 using Servy.Testing;
 using System;
+using System.Linq;
 using System.Reflection;
 using Xunit;
 
@@ -383,6 +384,50 @@ namespace Servy.CLI.UnitTests.Validation
             Assert.Equal(@"C:\App\poststop.exe", mapped.PostStopExecutablePath);
             Assert.Equal(@"C:\App\poststop", mapped.PostStopStartupDirectory);
             Assert.Equal("--poststop", mapped.PostStopParameters);
+        }
+
+        [Fact]
+        public void Validate_OneBooleanOptionSet_SetsOnlyItsOwnDtoFlag()
+        {
+            // Arrange
+            // One flag at a time: a cross-wired boolean lights up the wrong DTO property. A cross-wire between two
+            // booleans is otherwise invisible. RunAsLocalSystem is derived from User and pinned by Validate_NoUser_MapsRunAsLocalSystem,
+            // so it is not in the table. CreateValidOptions sets no boolean, so every flag starts false.
+            var flags = new (string Name, Action<InstallServiceOptions> Set, Func<ServiceDto, bool?> Get)[]
+            {
+                (nameof(ServiceDto.EnableConsoleUI), o => o.EnableConsoleUI = true, d => d.EnableConsoleUI),
+                (nameof(ServiceDto.EnableSizeRotation), o => o.EnableSizeRotation = true, d => d.EnableSizeRotation),
+                (nameof(ServiceDto.EnableDateRotation), o => o.EnableDateRotation = true, d => d.EnableDateRotation),
+                (nameof(ServiceDto.UseLocalTimeForRotation), o => o.UseLocalTimeForRotation = true, d => d.UseLocalTimeForRotation),
+                (nameof(ServiceDto.EnableHealthMonitoring), o => o.EnableHealthMonitoring = true, d => d.EnableHealthMonitoring),
+                (nameof(ServiceDto.RecoveryOnCleanExit), o => o.RecoveryOnCleanExit = true, d => d.RecoveryOnCleanExit),
+                (nameof(ServiceDto.EnableHeartbeatUrlFlags), o => o.EnableHeartbeatUrlFlags = true, d => d.EnableHeartbeatUrlFlags),
+                (nameof(ServiceDto.PreLaunchIgnoreFailure), o => o.PreLaunchIgnoreFailure = true, d => d.PreLaunchIgnoreFailure),
+                (nameof(ServiceDto.EnableDebugLogs), o => o.EnableDebugLogs = true, d => d.EnableDebugLogs),
+                (nameof(ServiceDto.PreStopLogAsError), o => o.PreStopLogAsError = true, d => d.PreStopLogAsError),
+            };
+
+            ServiceDto dto = null;
+            _rulesMock
+                .Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Callback<ServiceDto, string, string, bool>((d, wrapperPath, confirmPassword, importMode) => dto = d)
+                .Returns(new ValidationResult { });
+
+            foreach (var flag in flags)
+            {
+                var opts = CreateValidOptions();
+                flag.Set(opts);
+                dto = null;
+
+                // Act
+                var result = _validator.Validate(opts);
+
+                // Assert
+                Assert.True(result.IsSuccess);
+                Assert.NotNull(dto);
+                var lit = flags.Where(f => f.Get(dto) == true).Select(f => f.Name).ToArray();
+                Assert.Equal(new[] { flag.Name }, lit);
+            }
         }
 
         #endregion
