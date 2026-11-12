@@ -244,6 +244,26 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.True(result, "A PID absent from the process table reports success (nothing left to kill), matching the by-name overload's contract for a missing target.");
         }
 
+        /// <summary>
+        /// Verifies that a target which exits between the snapshot and the handle open is reported as
+        /// "nothing left to kill" by the by-PID overload too, for the InvalidOperationException form of
+        /// that race (the #5514 fix), not only for the ArgumentException form.
+        /// </summary>
+        [Fact]
+        public void KillProcessTreeAndParents_ByPid_TargetExitsBeforeHandleOpens_ReturnsTrue()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            accessor.GetProcessByIdErrors[12345] = new InvalidOperationException("exited");
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(12345, killParents: true);
+
+            // Assert
+            Assert.True(result, "A target that exits before its handle opens is not a failure, whichever exception reports it.");
+        }
+
         [Fact]
         public void KillProcessTreeAndParents_ByName_TargetFoundInSnapshot_KillsMatchedProcess()
         {
