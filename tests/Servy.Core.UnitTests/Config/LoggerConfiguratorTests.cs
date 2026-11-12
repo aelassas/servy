@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.Enums;
+using Servy.Core.IO;
 using Servy.Core.Logging;
 using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
@@ -27,8 +28,9 @@ namespace Servy.Core.UnitTests.Config
 
         public LoggerConfiguratorTests()
         {
-            // Reset the static state so a previous test's writer cannot hold this test's file
-            Logger.Shutdown();
+            // Reset the static state so a previous test's writer cannot hold this test's file, and forget
+            // the previous test's file name so a call without a file name does not open that file again
+            Logger.Initialize((string)null);
 
             _testFileName = $"LoggerConfiguratorTest_{Guid.NewGuid():N}.log";
             _fullLogPath = Path.Combine(Logger.EffectiveLogsPath, _testFileName);
@@ -174,6 +176,10 @@ namespace Servy.Core.UnitTests.Config
             Assert.Equal(DateRotationType.Daily, TestReflection.GetFieldStatic<DateRotationType>(typeof(Logger), "_dateRotationType"));
             Assert.Equal(7, TestReflection.GetFieldStatic<int>(typeof(Logger), "_maxBackupLogFiles"));
             Assert.True(TestReflection.GetFieldStatic<bool>(typeof(Logger), "_useLocalTimeForRotation"));
+
+            // Without a log file name no writer exists, so no other test's file was re-opened
+            if (!withLogFileName)
+                Assert.Null(TestReflection.GetFieldStatic<RotatingStreamWriter>(typeof(Logger), "_writer"));
         }
     }
 }
