@@ -38,6 +38,7 @@ namespace Servy.Core.DTOs
         /// <param name="isFile"><c>true</c> if the path must point to an existing file; <c>false</c> if it must point to an existing directory.</param>
         /// <param name="required"><c>true</c> if the path must be provided and cannot be null or whitespace.</param>
         /// <param name="errorResourceKey">The key corresponding to the localized error string in <see cref="Resources.Strings"/>.</param>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="label"/> is null, empty, or consists only of whitespace.</exception>
         public ServicePathAttribute(string label, bool isFile = true, bool required = false, string? errorResourceKey = null)
         {
             if (string.IsNullOrWhiteSpace(label))
