@@ -612,6 +612,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\"", true)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\" --debug", true)]
         [InlineData("C:\\ProgramData\\Servy\\servy.host.exe", true)]
+        [InlineData("C:\\ProgramData\\Servy\\Servy.Host.exe --debug", true)]
         [InlineData("C:\\ProgramData\\Servy\\Servy.Host.exe.bat", false)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.exe\" \"Servy\"", false)]
@@ -630,6 +631,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("C:\\ProgramData\\Servy\\Servy.Host.exe", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
         [InlineData("  \"c:\\programdata\\SERVY\\servy.host.EXE\" ", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe\" --flag", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
+        [InlineData("C:\\ProgramData\\Servy\\Servy.Host.exe --flag", "C:\\ProgramData\\Servy\\Servy.Host.exe", true)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
         [InlineData("\"C:\\Dev\\bin\\Debug\\Servy.Host.exe\"", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Host.exe", "C:\\ProgramData\\Servy\\Servy.Host.exe", false)]
@@ -688,6 +690,14 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert: the removed service is skipped on its own, so the dependents after it are not lost
             Assert.Equal(new[] { "Net48Service" }, names);
+        }
+
+        [Fact]
+        public void GetRunningServyServices_NullServiceHelper_Throws()
+        {
+            // Arrange, Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => Create().GetRunningServyServices(null));
+            Assert.Equal("serviceHelper", ex.ParamName);
         }
 
         [Fact]
