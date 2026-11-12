@@ -360,6 +360,44 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public async Task UpdateRuntimeState_StderrPathNeitherConfiguredNorStored_StoresNullForItAndKeepsTheKnownStdoutPath()
+        {
+            // Arrange: the mirror of the stdout test - the wrapper reports a share for stderr only
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, StdoutPath = @"C:\Logs\out.log", StderrPath = @"C:\Logs\err.log" });
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = @"C:\Logs\out.log", ActiveStderrPath = @"\\attacker\share\err.log" };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert: the unknown stderr path is written as null with its own warning, the known stdout path as reported
+            Assert.True(response.Success);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName,
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 77 && s.ActiveStdoutPath == @"C:\Logs\out.log" && s.ActiveStderrPath == null),
+                It.IsAny<CancellationToken>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("Ignored the active stderr path")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_NoStoredRow_RefusesBothReportedPathsAndStillUpdatesThePid()
+        {
+            // Arrange: the row is gone when the wrapper reports, so there is nothing to compare the paths with
+            _repository.Setup(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
+            var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+            request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = @"C:\Logs\out.log", ActiveStderrPath = @"C:\Logs\err.log" };
+
+            // Act
+            var response = await _sut.ProcessRequestAsync(request, TheServiceProcess, CancellationToken.None);
+
+            // Assert: neither path is accepted, and the request still succeeds with the PID as reported
+            Assert.True(response.Success, response.ErrorMessage);
+            _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName,
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 77 && s.ActiveStdoutPath == null && s.ActiveStderrPath == null),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task UpdateRuntimeState_ActivePathIsTheConfiguredPathAfterGetFullPath_IsStoredAsReported()
         {
             // Arrange: the same file as the configured one, spelled with another case and a ".." segment
