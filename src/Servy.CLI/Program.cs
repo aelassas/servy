@@ -109,11 +109,11 @@ namespace Servy.CLI
                     // Load configuration from appsettings.cli.json
                     var builder = new ConfigurationBuilder();
 #if DEBUG
-                    builder.AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: false);
+                    builder.AddJsonFile(AppConfig.ServyCliSettingsFileName, optional: true, reloadOnChange: false);
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     builder.SetBasePath(baseDirectory)
-                           .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: false);
+                           .AddJsonFile(AppConfig.ServyCliSettingsFileName, optional: true, reloadOnChange: false);
 #endif
                     var config = builder.Build();
 
@@ -123,7 +123,7 @@ namespace Servy.CLI
                     var aesIVFilePath = coreSettings.AESIVFilePath;
 
                     LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
-                    CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.cli.json");
+                    CoreSettingsLoader.WarnAboutIgnoredSettings(config, AppConfig.ServyCliSettingsFileName);
 
                     if (!runtime.IsSqliteVersionSafe(out var detectedVersion))
                     {

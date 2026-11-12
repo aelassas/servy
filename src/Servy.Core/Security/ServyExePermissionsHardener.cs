@@ -73,10 +73,10 @@ namespace Servy.Core.Security
     public class ServyExePermissionsHardener : IServyExePermissionsHardener
     {
         /// <summary>The file name of the service's settings file in the vault.</summary>
-        internal const string ServiceSettingsFileName = "appsettings.service.json";
+        internal const string ServiceSettingsFileName = AppConfig.ServyServiceSettingsFileName;
 
         /// <summary>The file name of the restarter's settings file in the vault.</summary>
-        internal const string RestarterSettingsFileName = "appsettings.restarter.json";
+        internal const string RestarterSettingsFileName = AppConfig.ServyRestarterSettingsFileName;
 
         /// <summary>The file name of the host's settings file in the vault.</summary>
         internal const string HostSettingsFileName = AppConfig.ServyHostSettingsFileName;

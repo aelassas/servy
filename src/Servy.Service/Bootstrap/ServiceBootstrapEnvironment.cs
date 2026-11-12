@@ -45,7 +45,7 @@ namespace Servy.Service.Bootstrap
         {
             return new ConfigurationBuilder()
                 .SetBasePath(AppFoldersHelper.GetAppDirectory())
-                .AddJsonFile("appsettings.service.json", optional: true, reloadOnChange: false)
+                .AddJsonFile(AppConfig.ServyServiceSettingsFileName, optional: true, reloadOnChange: false)
                 .Build();
         }
 

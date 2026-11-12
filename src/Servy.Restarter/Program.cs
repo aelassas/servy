@@ -84,7 +84,7 @@ namespace Servy.Restarter
                 // 2. Load configuration
                 var config = new ConfigurationBuilder()
                     .SetBasePath(AppFoldersHelper.GetAppDirectory())
-                    .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: false)
+                    .AddJsonFile(AppConfig.ServyRestarterSettingsFileName, optional: true, reloadOnChange: false)
                     .Build();
 
                 // 3. Parse the restart timeout
@@ -102,7 +102,7 @@ namespace Servy.Restarter
 
                 // 6. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
-                CoreSettingsLoader.WarnAboutIgnoredSettings(config, "appsettings.restarter.json", scopedLogger);
+                CoreSettingsLoader.WarnAboutIgnoredSettings(config, AppConfig.ServyRestarterSettingsFileName, scopedLogger);
 
                 var maxWrapperWaitSeconds = AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerSecond;
                 if (restartTimeout > maxWrapperWaitSeconds)

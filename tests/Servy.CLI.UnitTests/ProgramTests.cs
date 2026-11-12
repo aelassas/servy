@@ -282,6 +282,24 @@ namespace Servy.CLI.UnitTests
             Assert.DoesNotContain("Service status for", result.StdOut);
         }
 
+        [Fact]
+        public void SettingsFileName_NamesTheSettingsFileTheBuildShipsBesideTheCli()
+        {
+            // Arrange
+            // Program.Main loads its settings from AppConfig.ServyCliSettingsFileName and warns about ignored
+            // settings under the same name. The build copies src/Servy.CLI/appsettings.cli.json next to the
+            // assembly, so a constant that drifts from the shipped file name would make the CLI start on
+            // defaults with no error.
+            string shippedFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppConfig.ServyCliSettingsFileName);
+
+            // Act
+            bool exists = File.Exists(shippedFile);
+
+            // Assert
+            Assert.Equal("appsettings.cli.json", AppConfig.ServyCliSettingsFileName);
+            Assert.True(exists, $"Expected the CLI settings file at {shippedFile}.");
+        }
+
         #endregion
 
         #region Runtime Seam: Bootstrap Branches

@@ -1751,6 +1751,21 @@ namespace Servy.Core.Config
         public const string ServyHostSettingsFileName = "appsettings.host.json";
 
         /// <summary>
+        /// The file name of the Servy service wrapper's settings file.
+        /// </summary>
+        public const string ServyServiceSettingsFileName = "appsettings.service.json";
+
+        /// <summary>
+        /// The file name of the Servy restarter's settings file.
+        /// </summary>
+        public const string ServyRestarterSettingsFileName = "appsettings.restarter.json";
+
+        /// <summary>
+        /// The file name of the Servy CLI's settings file.
+        /// </summary>
+        public const string ServyCliSettingsFileName = "appsettings.cli.json";
+
+        /// <summary>
         /// The name of the local Named Pipe used for inter-process communication between wrapped services and the Servy host.
         /// </summary>
         public const string ServyHostNamedPipeName = "SERVY_HOST_IPC_PIPE";
