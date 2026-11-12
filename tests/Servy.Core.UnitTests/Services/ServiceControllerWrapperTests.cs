@@ -603,6 +603,54 @@ namespace Servy.Core.UnitTests.Services
             }
         }
 
+        [Fact]
+        public void GetDependencies_ResolvedWrappers_AreEachDisposedOnce()
+        {
+            // Arrange: Root -> [ServiceB, ServiceC]; both depend on ServiceShared (diamond)
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ServiceB", "ServiceC" });
+                var mockB = CreateMockWrapper("ServiceB", "Service B", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockC = CreateMockWrapper("ServiceC", "Service C", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockShared = CreateMockWrapper("ServiceShared", "Shared Service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ServiceB", mockB.Object },
+                    { "ServiceC", mockC.Object },
+                    { "ServiceShared", mockShared.Object }
+                };
+
+                // Act
+                wrapper.GetDependenciesInternal(name => mocks[name], TestContext.Current.CancellationToken);
+
+                // Assert: every wrapper the walk opened is released, and the cached shared node is not reopened
+                mockRoot.Verify(m => m.Dispose(), Times.Once);
+                mockB.Verify(m => m.Dispose(), Times.Once);
+                mockC.Verify(m => m.Dispose(), Times.Once);
+                mockShared.Verify(m => m.Dispose(), Times.Once);
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_WrapperThatFailsAfterCreation_IsStillDisposed()
+        {
+            // Arrange: the factory hands the wrapper back, then reading its status fails
+            using (var wrapper = new ServiceControllerWrapper("TargetService"))
+            {
+                var mockTarget = new Mock<IServiceControllerWrapper>();
+                mockTarget.Setup(m => m.Status).Throws(new InvalidOperationException("Service TargetService was not found on computer '.'."));
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(_ => mockTarget.Object, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.True(result.IsUnavailable);
+                mockTarget.Verify(m => m.Dispose(), Times.Once);
+            }
+        }
+
         #endregion
 
         #region Test Helpers
