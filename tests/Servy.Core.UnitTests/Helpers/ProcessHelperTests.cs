@@ -240,6 +240,20 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(Path.Combine(systemRoot, "System32\\cmd.exe"), result, ignoreCase: true);
         }
 
+        [Fact]
+        public void ResolvePath_PaddedAbsolutePath_IsTrimmedBeforeTheAbsoluteCheck()
+        {
+            // Arrange
+            var expected = Path.GetFullPath(Path.Combine(_testRoot, "padded.txt"));
+            var input = "  " + expected + "  ";
+
+            // Act
+            var result = _processHelper.ResolvePath(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         #endregion
 
         #region ValidatePath Tests
@@ -266,6 +280,16 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Act & Assert
             Assert.True(_processHelper.ValidatePath(file, isFile: true));
+        }
+
+        [Fact]
+        public void ValidatePath_PaddedExistingFile_ReturnsTrue()
+        {
+            // Arrange
+            var file = CreateTempFile();
+
+            // Act & Assert
+            Assert.True(_processHelper.ValidatePath("  " + file + "  ", isFile: true));
         }
 
         [Fact]
