@@ -371,6 +371,90 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
+        /// Pins that the spinner turns: an action that outlasts one frame gets a second frame, and the
+        /// second frame shows the next spinner character.
+        /// </summary>
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenActionOutlastsOneFrame_WritesTheNextSpinnerCharacter()
+        {
+            // Arrange
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 80);
+
+            try
+            {
+                using (var writer = new SpinnerFrameSequenceStringWriter())
+                {
+                    // Hold the action open until the spinner has written its second frame.
+                    Func<Task> action = () => Task.Run(() =>
+                    {
+                        Assert.True(
+                            writer.SecondFrameWritten.Task.Wait(TimeSpan.FromSeconds(5)),
+                            "The spinner never wrote a second frame.");
+                    });
+
+                    var originalOut = Console.Out;
+                    Console.SetOut(writer);
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(action, "Working");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.True(writer.Frames.Count >= 2);
+                    Assert.Equal("\rWorking |", writer.Frames[0]);
+                    Assert.Equal("\rWorking /", writer.Frames[1]);
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
+        /// Records every spinner frame in order and signals when the second one arrives.
+        /// </summary>
+        private sealed class SpinnerFrameSequenceStringWriter : StringWriter
+        {
+            private readonly object _gate = new object();
+
+            /// <summary>
+            /// Completes once the spinner has written its second frame.
+            /// </summary>
+            public TaskCompletionSource<bool> SecondFrameWritten { get; } = new TaskCompletionSource<bool>();
+
+            /// <summary>
+            /// The spinner frames in the order they were written.
+            /// </summary>
+            public List<string> Frames { get; } = new List<string>();
+
+            /// <summary>
+            /// Records spinner frames (they start with a carriage return and do not end with one), then forwards every write.
+            /// </summary>
+            /// <param name="value">The text being written to the console.</param>
+            public override void Write(string? value)
+            {
+                if (value != null && value.StartsWith("\r") && !value.EndsWith("\r"))
+                {
+                    lock (_gate)
+                    {
+                        Frames.Add(value);
+                        if (Frames.Count == 2) SecondFrameWritten.TrySetResult(true);
+                    }
+                }
+
+                base.Write(value);
+            }
+        }
+
+        /// <summary>
         /// Throws on the spinner frame (which starts with "\r" but does not end with it) and records the
         /// clearing write (which starts and ends with "\r"), so the background-fault catch is the only thing
         /// between the spinner's IOException and the caller. The inverse of
