@@ -133,6 +133,24 @@ namespace Servy.Core.UnitTests.Logging
         }
 
         [Fact]
+        public void Initialize_WithNullFileName_OnALiveLogger_ShutsTheWriterDown()
+        {
+            // Arrange
+            Logger.Initialize(_testFileName);
+            Logger.Info("Before the reset");
+
+            // Act
+            Logger.Initialize((string)null);
+            Logger.Info("After the reset");
+
+            // Assert
+            Assert.Null(TestReflection.GetFieldStatic<RotatingStreamWriter>(typeof(Logger), "_writer"));
+            string content = File.ReadAllText(_fullLogPath);
+            Assert.Contains("Before the reset", content);
+            Assert.DoesNotContain("After the reset", content);
+        }
+
+        [Fact]
         public void Initialize_WhenFileNameIsInvalid_FailsSilentlyAndWritesToFallback()
         {
             // Arrange
