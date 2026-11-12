@@ -59,7 +59,10 @@ namespace Servy.Core.IntegrationTests.Setup
         {
             foreach (string fileName in LauncherFileNames)
             {
+                // Arrange & Act
                 string text = File.ReadAllText(Path.Combine(_taskSchdDir, fileName));
+
+                // Assert
                 Assert.Contains("WScript.ScriptFullName", text);
                 Assert.Contains("GetBaseName", text);
             }
