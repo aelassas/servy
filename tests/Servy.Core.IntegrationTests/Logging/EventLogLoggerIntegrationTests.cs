@@ -503,6 +503,30 @@ namespace Servy.Core.IntegrationTests.Logging
             }
         }
 
+        [Fact]
+        public void Report_WithTitleOnly_SinkEnabled_SendsTheBareTitleToTheEventLog()
+        {
+            Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
+
+            // Arrange
+            string source = GenerateSourceName();
+            using (var logger = new RecordingEventLogLogger(source, LogLevel.Info, true))
+            {
+                // The sink must really be on, or the block is never built and the assert below
+                // only sees the file-sink title.
+                Assert.True(logger.IsEventLogEnabled);
+
+                // Act
+                logger.Report(LogLevel.Info, "Standalone Title", null!);
+
+                // Assert
+                // Format runs twice: once for the Event Log block and once for the file-sink title.
+                // With no body both must be the bare title, with no "\n" appended.
+                Assert.Equal(2, logger.Formatted.Count);
+                Assert.All(logger.Formatted, f => Assert.Equal("Standalone Title", f));
+            }
+        }
+
         [Theory]
         [InlineData(LogLevel.Error, EventLogEntryType.Error, EventIds.Error)]
         [InlineData(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning)]
