@@ -18,6 +18,7 @@ namespace Servy.Core.IntegrationTests.Services
         [Fact]
         public void EnsureLogOnAsServiceRight_InvalidAccountName_ThrowsInvalidOperationException()
         {
+            // Arrange
             // This tests the branch that flows through to LogonAsServiceGrant.Ensure.
             // We pass a dummy invalid name to trigger the underlying SID resolution failure.
             string invalidAccount = "NonExistentAccount_" + Guid.NewGuid().ToString("N");
