@@ -188,10 +188,13 @@ namespace Servy.Core.UnitTests.Domain
             // the matching Assert.Equal. A value equal to the default pins nothing: the assertion compares
             // equal values either way. The two false values are pinned with true by
             // Install_ShouldCallServiceManagerWithCorrectArguments_NoWrapperExe instead.
+            // DisplayName and StopTimeout are also distinct from Name and HeartbeatInterval, so a crossed
+            // assignment between those pairs fails; the booleans are crossed-checked one at a time by
+            // Install_ForwardsEachBooleanOnItsOwn.
             var service = new Core.Domain.Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
-                DisplayName = "TestService",
+                DisplayName = "Test Service Display",
                 Description = "My Test Service",
                 ExecutablePath = "C:\\real.exe",
                 StartupDirectory = @"C:\MyApp",
@@ -240,7 +243,7 @@ namespace Servy.Core.UnitTests.Domain
                 PostLaunchParameters = "--postArg",
                 EnableDebugLogs = true,
                 StartTimeout = 60,
-                StopTimeout = 45,
+                StopTimeout = 50,
                 PreStopExecutablePath = "C:\\pre-stop.exe",
                 PreStopStartupDirectory = "C:\\preStopDir",
                 PreStopParameters = "--preStopArg",
@@ -321,6 +324,61 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(service.PostStopExecutablePath, captured.PostStopExePath);
             Assert.Equal(service.PostStopStartupDirectory, captured.PostStopStartupDirectory);
             Assert.Equal(service.PostStopParameters, captured.PostStopArgs);
+        }
+
+        private static readonly string[] BooleanOptionNames =
+        {
+            nameof(Core.Domain.Service.EnableConsoleUI),
+            nameof(Core.Domain.Service.EnableSizeRotation),
+            nameof(Core.Domain.Service.EnableDateRotation),
+            nameof(Core.Domain.Service.UseLocalTimeForRotation),
+            nameof(Core.Domain.Service.EnableHealthMonitoring),
+            nameof(Core.Domain.Service.EnableHeartbeatUrlFlags),
+            nameof(Core.Domain.Service.RecoveryOnCleanExit),
+            nameof(Core.Domain.Service.PreLaunchIgnoreFailure),
+            nameof(Core.Domain.Service.AllowOverriddenRuntimeVars),
+            nameof(Core.Domain.Service.EnableDebugLogs),
+            nameof(Core.Domain.Service.PreStopLogAsError),
+        };
+
+        [Theory]
+        [InlineData(nameof(Core.Domain.Service.EnableConsoleUI))]
+        [InlineData(nameof(Core.Domain.Service.EnableSizeRotation))]
+        [InlineData(nameof(Core.Domain.Service.EnableDateRotation))]
+        [InlineData(nameof(Core.Domain.Service.UseLocalTimeForRotation))]
+        [InlineData(nameof(Core.Domain.Service.EnableHealthMonitoring))]
+        [InlineData(nameof(Core.Domain.Service.EnableHeartbeatUrlFlags))]
+        [InlineData(nameof(Core.Domain.Service.RecoveryOnCleanExit))]
+        [InlineData(nameof(Core.Domain.Service.PreLaunchIgnoreFailure))]
+        [InlineData(nameof(Core.Domain.Service.AllowOverriddenRuntimeVars))]
+        [InlineData(nameof(Core.Domain.Service.EnableDebugLogs))]
+        [InlineData(nameof(Core.Domain.Service.PreStopLogAsError))]
+        public async Task Install_ForwardsEachBooleanOnItsOwn(string onlyTrue)
+        {
+            // Arrange
+            var service = CreateService();
+            foreach (var name in BooleanOptionNames)
+            {
+                typeof(Core.Domain.Service).GetProperty(name)!.SetValue(service, name == onlyTrue);
+            }
+
+            InstallServiceOptions? captured = null;
+            _serviceManagerMock
+                .Setup(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await service.InstallAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(captured);
+            foreach (var name in BooleanOptionNames)
+            {
+                var actual = (bool)typeof(InstallServiceOptions).GetProperty(name)!.GetValue(captured)!;
+                Assert.True(name == onlyTrue == actual, $"{name} was forwarded as {actual} when only {onlyTrue} was set.");
+            }
         }
 
         [Fact]
