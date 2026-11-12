@@ -138,6 +138,44 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
+        public void ToDomain_EachBooleanFlag_ReachesOnlyItsOwnDomainProperty()
+        {
+            // Arrange: raising one flag at a time makes a flag wired to the wrong source visible, which the
+            // fully populated DTO cannot do while most of its flags share the value true
+            var flags = typeof(ServiceDto)
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.PropertyType == typeof(bool?)
+                    && typeof(Core.Domain.Service).GetProperty(p.Name)?.PropertyType == typeof(bool))
+                .ToList();
+            Assert.True(flags.Count >= 12, $"Expected at least 12 mapped boolean flags, found {flags.Count}.");
+
+            var misrouted = new List<string>();
+            foreach (var raised in flags)
+            {
+                var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\app\service.exe" };
+                foreach (var flag in flags)
+                {
+                    flag.SetValue(dto, flag == raised);
+                }
+
+                // Act
+                var service = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
+
+                // Assert (collected, so one failing run names every crossed pair)
+                foreach (var flag in flags)
+                {
+                    var actual = (bool)typeof(Core.Domain.Service).GetProperty(flag.Name)!.GetValue(service)!;
+                    if (actual != (flag == raised))
+                    {
+                        misrouted.Add($"With only {raised.Name} raised, Service.{flag.Name} was {actual}.");
+                    }
+                }
+            }
+
+            Assert.True(misrouted.Count == 0, string.Join(" ", misrouted));
+        }
+
+        [Fact]
         public void ToDomain_NullRepository_ThrowsArgumentNullException()
         {
             // Arrange
@@ -282,7 +320,7 @@ namespace Servy.Core.UnitTests.Mappers
                 PostLaunchParameters = "--post-param1",
                 PostLaunchStartupDirectory = @"C:\apps\post_launch\",
                 StartTimeout = 40,
-                StopTimeout = 50,
+                StopTimeout = 55,
                 PreStopExecutablePath = @"C:\prestop.exe",
                 PreStopStartupDirectory = @"C:\prestop",
                 PreStopParameters = "-pre-stop",
