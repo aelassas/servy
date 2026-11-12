@@ -394,7 +394,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public async Task Write_RequestAboveTheRequestCap_ThrowsInsteadOfSendingAFrameTheHostWouldRefuse()
         {
-            // Arrange: a request one byte above the 256 KB request cap
+            // Arrange: a name of cap + 1 characters, so the frame is above the 256 KB request cap
             var request = new IpcRequestDto { ServiceName = new string('x', (int)AppConfig.ServyHostMaxAllowedRequestSizeBytes + 1) };
             using (var sync = new MemoryStream())
             using (var async = new MemoryStream())
@@ -404,6 +404,45 @@ namespace Servy.Core.UnitTests.NamedPipes
                 await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.WriteAsync(async, request, CancellationToken.None));
                 Assert.Equal(0, sync.Length);
                 Assert.Equal(0, async.Length);
+            }
+        }
+
+        [Fact]
+        public async Task WriteThenRead_RequestOfExactlyTheRequestCap_RoundTrips_AndOneByteMoreIsRefused()
+        {
+            // Arrange: measure the frame of an empty name, then pad the name (1 byte per 'x') up to the cap
+            var ct = CancellationToken.None;
+            int cap = (int)AppConfig.ServyHostMaxAllowedRequestSizeBytes;
+            int overhead;
+            using (var probe = new MemoryStream())
+            {
+                _sut.Write(probe, new IpcRequestDto { ServiceName = string.Empty }, ct);
+                overhead = (int)probe.Length - 4;
+            }
+
+            var atCap = new IpcRequestDto { ServiceName = new string('x', cap - overhead) };
+            var overCap = new IpcRequestDto { ServiceName = new string('x', cap - overhead + 1) };
+
+            using (var sync = new MemoryStream())
+            using (var async = new MemoryStream())
+            using (var refused = new MemoryStream())
+            {
+                // Act
+                _sut.Write(sync, atCap, ct);
+                await _sut.WriteAsync(async, atCap, ct);
+                sync.Position = 0;
+                async.Position = 0;
+                var syncRead = _sut.Read<IpcRequestDto>(sync, ct);
+                var asyncRead = await _sut.ReadAsync<IpcRequestDto>(async, ct);
+
+                // Assert
+                Assert.Equal(cap + 4, sync.Length);
+                Assert.Equal(cap + 4, async.Length);
+                Assert.Equal(atCap.ServiceName, syncRead.ServiceName);
+                Assert.Equal(atCap.ServiceName, asyncRead.ServiceName);
+                Assert.Throws<InvalidOperationException>(() => _sut.Write(refused, overCap, ct));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.WriteAsync(refused, overCap, ct));
+                Assert.Equal(0, refused.Length);
             }
         }
 
