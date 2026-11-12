@@ -1,7 +1,9 @@
 using Moq;
 using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.UnitTests.Logging;
+using Servy.Testing;
 using System;
 using System.Collections.Specialized;
 using System.IO;
@@ -145,6 +147,33 @@ namespace Servy.Core.UnitTests.Config
             Assert.Contains("LogRollingInterval: 0 (Daily)", logText);
             Assert.Contains("MaxBackupLogFiles: 7", logText);
             Assert.Contains("UseLocalTimeForRotation: True", logText);
+        }
+
+        [Theory]
+        [InlineData(true)]   // Logger.Initialize(fileName, ...) arm
+        [InlineData(false)]  // Logger.Initialize(...) arm
+        public void ConfigureFromAppSettings_WithRotationSettings_PassesEveryParsedValueToTheStaticLogger(bool withLogFileName)
+        {
+            // Arrange
+            // Each value differs from its AppConfig default and from the other value of its type.
+            var config = new NameValueCollection
+            {
+                { "LogRollingInterval", "Daily" },
+                { "EnableSizeRotation", "false" },
+                { "LogRotationSizeMB", "42" },
+                { "MaxBackupLogFiles", "7" },
+                { "UseLocalTimeForRotation", "true" },
+            };
+
+            // Act
+            LoggerConfigurator.ConfigureFromAppSettings(config, logFileName: withLogFileName ? _testFileName : null);
+
+            // Assert
+            Assert.False(TestReflection.GetFieldStatic<bool>(typeof(Logger), "_enableSizeRotation"));
+            Assert.Equal(42, TestReflection.GetFieldStatic<int>(typeof(Logger), "_logRotationSizeMB"));
+            Assert.Equal(DateRotationType.Daily, TestReflection.GetFieldStatic<DateRotationType>(typeof(Logger), "_dateRotationType"));
+            Assert.Equal(7, TestReflection.GetFieldStatic<int>(typeof(Logger), "_maxBackupLogFiles"));
+            Assert.True(TestReflection.GetFieldStatic<bool>(typeof(Logger), "_useLocalTimeForRotation"));
         }
     }
 }
