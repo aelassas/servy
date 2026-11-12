@@ -302,32 +302,9 @@ namespace Servy.Core.IntegrationTests.Logging
                         {
                             eventLog.Source = source;
 
-                            EventLogEntry foundEntry = null;
-
-                            // Introduce a polling loop with exponential backoff
-                            // to account for asynchronous Event Log service disk-flushing delays
-                            const int maxRetries = 10;
-                            int retryCount = 0;
-                            int delayMs = 50;
-
-                            while (foundEntry == null && retryCount++ < maxRetries)
-                            {
-                                int count = eventLog.Entries.Count;
-                                for (int i = count - 1; i >= 0; i--)
-                                {
-                                    if (eventLog.Entries[i].Source == source)
-                                    {
-                                        foundEntry = eventLog.Entries[i];
-                                        break;
-                                    }
-                                }
-
-                                if (foundEntry == null)
-                                {
-                                    Thread.Sleep(delayMs);
-                                    delayMs *= 2; // Exponential backoff (50ms, 100ms, 200ms...)
-                                }
-                            }
+                            // Poll with exponential backoff to account for asynchronous Event Log
+                            // service disk-flushing delays.
+                            EventLogEntry foundEntry = PollForNewestEntry(eventLog, entry => entry.Source == source);
 
                             if (foundEntry != null)
                             {
@@ -342,7 +319,7 @@ namespace Servy.Core.IntegrationTests.Logging
                                 // The polling window can expire without the entry appearing (slow Event Log flush,
                                 // rotation eviction, write routed elsewhere). Report it the same way the ACL-restricted
                                 // read-back below does, so a run that verified nothing is distinguishable from one that did.
-                                Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {maxRetries} retries; truncation contract not verified this run.");
+                                Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {EventLogReadBackMaxRetries} retries; truncation contract not verified this run.");
                             }
                         }
                     }
@@ -576,30 +553,7 @@ namespace Servy.Core.IntegrationTests.Logging
                     using (var eventLog = new EventLog(AppConfig.EventLogName))
                     {
                         eventLog.Source = source;
-                        EventLogEntry foundEntry = null;
-
-                        const int maxRetries = 10;
-                        int retryCount = 0;
-                        int delayMs = 50;
-
-                        while (foundEntry == null && retryCount++ < maxRetries)
-                        {
-                            int count = eventLog.Entries.Count;
-                            for (int i = count - 1; i >= 0; i--)
-                            {
-                                if (eventLog.Entries[i].Source == source && eventLog.Entries[i].Message.Contains(title))
-                                {
-                                    foundEntry = eventLog.Entries[i];
-                                    break;
-                                }
-                            }
-
-                            if (foundEntry == null)
-                            {
-                                Thread.Sleep(delayMs);
-                                delayMs *= 2;
-                            }
-                        }
+                        EventLogEntry foundEntry = PollForNewestEntry(eventLog, entry => entry.Source == source && entry.Message.Contains(title));
 
                         // Assert
                         if (foundEntry != null)
@@ -614,7 +568,7 @@ namespace Servy.Core.IntegrationTests.Logging
                             // The polling window can expire without the entry appearing (slow Event Log
                             // flush, rotation eviction, write routed elsewhere). Report it the way the
                             // truncation test above does, so a run that read nothing back says so.
-                            Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {maxRetries} retries; Event Log read-back not verified this run.");
+                            Trace.WriteLine($"Warning: No EventLog entry from source '{source}' appeared after {EventLogReadBackMaxRetries} retries; Event Log read-back not verified this run.");
                         }
                     }
 
@@ -809,6 +763,36 @@ namespace Servy.Core.IntegrationTests.Logging
                 Formatted.Add(message);
                 return base.Format(message);
             }
+        }
+
+        private const int EventLogReadBackMaxRetries = 10;
+        private const int EventLogReadBackFirstDelayMs = 50;
+
+        /// <summary>
+        /// Scans <paramref name="eventLog"/> newest-first for an entry that satisfies <paramref name="matches"/>,
+        /// retrying with exponential backoff because the Event Log service flushes asynchronously.
+        /// </summary>
+        /// <returns>The newest matching entry, or <c>null</c> when none appeared within the retry budget.</returns>
+        private static EventLogEntry PollForNewestEntry(EventLog eventLog, Func<EventLogEntry, bool> matches)
+        {
+            int delayMs = EventLogReadBackFirstDelayMs;
+
+            for (int attempt = 0; attempt < EventLogReadBackMaxRetries; attempt++)
+            {
+                for (int i = eventLog.Entries.Count - 1; i >= 0; i--)
+                {
+                    EventLogEntry entry = eventLog.Entries[i];
+                    if (matches(entry))
+                    {
+                        return entry;
+                    }
+                }
+
+                Thread.Sleep(delayMs);
+                delayMs *= 2; // Exponential backoff (50ms, 100ms, 200ms...)
+            }
+
+            return null;
         }
 
         private string GenerateSourceName()
