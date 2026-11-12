@@ -455,7 +455,7 @@ namespace Servy.Core.UnitTests.Logging
             // U+1F60A is a supplementary-plane code point, so UTF-16 encodes it as the surrogate pair
             // U+D83D U+DE0A - the two code units the truncation guard must not separate. A BMP
             // character such as a heart plus a variation selector would contain no surrogate at all.
-            // The payload is run at both parities because the cut is derived from a fixed byte cap:
+            // The payload is run at both parities because the cut is derived from a fixed character cap:
             // only one of the two offsets puts the cut inside a pair and exercises the guard.
             string surrogatePair = char.ConvertFromUtf32(0x1F60A);
             int charCount = (AppConfig.LoggerMaxFormattedExceptionLength / 2) + 1024;
