@@ -444,7 +444,7 @@ namespace Servy.Core.UnitTests.Security
         #endregion
 
         /// <summary>
-        /// Helper to invoke the internal method via reflection.
+        /// Invokes the public <see cref="SecurityHelper.ApplySecurityRules"/> through <see cref="TestReflection"/>.
         /// </summary>
         /// <param name="security">The security descriptor context.</param>
         /// <param name="sid">The identity reference SID target.</param>
