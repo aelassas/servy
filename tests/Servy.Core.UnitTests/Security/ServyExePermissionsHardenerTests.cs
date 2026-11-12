@@ -1677,6 +1677,28 @@ namespace Servy.Core.UnitTests.Security
             await Assert.ThrowsAsync<ArgumentNullException>(() => sut.SecureVaultAsync(null!, TestContext.Current.CancellationToken));
         }
 
+        [Fact]
+        public void GetServiceNamesOf_AccountCannotBeResolved_MatchesItsServicesBySpellingOnly()
+        {
+            // Arrange
+            // The account being hardened does not resolve, the other account does.
+            var sut = new TestableHardener(TempDirectory)
+            {
+                Resolver = a => string.Equals(a, "ghost", StringComparison.OrdinalIgnoreCase) ? null : NetworkServiceSid,
+            };
+            var services = new List<ServiceDto>
+            {
+                new ServiceDto { Name = "same-spelling", UserAccount = "GHOST" },
+                new ServiceDto { Name = "other-account", UserAccount = "other" },
+            };
+
+            // Act
+            var names = sut.GetServiceNamesOf("ghost", services, "new-svc");
+
+            // Assert
+            Assert.Equal(new[] { "new-svc", "same-spelling" }, names);
+        }
+
         #endregion
 
         /// <summary>No remaining service.</summary>
