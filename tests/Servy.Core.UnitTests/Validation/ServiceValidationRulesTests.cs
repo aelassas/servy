@@ -213,6 +213,29 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Validate_LengthsExactlyAtTheirCaps_ReturnsValid()
+        {
+            // Arrange: every capped text field at exactly its limit
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.DisplayName = new string('C', AppConfig.MaxDisplayNameLength);
+            dto.Description = new string('C', AppConfig.MaxDescriptionLength);
+            var atCap = new string('C', AppConfig.MaxArgumentLength);
+            dto.Parameters = atCap;
+            dto.PreLaunchParameters = atCap;
+            dto.PostLaunchParameters = atCap;
+            dto.PreStopParameters = atCap;
+            dto.PostStopParameters = atCap;
+            dto.FailureProgramParameters = atCap;
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.True(result.IsValid, string.Join(", ", result.Errors));
+            Assert.Empty(result.Errors);
+        }
+
+        [Fact]
         public void Validate_InvalidPaths_ReturnsErrors()
         {
             // Arrange
@@ -311,6 +334,41 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.Contains(Strings.Msg_PasswordsDontMatch, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_Credentials_RunAsLocalSystemNotSet_StillValidatesTheAccount()
+        {
+            // Arrange: null is not LocalSystem, so the account is checked
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = null;
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
+            dto.Password = "Password123!";
+
+            // Act
+            var result = _sut.Validate(dto, confirmPassword: "Password123!");
+
+            // Assert
+            Assert.Single(result.Errors);
+            Assert.Contains("Username format is invalid", result.Errors[0]);
+        }
+
+        [Fact]
+        public void Validate_Credentials_NullPasswordWithEmptyConfirmation_IsNotAMismatch()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
+            dto.Password = null;
+
+            // Act
+            var result = _sut.Validate(dto, confirmPassword: string.Empty);
+
+            // Assert: the comparison passed, so the account check ran and is the only error
+            Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Contains("Username format is invalid", result.Errors[0]);
         }
 
         [Fact]
