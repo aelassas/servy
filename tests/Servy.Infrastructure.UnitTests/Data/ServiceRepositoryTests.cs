@@ -281,20 +281,6 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task DeleteAsync_ById_ReturnsAffectedRows()
-        {
-            // Arrange
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
-            var repo = CreateRepository();
-
-            // Act
-            var rows = await repo.DeleteAsync(10, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(1, rows);
-        }
-
-        [Fact]
         public async Task DeleteAsync_ByName_ReturnsAffectedRows()
         {
             // Arrange

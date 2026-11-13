@@ -31,9 +31,6 @@ namespace Servy.UI.Design
         public Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
-        public Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
-            => Task.FromResult(0);
-
         public Task<int> DeleteAsync(string name, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 

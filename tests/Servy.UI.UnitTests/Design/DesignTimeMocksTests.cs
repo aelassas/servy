@@ -58,7 +58,6 @@ namespace Servy.UI.UnitTests.Design
             Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: ct));
 
             // Act & Assert - Void/Int branches
-            Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
             Assert.Equal(0, await repo.DeleteAsync("test", cancellationToken: ct));
             Assert.Equal(0, await repo.UpsertAsync(new ServiceDto(), preserveExistingRuntimeState: true, preserveExistingCredentials: true, cancellationToken: ct));
         }

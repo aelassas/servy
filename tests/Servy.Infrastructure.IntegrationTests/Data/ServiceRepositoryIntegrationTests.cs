@@ -390,12 +390,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task DeleteAsync_ByNameAndId_RemovesTargetEntries()
+        public async Task DeleteAsync_ByName_RemovesTargetEntry()
         {
             // Arrange
             var cancellationToken = CancellationToken.None;
-
-            // --- 1. Verify "ByName" deletion path ---
             var serviceByName = new ServiceDto { Name = "KillMeByName", ExecutablePath = "kill_name.exe" };
             await _repository.UpsertAsync(serviceByName, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
 
@@ -406,20 +404,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(1, deletedByNameCount);
             var searchByName = await _repository.GetByNameAsync("KillMeByName", decrypt: true, cancellationToken);
             Assert.Null(searchByName);
-
-            // --- 2. Verify "ById" deletion path ---
-            // Arrange
-            var serviceById = new ServiceDto { Name = "KillMeById", ExecutablePath = "kill_id.exe" };
-            int idToDelete = await _repository.UpsertAsync(serviceById, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken);
-
-            // Act
-            // Act against the ID-based delete API overload to cover the other half of the name's promise
-            int deletedByIdCount = await _repository.DeleteAsync(idToDelete, cancellationToken);
-
-            // Assert
-            Assert.Equal(1, deletedByIdCount);
-            var searchById = await _repository.GetByNameAsync("KillMeById", decrypt: true, cancellationToken);
-            Assert.Null(searchById);
         }
 
         [Fact]
