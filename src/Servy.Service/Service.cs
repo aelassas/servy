@@ -74,7 +74,7 @@ namespace Servy.Service
         /// <summary>
         /// The command-line argument used to signal that the service is running in a test context.
         /// When this flag is present in the startup arguments, certain environment-specific
-        /// initializations (like Win32 handle reflection) are bypassed.
+        /// initializations (like reading the native service status handle) are bypassed.
         /// </summary>
         public const string TestModeFlag = "servy_test";
 
@@ -340,8 +340,8 @@ namespace Servy.Service
                 // Without Logger.Initialize in the constructor, this would be lost.
                 _bootstrapEnvironment.LogError("Fatal error during service construction.", ex);
 
-                // If the environment exit code was successfully set to a custom error
-                // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
+                // If a non-zero environment exit code was already set, preserve it.
+                // Otherwise, set a generic service failure code.
                 if (Environment.ExitCode == 0)
                 {
                     Environment.ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
@@ -506,7 +506,7 @@ namespace Servy.Service
                 // Start the monitored main process
                 StartMonitoredProcess(options, capturedToken);
 
-                // Reset restart attempts on service start to avoid blocking recovery
+                // Evaluate the restart attempts counter in the background; it is reset only after a stable run
                 if (_recoveryActionEnabled)
                 {
                     _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options, capturedToken), capturedToken)
@@ -590,7 +590,7 @@ namespace Servy.Service
         /// <summary>
         /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
         /// Starts the service using the <see cref="TestModeFlag"/> to bypass environment-specific
-        /// initializations like Win32 service handle reflection.
+        /// initializations like reading the native service status handle.
         /// </summary>
         public void StartForTest()
         {
