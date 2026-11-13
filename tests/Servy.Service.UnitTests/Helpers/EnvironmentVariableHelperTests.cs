@@ -804,6 +804,32 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.NotEqual("--max-old-space-size=4096", expanded.GetValueOrDefault("NODE_OPTIONS"));
         }
 
+        [Fact]
+        public void ExpandEnvironmentVariables_ProtectedVariables_LogTheDecisionTakenForEachTier()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "PATH", Value = "C:\\Attacker\\Bin" },   // Tier 1: never overridable
+                new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" }       // Tier 2: overridable by policy
+            };
+
+            // Act
+            string blockedLog = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
+            string allowedLog = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: true));
+
+            // Assert - policy off: both are reported as blocked, and only the Tier 2 line names the setting that lifts it
+            Assert.Contains("Blocked an attempt to override immutable system variable 'PATH'", blockedLog);
+            Assert.Contains("Blocked an attempt to override protected runtime variable 'JAVA_OPTS'", blockedLog);
+            Assert.Contains("Enable 'AllowOverriddenRuntimeVars' in service settings", blockedLog);
+            Assert.DoesNotContain("permitted by service policy", blockedLog);
+
+            // Assert - policy on: PATH is still reported as blocked, JAVA_OPTS is audited as permitted
+            Assert.Contains("Blocked an attempt to override immutable system variable 'PATH'", allowedLog);
+            Assert.Contains("Override for protected runtime variable 'JAVA_OPTS' permitted by service policy configuration", allowedLog);
+            Assert.DoesNotContain("Blocked an attempt to override protected runtime variable", allowedLog);
+        }
+
         #endregion
 
         #region Size Limitations and Truncation Sentinel Guard Paths
