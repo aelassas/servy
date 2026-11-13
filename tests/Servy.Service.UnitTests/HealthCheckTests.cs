@@ -7,6 +7,7 @@ using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
+using System.Diagnostics;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -157,6 +158,40 @@ namespace Servy.Service.UnitTests
             Assert.Equal(new[] { ServiceName, ServiceName }, store.ServiceNames);
             _ctx.NamedPipesService.Verify(p => p.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>()), Times.Once);
             _ctx.NamedPipesService.Verify(p => p.UpdateRestartAttemptsAsync(ServiceName, 0, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task CheckHealth_RestartAttemptsExhausted_RunsTheFailureProgramAndStopsTheService()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 3);
+
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            options.FailureProgramPath = @"C:\App\alert.exe";
+            TestReflection.SetField(service, "_options", options);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetMaxFailedChecks(1);
+            service.SetMaxRestartAttempts(3);   // already at 3 => exhausted
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetFailedChecks(0);
+
+            bool stopped = false;
+            service.OnStoppedForTest += () => stopped = true;
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert: the quota-reached path launches the failure program once and stops the service
+            _ctx.ProcessFactory.Verify(f => f.Create(
+                It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Once);
+            Assert.True(stopped);
         }
 
         [Fact]
