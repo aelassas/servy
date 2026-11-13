@@ -13,8 +13,10 @@ namespace Servy.Service
 
         /// <summary>
         /// Main entry point of the Servy Windows service application.
-        /// Re-attaches the parent console for diagnostic output and starts the service host.
+        /// Re-attaches the parent console for diagnostic output, declares the registry as the source of the
+        /// System environment variables and runs the service.
         /// </summary>
+        /// <param name="args">Command-line arguments passed to the process; not read here.</param>
         [ExcludeFromCodeCoverage]
         internal static void Main(string[] args)
         {
