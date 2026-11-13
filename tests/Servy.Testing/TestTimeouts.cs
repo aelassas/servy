@@ -178,6 +178,14 @@ namespace Servy.Testing
         public static readonly TimeSpan ServiceRestarterMidLoopExpiryBurn = TimeSpan.FromMilliseconds(750);
 
         /// <summary>
+        /// Budget (1 second) that outlasts one full recovery poll sleep (500 ms) but not that sleep plus
+        /// <see cref="ServiceRestarterMidLoopExpiryBurn"/>, so a second recovery pass starts and then runs out
+        /// before its wait; <see cref="ServiceRestarterMidLoopExpiryBudget"/> would be spent by the first poll sleep.
+        /// </summary>
+        /// <seealso cref="ServiceRestarterMidLoopExpiryBurn"/>
+        public static readonly TimeSpan ServiceRestarterLaterPassExpiryBudget = TimeSpan.FromSeconds(1);
+
+        /// <summary>
         /// Standard wait budget (5 seconds) for the log tailer suite: the background loop startup
         /// deadline, the graceful termination deadline and the polls that observe a single pass.
         /// </summary>
