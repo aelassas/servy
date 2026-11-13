@@ -1396,5 +1396,155 @@ namespace Servy.Restarter.UnitTests
         }
 
         #endregion
+
+        #region Remaining Budget Propagation Tests
+
+        [Fact]
+        public void RestartService_WaitsWithTheRemainingBudget_NotTheFullTimeout()
+        {
+            // Arrange
+            var timeout = TestTimeouts.ServiceRestarterRestartTimeout;
+            var burn = TestTimeouts.ServiceRestarterMidLoopExpiryBurn;
+            var waits = new List<(ServiceControllerStatus Target, TimeSpan Budget)>();
+
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)   // settle check: stable
+                .Returns(ServiceControllerStatus.Running)   // stop-phase entry: Stop is issued
+                .Returns(ServiceControllerStatus.Stopped);  // start-phase check: Start is issued
+
+            // The Stop command itself uses up part of the budget before the stop wait.
+            _mockController.Setup(c => c.Stop()).Callback(() => Thread.Sleep(burn));
+
+            _mockController.Setup(c => c.WaitForStatus(It.IsAny<ServiceControllerStatus>(), It.IsAny<TimeSpan>()))
+                .Callback<ServiceControllerStatus, TimeSpan>((target, budget) =>
+                {
+                    waits.Add((target, budget));
+                    Thread.Sleep(burn); // the stop wait uses up part of the budget
+                });
+
+            // Act
+            var result = _restarter.RestartService("MyService", timeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+            Assert.Equal(2, waits.Count);
+            Assert.Equal(ServiceControllerStatus.Stopped, waits[0].Target);
+            Assert.Equal(ServiceControllerStatus.Running, waits[1].Target);
+
+            // Each wait gets what is left of the one budget, never the full timeout again.
+            Assert.True(waits[0].Budget > TimeSpan.Zero);
+            Assert.True(waits[0].Budget < timeout);
+            Assert.True(waits[1].Budget < waits[0].Budget,
+                "The start wait was handed at least as much time as the stop wait, so the elapsed time was not subtracted from the one budget.");
+        }
+
+        [Fact]
+        public void HandleTransitionalError_StopRecovery_WaitsWithTheRemainingBudget()
+        {
+            // Arrange
+            var timeout = TestTimeouts.ServiceRestarterRestartTimeout;
+            var burn = TestTimeouts.ServiceRestarterMidLoopExpiryBurn;
+            var stopCallCount = 0;
+            var waits = new List<(ServiceControllerStatus Target, TimeSpan Budget)>();
+
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            // The primary Stop burns part of the budget and then fails transitionally, which routes
+            // execution into the recovery loop; the loop's own Stop is accepted.
+            _mockController.Setup(c => c.Stop()).Callback(() =>
+            {
+                stopCallCount++;
+                if (stopCallCount == 1)
+                {
+                    Thread.Sleep(burn);
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                }
+            });
+
+            // The recovery loop burns more of the budget before it waits, once.
+            var hasSlept = false;
+            _mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (stopCallCount > 0 && !hasSlept)
+                {
+                    hasSlept = true;
+                    Thread.Sleep(burn);
+                }
+            });
+
+            _mockController.Setup(c => c.WaitForStatus(It.IsAny<ServiceControllerStatus>(), It.IsAny<TimeSpan>()))
+                .Callback<ServiceControllerStatus, TimeSpan>((target, budget) => waits.Add((target, budget)));
+
+            // Act
+            var result = _restarter.RestartService("MyService", timeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+            Assert.Equal(2, stopCallCount);
+            Assert.Single(waits);
+            Assert.Equal(ServiceControllerStatus.Stopped, waits[0].Target);
+            Assert.True(hasSlept, "The recovery loop body was never reached.");
+
+            // Two burns were spent before the recovery wait: one by the primary command, one inside the
+            // loop. Dropping either leaves at most one burn off the timeout, so the threshold sits
+            // between the two (half a burn of margin each way against a timer that wakes early).
+            Assert.True(waits[0].Budget < timeout - TimeSpan.FromTicks(burn.Ticks * 3 / 2),
+                "The recovery loop waited with a budget that does not account for the time already spent.");
+        }
+
+        [Fact]
+        public void HandleTransitionalError_StartRecovery_WaitsWithTheRemainingBudget()
+        {
+            // Arrange
+            var timeout = TestTimeouts.ServiceRestarterRestartTimeout;
+            var burn = TestTimeouts.ServiceRestarterMidLoopExpiryBurn;
+            var startCallCount = 0;
+            var waits = new List<(ServiceControllerStatus Target, TimeSpan Budget)>();
+
+            // Stopped throughout: the stop phase is skipped and the start phase issues Start.
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            // The primary Start burns part of the budget and then fails transitionally, which routes
+            // execution into the recovery loop; the loop's own Start is accepted.
+            _mockController.Setup(c => c.Start()).Callback(() =>
+            {
+                startCallCount++;
+                if (startCallCount == 1)
+                {
+                    Thread.Sleep(burn);
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                }
+            });
+
+            // The recovery loop burns more of the budget before it waits, once.
+            var hasSlept = false;
+            _mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (startCallCount > 0 && !hasSlept)
+                {
+                    hasSlept = true;
+                    Thread.Sleep(burn);
+                }
+            });
+
+            _mockController.Setup(c => c.WaitForStatus(It.IsAny<ServiceControllerStatus>(), It.IsAny<TimeSpan>()))
+                .Callback<ServiceControllerStatus, TimeSpan>((target, budget) => waits.Add((target, budget)));
+
+            // Act
+            var result = _restarter.RestartService("MyService", timeout);
+
+            // Assert
+            Assert.Equal(RestartResult.Restarted, result);
+            Assert.Equal(2, startCallCount);
+            Assert.Single(waits);
+            Assert.Equal(ServiceControllerStatus.Running, waits[0].Target);
+            Assert.True(hasSlept, "The recovery loop body was never reached.");
+
+            // Two burns were spent before the recovery wait (the primary Start and the loop); see the Stop variant.
+            Assert.True(waits[0].Budget < timeout - TimeSpan.FromTicks(burn.Ticks * 3 / 2),
+                "The recovery loop waited with a budget that does not account for the time already spent.");
+        }
+
+        #endregion
     }
 }
