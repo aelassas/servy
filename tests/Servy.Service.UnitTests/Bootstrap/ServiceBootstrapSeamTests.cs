@@ -481,31 +481,18 @@ namespace Servy.Service.UnitTests.Bootstrap
             }
 
             /// <summary>
-            /// Gets the exit codes <see cref="TerminateProcess(int)"/> was called with, in call order.
-            /// </summary>
-            /// <remarks>
-            /// An initializer rather than a constructor-body assignment, because the base
-            /// constructor - which is what reaches the termination seam - runs before that body.
-            /// </remarks>
-            private List<int> Terminations { get; } = new List<int>();
-
-            /// <summary>
             /// Throws instead of terminating the host process.
             /// </summary>
             /// <param name="exitCode">The exit code the service asked the host process to terminate with.</param>
             /// <exception cref="ProcessTerminatedException">Always.</exception>
             /// <remarks>
-            /// The production seam forwards to <c>Environment.Exit</c>, which does not return. Throwing
-            /// keeps everything after the call unreachable here too only where the call sits outside a
-            /// <c>try</c>: a termination raised inside the constructor's <c>try</c> is caught by its
-            /// catch-all, which logs and terminates a second time. Every exit code is therefore recorded
-            /// and handed to <see cref="ProcessTerminatedException.ExitCodes"/> in call order, because the
-            /// first one is what the real service would have exited with.
+            /// The production seam forwards to <c>Environment.Exit</c>, which does not return. The
+            /// constructor reaches it from its catch-all only, so throwing here ends the construction the
+            /// same way.
             /// </remarks>
             protected override void TerminateProcess(int exitCode)
             {
-                Terminations.Add(exitCode);
-                throw new ProcessTerminatedException(exitCode, Terminations.ToArray());
+                throw new ProcessTerminatedException(exitCode);
             }
         }
 
@@ -520,26 +507,16 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// Initializes a new instance of the <see cref="ProcessTerminatedException"/> class.
             /// </summary>
             /// <param name="exitCode">The exit code the service asked the host process to terminate with.</param>
-            /// <param name="exitCodes">Every exit code recorded so far, in call order, ending with <paramref name="exitCode"/>.</param>
-            public ProcessTerminatedException(int exitCode, int[] exitCodes)
+            public ProcessTerminatedException(int exitCode)
                 : base($"Service requested process termination with exit code {exitCode}.")
             {
                 ExitCode = exitCode;
-                ExitCodes = exitCodes;
             }
 
             /// <summary>
             /// Gets the exit code the service asked the host process to terminate with.
             /// </summary>
             public int ExitCode { get; }
-
-            /// <summary>
-            /// Gets every exit code the service asked the host process to terminate with, in call order,
-            /// ending with <see cref="ExitCode"/>. A termination raised inside the constructor's
-            /// <c>try</c> is caught by its catch-all, which terminates again, so this list can hold more
-            /// than one entry where production would have exited on the first.
-            /// </summary>
-            public IReadOnlyList<int> ExitCodes { get; }
         }
 
         /// <summary>
