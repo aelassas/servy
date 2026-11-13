@@ -790,6 +790,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         [InlineData(5, 638_000_000_000_000_000L, 5, true)]
         [InlineData(-3, 638_000_000_000_000_000L, 0, true)]  // a negative stored value reads back as 0
         [InlineData(2, -1L, 2, false)]              // ticks out of DateTime's range read back as no time
+        [InlineData(2, long.MaxValue, 2, false)]    // ticks above DateTime.MaxValue read back as no time, not as an exception
+        [InlineData(2, 3_155_378_975_999_999_999L, 2, true)] // DateTime.MaxValue.Ticks is still a time
+        [InlineData(2, 0L, 2, true)]                // DateTime.MinValue.Ticks is still a time
         public async Task GetRestartAttemptsAsync_Row_MapsCounterAndTimestamp(int? stored, long? ticks, int expectedAttempts, bool expectTime)
         {
             // Arrange
