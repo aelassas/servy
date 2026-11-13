@@ -141,9 +141,10 @@ namespace Servy.Service.UnitTests.CommandLine
                 UseLocalTimeForRotation = true,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 15,
-                MaxFailedChecks = 3,
+                MaxFailedChecks = 4, // deliberately not AppConfig.DefaultMaxFailedChecks (3), so the mapping cannot be replaced by the bare default
                 RecoveryAction = 2, // RestartProcess - deliberately not AppConfig.DefaultRecoveryAction (RestartService), so the mapping cannot be replaced by the bare default
-                RecoveryOnCleanExit = false,
+                RecoveryOnCleanExit = true, // deliberately not AppConfig.DefaultRecoveryOnCleanExit (false), so the mapping cannot be replaced by the bare default
+                AllowOverriddenRuntimeVars = true, // deliberately not AppConfig.DefaultAllowOverriddenRuntimeVars (false)
                 MaxRestartAttempts = 5,
                 HeartbeatUrl = "https://hc.example.com/ping/abc",
                 HeartbeatUrlTimeoutSeconds = 7,
@@ -210,9 +211,10 @@ namespace Servy.Service.UnitTests.CommandLine
             // Assert Health Monitoring & Recovery Actions
             Assert.True(result.EnableHealthMonitoring);
             Assert.Equal(15, result.HeartbeatIntervalInSeconds);
-            Assert.Equal(3, result.MaxFailedChecks);
+            Assert.Equal(4, result.MaxFailedChecks);
             Assert.Equal(RecoveryAction.RestartProcess, result.RecoveryAction);
-            Assert.False(result.RecoveryOnCleanExit);
+            Assert.True(result.RecoveryOnCleanExit);
+            Assert.True(result.AllowOverriddenRuntimeVars);
             Assert.Equal(5, result.MaxRestartAttempts);
 
             // Assert Heartbeat URL properties
@@ -293,6 +295,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, result.HeartbeatIntervalInSeconds);
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, result.MaxFailedChecks);
             Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, result.RecoveryOnCleanExit);
+            Assert.Equal(AppConfig.DefaultAllowOverriddenRuntimeVars, result.AllowOverriddenRuntimeVars);
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, result.MaxRestartAttempts);
             Assert.Null(result.HeartbeatUrl);
             Assert.Equal(AppConfig.DefaultHeartbeatUrlTimeoutSeconds, result.HeartbeatUrlTimeoutInSeconds);
