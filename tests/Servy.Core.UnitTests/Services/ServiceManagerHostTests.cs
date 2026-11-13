@@ -109,7 +109,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("aes_key.dat", result.ErrorMessage);
+            Assert.Equal(new ServiceDecryptionFailedException(ServiceName, null).Message, result.ErrorMessage);
             Assert.Contains(ServiceName, result.ErrorMessage);
             _windowsServiceApi.Verify(x => x.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
             _serviceRepository.Verify(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);

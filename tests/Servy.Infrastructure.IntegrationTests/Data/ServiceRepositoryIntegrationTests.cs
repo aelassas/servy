@@ -709,6 +709,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             await AddPoisonedAsync("PoisonUpdate");
             var read = await _repository.GetByNameAsync("PoisonUpdate", decrypt: true, ct);
             Assert.True(DecryptionFailureMarker.HasDecryptionFailure(read));
+            Assert.False(read.LegacyEncryptionBlocked);
             read.ExecutablePath = "changed.exe";
 
             // Act
@@ -716,7 +717,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal("PoisonUpdate", ex.ServiceName);
-            Assert.Contains("aes_key.dat", ex.Message);
+            Assert.False(ex.IsLegacyEncryption);
+            Assert.Contains("copy Servy.db back", ex.Message);
+            Assert.DoesNotContain("is not involved", ex.Message);
             AssertRowUntouched(await _repository.GetByNameAsync("PoisonUpdate", decrypt: false, ct));
         }
 
@@ -820,6 +823,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal("PoisonExportXml", ex.ServiceName);
+            Assert.False(ex.IsLegacyEncryption);
             AssertRowUntouched(await _repository.GetByNameAsync("PoisonExportXml", decrypt: false, ct));
         }
 
@@ -835,6 +839,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.Equal("PoisonExportJson", ex.ServiceName);
+            Assert.False(ex.IsLegacyEncryption);
             AssertRowUntouched(await _repository.GetByNameAsync("PoisonExportJson", decrypt: false, ct));
         }
 
