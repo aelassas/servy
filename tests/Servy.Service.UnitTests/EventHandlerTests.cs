@@ -133,9 +133,9 @@ namespace Servy.Service.UnitTests
 
             var startOptions = ServiceTestContext.CreateDefaultStartOptions();
             startOptions.StdoutPath = "shared-path.log";
-            // A different spelling of the same file: the multiplex decision is made on the
-            // canonicalized paths (Helper.NormalizePath), so a raw string comparison misses it.
-            startOptions.StderrPath = Path.Combine(".", "shared-path.log");
+            // A different spelling of the same file, in a different case: the multiplex decision is made on the
+            // canonicalized paths (Helper.NormalizePath) and ignores case, as Windows paths do.
+            startOptions.StderrPath = Path.Combine(".", "SHARED-PATH.LOG");
 
             // Act
             service.InvokeHandleLogWriters(startOptions);
