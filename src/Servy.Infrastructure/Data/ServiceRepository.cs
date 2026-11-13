@@ -262,7 +262,9 @@ namespace Servy.Infrastructure.Data
             // A row read with a field that does not decrypt comes back with every sensitive field cleared. Written to a
             // file it would look complete, and an import would store it over the real values once the key works again.
             if (DecryptionFailureMarker.HasDecryptionFailure(service))
-                throw new ServiceDecryptionFailedException(service.Name, null);
+                throw service.LegacyEncryptionBlocked
+                    ? ServiceDecryptionFailedException.ForLegacyEncryption(service.Name, null, null)
+                    : new ServiceDecryptionFailedException(service.Name, null);
 
             return _xmlServiceSerializer.Serialize(service) ?? string.Empty;
         }
@@ -277,7 +279,9 @@ namespace Servy.Infrastructure.Data
             // A row read with a field that does not decrypt comes back with every sensitive field cleared. Written to a
             // file it would look complete, and an import would store it over the real values once the key works again.
             if (DecryptionFailureMarker.HasDecryptionFailure(service))
-                throw new ServiceDecryptionFailedException(service.Name, null);
+                throw service.LegacyEncryptionBlocked
+                    ? ServiceDecryptionFailedException.ForLegacyEncryption(service.Name, null, null)
+                    : new ServiceDecryptionFailedException(service.Name, null);
 
             return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
         }
@@ -401,6 +405,7 @@ namespace Servy.Infrastructure.Data
             // The marker is display text; this flag is what every save-side refusal reads, so a stored
             // marker left behind by a v9.5 save (#5186) cannot refuse a row whose secrets do decrypt.
             dto.DecryptionFailed = true;
+            dto.LegacyEncryptionBlocked = true;
 
             dto.Description = $"{LegacyBlockedMarker}{OriginalDescriptionSeparator}{dto.Description}";
         }
@@ -507,7 +512,9 @@ namespace Servy.Infrastructure.Data
 
             if (DecryptionFailureMarker.HasDecryptionFailure(incoming) && stored != null)
             {
-                var refused = new ServiceDecryptionFailedException(incoming.Name, null);
+                var refused = incoming.LegacyEncryptionBlocked
+                    ? ServiceDecryptionFailedException.ForLegacyEncryption(incoming.Name, null, null)
+                    : new ServiceDecryptionFailedException(incoming.Name, null);
                 Logger.Error(refused.Message);
                 throw refused;
             }

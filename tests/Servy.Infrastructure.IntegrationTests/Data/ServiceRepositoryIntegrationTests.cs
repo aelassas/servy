@@ -834,6 +834,85 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             AssertRowUntouched(await _repository.GetByNameAsync("PoisonExportJson", decrypt: false, ct));
         }
 
+        /// <summary>
+        /// Adds a service whose stored <c>Password</c> holds pre-v2 ciphertext the legacy policy refuses, and whose
+        /// <c>Parameters</c> holds current ciphertext.
+        /// </summary>
+        /// <param name="name">The service name.</param>
+        /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the row is stored.</returns>
+        private async Task AddLegacyBlockedAsync(string name, CancellationToken ct)
+        {
+            var id = await _repository.UpsertAsync(new ServiceDto
+            {
+                Name = name,
+                ExecutablePath = "legacy.exe",
+                Parameters = "--port 8080",
+            }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
+            await _executor.ExecuteAsync(
+                $"UPDATE {SqlConstants.ServicesTableName} SET Password = 'LEGACY_PAYLOAD' WHERE Id = @Id",
+                new { Id = id },
+                cancellationToken: ct);
+        }
+
+        [Fact]
+        public async Task ExportXmlAsync_LegacyBlockedRow_IsRefusedAsTheLegacyEncryptionPolicyNotAsAKeyProblem()
+        {
+            // Arrange: a row with a field the pre-v2 policy refuses - the key is fine and was never used (#7816)
+            var ct = TestContext.Current.CancellationToken;
+            await AddLegacyBlockedAsync("LegacyExportXml", ct);
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.ExportXmlAsync("LegacyExportXml", ct));
+
+            // Assert
+            Assert.Equal("LegacyExportXml", ex.ServiceName);
+            Assert.True(ex.IsLegacyEncryption);
+            Assert.Contains("The encryption key (aes_key.dat) is not involved", ex.Message);
+            Assert.Equal("LEGACY_PAYLOAD", (await _repository.GetByNameAsync("LegacyExportXml", decrypt: false, ct))!.Password);
+        }
+
+        [Fact]
+        public async Task ExportJsonAsync_LegacyBlockedRow_IsRefusedAsTheLegacyEncryptionPolicyNotAsAKeyProblem()
+        {
+            // Arrange: a row with a field the pre-v2 policy refuses - the key is fine and was never used (#7816)
+            var ct = TestContext.Current.CancellationToken;
+            await AddLegacyBlockedAsync("LegacyExportJson", ct);
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.ExportJsonAsync("LegacyExportJson", ct));
+
+            // Assert
+            Assert.Equal("LegacyExportJson", ex.ServiceName);
+            Assert.True(ex.IsLegacyEncryption);
+            Assert.Contains("The encryption key (aes_key.dat) is not involved", ex.Message);
+            Assert.Equal("LEGACY_PAYLOAD", (await _repository.GetByNameAsync("LegacyExportJson", decrypt: false, ct))!.Password);
+        }
+
+        [Fact]
+        public async Task UpsertAsync_ServiceReadFromALegacyBlockedRow_IsRefusedNamingTheLegacyEncryptionAndTheRowIsLeftAsItIs()
+        {
+            // Arrange: the service as the UI gets it from a row the pre-v2 policy refuses - both flags set (#7816)
+            var ct = TestContext.Current.CancellationToken;
+            await AddLegacyBlockedAsync("LegacyUpdate", ct);
+            var read = await _repository.GetByNameAsync("LegacyUpdate", decrypt: true, ct);
+            Assert.True(read!.DecryptionFailed);
+            Assert.True(read.LegacyEncryptionBlocked);
+            read.ExecutablePath = "changed.exe";
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.UpsertAsync(read, false, false, ct));
+
+            // Assert: the refusal names the real cause and the route that works, not a key file that is fine
+            Assert.Equal("LegacyUpdate", ex.ServiceName);
+            Assert.True(ex.IsLegacyEncryption);
+            Assert.Contains("The encryption key (aes_key.dat) is not involved", ex.Message);
+            Assert.DoesNotContain("copy Servy.db back", ex.Message);
+            var after = await _repository.GetByNameAsync("LegacyUpdate", decrypt: false, ct);
+            Assert.Equal("legacy.exe", after!.ExecutablePath);
+            Assert.Equal("LEGACY_PAYLOAD", after.Password);
+        }
+
         [Fact]
         public async Task UpsertAsync_HealthyRow_IsStillWritten()
         {

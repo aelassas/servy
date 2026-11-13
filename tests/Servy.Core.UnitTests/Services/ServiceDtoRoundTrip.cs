@@ -18,7 +18,7 @@ namespace Servy.Core.UnitTests.Services
         /// and is otherwise reset on import together with <c>RunAsLocalSystem</c>, and the remaining five are runtime state (<c>PreviousStopTimeout</c>, <c>ActiveStdoutPath</c>,
         /// <c>ActiveStderrPath</c>, <c>RestartAttempts</c>, <c>RestartAttemptsUpdatedAtTicks</c>). <c>DecryptionFailed</c> is the outcome of one read,
         /// also dropped by <c>[XmlIgnore]</c>/<c>[JsonIgnore]</c>: an export must not carry a verdict about the key
-        /// that read it (#7348). Stated once, so adding a property to
+        /// that read it (#7348), and neither must <c>LegacyEncryptionBlocked</c>, which says which kind of failure it was (#7816). Stated once, so adding a property to
         /// <see cref="ServiceDto"/> means deciding here whether it round trips, rather than in four test bodies.
         /// </summary>
         public static readonly IReadOnlyList<string> NonRoundTrippedProperties = new[]
@@ -33,7 +33,8 @@ namespace Servy.Core.UnitTests.Services
             "ActiveStderrPath",
             "RestartAttempts",
             "RestartAttemptsUpdatedAtTicks",
-            "DecryptionFailed"
+            "DecryptionFailed",
+            "LegacyEncryptionBlocked"
         };
 
         /// <summary>

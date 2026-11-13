@@ -340,6 +340,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was not exported: at least one sensitive field uses the pre-v2 encryption of an older Servy version, which this version refuses to decrypt. The encryption key (aes_key.dat) is not involved. To upgrade the service, export its configuration with a v1-compatible version of Servy, remove the service here, then import the exported file..
+        /// </summary>
+        public static string Msg_ExportLegacyEncryptionBlocked {
+            get {
+                return ResourceManager.GetString("Msg_ExportLegacyEncryptionBlocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file..
         /// </summary>
         public static string Msg_FatalError_Body {

@@ -1796,6 +1796,40 @@ namespace Servy.Manager.UnitTests.Services
             }
         }
 
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ExportServiceConfigAsync_RowRefusedByTheLegacyEncryptionPolicy_RefusesTheExportNamingTheLegacyEncryption(string format)
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "LegacyService" };
+
+            // Generate a guaranteed unique filename without creating a zero-byte file on disk
+            using (var targetPath = new TempFile("_export_test." + format))
+            {
+                // What a decrypting read returns for a row with a field that still uses the pre-v2 encryption (#7816)
+                var legacyDto = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe", DecryptionFailed = true, LegacyEncryptionBlocked = true };
+
+                _fileDialogServiceMock.Setup(f => f.SaveXml(It.IsAny<string>())).Returns(targetPath.Path);
+                _fileDialogServiceMock.Setup(f => f.SaveJson(It.IsAny<string>())).Returns(targetPath.Path);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(legacyDto);
+
+                // Act
+                if (format == "xml")
+                    await sut.ExportServiceToXmlAsync(service, TestContext.Current.CancellationToken);
+                else
+                    await sut.ExportServiceToJsonAsync(service, TestContext.Current.CancellationToken);
+
+                // Assert: the policy refusal is reported as such, not as a key file to restore
+                Assert.False(File.Exists(targetPath.Path));
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(string.Format(Core.Resources.Strings.Msg_ExportLegacyEncryptionBlocked, service.Name), UiAppConfig.Caption), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, service.Name), It.IsAny<string>()), Times.Never);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
         [Fact]
         public async Task ExportServiceToJsonAsync_RepositoryThrowsException_HandlesExceptionGracefully()
         {

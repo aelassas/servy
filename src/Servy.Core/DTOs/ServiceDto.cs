@@ -73,6 +73,21 @@ namespace Servy.Core.DTOs
         public bool DecryptionFailed { get; set; }
 
         /// <summary>
+        /// Whether the decryption failure this read reported was a policy refusal of the pre-v2 encryption of an older
+        /// Servy version, rather than a field that does not decrypt with the current key.
+        /// </summary>
+        /// <remarks>
+        /// Set by the repository's read path together with <see cref="DecryptionFailed"/>, and only when a sensitive field
+        /// was refused because <see cref="AppConfig.AllowLegacyV1Decryption"/> is <see langword="false"/>. The key
+        /// is not involved in that case and the fields are left as stored, so a refusal reports the upgrade route instead of
+        /// naming <c>aes_key.dat</c>. Like <see cref="DecryptionFailed"/> it describes one read, not the configuration: it
+        /// is never a column and never round-trips through <c>Servy.db</c>, an export or an import.
+        /// </remarks>
+        [JsonIgnore]
+        [XmlIgnore]
+        public bool LegacyEncryptionBlocked { get; set; }
+
+        /// <summary>
         /// Path to the executable of the service.
         /// </summary>
         [ServicePath("executable path", isFile: true, required: true, errorResourceKey: nameof(Strings.Msg_InvalidPath))]

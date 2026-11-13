@@ -34,11 +34,13 @@ namespace Servy.Core.Security
         /// <param name="fieldName">The first sensitive field that failed to decrypt, or <see langword="null"/> when unknown.</param>
         /// <param name="message">The message shown to the user.</param>
         /// <param name="innerException">The decryption failure, or <see langword="null"/>.</param>
-        private ServiceDecryptionFailedException(string? serviceName, string? fieldName, string message, Exception? innerException)
+        /// <param name="isLegacyEncryption">Whether the refusal is the policy refusal of the pre-v2 encryption.</param>
+        private ServiceDecryptionFailedException(string? serviceName, string? fieldName, string message, Exception? innerException, bool isLegacyEncryption)
             : base(message, innerException)
         {
             ServiceName = serviceName;
             FieldName = fieldName;
+            IsLegacyEncryption = isLegacyEncryption;
         }
 
         /// <summary>
@@ -47,9 +49,12 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="serviceName">The service whose row holds the pre-v2 ciphertext.</param>
         /// <param name="fieldName">The first sensitive field refused by the policy, or <see langword="null"/> when unknown.</param>
-        /// <param name="innerException">The policy refusal.</param>
+        /// <param name="innerException">
+        /// The policy refusal, or <see langword="null"/> when the refusal comes from a row the read path already flagged
+        /// with <see cref="DTOs.ServiceDto.LegacyEncryptionBlocked"/>.
+        /// </param>
         /// <returns>
-        /// The exception, whose message says that the encryption key is not involved and that the service must be removed
+        /// The exception, whose <see cref="IsLegacyEncryption"/> is <see langword="true"/> and whose message says that the encryption key is not involved and that the service must be removed
         /// before the file exported with a v1-compatible version of Servy is imported.
         /// </returns>
         /// <remarks>
@@ -57,8 +62,8 @@ namespace Servy.Core.Security
         /// would send the user looking for another machine's key file. The row is left as it is: removing the service
         /// deletes it, and importing the exported file then writes the configuration with the current encryption.
         /// </remarks>
-        public static ServiceDecryptionFailedException ForLegacyEncryption(string? serviceName, string? fieldName, SecureDataLegacyBlockedException innerException)
-            => new ServiceDecryptionFailedException(serviceName, fieldName, BuildLegacyMessage(serviceName, fieldName), innerException);
+        public static ServiceDecryptionFailedException ForLegacyEncryption(string? serviceName, string? fieldName, SecureDataLegacyBlockedException? innerException)
+            => new ServiceDecryptionFailedException(serviceName, fieldName, BuildLegacyMessage(serviceName, fieldName), innerException, isLegacyEncryption: true);
 
         /// <summary>
         /// Gets the service whose row cannot be decrypted.
@@ -69,6 +74,16 @@ namespace Servy.Core.Security
         /// Gets the first sensitive field that failed to decrypt, or <see langword="null"/> when unknown.
         /// </summary>
         public string? FieldName { get; }
+
+        /// <summary>
+        /// Gets whether the refusal is the policy refusal of the pre-v2 encryption of an older Servy version, built by
+        /// <see cref="ForLegacyEncryption"/>, rather than a field that does not decrypt with the current key.
+        /// </summary>
+        /// <remarks>
+        /// A caller that shows a message of its own, such as an export, reads this to name the upgrade route instead of
+        /// <c>aes_key.dat</c>.
+        /// </remarks>
+        public bool IsLegacyEncryption { get; }
 
         /// <summary>
         /// Builds the message shown to the user.
