@@ -263,9 +263,6 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.Equal(expectedLastWrite, result.Lines[1].Timestamp);
                 // ...and every earlier line is exactly one tick older than the one after it.
                 Assert.Equal(expectedLastWrite.AddTicks(-1), result.Lines[0].Timestamp);
-
-                Assert.True(result?.Lines[0].IsSyntheticTime);
-                Assert.True(result?.Lines[1].IsSyntheticTime);
             }
         }
 
@@ -326,7 +323,6 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.Equal(expectedLastWrite, result.Lines[2].Timestamp);
                 Assert.Equal(expectedLastWrite.AddTicks(-1), result.Lines[1].Timestamp);
                 Assert.Equal(expectedLastWrite.AddTicks(-2), result.Lines[0].Timestamp);
-                Assert.All(result.Lines, line => Assert.True(line.IsSyntheticTime));
             }
         }
 

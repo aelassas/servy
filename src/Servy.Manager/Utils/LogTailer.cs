@@ -467,8 +467,7 @@ namespace Servy.Manager.Utils
         /// </summary>
         /// <remarks>
         /// Historical lines are assigned synthetic timestamps based on the file's last write time
-        /// with a 1-tick (100-nanosecond) backward offset per line. These lines are explicitly marked with
-        /// <see cref="LogLine.IsSyntheticTime"/> to indicate the time is an estimate.
+        /// with a 1-tick (100-nanosecond) backward offset per line.
         /// </remarks>
         /// <param name="path">The file path.</param>
         /// <param name="type">The log type for the resulting <see cref="LogLine"/> objects.</param>
@@ -562,10 +561,7 @@ namespace Servy.Manager.Utils
                             long offsetTicks = tempLinesList.Count - 1 - i;
                             DateTime syntheticTime = lastWrite.AddTicks(-offsetTicks);
 
-                            LogLine logLine = new LogLine(tempLinesList[i], type, syntheticTime)
-                            {
-                                IsSyntheticTime = true
-                            };
+                            LogLine logLine = new LogLine(tempLinesList[i], type, syntheticTime);
 
                             lines.Add(logLine);
                         }
@@ -678,11 +674,8 @@ namespace Servy.Manager.Utils
                             long offsetTicks = tempLines.Count - 1 - i;
                             DateTime syntheticTime = lastWrite.AddTicks(-offsetTicks);
 
-                            // Create the line and explicitly mark the time as synthetic
-                            LogLine logLine = new LogLine(tempLines[i], type, syntheticTime)
-                            {
-                                IsSyntheticTime = true
-                            };
+                            // Create the line with its synthetic timestamp
+                            LogLine logLine = new LogLine(tempLines[i], type, syntheticTime);
 
                             lines.Add(logLine);
                         }

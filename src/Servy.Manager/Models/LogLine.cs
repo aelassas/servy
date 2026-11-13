@@ -35,12 +35,6 @@ namespace Servy.Manager.Models
         public DateTime Timestamp { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the timestamp was synthetically generated
-        /// during history loading rather than parsed from the log stream.
-        /// </summary>
-        public bool IsSyntheticTime { get; set; }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="LogLine"/> class.
         /// </summary>
         /// <param name="text">The string content read from the file.</param>
@@ -59,8 +53,6 @@ namespace Servy.Manager.Models
                     ? DateTime.SpecifyKind(timestamp.Value, DateTimeKind.Utc)
                     : timestamp.Value.ToUniversalTime())
                 : DateTime.UtcNow;
-
-            IsSyntheticTime = false;
         }
 
     }
