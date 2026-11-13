@@ -360,6 +360,33 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
+        [Theory]
+        [InlineData(0, true)]   // exactly the 1024 byte cap: still imported
+        [InlineData(1, false)]  // one byte more: skipped and kept
+        public void Initialize_CounterFileAtAndJustOverTheSizeCap_ImportsTheFirstAndSkipsTheSecond(int bytesOverCap, bool imported)
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: leading spaces are trimmed by the parse, so a file padded to the cap still reads as 7
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Boundary");
+                DowngradeToVersion9(conn);
+                var time = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc);
+                // 1024 is the documented cap, pinned here as a literal so raising or lowering the constant is caught
+                var size = 1024 + bytesOverCap;
+                var path = WriteCounterFile("Boundary", new string(' ', size - 1) + "7", time);
+                Assert.Equal(size, new FileInfo(path).Length);
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
+
+                // Assert
+                var expected = imported ? ((int?)7, (long?)time.Ticks) : ((int?)null, (long?)null);
+                Assert.Equal(expected, ReadCounter(conn, "Boundary"));
+                Assert.Equal(!imported, File.Exists(path));
+            }
+        }
+
         [Fact]
         public void Initialize_CounterFileIsASymbolicLink_IsSkippedAndTheTargetKept()
         {
