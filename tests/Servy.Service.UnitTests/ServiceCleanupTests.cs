@@ -464,7 +464,10 @@ namespace Servy.Service.UnitTests
 
             // The waits add up to exactly the budget (with the shipped constants, one wait).
             Assert.Equal(AppConfig.HookCleanupTimeoutMs, waits.Sum());
-            _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, It.IsAny<int>(), null), Times.AtLeast(waits.Count));
+
+            // One pulse per wait, each carrying the service's SCM wait hint.
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, AppConfig.DefaultScmAdditionalTimeMs, null), Times.Exactly(waits.Count));
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, It.IsAny<int>(), null), Times.Exactly(waits.Count));
             scopedLogger.Verify(l => l.Warn($"Tracked hook 'Post-Launch' (PID: 0) did not exit within the {AppConfig.HookCleanupTimeoutMs}ms budget. Proceeding with teardown to avoid SCM hang.", It.IsAny<Exception>()), Times.Once);
             scopedLogger.Verify(l => l.Info(It.Is<string>(m => m.EndsWith("cleaned up successfully.")), It.IsAny<Exception>()), Times.Never);
         }
@@ -497,6 +500,9 @@ namespace Servy.Service.UnitTests
             // Budget 12_000 with the shipped 5_000 pulse: two whole pulses, then the 2_000 remainder.
             Assert.Equal(5_000, AppConfig.SafeKillProcessPulseIntervalMs);
             Assert.Equal(new[] { 5_000, 5_000, 2_000 }, waits);
+
+            // One pulse per wait: three waits, three pulses, each with the service's wait hint.
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(service, AppConfig.DefaultScmAdditionalTimeMs, null), Times.Exactly(3));
         }
 
         /// <summary>
