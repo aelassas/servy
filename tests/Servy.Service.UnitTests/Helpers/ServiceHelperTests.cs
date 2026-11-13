@@ -417,18 +417,29 @@ namespace Servy.Service.UnitTests.Helpers
             mockProcess.Setup(p => p.HasExited).Returns(false);
 
             var mockLog = new Mock<IServyLogger>();
-            bool startActionInvoked = false;
+            var environment = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "K", Value = "V" } };
+            using var cancellation = new CancellationTokenSource();
+
+            (string Exe, string Args, string Dir, List<EnvironmentVariable> Env, bool Allow, CancellationToken Token)? seen = null;
             StartProcessCallback startAction =
-                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => startActionInvoked = true;
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => seen = (exe, args, dir, env, allowOverriddenRuntimeVars, ct);
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(),false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
+            // allowOverriddenRuntimeVars is true, deliberately not its default, so it cannot be replaced by a literal false
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", environment, true, mockLog.Object, 1000, cancellation.Token);
 
             // Assert
             mockProcess.Verify(p => p.Stop(1000), Times.Once);
             mockProcess.Verify(p => p.StopDescendants(1234, It.IsAny<DateTime>(), 1000), Times.Once);
             mockProcess.Verify(p => p.Dispose(), Times.Once);
-            Assert.True(startActionInvoked);
+
+            Assert.NotNull(seen);
+            Assert.Equal("exe", seen.Value.Exe);
+            Assert.Equal("args", seen.Value.Args);
+            Assert.Equal("dir", seen.Value.Dir);
+            Assert.Same(environment, seen.Value.Env);
+            Assert.True(seen.Value.Allow);
+            Assert.Equal(cancellation.Token, seen.Value.Token);
             mockLog.Verify(l => l.Info("Process restarted.", It.IsAny<Exception>()), Times.Once);
         }
 
