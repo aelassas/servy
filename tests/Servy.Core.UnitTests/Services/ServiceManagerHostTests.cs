@@ -117,6 +117,31 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_ExistingRowRefusedByTheLegacyEncryptionPolicy_IsRefusedNamingTheLegacyEncryptionNotTheKey()
+        {
+            // Arrange: the row as the repository returns it when a sensitive field still uses the pre-v2 encryption -
+            // the read path sets both flags, and the key is not involved (#7816)
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto
+                {
+                    Name = ServiceName,
+                    DecryptionFailed = true,
+                    LegacyEncryptionBlocked = true,
+                    Description = DecryptionFailureMarker.LegacyBlocked + DecryptionFailureMarker.OriginalDescriptionSeparator + "desc",
+                });
+
+            // Act
+            var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(null), CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ServiceDecryptionFailedException.ForLegacyEncryption(ServiceName, null, null).Message, result.ErrorMessage);
+            Assert.DoesNotContain("copy Servy.db back", result.ErrorMessage);
+            _windowsServiceApi.Verify(x => x.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
+            _serviceRepository.Verify(x => x.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task InstallService_ExistingRowCarriesAStoredMarkerButDecrypts_IsNotRefused()
         {
             // Arrange: the shape a Servy v9.5 save persisted (#5186) - the marker is in the STORED description and

@@ -181,6 +181,27 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.False(File.Exists(filePath));
         }
 
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task Execute_ShouldFailNamingTheLegacyEncryption_WhenTheStoredRowIsRefusedByTheLegacyPolicy(string format)
+        {
+            // Arrange: the repository refuses to export a row whose sensitive field still uses the pre-v2 encryption (#7816)
+            var filePath = Path.Combine(TempDirectory, "out." + format);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "svc" });
+            _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ThrowsAsync(ServiceDecryptionFailedException.ForLegacyEncryption("svc", null, null));
+            _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ThrowsAsync(ServiceDecryptionFailedException.ForLegacyEncryption("svc", null, null));
+            var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = format, Path = filePath };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert: the policy refusal is reported as such, not as a key file to restore
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(Core.Resources.Strings.Msg_ExportLegacyEncryptionBlocked, "svc"), result.Message);
+            Assert.False(File.Exists(filePath));
+        }
+
         [Fact]
         public async Task Execute_ShouldHandleException()
         {

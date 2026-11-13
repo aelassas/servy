@@ -339,7 +339,9 @@ namespace Servy.Core.Services
             // or the database is touched: saving it would replace the stored ciphertext with blanks for good.
             if (DecryptionFailureMarker.HasDecryptionFailure(existingDbService))
             {
-                var refused = new ServiceDecryptionFailedException(existingDbService.Name, null);
+                var refused = existingDbService.LegacyEncryptionBlocked
+                    ? ServiceDecryptionFailedException.ForLegacyEncryption(existingDbService.Name, null, null)
+                    : new ServiceDecryptionFailedException(existingDbService.Name, null);
                 Logger.Error(refused.Message);
                 return OperationResult.Failure(refused.Message);
             }

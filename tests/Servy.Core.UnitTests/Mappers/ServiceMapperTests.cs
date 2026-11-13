@@ -44,12 +44,12 @@ namespace Servy.Core.UnitTests.Mappers
             // DTO-only persistence fields with no domain counterpart. The restart attempts counter is runtime state
             // only the wrapper reads and writes, through the Servy host. DecryptionFailed is the outcome of one
             // read rather than a stored value: the repository sets it when a sensitive field will not decrypt, and
-            // it is neither a column nor part of the configuration (#7348).
+            // it is neither a column nor part of the configuration (#7348); LegacyEncryptionBlocked qualifies it (#7816).
             var excluded = new[]
             {
                 nameof(ServiceDto.Id), nameof(ServiceDto.PreviousStopTimeout),
                 nameof(ServiceDto.RestartAttempts), nameof(ServiceDto.RestartAttemptsUpdatedAtTicks),
-                nameof(ServiceDto.DecryptionFailed),
+                nameof(ServiceDto.DecryptionFailed), nameof(ServiceDto.LegacyEncryptionBlocked),
             };
 
             var domainProperties = typeof(Core.Domain.Service)

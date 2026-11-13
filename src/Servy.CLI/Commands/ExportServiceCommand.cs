@@ -130,9 +130,13 @@ namespace Servy.CLI.Commands
                             return CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
                     }
                 }
-                catch (ServiceDecryptionFailedException)
+                catch (ServiceDecryptionFailedException ex)
                 {
-                    return CommandResult.Fail(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, opts.ServiceName));
+                    // A field refused by the pre-v2 encryption policy is not a key problem; name the upgrade route instead.
+                    var refusal = ex.IsLegacyEncryption
+                        ? Core.Resources.Strings.Msg_ExportLegacyEncryptionBlocked
+                        : Core.Resources.Strings.Msg_ExportDecryptionFailed;
+                    return CommandResult.Fail(string.Format(refusal, opts.ServiceName));
                 }
 
                 // 2. Save the file (Logic extracted from the switch to avoid duplication)

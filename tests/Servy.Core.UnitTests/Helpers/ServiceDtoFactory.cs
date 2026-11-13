@@ -9,10 +9,10 @@ namespace Servy.Core.UnitTests.Helpers
     {
         /// <summary>
         /// Creates a DTO with non-default values for every writable, serialized property.
-        /// Eight properties are deliberately left at their defaults because no serializer
+        /// Nine properties are deliberately left at their defaults because no serializer
         /// round-trip covers them: Id and Pid (database and runtime identity),
         /// PreviousStopTimeout, ActiveStdoutPath, ActiveStderrPath, RestartAttempts,
-        /// RestartAttemptsUpdatedAtTicks and DecryptionFailed (runtime state).
+        /// RestartAttemptsUpdatedAtTicks, DecryptionFailed and LegacyEncryptionBlocked (runtime state).
         /// The credential trio RunAsLocalSystem, UserAccount and Password is marked
         /// [JsonIgnore] and [XmlIgnore] as well, but IS populated, because the mapper and
         /// validation tests need it. <c>CreateFull_PopulatesEverySerializedProperty</c>

@@ -792,6 +792,14 @@ namespace Servy.Manager.Services
                 // a file it would look complete, and an import would store it over the real values once the key works again.
                 if (DecryptionFailureMarker.HasDecryptionFailure(dto))
                 {
+                    // A field refused by the pre-v2 encryption policy is not a key problem; name the upgrade route instead.
+                    if (dto.LegacyEncryptionBlocked)
+                    {
+                        Logger.Warn($"Export of {service.Name} to {formatName} refused: its stored configuration uses the pre-v2 encryption, which this version refuses to decrypt.");
+                        await _messageBoxService.ShowErrorAsync(string.Format(Core.Resources.Strings.Msg_ExportLegacyEncryptionBlocked, service.Name), UiAppConfig.Caption);
+                        return;
+                    }
+
                     Logger.Warn($"Export of {service.Name} to {formatName} refused: its stored configuration does not decrypt with the current key.");
                     await _messageBoxService.ShowErrorAsync(string.Format(Core.Resources.Strings.Msg_ExportDecryptionFailed, service.Name), UiAppConfig.Caption);
                     return;
