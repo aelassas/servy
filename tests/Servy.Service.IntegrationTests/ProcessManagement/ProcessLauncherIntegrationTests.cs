@@ -308,9 +308,25 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [InlineData("pythonw.exe", true, "-version")]
         [InlineData("python3.exe", true, "-version")]
         [InlineData("py.exe", true, "-version")]
+        [InlineData("pyw.exe", true, "-version")]
+        [InlineData("python2.exe", true, "-version")]
+        [InlineData("python3.11.exe", true, "-version")]
+        [InlineData("PYTHON.EXE", true, "-version")]
+        // Near misses: the anchors must keep these out (#1844)
+        [InlineData("pythonista.exe", false, "-version")]
+        [InlineData("python_wrapper.exe", false, "-version")]
+        [InlineData("ipython.exe", false, "-version")]
+        [InlineData("mypy.exe", false, "-version")]
+        // Only the file name counts, not the directory
+        [InlineData(@"C:\python\tool.exe", false, "-version")]
+        [InlineData(@"C:\java\tool.exe", false, "-version")]
         [InlineData("java.exe", false, "-Dfile.encoding=UTF-8 -version")]
         [InlineData("javaw.exe", false, "-Dfile.encoding=UTF-8 -version")]
         [InlineData("javac.exe", false, "-J-Dfile.encoding=UTF-8 -version")]
+        // Java: case, the documented shim, and a near miss
+        [InlineData("JAVA.EXE", false, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("java.cmd", false, "-Dfile.encoding=UTF-8 -version")]
+        [InlineData("javap.exe", false, "-version")]
         public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(
             string fileName,
             bool isPython,
