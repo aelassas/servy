@@ -208,18 +208,22 @@ namespace Servy.Service.UnitTests
             _mockStderrWriter.Verify(w => w.Dispose(), Times.Once);
         }
 
-        [Fact]
-        public void Cleanup_PreStopFailsWithLogAsError_LogsManualInterventionAndStillStopsTheChild()
+        [Theory]
+        [InlineData(3, true, 1)]   // failed, policy says error: the line is written
+        [InlineData(3, false, 0)]  // failed, policy says warning: no manual-intervention error
+        [InlineData(0, true, 0)]   // succeeded: nothing to report, whatever the policy
+        public void Cleanup_PreStop_WritesTheManualInterventionErrorOnlyForAFailureUnderTheErrorPolicy(
+            int preStopExitCode, bool preStopLogAsError, int expectedErrors)
         {
             // Arrange
-            var options = CreateOptions(preStopExecutablePath: PreStopExe, preStopLogAsError: true);
+            var options = CreateOptions(preStopExecutablePath: PreStopExe, preStopLogAsError: preStopLogAsError);
             var scopedLogger = SetupStart(options);
 
             var preStop = new Mock<IProcessWrapper>();
             preStop.Setup(p => p.StartInfo).Returns(new ProcessStartInfo());
             preStop.Setup(p => p.Start()).Returns(true);
             preStop.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
-            preStop.Setup(p => p.ExitCode).Returns(3);
+            preStop.Setup(p => p.ExitCode).Returns(preStopExitCode);
             _ctx.ProcessFactory
                 .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
                 .Returns((ProcessStartInfo psi, IServyLogger logger) =>
@@ -233,9 +237,9 @@ namespace Servy.Service.UnitTests
             // Assert
             scopedLogger.Verify(l => l.Error(
                 "Pre-stop failed. Manual intervention may be required, but continuing cleanup to avoid orphans.",
-                It.IsAny<Exception>()), Times.Once);
+                It.IsAny<Exception>()), Times.Exactly(expectedErrors));
 
-            // The contract the message states: the main child is still killed after a failed pre-stop.
+            // The contract the message states: the main child is still killed whatever the pre-stop hook did.
             _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
         }
 
