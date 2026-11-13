@@ -20,14 +20,6 @@ namespace Servy.Core.Data
         Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Deletes a <see cref="ServiceDto"/> by its database ID.
-        /// </summary>
-        /// <param name="id">The ID of the service to delete.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The number of affected records.</returns>
-        Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Deletes a <see cref="ServiceDto"/> by its unique name.
         /// </summary>
         /// <param name="name">The name of the service to delete.</param>

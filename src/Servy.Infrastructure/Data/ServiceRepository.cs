@@ -89,13 +89,6 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
-        {
-            string sql = $"DELETE FROM {SqlConstants.ServicesTableName} WHERE Id = @Id;";
-            return await _dapper.ExecuteAsync(sql, new { Id = id }, cancellationToken: cancellationToken);
-        }
-
-        /// <inheritdoc />
         public virtual async Task<int> DeleteAsync(string? name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
