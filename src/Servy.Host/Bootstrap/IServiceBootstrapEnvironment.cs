@@ -63,13 +63,6 @@ namespace Servy.Host.Bootstrap
         void ConfigureLogging(NameValueCollection configuration, IServyLogger instanceLogger);
 
         /// <summary>
-        /// Writes a multi-line report at <see cref="LogLevel.Debug"/> to the global logger.
-        /// </summary>
-        /// <param name="title">The first line of the report.</param>
-        /// <param name="body">The body of the report, already formatted with its own line breaks.</param>
-        void ReportDebug(string title, string body);
-
-        /// <summary>
         /// Determines whether the SQLite version the process would open its database with is at or above
         /// the minimum required by the CVE-2025-6965 mitigation.
         /// </summary>

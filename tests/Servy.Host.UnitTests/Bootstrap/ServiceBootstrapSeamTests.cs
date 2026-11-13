@@ -325,8 +325,6 @@ namespace Servy.Host.UnitTests.Bootstrap
                 ConfiguredInstanceLoggers.Add(instanceLogger);
             }
 
-            public void ReportDebug(string title, string body) => Calls.Add("ReportDebug");
-
             public bool IsSqliteVersionSafe(out string detectedVersion)
             {
                 Calls.Add("IsSqliteVersionSafe");

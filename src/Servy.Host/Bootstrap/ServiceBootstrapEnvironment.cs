@@ -72,16 +72,6 @@ namespace Servy.Host.Bootstrap
         }
 
         /// <summary>
-        /// Calls <see cref="Logger.Report"/> at <see cref="LogLevel.Debug"/>.
-        /// </summary>
-        /// <param name="title">The first line of the report.</param>
-        /// <param name="body">The body of the report, already formatted with its own line breaks.</param>
-        public void ReportDebug(string title, string body)
-        {
-            Logger.Report(LogLevel.Debug, title, body);
-        }
-
-        /// <summary>
         /// Calls <see cref="DatabaseValidator.IsSqliteVersionSafe"/>.
         /// </summary>
         /// <param name="detectedVersion">
