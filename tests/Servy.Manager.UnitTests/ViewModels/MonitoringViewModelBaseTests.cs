@@ -569,6 +569,37 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task CopyPidAsync_WhileMonitoring_PassesTheSessionTokenToTheCommand()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            vm.MockedSelectedService = new ConcreteServiceItem { Name = "ServyEngine", Pid = 5028 };
+            vm.StartMonitoring();
+            var sessionToken = vm.ExposeCurrentToken();
+
+            // Act
+            await vm.CopyPidCommand.ExecuteAsync(null);
+
+            // Assert - the token is the live session token, not CancellationToken.None
+            Assert.True(sessionToken.CanBeCanceled);
+            _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.IsAny<Service>(), sessionToken), Times.Once);
+        }
+
+        [Fact]
+        public void StartMonitoring_AfterFailuresInAPreviousSession_ResetsTheErrorCounter()
+        {
+            // Arrange - a previous session left the counter in the middle of a throttle window
+            var vm = CreateViewModel();
+            TestReflection.SetField(vm, "_tickErrorCount", 5L);
+
+            // Act
+            vm.StartMonitoring();
+
+            // Assert
+            Assert.Equal(0L, TestReflection.GetField<long>(vm, "_tickErrorCount"));
+        }
+
+        [Fact]
         public async Task CopyPidAsync_NullOrMissingProperties_BypassesExecutionAndReturnsSilently()
         {
             // Arrange
