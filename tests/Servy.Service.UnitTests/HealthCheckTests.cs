@@ -823,6 +823,31 @@ namespace Servy.Service.UnitTests
                 Times.Never);
         }
 
+        [Fact]
+        public async Task CheckHealth_PreLaunchDisabled_LeavesPreLaunchTimeoutOutOfResetThreshold()
+        {
+            // Arrange: 45s clears the 31s base threshold; the 300s pre-launch budget must not count
+            // because no pre-launch hook is configured (_preLaunchEnabled stays false)
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 3, updatedAtUtc: DateTime.UtcNow.AddSeconds(-45));
+
+            TestReflection.SetField(service, "_options", CreateStabilityOptions(heartbeatIntervalInSeconds: 1, maxFailedChecks: 1, preLaunchTimeoutInSeconds: 300));
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(0, store.Attempts);
+            Assert.Equal(new[] { 0 }, store.Writes);
+        }
+
         [Theory]
         [InlineData(75, false)]   // between 40+30 (constant buffer) and 40+40 (window buffer): must be kept
         [InlineData(85, true)]    // past 40+40: must be reset
