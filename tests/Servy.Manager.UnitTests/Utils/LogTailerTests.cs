@@ -1459,13 +1459,17 @@ namespace Servy.Manager.UnitTests.Utils
             bool isDisposedAfterFirst = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
             Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
 
-            // Act - Reset guard field back to 0 (alive) to verify second disposal hits Interlocked.Exchange
-            TestReflection.SetField(tailer, "_isDisposed", 0);
+            // Arrange - a handler attached after the first Dispose stands in for state that a second,
+            // unguarded pass through the dispose body would clear (it sets OnLoopCompleted to null)
+            tailer.OnLoopCompleted += () => { };
+
+            // Act - Second disposal, reached naturally; nothing resets the guard in between
             var doubleDisposeException = Record.Exception(tailer.Dispose);
 
-            // Assert
+            // Assert - The early return leaves the planted handler attached
             Assert.Null(doubleDisposeException);
-            Assert.True(TestReflection.GetField<int>(tailer, "_isDisposed") == 1, "Second Dispose after guard reset did not set _isDisposed back to true.");
+            Assert.NotNull(TestReflection.GetField<Action?>(tailer, "OnLoopCompleted"));
+            Assert.Equal(1, TestReflection.GetField<int>(tailer, "_isDisposed"));
         }
 
         [Fact]
