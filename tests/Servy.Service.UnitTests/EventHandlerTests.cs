@@ -17,7 +17,7 @@ namespace Servy.Service.UnitTests
         private readonly ServiceTestContext _ctx = new ServiceTestContext();
 
         [Fact]
-        public void OnOutputDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
+        public void OnOutputDataReceived_WritesLinesIncludingEmptyOnes_IgnoresTheNullEndOfStreamSentinel()
         {
             // Arrange
             var service = _ctx.Build();
@@ -34,7 +34,7 @@ namespace Servy.Service.UnitTests
                .Returns(mockStderrWriter.Object);
 
             var nonEmptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("output line");
-            var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
+            var endOfStreamArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
             var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
             var startOptions = ServiceTestContext.CreateDefaultStartOptions();
@@ -50,7 +50,7 @@ namespace Servy.Service.UnitTests
 
             // Act
             service.InvokeOnOutputDataReceived(null, nonEmptyArgs);
-            service.InvokeOnOutputDataReceived(null, emptyArgs);
+            service.InvokeOnOutputDataReceived(null, endOfStreamArgs);
             service.InvokeOnOutputDataReceived(null, emptyStringArgs);
 
             // Assert
@@ -68,7 +68,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void OnErrorDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
+        public void OnErrorDataReceived_WritesLinesIncludingEmptyOnes_IgnoresTheNullEndOfStreamSentinel()
         {
             // Arrange
             var service = _ctx.Build();
@@ -85,7 +85,7 @@ namespace Servy.Service.UnitTests
                .Returns(mockStderrWriter.Object);
 
             var nonEmptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("error line");
-            var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
+            var endOfStreamArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
             var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
             var startOptions = ServiceTestContext.CreateDefaultStartOptions();
@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests
 
             // Act
             service.InvokeOnErrorDataReceived(null, nonEmptyArgs);
-            service.InvokeOnErrorDataReceived(null, emptyArgs);
+            service.InvokeOnErrorDataReceived(null, endOfStreamArgs);
             service.InvokeOnErrorDataReceived(null, emptyStringArgs);
 
             // Assert
