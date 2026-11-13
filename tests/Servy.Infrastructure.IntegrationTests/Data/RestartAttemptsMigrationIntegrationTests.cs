@@ -1,5 +1,4 @@
 using Dapper;
-using Servy.Core.Logging;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System.Data.Common;
@@ -186,26 +185,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 DowngradeToVersion9(conn);
                 var installedPath = WriteCounterFile("Installed", "2", DateTime.UtcNow);
                 var orphanPath = WriteCounterFile("RemovedLongAgo", "7", DateTime.UtcNow);
-                var logDirectory = Path.Combine(TempDirectory, "logs");
-                var logFileName = $"OrphanReport_{Guid.NewGuid():N}.log";
-                Directory.CreateDirectory(logDirectory);
 
-                try
-                {
-                    Logger.Initialize(logFileName, LogLevel.Info, logDirectory: logDirectory);
-
-                    // Act
-                    SQLiteDbInitializer.Initialize(conn, _recoveryFolder);
-                }
-                finally
-                {
-                    // Flush and release the handle, then hand the process-wide logger back to its default state
-                    Logger.Shutdown();
-                    Logger.Initialize((string?)null, logDirectory: string.Empty);
-                }
+                // Act
+                var log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
 
                 // Assert
-                var log = File.ReadAllText(Path.Combine(logDirectory, logFileName));
                 Assert.Contains($"Legacy restart attempts file '{orphanPath}' belongs to no installed service and was not imported.", log);
                 Assert.DoesNotContain($"'{installedPath}' belongs to no installed service", log);
             }
