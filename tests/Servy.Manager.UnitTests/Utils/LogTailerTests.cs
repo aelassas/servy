@@ -302,6 +302,28 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task GetHistoryAsync_Utf16LeFile_AnchorsTheLastLineOnLastWriteAndSpacesEarlierLinesOneTickApart()
+        {
+            // Arrange
+            string path = NewTempFilePath("utf16le_history_time");
+            File.WriteAllText(path, "Line1\nLine2\nLine3\n", EncodingWithByteOrderMark("utf-16le"));
+            var expectedLastWrite = new FileInfo(path).LastWriteTimeUtc;
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, 10, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(3, result.Lines.Count);
+                Assert.Equal(expectedLastWrite, result.Lines[2].Timestamp);
+                Assert.Equal(expectedLastWrite.AddTicks(-1), result.Lines[1].Timestamp);
+                Assert.Equal(expectedLastWrite.AddTicks(-2), result.Lines[0].Timestamp);
+                Assert.All(result.Lines, line => Assert.True(line.IsSyntheticTime));
+            }
+        }
+
+        [Fact]
         public async Task GetHistoryAsync_Utf16LeFile_MoreLinesThanMaxLines_KeepsOnlyTheLastLines()
         {
             // Arrange
