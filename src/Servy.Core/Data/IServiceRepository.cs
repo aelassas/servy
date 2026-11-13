@@ -20,7 +20,7 @@ namespace Servy.Core.Data
         /// unless <paramref name="service"/> names a passwordless account (see <see cref="Servy.Core.Config.ServiceAccounts.IsPasswordlessAccount"/>), which is then kept.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The ID of the upserted service.</returns>
-        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
+        /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key or that still uses the disabled pre-v2 encryption, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
         Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
 
         /// <summary>
