@@ -56,6 +56,32 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
+        public void Constructor_DesignMode_UsesDesignTimeHelperEvenWhenDIHasAHelper()
+        {
+            // Arrange
+            var mockHelper = new Mock<IProcessHelper>();
+            var originalCheck = ProcessMetricConverter<double>.IsInDesignModeCheck;
+            ProcessMetricConverter<double>.IsInDesignModeCheck = () => true;
+
+            try
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton<IProcessHelper>(mockHelper.Object)))
+                {
+                    // Act
+                    var converter = new TestMetricConverter();
+
+                    // Assert
+                    Assert.IsType<DesignTimeProcessHelper>(converter.ExposedProcessHelper);
+                    Assert.NotSame(mockHelper.Object, converter.ExposedProcessHelper);
+                }
+            }
+            finally
+            {
+                ProcessMetricConverter<double>.IsInDesignModeCheck = originalCheck;
+            }
+        }
+
+        [Fact]
         public void Constructor_ServicesAndHelperAvailable_ResolvesProcessHelperFromDI()
         {
             // Arrange
