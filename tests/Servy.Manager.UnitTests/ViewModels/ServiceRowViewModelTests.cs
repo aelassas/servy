@@ -160,6 +160,24 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task ConfigureCommand_LeavesTheCursorToConfigureServiceAsync()
+        {
+            // Arrange
+            var vm = CreateViewModel("RowSvc");
+
+            _serviceCommandsMock.Setup(s => s.ConfigureServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await vm.ConfigureCommand.ExecuteAsync(null);
+
+            // Assert - the call went out, and the row view model touched the cursor neither before nor after it
+            _serviceCommandsMock.Verify(s => s.ConfigureServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Never);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Never);
+        }
+
+        [Fact]
         public async Task InstallCommand_ShouldCallInstallServiceAsync()
         {
             // Arrange
@@ -175,6 +193,26 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Assert
             _serviceCommandsMock.Verify();
+        }
+
+        [Fact]
+        public async Task InstallCommand_ShowsTheWaitCursorAroundTheCall()
+        {
+            // Arrange
+            var vm = CreateViewModel("RowSvc");
+            var events = new List<string>();
+
+            _cursorServiceMock.Setup(c => c.SetWaitCursor()).Callback(() => events.Add("set"));
+            _cursorServiceMock.Setup(c => c.ResetCursor()).Callback(() => events.Add("reset"));
+            _serviceCommandsMock.Setup(s => s.InstallServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
+                .Callback(() => events.Add("call"))
+                .ReturnsAsync(true);
+
+            // Act
+            await vm.InstallCommand.ExecuteAsync(null);
+
+            // Assert - set before the call, reset after it, once each
+            Assert.Equal(new[] { "set", "call", "reset" }, events);
         }
 
         [Fact]
