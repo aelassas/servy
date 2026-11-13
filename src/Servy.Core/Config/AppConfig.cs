@@ -1696,7 +1696,8 @@ namespace Servy.Core.Config
         /// <remarks>
         /// This flag is maintained as a hardcoded compile-time constant <c>false</c> to mitigate ciphertext
         /// downgrade attack vectors. Automated runtime migration windows are no longer supported. Older
-        /// configurations must be modernized by re-saving them through the Servy Manager UI or the CLI tool.
+        /// configurations must be modernized by exporting them with a v1-compatible version of Servy, removing
+        /// the service, then importing the exported file through the Servy Manager UI or the CLI tool.
         /// </remarks>
         public const bool AllowLegacyV1Decryption = false;
 
