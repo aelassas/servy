@@ -127,17 +127,22 @@ namespace Servy.Service.UnitTests
         public void SafeKillProcess_KillsProcessGracefully()
         {
             // Arrange
-            var service = _ctx.Build();
+            using var service = BuildScanningService((pid, scanStart) => new List<Process>());
+            var startTime = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Local);
 
             var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(ScannedParentPid);
+            mockProcess.Setup(p => p.StartTime).Returns(startTime);
             mockProcess.Setup(p => p.HasExited).Returns(false);
             mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
 
             // Act
-            service.InvokeSafeKillProcess(mockProcess.Object, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+            // A value no constant in the product equals, so a hard-coded timeout cannot satisfy the verifies.
+            service.InvokeSafeKillProcess(mockProcess.Object, 4321);
 
             // Assert
-            mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+            mockProcess.Verify(p => p.Stop(4321), Times.Once);
+            mockProcess.Verify(p => p.StopDescendants(ScannedParentPid, startTime, 4321), Times.Once);
             _ctx.Logger.Verify(l => l.Info(
                 It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
         }
