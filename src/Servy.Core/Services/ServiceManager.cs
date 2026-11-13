@@ -330,8 +330,10 @@ namespace Servy.Core.Services
             var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
             bool isUpdateMode = existingDbService != null;
 
-            // A row with a sensitive field that no longer decrypts came back with its secrets cleared. Refuse before the SCM
-            // or the database is touched: saving it would replace the stored ciphertext with blanks for good.
+            // A row with a sensitive field that could not be decrypted is refused before the SCM or the database is touched.
+            // A row that does not decrypt with the current key came back with its secrets cleared: saving it would replace
+            // the stored ciphertext with blanks for good. A legacy-blocked row (pre-v2 encryption) is not cleared, but the
+            // fields that were refused are still ciphertext, so it is refused as well.
             if (DecryptionFailureMarker.HasDecryptionFailure(existingDbService))
             {
                 var refused = existingDbService!.LegacyEncryptionBlocked
