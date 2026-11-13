@@ -93,6 +93,21 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void ExpandAndAudit_AllowOverriddenRuntimeVars_IsForwardedToTheExpansion()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" } };
+
+            // Act
+            var allowed = ProcessHelper.ExpandAndAudit(vars, true, "arg1", _mockLogger.Object, "Test");
+            var blocked = ProcessHelper.ExpandAndAudit(vars, false, "arg1", _mockLogger.Object, "Test");
+
+            // Assert - the policy decides whether the configured Tier 2 value reaches the child environment
+            Assert.Equal("-Xmx2048m", allowed.env["JAVA_OPTS"]);
+            Assert.NotEqual("-Xmx2048m", blocked.env.GetValueOrDefault("JAVA_OPTS"));
+        }
+
+        [Fact]
         public void ExpandAndAudit_InheritedVariableWithPlaceholder_IsNotAudited()
         {
             // Arrange
