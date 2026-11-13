@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Moq;
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
@@ -262,6 +263,44 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
+        /// Logging is configured with the configuration the constructor loaded from the settings file, not
+        /// with an empty one, so the log level, rotation and event-log settings take effect.
+        /// </summary>
+        [Fact]
+        public void Constructor_ConfiguresLoggingWithTheLoadedConfiguration()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+            env.Settings["LogLevel"] = "Debug";
+
+            // Act
+            Build(env);
+
+            // Assert
+            Assert.Equal("Debug", Assert.Single(env.ConfiguredConfigurations)["LogLevel"]);
+        }
+
+        /// <summary>
+        /// A settings file that still relocates the database is told, through the instance logger, that the
+        /// setting is ignored.
+        /// </summary>
+        [Fact]
+        public void Constructor_SettingsFileStillRelocatesTheDatabase_WarnsThatTheSettingIsIgnored()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+            env.Settings["ConnectionStrings:DefaultConnection"] = @"Data Source=D:\old\Servy.db";
+
+            // Act
+            Build(env);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(m => m.StartsWith(AppConfig.ServyServiceSettingsFileName + " sets ConnectionStrings:DefaultConnection, which Servy ignores since v10.2")),
+                null), Times.Once);
+        }
+
+        /// <summary>
         /// A failing start-up step with no exit code already set terminates with
         /// <see cref="AppConfig.ServiceSpecificErrorCode"/>, and the exception is logged.
         /// </summary>
@@ -522,6 +561,9 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <summary>Gets the debug reports <see cref="ReportDebug"/> was called with, in call order.</summary>
             public List<(string Title, string Body)> DebugReports { get; } = new List<(string Title, string Body)>();
 
+            /// <summary>Gets the configurations <see cref="ConfigureLogging"/> was called with, in call order.</summary>
+            public List<IConfiguration> ConfiguredConfigurations { get; } = new List<IConfiguration>();
+
             /// <summary>Gets the instance loggers <see cref="ConfigureLogging"/> was called with, in call order.</summary>
             public List<IServyLogger?> ConfiguredInstanceLoggers { get; } = new List<IServyLogger?>();
 
@@ -548,11 +590,14 @@ namespace Servy.Service.UnitTests.Bootstrap
             public IConfiguration BuildConfiguration() =>
                 new ConfigurationBuilder().AddInMemoryCollection(Settings).Build();
 
-            /// <summary>Records the instance logger and does nothing else.</summary>
-            /// <param name="configuration">Ignored.</param>
+            /// <summary>Records the configuration and the instance logger and does nothing else.</summary>
+            /// <param name="configuration">The configuration the constructor passed.</param>
             /// <param name="instanceLogger">The instance logger the constructor passed.</param>
-            public void ConfigureLogging(IConfiguration configuration, IServyLogger? instanceLogger) =>
+            public void ConfigureLogging(IConfiguration configuration, IServyLogger? instanceLogger)
+            {
+                ConfiguredConfigurations.Add(configuration);
                 ConfiguredInstanceLoggers.Add(instanceLogger);
+            }
 
             /// <summary>Records the report.</summary>
             /// <param name="title">The first line of the report.</param>
