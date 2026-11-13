@@ -185,7 +185,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Theory]
-        [InlineData(false)] // only the new column: the first term of the guard decides
+        [InlineData(false)] // only the new column: both terms are false, so this row pins the kept value, not a term
         [InlineData(true)]  // both columns: the second term decides
         public void Initialize_LegacyUnversionedDatabaseThatAlreadyHasEnableSizeRotation_SkipsTheRenameAndKeepsTheValue(bool alsoHasOldColumn)
         {
