@@ -393,6 +393,57 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SearchCommand_RunTwice_ReplacesThePreviousRowsAndReportsEachCountInTheFooter()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    // Arrange - two rows for the first search, one different row for the second, none for the third
+                    var first = new List<ServyEventLogEntry>
+                    {
+                        new ServyEventLogEntry { EventId = 1, Time = DateTimeOffset.Now, Level = EventLogLevel.Information, Message = "first-a" },
+                        new ServyEventLogEntry { EventId = 2, Time = DateTimeOffset.Now, Level = EventLogLevel.Information, Message = "first-b" },
+                    };
+                    var second = new List<ServyEventLogEntry>
+                    {
+                        new ServyEventLogEntry { EventId = 3, Time = DateTimeOffset.Now, Level = EventLogLevel.Warning, Message = "second-only" },
+                    };
+
+                    _eventLogServiceMock
+                        .SetupSequence(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(first)
+                        .ReturnsAsync(second)
+                        .ReturnsAsync(new List<ServyEventLogEntry>());
+
+                    using (var vm = CreateViewModel())
+                    {
+                        // Act
+                        await vm.SearchCommand.ExecuteAsync(null);
+                        var footerAfterFirst = vm.FooterText;
+
+                        await vm.SearchCommand.ExecuteAsync(null);
+                        var rowsAfterSecond = vm.LogsView.SourceCollection.Cast<LogEntryModel>().Select(r => r.Message).ToList();
+                        var footerAfterSecond = vm.FooterText;
+
+                        await vm.SearchCommand.ExecuteAsync(null);
+                        var rowsAfterThird = vm.LogsView.SourceCollection.Cast<LogEntryModel>().ToList();
+                        var footerAfterThird = vm.FooterText;
+
+                        // Assert - the second search replaced the first instead of appending to it
+                        Assert.Equal(new[] { "second-only" }, rowsAfterSecond);
+                        Assert.Empty(rowsAfterThird);
+
+                        // Assert - each count picked its own template ({1} is the duration, so compare the part before it)
+                        Assert.StartsWith(string.Format(Strings.Footer_Log_Many, "2", "|").Split('|')[0], footerAfterFirst);
+                        Assert.StartsWith(string.Format(Strings.Footer_Log_One, "1", "|").Split('|')[0], footerAfterSecond);
+                        Assert.StartsWith(string.Format(Strings.Footer_Log_None, "0", "|").Split('|')[0], footerAfterThird);
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SearchCommand_MapsEveryEventLogFieldOntoTheLogEntryModel()
         {
             await Helper.RunOnSTA(async () =>
