@@ -185,6 +185,56 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
+        [Theory]
+        [InlineData(false)] // only the new column: the first term of the guard decides
+        [InlineData(true)]  // both columns: the second term decides
+        public void Initialize_LegacyUnversionedDatabaseThatAlreadyHasEnableSizeRotation_SkipsTheRenameAndKeepsTheValue(bool alsoHasOldColumn)
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: a Services table and no SchemaInfo row, so Initialize takes the unversioned path
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT", "EnableSizeRotation INTEGER" };
+                var seedData = new Dictionary<string, string> { { "Name", "'LegacyV0'" }, { "EnableSizeRotation", "1" } };
+                if (alsoHasOldColumn)
+                {
+                    baseColumns.Add("EnableRotation INTEGER");
+                    seedData.Add("EnableRotation", "0");
+                }
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "EnableRotation", "EnableSizeRotation");
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+
+                // Assert: the upgrade completed and the value in the new column is the one that was stored
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                Assert.Equal(1L, conn.QuerySingle<long>($"SELECT EnableSizeRotation FROM {SqlConstants.ServicesTableName} WHERE Name = 'LegacyV0';"));
+            }
+        }
+
+        [Fact]
+        public void Initialize_LegacyUnversionedDatabaseWithNeitherRotationColumn_SkipsTheRenameAndAddsTheNewColumn()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: a Services table with neither rotation column and no SchemaInfo row. The row with only
+                // EnableSizeRotation cannot tell the guard's first term from its second (both are false there), so
+                // this layout is the one where only the first term keeps the rename from running.
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
+                var seedData = new Dictionary<string, string> { { "Name", "'LegacyV0'" } };
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "EnableRotation", "EnableSizeRotation");
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+
+                // Assert: the upgrade completed, the missing column was added rather than renamed into, and the row survived
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                var columns = conn.Query($"PRAGMA table_info({SqlConstants.ServicesTableName});").Select(r => (string)r.name).ToList();
+                Assert.DoesNotContain("EnableRotation", columns);
+                Assert.Contains("EnableSizeRotation", columns);
+                Assert.Equal(1L, conn.QuerySingle<long>($"SELECT COUNT(*) FROM {SqlConstants.ServicesTableName} WHERE Name = 'LegacyV0';"));
+            }
+        }
+
         #endregion
 
         #region V4 Rebuild & Helper Skip Branches
