@@ -390,8 +390,8 @@ namespace Servy.Restarter.UnitTests
 
             // 2. Stop() throws InvalidOperationException on the 1st call to force entry into HandleTransitionalError.
             // On subsequent calls inside HandleTransitionalError, it also throws so execution stays in the loop.
-            _mockController.Setup(c => c.Stop()).Callback(() => stopCallCount++)
-                .Throws(new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)));
+            var transitional = new InvalidOperationException("Transitional", new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+            _mockController.Setup(c => c.Stop()).Callback(() => stopCallCount++).Throws(transitional);
 
             // 3. Refresh() burns the budget ONCE after HandleTransitionalError has been entered (stopCallCount > 0)
             _mockController.Setup(c => c.Refresh()).Callback(() =>
@@ -415,10 +415,54 @@ namespace Servy.Restarter.UnitTests
             // TimeExpiresAfterPendingCheckSucceeds test covers cannot satisfy this assertion.
             Assert.Contains("failed to reach Stopped within the timeout period; the SCM did not accept a recovery command before the budget expired.", ex.Message);
 
+            // The last transitional error is the only place the SCM's own reason survives.
+            Assert.Same(transitional, ex.InnerException);
+
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce(),
                 "The transitional error loop condition was short-circuited; code execution failed to traverse internal mid-loop monitoring steps.");
 
             _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void HandleTransitionalError_BudgetExpiresBeforeTheWaitOnALaterPass_AttachesTheLastTransitionalError()
+        {
+            // Arrange
+            var waitTimeout = new System.ServiceProcess.TimeoutException("Still stopping.");
+            var stopCallCount = 0;
+
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockController.Setup(c => c.Stop()).Callback(() =>
+            {
+                stopCallCount++;
+                if (stopCallCount == 1)
+                {
+                    // Primary stop phase: route execution into the recovery loop.
+                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                }
+
+                if (stopCallCount == 3)
+                {
+                    // Second recovery pass: use up the budget before the pre-wait check.
+                    Thread.Sleep(TestTimeouts.ServiceRestarterMidLoopExpiryBurn);
+                }
+            });
+
+            // First recovery pass: the wait itself times out, which the loop records and retries.
+            _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()))
+                .Throws(waitTimeout);
+
+            // Act
+            var ex = Assert.Throws<System.TimeoutException>(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterLaterPassExpiryBudget));
+
+            // Assert
+            Assert.Equal(3, stopCallCount);
+
+            // The in-try expiry exit, reached on a pass after a failed one: the first pass's
+            // wait timeout is the last transitional error and must ride along.
+            Assert.Contains("the transition may still complete", ex.Message);
+            Assert.Same(waitTimeout, ex.InnerException);
         }
 
         [Fact]
