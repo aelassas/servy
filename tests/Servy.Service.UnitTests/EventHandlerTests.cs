@@ -336,6 +336,29 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnDataReceived_NoWriterConfigured_DropsTheLineSilently(bool stdout)
+        {
+            // Arrange
+            // HandleLogWriters is not called, so neither stream has a writer: the state of a service
+            // that configures no stdout or stderr path.
+            var service = _ctx.Build();
+            var args = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("line");
+
+            // Act
+            var ex = Record.Exception(() =>
+            {
+                if (stdout) service.InvokeOnOutputDataReceived(null, args);
+                else service.InvokeOnErrorDataReceived(null, args);
+            });
+
+            // Assert
+            Assert.Null(ex);
+            _ctx.Logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
