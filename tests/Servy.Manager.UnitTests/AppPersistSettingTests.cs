@@ -1,4 +1,5 @@
 using Newtonsoft.Json.Linq;
+using Servy.Testing;
 using System.Text;
 
 namespace Servy.Manager.UnitTests
@@ -7,6 +8,7 @@ namespace Servy.Manager.UnitTests
     /// Tests for <see cref="App.PersistSetting(string, string, string)"/>, the path-taking overload that writes a
     /// setting into the Manager's JSON configuration file through <c>Helper.WriteFileAtomic</c>.
     /// </summary>
+    [Collection(AmbientTestCollection.Name)]
     public class AppPersistSettingTests : IDisposable
     {
         /// <summary>
@@ -64,6 +66,23 @@ namespace Servy.Manager.UnitTests
             var json = JObject.Parse(Encoding.UTF8.GetString(bytes));
             Assert.Equal("true", json.Value<string>("IsDisplayNameColumnMigrated"));
             Assert.Single(json.Properties());
+            Assert.Equal(new[] { configPath }, Directory.GetFiles(_directory));
+        }
+
+        [Fact]
+        public void PersistSetting_ExistingFileIsNotValidJson_LogsAWarningDoesNotThrowAndLeavesTheFileAsItIs()
+        {
+            // Arrange
+            var configPath = Path.Combine(_directory, "appsettings.manager.json");
+            const string torn = "{\"RefreshIntervalInSeconds\": 7, \"ServicesHiddenCol";
+            File.WriteAllText(configPath, torn);
+
+            // Act
+            var log = LogCapture.Run(() => App.PersistSetting(configPath, "ServicesHiddenColumns", "Pid,Ram"));
+
+            // Assert
+            Assert.Contains("Failed to save ServicesHiddenColumns setting", log);
+            Assert.Equal(torn, File.ReadAllText(configPath));
             Assert.Equal(new[] { configPath }, Directory.GetFiles(_directory));
         }
     }
