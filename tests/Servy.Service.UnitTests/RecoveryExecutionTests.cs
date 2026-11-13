@@ -288,6 +288,31 @@ namespace Servy.Service.UnitTests
                 cancellationSource.Token), Times.Once);
         }
 
+        [Theory]
+        [InlineData(RecoveryAction.RestartService, true, false)]
+        [InlineData(RecoveryAction.RestartComputer, true, true)]
+        [InlineData(RecoveryAction.RestartProcess, false, false)]
+        [InlineData(RecoveryAction.None, false, false)]
+        public async Task InitiateRecoveryAsync_ActionSucceeds_LeavesTheGateAndRebootFlagAsDocumented(
+            RecoveryAction action, bool gateStaysClosed, bool rebooting)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, action);
+            service.SetFailedChecks(3);
+
+            // Act
+            await service.InvokeInitiateRecoveryAsync();
+
+            // Assert
+            // A successful RestartService/RestartComputer keeps the gate closed (the instance is about
+            // to be replaced); the other actions reopen it. Only a reboot sets _isRebooting, and every
+            // dispatched recovery resets the failure counter.
+            Assert.Equal(gateStaysClosed, TestReflection.GetField<bool>(service, "_isRecovering"));
+            Assert.Equal(rebooting, TestReflection.GetField<bool>(service, "_isRebooting"));
+            Assert.Equal(0, service.GetFailedChecks());
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
