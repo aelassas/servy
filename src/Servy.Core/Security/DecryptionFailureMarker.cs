@@ -9,9 +9,10 @@ namespace Servy.Core.Security
     /// cannot be decrypted, and the checks every application uses to recognize such a service.
     /// </summary>
     /// <remarks>
-    /// A service read with a field that fails to decrypt comes back with every sensitive field cleared and its description
-    /// prefixed with one of these markers, so it can be shown. It must never be saved: saving it would replace the stored
-    /// ciphertext with blanks, and the configuration could no longer be recovered with the original <c>aes_key.dat</c>.
+    /// A service read with a field that fails to decrypt comes back with its description prefixed with one of these
+    /// markers, so it can be shown. A row whose ciphertext is corrupt also comes back with every sensitive field cleared;
+    /// a row refused for its pre-v2 encryption keeps the fields that were not decrypted as stored ciphertext. It must
+    /// never be saved: saving it would replace the stored ciphertext, and the configuration could no longer be recovered.
     /// </remarks>
     public static class DecryptionFailureMarker
     {
