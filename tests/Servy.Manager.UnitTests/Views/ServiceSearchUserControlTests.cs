@@ -243,5 +243,28 @@ namespace Servy.Manager.UnitTests.Views
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
             }, createApp: true);
         }
+
+        [Fact]
+        public async Task UserControl_Loaded_WhenGenericExceptionIsThrown_LogsTheFailureUnderTheViewName()
+        {
+            // Arrange & Act
+            var log = await LogCapture.RunAsync(() => Helper.RunOnSTA(async () =>
+            {
+                var control = new TestServiceSearchUserControl();
+                var viewModel = CreateIsolatedViewModel();
+                control.DataContext = viewModel;
+
+                control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+                viewModel.CommandTcs.SetException(new InvalidOperationException("SCM Connection Refused"));
+
+                var task = control.LastLoadedTask;
+                Assert.NotNull(task);
+                await task;
+            }, createApp: true));
+
+            // Assert - the failure is logged under the name the view declares, not under the type name
+            Assert.Contains($"Async UI handler failed in {TestServiceSearchUserControl.ExpectedViewName}.", log);
+            Assert.Contains("SCM Connection Refused", log);
+        }
     }
 }
