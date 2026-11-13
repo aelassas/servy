@@ -117,6 +117,24 @@ namespace Servy.Service.UnitTests.Native
         }
 
         [Fact]
+        public void UpdateServiceStatus_StopPendingWithNonZeroExitCode_ReportsNoErrorUntilStopped()
+        {
+            // Arrange
+            var service = BuildService();
+            TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+            service.ExitCode = 42;
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "UpdateServiceStatus", NativeMethods.SERVICE_STOP_PENDING, 1000);
+
+            // Assert
+            var status = Assert.Single(_scm.StatusCalls);
+            Assert.Equal(NativeMethods.SERVICE_STOP_PENDING, status.dwCurrentState);
+            Assert.Equal(0, status.dwWin32ExitCode);
+            Assert.Equal(0, status.dwServiceSpecificExitCode);
+        }
+
+        [Fact]
         public void UpdateServiceStatus_Running_AcceptsStopAndPreShutdownAndZeroesTheCheckPoint()
         {
             // Arrange
