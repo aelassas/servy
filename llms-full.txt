@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-11T18:35:48Z
+> Generated on: 2026-11-13T07:02:06Z
 
 ---
 
@@ -6529,7 +6529,7 @@ Your master encryption keys are stored here:
   * **Key:** `%ProgramData%\Servy\security\aes_key.dat`
   * **IV:** `%ProgramData%\Servy\security\aes_iv.dat`
 
-The `aes_iv.dat` file holds the static IV used by the legacy v1 cipher format (Servy < 6.5). Servy 6.5+ uses a per-message random IV embedded in the ciphertext, so the static IV is no longer used to encrypt or decrypt anything in current builds - v1 decryption is permanently disabled (`AllowLegacyV1Decryption = false`) to mitigate downgrade attacks. While disabled, the file is **not** read on service start and is **not** loaded into memory; the entire load path is compiled out via the `AllowLegacyV1Decryption` constant, so the runtime no longer creates `aes_iv.dat` on fresh installs; the file is only present on machines that were first set up by an older (pre-gating) build, where it should be retained - **do not delete it.** To migrate records written by a pre-6.5 build, export them with a v1-compatible Servy version and import the resulting file into the current version; they will be re-encrypted as v2.
+The `aes_iv.dat` file holds the static IV used by the legacy v1 cipher format (Servy < 6.5). Servy 6.5+ uses a per-message random IV embedded in the ciphertext, so the static IV is no longer used to encrypt or decrypt anything in current builds - v1 decryption is permanently disabled (`AllowLegacyV1Decryption = false`) to mitigate downgrade attacks. While disabled, the file is **not** read on service start and is **not** loaded into memory; the entire load path is compiled out via the `AllowLegacyV1Decryption` constant, so the runtime no longer creates `aes_iv.dat` on fresh installs; the file is only present on machines that were first set up by an older (pre-gating) build, where it should be retained - **do not delete it.** To migrate records written by a pre-6.5 build, export them with a v1-compatible Servy version, remove the service in the current version, then import the resulting file; they will be re-encrypted as v2. Importing over the existing service is refused, because the stored row still holds v1 ciphertext.
 
 ## Critical Warning: Machine Migration
 
