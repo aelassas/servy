@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
@@ -247,6 +248,44 @@ namespace Servy.Service.UnitTests
 
             // A failed terminal action reopens the gate, so a later health check is not swallowed.
             Assert.False(TestReflection.GetField<bool>(service, "_isRecovering"));
+        }
+
+        [Fact]
+        public async Task InitiateRecoveryAsync_RestartProcess_HandsTheHelperTheConfiguredRelaunchValues()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = ServiceTestContext.CreateDefaultStartOptions();
+            options.AllowOverriddenRuntimeVars = true;   // the default is false
+            options.StopTimeoutInSeconds = 42;           // not AppConfig.DefaultStopTimeout
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartProcess, options);
+
+            var oldProcess = new Mock<IProcessWrapper>();
+            service.SetChildProcess(oldProcess.Object);
+
+            var environment = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "A", Value = "1" } };
+            TestReflection.SetField(service, "_environmentVariables", environment);
+
+            using var cancellationSource = new CancellationTokenSource();
+            TestReflection.SetField(service, "_cancellationSource", cancellationSource);
+
+            // Act
+            await service.InvokeInitiateRecoveryAsync();
+
+            // Assert
+            // Every argument is distinct and non-default, so a swapped, nulled or hard-coded value fails.
+            _ctx.Helper.Verify(h => h.RestartProcess(
+                oldProcess.Object,
+                It.IsAny<StartProcessCallback>(),
+                "C:\\myapp.exe",
+                "--arg",
+                "C:\\workdir",
+                environment,
+                true,
+                _ctx.Logger.Object,
+                42 * AppConfig.MillisecondsPerSecond,
+                cancellationSource.Token), Times.Once);
         }
 
         public void Dispose() => _ctx.Dispose();
