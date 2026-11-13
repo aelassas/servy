@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
@@ -56,6 +57,52 @@ namespace Servy.Service.UnitTests
             // Verify asynchronous stream reading calls
             mockProcess.Verify(p => p.BeginOutputReadLine(), Times.Once);
             mockProcess.Verify(p => p.BeginErrorReadLine(), Times.Once);
+        }
+
+        [Fact]
+        public void StartProcess_Started_PersistsThePidAndThePreviousStopTimeout()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_serviceName", "ServyTest");
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(123);
+            mockProcess.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(mockProcess.Object);
+
+            // Act
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), false, TestContext.Current.CancellationToken);
+
+            // Assert
+            _ctx.NamedPipesService.Verify(n => n.UpdateRuntimeState(
+                "ServyTest",
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == 123 && s.UpdatePreviousStopTimeout),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public void StartProcess_StartFails_PersistsNoPid()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_serviceName", "ServyTest");
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Start()).Throws(new Win32Exception(2));
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(mockProcess.Object);
+
+            // Act
+            Assert.Throws<TargetInvocationException>(() =>
+                service.InvokeStartProcess("C:\\missing.exe", "", "C:\\", new List<EnvironmentVariable>(), false, TestContext.Current.CancellationToken));
+
+            // Assert
+            _ctx.NamedPipesService.Verify(n => n.UpdateRuntimeState(
+                It.IsAny<string>(), It.Is<ServiceRuntimeStateDto>(s => s.Pid != null), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

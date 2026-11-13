@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
@@ -135,6 +136,24 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.CancelErrorRead(), Times.Once);
             _mockProcess.VerifyRemove(p => p.OutputDataReceived -= It.IsAny<DataReceivedEventHandler>(), Times.Once);
             _mockProcess.VerifyRemove(p => p.ErrorDataReceived -= It.IsAny<DataReceivedEventHandler>(), Times.Once);
+        }
+
+        [Fact]
+        public void Cleanup_ClearsThePersistedProcessState()
+        {
+            // Arrange
+            var options = CreateOptions();
+            SetupStart(options);
+            _service.StartForTest();
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            _ctx.NamedPipesService.Verify(n => n.UpdateRuntimeState(
+                "Test",
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == null && s.ActiveStdoutPath == null && s.ActiveStderrPath == null),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
@@ -79,6 +80,37 @@ namespace Servy.Service.UnitTests
                     It.Is<string>(s => s.Contains("[OnProcessExited] Failure threshold reached. Scheduling recovery in")),
                     It.IsAny<Exception>()),
                 recoveryOnCleanExit ? Times.Once() : Times.Never());
+        }
+
+        [Fact]
+        public void OnProcessExited_ClearsThePersistedProcessState()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_serviceName", "ServyTest");
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(recoveryOnCleanExit: false);
+            TestReflection.SetField(service, "_options", options);
+
+            // A crash below the failure threshold neither stops the service nor schedules a recovery, so
+            // Cleanup() does not run and the exit handler's own clear is the only one observed.
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetMaxFailedChecks(5);
+            service.SetFailedChecks(0);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(1);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            _ctx.NamedPipesService.Verify(n => n.UpdateRuntimeState(
+                "ServyTest",
+                It.Is<ServiceRuntimeStateDto>(s => s.Pid == null && s.ActiveStdoutPath == null && s.ActiveStderrPath == null),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
