@@ -382,6 +382,60 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SearchCommand_RunThreeTimes_ReportsEachRowCountInTheFooterWithItsOwnTemplate()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange - two rows for the first search, one for the second, none for the third
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                _serviceCommandsMock.SetupSequence(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new List<Service>
+                    {
+                        new Service { Name = "A", IsInstalled = true },
+                        new Service { Name = "B", IsInstalled = true },
+                    })
+                    .ReturnsAsync(new List<Service> { new Service { Name = "C", IsInstalled = true } })
+                    .ReturnsAsync(new List<Service>());
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+                var rowsAfterFirst = vm.ServicesView.Cast<ServiceRowViewModel>().Count();
+                var footerAfterFirst = vm.FooterText;
+
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+                var rowsAfterSecond = vm.ServicesView.Cast<ServiceRowViewModel>().Count();
+                var footerAfterSecond = vm.FooterText;
+
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+                var rowsAfterThird = vm.ServicesView.Cast<ServiceRowViewModel>().Count();
+                var footerAfterThird = vm.FooterText;
+
+                // Assert - the rows are the ones the pipeline counted
+                Assert.Equal(2, rowsAfterFirst);
+                Assert.Equal(1, rowsAfterSecond);
+                Assert.Equal(0, rowsAfterThird);
+
+                // Assert - each count picked its own template ({1} is the duration, so compare the part before it)
+                Assert.StartsWith(string.Format(Strings.Footer_Service_Many, "2", "|").Split('|')[0], footerAfterFirst);
+                Assert.StartsWith(string.Format(Strings.Footer_Service_One, "1", "|").Split('|')[0], footerAfterSecond);
+                Assert.StartsWith(string.Format(Strings.Footer_Service_None, "0", "|").Split('|')[0], footerAfterThird);
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SearchCommand_SupersededWhileApplyIsQueued_KeepsGridAndStartsNoRefresh()
         {
             await Helper.RunOnSTA(async () =>
