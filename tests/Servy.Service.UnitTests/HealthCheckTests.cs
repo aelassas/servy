@@ -761,6 +761,44 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task GetRestartAttemptsAsync_SemaphoreAlreadyDisposed_ReturnsZeroWithoutAnErrorLine()
+        {
+            // Arrange: teardown disposed the semaphore before the wait (#7613)
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 3);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            TestReflection.GetField<SemaphoreSlim>(service, "_restartAttemptsSemaphore").Dispose();
+
+            // Act
+            var attempts = await (Task<int?>)TestReflection.InvokeNonPublic(service, "GetRestartAttemptsAsync", CancellationToken.None)!;
+
+            // Assert: the shutdown value, not the "unreadable" null, and nothing logged or read
+            Assert.Equal(0, attempts);
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("is unreadable")), It.IsAny<Exception>()), Times.Never);
+            _ctx.NamedPipesService.Verify(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.Equal(3, store.Attempts);
+        }
+
+        [Fact]
+        public async Task SaveRestartAttemptsAsync_SemaphoreAlreadyDisposed_CompletesWithoutAnErrorLine()
+        {
+            // Arrange: teardown disposed the semaphore before the wait (#7613)
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 1);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            TestReflection.GetField<SemaphoreSlim>(service, "_restartAttemptsSemaphore").Dispose();
+
+            // Act
+            await (Task)TestReflection.InvokeNonPublic(service, "SaveRestartAttemptsAsync", 2, CancellationToken.None)!;
+
+            // Assert: nothing is written and the generic save-failure arm is not taken
+            Assert.Empty(store.Writes);
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Failed to save the restart attempts counter")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
         public async Task ConditionalResetRestartAttemptsAsync_TokenAlreadyCancelled_CompletesSilently()
         {
             // Arrange: a token cancelled before the semaphore wait is the teardown race of #7613
