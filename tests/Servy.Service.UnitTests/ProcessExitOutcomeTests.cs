@@ -284,6 +284,114 @@ namespace Servy.Service.UnitTests
                 It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        /// <summary>
+        /// Wires the <c>Debug</c> line <c>EmitHeartbeatPing</c> writes before its request, which is the only
+        /// observation point of a ping: the request itself goes out from a <c>Task.Run</c>.
+        /// </summary>
+        private (TaskCompletionSource<string> Logged, Func<int> Count) CaptureHeartbeatPings()
+        {
+            var logged = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var count = 0;
+            _ctx.Logger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) =>
+                {
+                    Interlocked.Increment(ref count);
+                    logged.TrySetResult(msg);
+                });
+
+            return (logged, () => Volatile.Read(ref count));
+        }
+
+        [Fact]
+        public async Task OnProcessExited_ErrorExitWithRecoveryDisabled_EmitsTheFailFlagPing()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (pingLogged, _) = CaptureHeartbeatPings();
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(42);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            var completed = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+            Assert.Same(pingLogged.Task, completed);
+            Assert.Contains("(flag: fail)", await pingLogged.Task);
+        }
+
+        [Fact]
+        public async Task OnProcessExited_FailureThresholdReachedFromTheExitEvent_EmitsTheFailFlagPing()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (pingLogged, _) = CaptureHeartbeatPings();
+
+            // Exit code 0 with RecoveryOnCleanExit enabled: the exit is a recovery trigger, not a stop,
+            // so only the needsRecovery half of the condition can send the ping.
+            var options = CreateOptionsWithMinimumRecoveryDelay(recoveryOnCleanExit: true);
+            TestReflection.SetField(service, "_options", options);
+
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(0);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            var completed = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+            Assert.Same(pingLogged.Task, completed);
+            Assert.Contains("(flag: fail)", await pingLogged.Task);
+        }
+
+        [Fact]
+        public async Task OnProcessExited_CleanExitThatStopsTheService_SendsNoFailFlagPing()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (pingLogged, pingCount) = CaptureHeartbeatPings();
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var cleanProcess = new Mock<IProcessWrapper>();
+            cleanProcess.Setup(p => p.ExitCode).Returns(0);
+            service.SetChildProcess(cleanProcess.Object);
+
+            // Act
+            // The ping is logged from a Task.Run, so a bare "never" right after the call would pass
+            // vacuously. Give a wrongly sent ping time to land, then raise an error exit on a second
+            // service that shares the logger (a stopped service no longer handles exits): its
+            // ping is the marker that every earlier one has had its chance to log.
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+            SpinWait.SpinUntil(() => pingCount() > 0, TimeSpan.FromSeconds(1));
+
+            var failingService = _ctx.Build();
+            TestReflection.SetField(failingService, "_options", ServiceTestContext.CreateDefaultStartOptions());
+            var failingProcess = new Mock<IProcessWrapper>();
+            failingProcess.Setup(p => p.ExitCode).Returns(42);
+            failingService.SetChildProcess(failingProcess.Object);
+            failingService.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            var completed = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+            Assert.Same(pingLogged.Task, completed);
+            Assert.Contains("(flag: fail)", await pingLogged.Task);
+
+            // Only the error exit pinged; the clean exit that stopped the service sent nothing.
+            Assert.Equal(1, pingCount());
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
