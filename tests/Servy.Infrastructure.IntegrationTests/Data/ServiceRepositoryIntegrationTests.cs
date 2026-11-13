@@ -785,6 +785,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task UpsertAsync_FreshConfigurationOverALegacyBlockedRow_IsRefusedNamingTheLegacyEncryptionAndTheRowIsLeftAsItIs()
+        {
+            // Arrange: a row whose Password still holds pre-v2 ciphertext the policy refuses, and the import of the file
+            // exported from a v1-compatible version - the route the legacy marker sends the user down (#7806)
+            var ct = TestContext.Current.CancellationToken;
+            var id = await _repository.UpsertAsync(new ServiceDto
+            {
+                Name = "LegacyImport",
+                ExecutablePath = "legacy.exe",
+                Parameters = "--port 8080",
+            }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, ct);
+            await _executor.ExecuteAsync(
+                $"UPDATE {SqlConstants.ServicesTableName} SET Password = 'LEGACY_PAYLOAD' WHERE Id = @Id",
+                new { Id = id },
+                cancellationToken: ct);
+            var incoming = new ServiceDto { Name = "LegacyImport", ExecutablePath = "new.exe", Parameters = "--port 9090" };
+
+            // Act
+            var ex = await Assert.ThrowsAsync<ServiceDecryptionFailedException>(() => _repository.UpsertAsync(incoming, true, true, ct));
+
+            // Assert: the message names the real cause and the route that works, not a key file that is fine
+            Assert.Equal("LegacyImport", ex.ServiceName);
+            Assert.Equal(nameof(ServiceDto.Password), ex.FieldName);
+            Assert.IsType<SecureDataLegacyBlockedException>(ex.InnerException);
+            Assert.Contains("pre-v2 encryption", ex.Message);
+            Assert.Contains("The encryption key (aes_key.dat) is not involved", ex.Message);
+            Assert.Contains("remove the service here, then import the exported file", ex.Message);
+            Assert.DoesNotContain("copy Servy.db back", ex.Message);
+            var after = await _repository.GetByNameAsync("LegacyImport", decrypt: false, ct);
+            Assert.NotNull(after);
+            Assert.Equal("LEGACY_PAYLOAD", after!.Password);
+            Assert.Equal("legacy.exe", after.ExecutablePath);
+            Assert.Equal("SECRET_HASH:--port 8080", after.Parameters);
+        }
+
+        [Fact]
         public async Task ExportXmlAsync_UndecryptableRow_IsRefusedRatherThanWrittenWithoutItsSensitiveFields()
         {
             // Arrange

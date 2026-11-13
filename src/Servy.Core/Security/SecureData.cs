@@ -218,8 +218,8 @@ namespace Servy.Core.Security
                             Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Throwing to prevent downgrade attack.");
                             throw new SecureDataLegacyBlockedException(
                                 "Legacy v1 decryption is disabled in this version. To migrate older records, " +
-                                "export the configuration using a v1-compatible version of Servy, then import " +
-                                "the resulting file into this version to upgrade to v2 authenticated encryption.");
+                                "export the configuration using a v1-compatible version of Servy, remove the service " +
+                                "in this version, then import the resulting file to upgrade to v2 authenticated encryption.");
                         }
 
                         Logger.Warn("Security audit: Legacy v1 decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
@@ -264,7 +264,7 @@ namespace Servy.Core.Security
                         throw new SecureDataLegacyBlockedException(
                             "Raw legacy ciphertext detected. Legacy unauthenticated decryption is permanently disabled in this version. " +
                             "To migrate these records, export the service configuration using an older v1-compatible version of Servy, " +
-                            "then import that file into this version to generate a secure v2 authenticated ciphertext.");
+                            "remove the service in this version, then import that file to generate a secure v2 authenticated ciphertext.");
                     }
 
                     Logger.Warn("Security audit: Raw legacy decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");

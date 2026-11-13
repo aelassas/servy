@@ -23,7 +23,7 @@ namespace Servy.Core.Security
         /// <summary>
         /// The marker of a row whose ciphertext uses the disabled pre-v2 encryption.
         /// </summary>
-        public const string LegacyBlocked = "[LEGACY ENCRYPTION BLOCKED] This record uses pre-v2 encryption, which is disabled. Export it with a v1-compatible version of Servy and re-import it here to upgrade.";
+        public const string LegacyBlocked = "[LEGACY ENCRYPTION BLOCKED] This record uses pre-v2 encryption, which is disabled. Export it with a v1-compatible version of Servy, remove the service here, then import the exported file to upgrade.";
 
         /// <summary>
         /// Separates a marker from the service's original description.

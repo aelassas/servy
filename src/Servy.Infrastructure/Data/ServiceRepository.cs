@@ -502,7 +502,8 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Refuses to write a service whose stored row has a sensitive field that no longer decrypts with the current key,
-        /// or that was itself read from such a row, so the stored ciphertext is never replaced with blanks.
+        /// or that was itself read from such a row, so the stored ciphertext is never replaced with blanks. A stored field
+        /// that uses the disabled pre-v2 encryption is refused with a message of its own, because the key is not involved.
         /// </summary>
         /// <param name="incoming">The service about to be written.</param>
         /// <param name="stored">The service's row as stored, not decrypted, or <see langword="null"/> when it has none.</param>
@@ -525,6 +526,13 @@ namespace Servy.Infrastructure.Data
                 try
                 {
                     DecryptIfPresent(get(stored));
+                }
+                catch (SecureDataLegacyBlockedException ex)
+                {
+                    // Policy refusal of pre-v2 ciphertext: the key is not involved, so say so and name the route that works.
+                    var refused = ServiceDecryptionFailedException.ForLegacyEncryption(stored.Name ?? incoming.Name, name, ex);
+                    Logger.Error(refused.Message, ex);
+                    throw refused;
                 }
                 catch (Exception ex)
                 {
