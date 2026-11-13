@@ -346,6 +346,44 @@ namespace Servy.Service.UnitTests
             Assert.Equal(1, pingCount());
         }
 
+        [Theory]
+        [InlineData(1, 5)]    // interval below the buffer: the 5 s floor
+        [InlineData(10, 5)]   // interval - buffer equals the floor
+        [InlineData(30, 25)]  // interval above the buffer: interval minus 5 s
+        public void OnProcessExited_FailureThresholdReached_SchedulesRecoveryAfterTheHeartbeatIntervalMinusTheBuffer(
+            int heartbeatIntervalInSeconds, int expectedDelaySeconds)
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(recoveryOnCleanExit: false);
+            options.HeartbeatIntervalInSeconds = heartbeatIntervalInSeconds;
+            TestReflection.SetField(service, "_options", options);
+
+            // The scheduled recovery must not outlive the test: cancel its delay when the test ends.
+            var cancellation = new CancellationTokenSource();
+            TestReflection.SetField(service, "_cancellationSource", cancellation);
+
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(1);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info(
+                $"[OnProcessExited] Failure threshold reached. Scheduling recovery in {expectedDelaySeconds}s...",
+                It.IsAny<Exception>()), Times.Once);
+
+            cancellation.Cancel();
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
