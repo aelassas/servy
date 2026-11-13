@@ -213,6 +213,26 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void FromDateAndToDate_WithATimeOfDay_BoundTheOtherPickerAtMidnightOfThatDay()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange - values with a time of day, which is what ResetDateWindowToNow assigns
+                var from = new DateTime(2026, 1, 2, 13, 45, 30);
+                var to = new DateTime(2026, 1, 9, 23, 59, 59);
+
+                // Act
+                vm.FromDate = from;
+                vm.ToDate = to;
+
+                // Assert
+                Assert.Equal(new DateTime(2026, 1, 2), vm.ToDateMinDate);
+                Assert.Equal(new DateTime(2026, 1, 9), vm.FromDateMaxDate);
+            }
+        }
+
+        [Fact]
         public void FromDate_SetToNull_ClearsToDateMinDate()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -319,6 +339,43 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.Null(vm.SelectedLog);
+                Assert.Equal(string.Empty, vm.SelectedLogMessage);
+            }
+        }
+
+        [Fact]
+        public void SelectedLog_SetToARow_ShowsThatRowsMessage()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange
+                var changed = new List<string>();
+                vm.PropertyChanged += (s, e) => changed.Add(e.PropertyName);
+
+                // Act
+                vm.SelectedLog = new LogEntryModel { Message = "Error Context" };
+
+                // Assert
+                Assert.Equal("Error Context", vm.SelectedLogMessage);
+                Assert.Contains(nameof(LogsViewModel.SelectedLogMessage), changed);
+                Assert.Contains(nameof(LogsViewModel.SelectedLog), changed);
+            }
+        }
+
+        [Fact]
+        public void SelectedLog_SetToARowWithoutAMessage_ShowsAnEmptyMessage()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange - a previous selection, so the empty string below is not the initial state
+                vm.SelectedLog = new LogEntryModel { Message = "Error Context" };
+
+                // Act
+                vm.SelectedLog = new LogEntryModel { Message = null };
+
+                // Assert
                 Assert.Equal(string.Empty, vm.SelectedLogMessage);
             }
         }
