@@ -783,8 +783,10 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                // A row read with a field that does not decrypt comes back with every sensitive field cleared. Written to
-                // a file it would look complete, and an import would store it over the real values once the key works again.
+                // A row read with a field that does not decrypt with the current key comes back with every sensitive field
+                // cleared. Written to a file it would look complete, and an import would store it over the real values once
+                // the key works again. A legacy-blocked row (pre-v2 encryption) is not cleared, but the fields that were
+                // refused are still ciphertext, so it is refused as well.
                 if (DecryptionFailureMarker.HasDecryptionFailure(dto))
                 {
                     // A field refused by the pre-v2 encryption policy is not a key problem; name the upgrade route instead.
