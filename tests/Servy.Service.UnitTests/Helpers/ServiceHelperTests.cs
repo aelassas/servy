@@ -57,6 +57,7 @@ namespace Servy.Service.UnitTests.Helpers
             public int RestarterKillGracePeriodMsOverride { get; set; } = 5000;
             public bool KillCalled { get; private set; }
             public bool ShouldKillThrow { get; set; }
+            public List<int> WaitBudgetsMs { get; } = new List<int>();
 
             public TestableServiceHelper(ICommandLineProvider commandLineProvider, IProcessHelper processHelper)
                 : base(commandLineProvider, processHelper)
@@ -76,6 +77,8 @@ namespace Servy.Service.UnitTests.Helpers
 
             protected override bool WaitForProcessExit(Process process, int milliseconds)
             {
+                WaitBudgetsMs.Add(milliseconds);
+
                 if (_waitForExitResults.Count > 0)
                 {
                     return _waitForExitResults.Dequeue();
@@ -783,6 +786,40 @@ namespace Servy.Service.UnitTests.Helpers
                 mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains("timed out after")), It.IsAny<Exception>()), Times.Once);
                 mockLog.Verify(l => l.Warn(It.Is<string>(m => m.Contains("kernel cleanup is taking longer than")), It.IsAny<Exception>()), Times.Once);
                 Assert.True(testableHelper.KillCalled, "Orphaned restarter process should have been killed.");
+            }
+        }
+
+        [Fact]
+        public void RestartService_RestarterTimesOut_WaitsTheMaxWaitFirstThenTheKillGracePeriod()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+            var testableHelper = new TestableServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object)
+            {
+                RestarterExeMaxWaitMsOverride = 120000,     // 2 minutes
+                RestarterKillGracePeriodMsOverride = 7000   // 7 seconds
+            };
+            testableHelper.QueueWaitForExitResult(false);
+            testableHelper.QueueWaitForExitResult(false);
+
+            using (new PlaceholderRestarter())
+            using (var dummyProcess = new Process())
+            {
+                _mockProcessHelper
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Returns(dummyProcess);
+
+                // Act
+                testableHelper.RestartService("TestServiceBudgets", mockLog.Object);
+
+                // Assert
+                Assert.Equal(new[] { 120000, 7000 }, testableHelper.WaitBudgetsMs);
+                mockLog.Verify(l => l.Error(
+                    "Servy.Restarter.Net48.exe timed out after 2 minutes. Forcing termination to prevent orphan conflicts.",
+                    It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Warn(
+                    "Restarter killed, but kernel cleanup is taking longer than 7 seconds.",
+                    It.IsAny<Exception>()), Times.Once);
             }
         }
 
