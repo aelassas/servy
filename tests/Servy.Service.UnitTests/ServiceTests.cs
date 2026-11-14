@@ -2097,8 +2097,10 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Stop(42_000), Times.Once);
             _mockProcess.Verify(p => p.StopDescendants(It.IsAny<int>(), It.IsAny<DateTime>(), 42_000), Times.Once);
 
-            // 3. Verify that the health-monitoring timer was stopped
+            // 3. Verify that the health-monitoring timer was unsubscribed, stopped and disposed
+            _mockTimer.VerifyRemove(t => t.Elapsed -= It.IsAny<System.Timers.ElapsedEventHandler>(), Times.Once);
             _mockTimer.Verify(t => t.Stop(), Times.Once);
+            _mockTimer.Verify(t => t.Dispose(), Times.Once);
 
             // 4. Verify stdout and stderr writers were disposed
             _mockStdoutWriter.Verify(w => w.Dispose(), Times.Once);
