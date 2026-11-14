@@ -1638,7 +1638,10 @@ namespace Servy.Service.UnitTests
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Once);
             scopedLogger.Verify(l => l.Error(TopOfAttemptTeardownAbort, null), Times.Never);
             scopedLogger.Verify(l => l.Error(BackOffTeardownAbort, null), Times.Never);
-            _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, It.IsAny<int>(), null), Times.AtLeastOnce);
+            // One back-off wait (attempt 1 of 2), and PreLaunchRetryInitialDelayMs fits in one
+            // wait chunk, so there is exactly one slice and one pulse, carrying the SCM wait hint.
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, AppConfig.DefaultScmAdditionalTimeMs, null), Times.Once);
+            _ctx.Helper.Verify(h => h.RequestAdditionalTime(_service, It.IsAny<int>(), null), Times.Once);
             _mockProcess.Verify(p => p.Start(), Times.Never);
         }
 
