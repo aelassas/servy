@@ -185,7 +185,7 @@ try {
     # The set of shipped executables is enumerated independently in three places, in three
     # different orders: build.yml's $projects array, publish.yml's six build-and-sign step
     # groups (which stay as separate steps per #1037) and generate-sbom.ps1's $projects table.
-    # Nothing ties them together, so adding a sixth executable to one and forgetting another is
+    # Nothing ties them together, so adding a seventh executable to one and forgetting another is
     # silent - a binary that is built but never SBOM'd, or published but never ARM64-verified.
     # Membership is what has to agree; the three orders are deliberately left alone.
 
