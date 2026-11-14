@@ -173,6 +173,73 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         [Fact]
+        public async Task CheckUpdates_AsksTheLatestReleaseEndpointWithTheServyUserAgent()
+        {
+            // Arrange
+            HttpRequestMessage? sent = null;
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) => sent = request)
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("{ \"tag_name\": \"v1.0.0\" }")
+                });
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            Assert.NotNull(sent);
+            Assert.Equal(HttpMethod.Get, sent!.Method);
+            Assert.Equal(new Uri(AppConfig.LatestReleaseApiUrl), sent.RequestUri);
+
+            // GitHub's API refuses a request with no User-Agent, so the header is part of the contract.
+            Assert.Equal("Servy", sent.Headers.UserAgent.ToString());
+        }
+
+        [Fact]
+        public async Task CheckUpdates_NonSuccessStatus_ReportsTheFailureAndIgnoresTheBody()
+        {
+            // Arrange
+            // A refused request whose body would read as a newer release if the status were not checked.
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.Forbidden,
+                    Content = new StringContent("{ \"tag_name\": \"v9999.0\" }")
+                });
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+
+            string shownError = string.Empty;
+            _mockMessageBox
+                .Setup(m => m.ShowErrorAsync(It.IsAny<string>(), Caption))
+                .Callback<string, string>((message, _) => shownError = message)
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), Caption), Times.Once);
+            Assert.StartsWith(FormatPrefix(Strings.Msg_UpdateCheckFailed), shownError);
+            _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task CheckUpdates_NewerVersionAvailable_UserConfirms_InHeadlessMode_TakesTheOpenReleasePagePath()
         {
             // Arrange
