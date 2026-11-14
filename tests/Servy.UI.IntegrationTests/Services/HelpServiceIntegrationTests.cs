@@ -126,6 +126,47 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         [Fact]
+        public async Task CheckUpdates_TagNameKeyAbsent_ShowsInvalidTagErrorAsMissing()
+        {
+            // Arrange
+            // Branch: the null half of if (string.IsNullOrEmpty(tagName)) and the inner ?. of json?["tag_name"]?.ToString().
+            // A 200 response that is valid JSON but not a release object: there is no tag_name key at all.
+            SetupHandlerResponse("{ \"name\": \"Draft Release\" }");
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(
+                m => m.ShowErrorAsync(
+                    It.Is<string>(s => s == string.Format(Strings.Msg_UpdateCheckInvalidTag, "<missing>")),
+                    Caption),
+                Times.Once);
+
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CheckUpdates_BodyIsJsonNull_ShowsInvalidTagErrorAsMissing()
+        {
+            // Arrange
+            // Branch: the outer ?. of json?["tag_name"]. The JSON literal null deserializes to a null JObject.
+            SetupHandlerResponse("null");
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(
+                m => m.ShowErrorAsync(
+                    It.Is<string>(s => s == string.Format(Strings.Msg_UpdateCheckInvalidTag, "<missing>")),
+                    Caption),
+                Times.Once);
+
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task CheckUpdates_VersionIsOlder_ShowsNoUpdates()
         {
             // Arrange
