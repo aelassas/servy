@@ -1289,6 +1289,43 @@ namespace Servy.Service.UnitTests
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process starts anyway
         }
 
+        [Theory]
+        [InlineData("pre-out.log", null, true, false)]
+        [InlineData(null, "pre-err.log", false, true)]
+        public void OnStart_PreLaunchSynchronous_RedirectsOnlyTheStreamsWithAConfiguredPreLaunchPath(
+            string? preLaunchStdoutPath, string? preLaunchStderrPath, bool expectStdout, bool expectStderr)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchRetryAttempts = 0,
+                PreLaunchStdoutPath = preLaunchStdoutPath,
+                PreLaunchStderrPath = preLaunchStderrPath,
+            };
+            SetupStandardServiceStart(options);
+
+            ProcessStartInfo? preLaunchPsi = null;
+            var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+            mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            mockPreLaunchProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(0);
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => preLaunchPsi = psi)
+                .Returns(mockPreLaunchProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.NotNull(preLaunchPsi);
+            Assert.Equal(expectStdout, preLaunchPsi.RedirectStandardOutput);
+            Assert.Equal(expectStderr, preLaunchPsi.RedirectStandardError);
+        }
+
         [Fact]
         public void OnStart_PreLaunchSynchronous_RetriesAfterBackoff_ThenSucceeds()
         {
