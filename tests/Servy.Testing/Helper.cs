@@ -100,7 +100,7 @@ namespace Servy.Testing
         /// Executes a synchronous operation on a newly spawned Single-Threaded Apartment (STA) thread.
         /// </summary>
         /// <param name="action">The synchronous operation to execute.</param>
-        /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
+        /// <param name="createApp">If true, calls <see cref="EnsureApplication"/> before the operation runs, so the shared WPF <see cref="Application"/> exists. It lives on its own persistent STA thread, not on the thread spawned here.</param>
         public static void RunOnSTA(Action action, bool createApp = false)
         {
             RunOnSTA<object?>(() => { action(); return null; }, createApp);
@@ -111,7 +111,7 @@ namespace Servy.Testing
         /// </summary>
         /// <typeparam name="T">The return type value of the function.</typeparam>
         /// <param name="func">The synchronous function to execute.</param>
-        /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
+        /// <param name="createApp">If true, calls <see cref="EnsureApplication"/> before the operation runs, so the shared WPF <see cref="Application"/> exists. It lives on its own persistent STA thread, not on the thread spawned here.</param>
         /// <returns>The value returned by <paramref name="func"/>, evaluated on the STA thread.</returns>
         public static T RunOnSTA<T>(Func<T> func, bool createApp = false)
         {
@@ -146,7 +146,7 @@ namespace Servy.Testing
         /// ensuring a message pump is maintained for the duration of the task.
         /// </summary>
         /// <param name="action">The asynchronous task to execute.</param>
-        /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
+        /// <param name="createApp">If true, calls <see cref="EnsureApplication"/> before the operation runs, so the shared WPF <see cref="Application"/> exists. It lives on its own persistent STA thread, not on the thread spawned here.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunOnSTA(Func<Task> action, bool createApp = false)
         {
