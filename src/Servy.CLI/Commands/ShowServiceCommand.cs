@@ -170,7 +170,7 @@ namespace Servy.CLI.Commands
             // request asks for, so the two lines a reader is most likely to want are the top two.
             var core = new Section(null);
             core.Always(Strings.Msg_Show_Label_Name, dto.Name);
-            core.Always(Strings.Msg_Show_Label_Status, ResolveStatusToken(dto.Name, cancellationToken));
+            core.Always(Strings.Msg_Show_Label_Status, ResolveStatusToken(_serviceManager, dto.Name, cancellationToken));
             core.Always(Strings.Msg_Show_Label_Pid, dto.Pid?.ToString(CultureInfo.InvariantCulture));
             core.Always(Strings.Msg_Show_Label_DisplayName, dto.DisplayName);
             core.Always(Strings.Msg_Show_Label_Description, dto.Description);
@@ -363,7 +363,7 @@ namespace Servy.CLI.Commands
                     ListCell(service.DisplayName, notSet),
                     ListCell(service.Description, notSet),
                     Display(FormatEnum(typeof(ServiceStartType), service.StartupType), notSet),
-                    ResolveStatusToken(service.Name, cancellationToken),
+                    ResolveStatusToken(_serviceManager, service.Name, cancellationToken),
                     Display(service.Pid?.ToString(CultureInfo.InvariantCulture), notSet)
                 });
             }
@@ -415,24 +415,6 @@ namespace Servy.CLI.Commands
         #endregion
 
         #region Formatting helpers
-
-        /// <summary>
-        /// Resolves the invariant status token for a service, using the same fallback ladder as the
-        /// <c>status</c> verb: the SCM value, then Unknown for an installed service whose status cannot
-        /// be read, then NotInstalled.
-        /// </summary>
-        /// <param name="serviceName">The service name to query.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>The status token.</returns>
-        private string ResolveStatusToken(string? serviceName, CancellationToken cancellationToken)
-        {
-            var status = _serviceManager.GetServiceStatus(serviceName, cancellationToken: cancellationToken);
-
-            return status?.ToString()
-                ?? (_serviceManager.IsServiceInstalled(serviceName, cancellationToken)
-                        ? nameof(ServiceStatus.Unknown)
-                        : nameof(ServiceStatus.NotInstalled));
-        }
 
         /// <summary>
         /// Renders a stored enum ordinal as its member name, falling back to the raw number when the
