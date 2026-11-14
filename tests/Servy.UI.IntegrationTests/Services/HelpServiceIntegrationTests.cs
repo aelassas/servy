@@ -155,6 +155,28 @@ namespace Servy.UI.IntegrationTests.Services
                 Times.Once);
         }
 
+        [Theory]
+        [InlineData("v{0}.{1}")]      // the tag shape the releases use, same component count as AppConfig.Version
+        [InlineData("v{0}.{1}.0.0")]  // same version with more components: only normalizing both sides makes it equal
+        public async Task CheckUpdates_LatestReleaseIsTheRunningVersion_ShowsNoUpdates(string tagFormat)
+        {
+            // Arrange
+            // The steady state of an up-to-date install. The tag is derived from the same parse the SUT
+            // applies to AppConfig.Version, which is "unknown" (mapped to 0.0) for an unversioned assembly.
+            var running = Servy.Core.Helpers.Helper.ParseVersion(AppConfig.Version) ?? new Version(0, 0);
+            string tagName = string.Format(tagFormat, running.Major, running.Minor);
+            SetupHandlerResponse($"{{ \"tag_name\": \"{tagName}\" }}");
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(
+                m => m.ShowInfoAsync(It.Is<string>(s => s == Strings.Msg_NoUpdatesAvailable), Caption),
+                Times.Once);
+            _mockMessageBox.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
         [Fact]
         public async Task CheckUpdates_NewerVersionAvailable_UserConfirms_InHeadlessMode_TakesTheOpenReleasePagePath()
         {
