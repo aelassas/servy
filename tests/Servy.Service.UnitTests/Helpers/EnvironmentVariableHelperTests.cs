@@ -987,6 +987,58 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.DoesNotContain(EnvironmentVariableHelper.PercentEscapeToken, resultValue);
         }
 
+        [Fact]
+        public void ExpandEnvironmentVariables_VariableLongerThanTheCap_WarnsWithTheVariableName()
+        {
+            // Arrange
+            // No placeholder in the value, so only the per-variable guard can truncate it
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "TOO_LONG_VAR", Value = new string('B', AppConfig.MaxEnvVarExpandedLength + 10) }
+            };
+
+            // Act
+            string log = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
+
+            // Assert
+            Assert.Contains($"Expansion of 'TOO_LONG_VAR' exceeded {AppConfig.MaxEnvVarExpandedLength} characters", log);
+            Assert.DoesNotContain("Inline expansion exceeded", log);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_StringOverload_ReplacementCrossesTheCap_WarnsFromTheInlineGuard()
+        {
+            // Arrange
+            var context = new Dictionary<string, string> { { "TRIGGER_VAR", new string('C', AppConfig.MaxEnvVarExpandedLength + 10) } };
+
+            // Act
+            string log = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables("%TRIGGER_VAR%", context));
+
+            // Assert
+            Assert.Contains($"Inline expansion exceeded {AppConfig.MaxEnvVarExpandedLength} characters during token replacement", log);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_TruncationSplitsToken_LogsTheRollbackPosition()
+        {
+            // Arrange
+            // Same layout as TruncationSplitsToken_RollsBackToCleanBoundary
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+            string token = EnvironmentVariableHelper.PercentEscapeToken;
+            int prefixLength = maxLen - (token.Length / 2);
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "FRAGMENT_VAR", Value = new string('B', prefixLength) + token + "ExtendedContent" }
+            };
+
+            // Act
+            string log = CaptureExpansionLog(() => EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
+
+            // Assert
+            // The token starts right after the padding, so that is the position the cut is moved back to
+            Assert.Contains($"split at boundary position {prefixLength}.", log);
+        }
+
         #endregion
 
         #region System variables added after the service started (#7393)
