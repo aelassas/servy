@@ -1793,6 +1793,77 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnStart_PostLaunchConfirmation_WaitsTheStartTimeoutOnTheServiceToken()
+        {
+            // Arrange
+            var options = CreatePostLaunchOptions(PostLaunchExe);
+            options.StartTimeoutInSeconds = 7; // not AppConfig.DefaultStartTimeout, and no other option carries this value
+            SetupStandardServiceStart(options);
+
+            using var waitRequested = new ManualResetEventSlim(false);
+            TimeSpan requestedWindow = default;
+            CancellationToken requestedToken = default;
+            _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+                .Callback<TimeSpan, CancellationToken>((window, token) =>
+                {
+                    requestedWindow = window;
+                    requestedToken = token;
+                    waitRequested.Set();
+                })
+                .ReturnsAsync(false);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.True(waitRequested.Wait(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken),
+                "the post-launch confirmation wait was never requested");
+            Assert.Equal(TimeSpan.FromSeconds(7), requestedWindow);
+
+            // The token is the service's own: cancelling the source the start created cancels the wait.
+            Assert.False(requestedToken.IsCancellationRequested);
+            TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource").Cancel();
+            Assert.True(requestedToken.IsCancellationRequested);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task OnStart_StartPing_IsEmittedOnlyOnceTheChildIsConfirmedStillRunning(bool stillRunning)
+        {
+            // Arrange
+            var options = CreatePostLaunchOptions(null);
+            options.EnableHealthMonitoring = true;      // first guard of EmitHeartbeatPing
+            options.EnableHeartbeatUrlFlags = true;     // the start flag is a suffix
+            options.HeartbeatIntervalInSeconds = 30;
+            options.MaxFailedChecks = 3;
+            options.HeartbeatUrl = "https://127.0.0.1:1/start-heartbeat"; // never answers; only the Debug line is read
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            // After OnStart the service logs through the scoped logger, so the line is captured there
+            // rather than through ServiceTestContext.CaptureHeartbeatPings, which wires the root logger.
+            var pingLogged = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            scopedLogger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
+                .Callback<string, Exception>((message, _) => pingLogged.TrySetResult(message));
+
+            _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stillRunning);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            var window = stillRunning ? TestTimeouts.CiGenerous : TestTimeouts.NegativeObservationWindow;
+            var completed = await Task.WhenAny(pingLogged.Task, Task.Delay(window, TestContext.Current.CancellationToken));
+            Assert.Equal(stillRunning, completed == pingLogged.Task);
+            if (stillRunning)
+            {
+                Assert.Contains("(flag: start)", await pingLogged.Task);
+            }
+        }
+
+        [Fact]
         public void CleanupTrackedHooks_WhenOneHookThrowsOnDispose_LogsItAndStillClearsTheList()
         {
             // Arrange
