@@ -158,8 +158,11 @@ function Copy-CommonArtifacts {
         Copy-TaskSchdArtifacts -SourcePath $taskSchdSource -DestPath $taskSchdDest
 
         # Post-copy verification to ensure no sensitive files leaked into the package
-        $searchPath = Join-Path $taskSchdDest "*"
-        $leaks = Get-ChildItem -Path $searchPath -Recurse -Include $script:TaskSchdExcludedPatterns
+        $leaks = Get-ChildItem -LiteralPath $taskSchdDest -Recurse -File |
+            Where-Object {
+                $leafName = $_.Name
+                $script:TaskSchdExcludedPatterns | Where-Object { $leafName -like $_ }
+            }
         if ($leaks) {
             throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')"
         }

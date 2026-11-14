@@ -9,8 +9,9 @@
     These tests pin the three things a second, hand-rolled copy of that loop would be free
     to drift on: where the surviving policy lives, how many attempts it makes, and the
     failure message the caller finally sees. They also pin that the Task Scheduler
-    exclusion list is declared once and enforced by both of its consumers, and that the
-    target framework moniker is supplied by the caller rather than resolved a second time.
+    exclusion list is declared once and enforced by both of its consumers (including under
+    bracketed checkout paths), and that the target framework moniker is supplied by the
+    caller rather than resolved a second time.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -38,7 +39,7 @@ $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("servy-publish-common-te
 New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
 function Remove-TestArtifacts {
-    if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path -LiteralPath $tempDir) { Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
 # Writes a stand-in for ISCC.exe that logs each invocation and fails the first
@@ -62,7 +63,7 @@ function New-FakeInnoCompiler {
 
 function Get-AttemptCount {
     param([Parameter(Mandatory = $true)][string]$AttemptLog)
-    if (-not (Test-Path $AttemptLog)) { return 0 }
+    if (-not (Test-Path -LiteralPath $AttemptLog)) { return 0 }
     return @(Get-Content -LiteralPath $AttemptLog).Count
 }
 
@@ -171,15 +172,18 @@ try {
     }
     Write-Host "  [OK] The Task Scheduler exclusion list is declared once, as a script-scoped array." -ForegroundColor Gray
 
-    # --- Both consumers enforce every pattern in that one array ----------------------
+    # --- Both consumers enforce every pattern in that one array (including bracketed paths) ---
     # The sample filenames are derived from the patterns, so a sixth pattern added to the
-    # array is exercised by both halves of this test without editing it.
+    # array is exercised by both halves of this test without editing it. Using a bracketed
+    # folder name (`exclusions[bracket]`) pins the WildcardPattern::Escape handling so
+    # `-Path` with `-Include` does not treat `[` and `]` as character classes.
 
     # Arrange
-    $filterSource = Join-Path $tempDir "exclusions-src"
-    $filterDest = Join-Path $tempDir "exclusions-dst"
-    New-Item -ItemType Directory -Path (Join-Path $filterSource "SubFolder") -Force | Out-Null
-    New-Item -ItemType Directory -Path $filterDest -Force | Out-Null
+    $bracketRoot = Join-Path $tempDir "exclusions[bracket]"
+    $filterSource = Join-Path $bracketRoot "taskschd"
+    $filterDest = Join-Path $bracketRoot "dst"
+    [void][System.IO.Directory]::CreateDirectory((Join-Path $filterSource "SubFolder"))
+    [void][System.IO.Directory]::CreateDirectory($filterDest)
 
     $payloadName = "ServySecurity.ps1"
     [System.IO.File]::WriteAllText((Join-Path $filterSource $payloadName), "payload")
@@ -194,8 +198,12 @@ try {
 
     # Act
     Copy-TaskSchdArtifacts -SourcePath $filterSource -DestPath $filterDest
-    $copied = @(Get-ChildItem -Path $filterDest -Recurse -File | Select-Object -ExpandProperty Name)
-    $leaks = @(Get-ChildItem -Path $filterSource -Recurse -Include $script:TaskSchdExcludedPatterns)
+    $copied = @(Get-ChildItem -LiteralPath $filterDest -Recurse -File | Select-Object -ExpandProperty Name)
+    $leaks = @(Get-ChildItem -LiteralPath $filterSource -Recurse -File |
+        Where-Object {
+            $leafName = $_.Name
+            $script:TaskSchdExcludedPatterns | Where-Object { $leafName -like $_ }
+        })
 
     # Assert
     if ($copied -notcontains $payloadName) {
@@ -210,15 +218,64 @@ try {
     }
     Write-Host "  [OK] The copy filter excludes every pattern in the shared array, nested included." -ForegroundColor Gray
 
-    # The leak check is the second, independent mechanism: -Include globbing over the same
-    # array. It has to recognise every pattern the copy filter does, or it silently stops
-    # being a check at all.
+    # The leak check is the second, independent post-copy scan over the destination tree
+    # using -LiteralPath (safe for bracketed checkout paths) and the same shared array.
+    # It has to recognise every pattern at every depth, or it silently stops being a check at all.
     $expectedLeakCount = @($script:TaskSchdExcludedPatterns).Count * 2
     if ($leaks.Count -ne $expectedLeakCount) {
-        Write-Host "FAIL: the leak check's -Include globbing matched $($leaks.Count) of $expectedLeakCount planted files." -ForegroundColor Red
+        Write-Host "FAIL: the leak check matched $($leaks.Count) of $expectedLeakCount planted files in bracketed path." -ForegroundColor Red
         exit 1
     }
-    Write-Host "  [OK] The leak check recognises every pattern in the same shared array." -ForegroundColor Gray
+    Write-Host "  [OK] The leak check recognises every pattern in the same shared array, nested and bracketed included." -ForegroundColor Gray
+
+    # --- Copy-CommonArtifacts catches a leaked file even under a bracketed path -------
+    # Simulate a bug in Copy-TaskSchdArtifacts that copies files unfiltered into a
+    # bracketed destination, verifying the post-copy leak check still throws SECURITY ERROR.
+
+    # Arrange
+    $mockCliDir = Join-Path $bracketRoot "cli"
+    $pkgCleanDest = Join-Path $bracketRoot "pkg-clean"
+    $pkgLeakDest = Join-Path $bracketRoot "pkg-leak"
+    [void][System.IO.Directory]::CreateDirectory($mockCliDir)
+    [void][System.IO.Directory]::CreateDirectory($pkgCleanDest)
+    [void][System.IO.Directory]::CreateDirectory($pkgLeakDest)
+
+    foreach ($art in @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1", "Servy-Dump.ps1", "Servy-Restore.ps1")) {
+        [System.IO.File]::WriteAllText((Join-Path $mockCliDir $art), "stub")
+    }
+
+    # Act 1: Normal Copy-CommonArtifacts run in a bracketed path succeeds cleanly
+    Copy-CommonArtifacts -ScriptDir $bracketRoot -CliDir $mockCliDir -DestFolder $pkgCleanDest
+
+    # Act 2: Bypass filtering in Copy-TaskSchdArtifacts to verify the leak check catches leaks in bracketed paths
+    $origCopyFn = (Get-Item Function:\Copy-TaskSchdArtifacts).ScriptBlock
+    $leakCaught = $null
+    try {
+        Set-Item Function:\Copy-TaskSchdArtifacts -Value {
+            param([string]$SourcePath, [string]$DestPath)
+            Get-ChildItem -LiteralPath $SourcePath -Recurse -File | ForEach-Object {
+                $target = Join-Path $DestPath $_.Name
+                Copy-Item -LiteralPath $_.FullName -Destination $target -Force
+            }
+        }
+
+        try {
+            Copy-CommonArtifacts -ScriptDir $bracketRoot -CliDir $mockCliDir -DestFolder $pkgLeakDest
+        }
+        catch {
+            $leakCaught = $_
+        }
+    }
+    finally {
+        Set-Item Function:\Copy-TaskSchdArtifacts -Value $origCopyFn
+    }
+
+    # Assert
+    if ($null -eq $leakCaught -or $leakCaught.Exception.Message -notlike "*SECURITY ERROR: Excluded files leaked into package*") {
+        Write-Host "FAIL: Copy-CommonArtifacts failed to detect leaked files under a bracketed path." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Copy-CommonArtifacts post-copy leak check catches leaked files even under bracketed paths." -ForegroundColor Gray
 
     # --- The moniker is resolved by the caller, not a second time in here -----------
     # publish-sc.ps1, the one production caller, reads build-config.ps1 and passes the
