@@ -1,6 +1,7 @@
 using Moq;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
@@ -1156,6 +1157,9 @@ namespace Servy.Service.UnitTests
                 FailureProgramExecutableArgs = "--failure-arg",
                 PreStopExecutableArgs = "--pre-stop-arg",
                 PostStopExecutableArgs = "--post-stop-arg",
+                // The same name carries a different value in each list, so a program handed the wrong list is noticed.
+                EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } },
+                PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "pre-launch" } },
             };
             var scopedLogger = SetupStandardServiceStart(options);
 
@@ -1173,6 +1177,8 @@ namespace Servy.Service.UnitTests
             Assert.NotNull(preLaunchPsi);
             Assert.Equal("--pre-launch-arg", preLaunchPsi.Arguments);
             Assert.Equal(@"C:\hooks\prelaunch", preLaunchPsi.WorkingDirectory);
+            // The pre-launch hook is the only program with its own variables
+            Assert.Equal("pre-launch", preLaunchPsi.Environment["SERVY_TEST_SCOPE"]);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("fire-and-forget")), It.IsAny<Exception>()), Times.AtLeastOnce);
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process still starts
         }
@@ -1208,6 +1214,33 @@ namespace Servy.Service.UnitTests
             // Assert
             Assert.NotNull(preLaunchPsi);
             Assert.Equal(@"C:\svc", preLaunchPsi.WorkingDirectory);
+        }
+
+        [Fact]
+        public void OnStart_MainProcess_ReceivesTheMainVariablesNotThePreLaunchOnes()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                // The same name carries a different value in each list, so a program handed the wrong list is noticed.
+                EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } },
+                PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "pre-launch" } },
+            };
+            SetupStandardServiceStart(options);
+
+            ProcessStartInfo? mainPsi = null;
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "test.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => mainPsi = psi)
+                .Returns(_mockProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.NotNull(mainPsi);
+            Assert.Equal("main", mainPsi.Environment["SERVY_TEST_SCOPE"]);
         }
 
         [Fact]
@@ -1768,11 +1801,15 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var options = CreatePostLaunchOptions(PostLaunchExe);
+            // The same name carries a different value in each list, so a hook handed the wrong list is noticed.
+            options.EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } };
+            options.PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "pre-launch" } };
             SetupStandardServiceStart(options);
 
             using var postLaunchStarted = new ManualResetEventSlim(false);
             string? postLaunchArguments = null;
             string? postLaunchWorkingDirectory = null;
+            string? postLaunchScope = null;
             var mockPostLaunchProcess = new Mock<IProcessWrapper>();
             mockPostLaunchProcess.Setup(p => p.Start()).Returns(true);
             _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()))
@@ -1780,6 +1817,7 @@ namespace Servy.Service.UnitTests
                 {
                     postLaunchArguments = psi.Arguments;
                     postLaunchWorkingDirectory = psi.WorkingDirectory;
+                    postLaunchScope = psi.Environment["SERVY_TEST_SCOPE"];
                     postLaunchStarted.Set();
                 })
                 .Returns(mockPostLaunchProcess.Object);
@@ -1804,6 +1842,8 @@ namespace Servy.Service.UnitTests
                 Assert.Equal("--post-launch-arg", postLaunchArguments);
                 // ... and starts in its own directory, not another hook's
                 Assert.Equal(@"C:\hooks\postlaunch", postLaunchWorkingDirectory);
+                // ... and receives the main variables, not the pre-launch hook's own
+                Assert.Equal("main", postLaunchScope);
             }
         }
 

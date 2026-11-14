@@ -35,12 +35,18 @@ namespace Servy.Service.UnitTests
                 .Returns(mockProcess.Object);
 
             // Act
-            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), false, TestContext.Current.CancellationToken);
+            var environmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } };
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", environmentVariables, false, TestContext.Current.CancellationToken);
 
             // Assert
             var childProcess = service.GetChildProcess();
             Assert.Equal(mockProcess.Object, childProcess);
             mockProcess.Verify(p => p.Start(), Times.Once);
+
+            // The variables reach the launched program and are kept for the RestartProcess relaunch
+            Assert.NotNull(seenPsi);
+            Assert.Equal("main", seenPsi.Environment["SERVY_TEST_SCOPE"]);
+            Assert.Same(environmentVariables, TestReflection.GetField<List<EnvironmentVariable>>(service, "_environmentVariables"));
 
             // Verify ProcessStartInfo propagation
             Assert.NotNull(seenPsi);
@@ -466,6 +472,9 @@ namespace Servy.Service.UnitTests
             options.FailureProgramExecutableArgs = "--failure-arg";
             options.PreStopExecutableArgs = "--drain --grace 5";
             options.PostStopExecutableArgs = "--post-stop-arg";
+            // The same name carries a different value in each list, so a hook handed the wrong list is noticed.
+            options.EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } };
+            options.PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "pre-launch" } };
 
             ProcessStartInfo? seenPsi = null;
             var preStop = new Mock<IProcessWrapper>();
@@ -484,6 +493,8 @@ namespace Servy.Service.UnitTests
             Assert.NotNull(seenPsi);
             Assert.Equal(PreStopExe, seenPsi.FileName);
             Assert.Equal("--drain --grace 5", seenPsi.Arguments);
+            // ... and receives the main variables, not the pre-launch hook's own
+            Assert.Equal("main", seenPsi.Environment["SERVY_TEST_SCOPE"]);
         }
 
         [Fact]
@@ -501,6 +512,9 @@ namespace Servy.Service.UnitTests
             options.FailureProgramExecutableArgs = "--failure-arg";
             options.PreStopExecutableArgs = "--pre-stop-arg";
             options.PostStopExecutableArgs = "--cleanup --keep 2";
+            // The same name carries a different value in each list, so a hook handed the wrong list is noticed.
+            options.EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } };
+            options.PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "pre-launch" } };
             TestReflection.SetField(service, "_options", options);
 
             ProcessStartInfo? seenPsi = null;
@@ -518,6 +532,8 @@ namespace Servy.Service.UnitTests
             Assert.NotNull(seenPsi);
             Assert.Equal(@"C:\hooks\poststop.exe", seenPsi.FileName);
             Assert.Equal("--cleanup --keep 2", seenPsi.Arguments);
+            // ... and receives the main variables, not the pre-launch hook's own
+            Assert.Equal("main", seenPsi.Environment["SERVY_TEST_SCOPE"]);
         }
 
         [Theory]

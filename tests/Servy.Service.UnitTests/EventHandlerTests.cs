@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
@@ -198,6 +199,9 @@ namespace Servy.Service.UnitTests
             options.FailureProgramExecutableArgs = "--failure-arg";
             options.PreStopExecutableArgs = "--pre-stop-arg";
             options.PostStopExecutableArgs = "--post-stop-arg";
+            // The same name carries a different value in each list, so a program handed the wrong list is noticed.
+            options.EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "main" } };
+            options.PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "SERVY_TEST_SCOPE", Value = "pre-launch" } };
             TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();
@@ -229,6 +233,8 @@ namespace Servy.Service.UnitTests
             Assert.Equal("--failure-arg", failurePsi.Arguments);
             // ... and starts in its own directory, not another hook's
             Assert.Equal(@"C:\hooks\failure", failurePsi.WorkingDirectory);
+            // ... and receives the main variables, not the pre-launch hook's own
+            Assert.Equal("main", failurePsi.Environment["SERVY_TEST_SCOPE"]);
         }
 
         [Fact]
