@@ -334,7 +334,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(manager): LogsView.xaml.cs - Missing Unloaded event unsubscribe, memory leak (#679)
 * fix(manager,cli): Export functionality writes plaintext service account passwords to XML/JSON files (#375)
 * fix(cli): misleading success message for import and export commands
-* fix(cli): log exceptions in case unexpected errors
+* fix(cli): log exceptions in case of unexpected errors
 * fix(cli): ServiceInstallValidator: operator precedence bug in timeout/retry validation (#96)
 * fix(cli): ImportServiceCommand: no path validation on deserialized service configuration (#100)
 * fix(cli): ExportServiceCommand: redundant inner try-catch and misspelled error message (#112)
