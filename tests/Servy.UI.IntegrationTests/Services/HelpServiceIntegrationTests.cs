@@ -93,21 +93,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Arrange
             // Branch: if (string.IsNullOrEmpty(tagName))
-            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-            mockHandler
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{ \"name\": \"Draft Release\", \"tag_name\": \"\" }")
-                });
-
-            // Inject our mock handler directly into the existing static HttpClient instance
-            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+            SetupHandlerResponse("{ \"name\": \"Draft Release\", \"tag_name\": \"\" }");
 
             // Act
             await _service.CheckUpdatesAsync(Caption);
@@ -166,21 +152,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Arrange
             // Branch: else { await _messageBoxService.ShowInfoAsync(Strings.Msg_NoUpdatesAvailable...) }
-            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-            mockHandler
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{ \"tag_name\": \"v1.0.0\" }")
-                });
-
-            // Inject our mock handler directly into the existing static HttpClient instance
-            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+            SetupHandlerResponse("{ \"tag_name\": \"v1.0.0\" }");
 
             // Act
             await _service.CheckUpdatesAsync(Caption);
@@ -285,20 +257,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Arrange
             // 1. Mock GitHub API returning a newer version tag
-            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-            mockHandler
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{ \"tag_name\": \"v9999.0\", \"html_url\": \"https://github.com/aelassas/servy/releases/tag/v9999.0\" }")
-                });
-
-            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+            SetupHandlerResponse("{ \"tag_name\": \"v9999.0\", \"html_url\": \"https://github.com/aelassas/servy/releases/tag/v9999.0\" }");
 
             // 2. Mock user clicking "Yes" on the update prompt
             _mockMessageBox
