@@ -107,5 +107,24 @@ namespace Servy.Service.UnitTests
 
             _builtServices.Clear();
         }
+
+        /// <summary>
+        /// Wires the <c>Debug</c> line <c>EmitHeartbeatPing</c> writes before its request, which is the only
+        /// observation point of a ping: the request itself goes out from a <c>Task.Run</c>.
+        /// </summary>
+        public (TaskCompletionSource<string> Logged, Func<int> Count) CaptureHeartbeatPings()
+        {
+            var logged = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var count = 0;
+            Logger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) =>
+                {
+                    Interlocked.Increment(ref count);
+                    logged.TrySetResult(msg);
+                });
+
+            return (logged, () => Volatile.Read(ref count));
+        }
     }
 }

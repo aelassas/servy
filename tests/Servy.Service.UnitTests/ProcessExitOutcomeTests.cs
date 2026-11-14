@@ -340,31 +340,12 @@ namespace Servy.Service.UnitTests
                 It.Is<string>(s => s.Contains("Scheduling recovery")), It.IsAny<Exception>()), Times.Never);
         }
 
-        /// <summary>
-        /// Wires the <c>Debug</c> line <c>EmitHeartbeatPing</c> writes before its request, which is the only
-        /// observation point of a ping: the request itself goes out from a <c>Task.Run</c>.
-        /// </summary>
-        private (TaskCompletionSource<string> Logged, Func<int> Count) CaptureHeartbeatPings()
-        {
-            var logged = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var count = 0;
-            _ctx.Logger
-                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
-                .Callback<string, Exception>((msg, ex) =>
-                {
-                    Interlocked.Increment(ref count);
-                    logged.TrySetResult(msg);
-                });
-
-            return (logged, () => Volatile.Read(ref count));
-        }
-
         [Fact]
         public async Task OnProcessExited_ErrorExitWithRecoveryDisabled_EmitsTheFailFlagPing()
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, _) = CaptureHeartbeatPings();
+            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
@@ -386,7 +367,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, _) = CaptureHeartbeatPings();
+            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
 
             // Exit code 0 with RecoveryOnCleanExit enabled: the exit is a recovery trigger, not a stop,
             // so only the needsRecovery half of the condition can send the ping.
@@ -416,7 +397,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, pingCount) = CaptureHeartbeatPings();
+            var (pingLogged, pingCount) = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
