@@ -43,7 +43,7 @@ namespace Servy.CLI.Runtime
         /// <summary>
         /// Initializes a new instance of the <see cref="DeferredSecureData"/> class.
         /// </summary>
-        /// <param name="factory">Builds the real <see cref="ISecureData"/>; called at most once, on the first use.</param>
+        /// <param name="factory">Builds the real <see cref="ISecureData"/> on the first use. It is not called again once it returned an instance; a call that throws or returns <see langword="null"/> caches nothing, so the next use calls it again.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="factory"/> is <see langword="null"/>.</exception>
         public DeferredSecureData(Func<ISecureData> factory)
         {
