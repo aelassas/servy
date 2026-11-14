@@ -475,7 +475,8 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// Renders a column that is encrypted at rest: the value when the caller asked for it, the mask
-        /// when not, and <c>null</c> when the column is unset so no row is emitted at all.
+        /// when not, and <c>null</c> when the column is unset, which the caller then renders as unset:
+        /// no row under <c>IfSet</c>, the not-set placeholder under <c>Always</c>.
         /// </summary>
         /// <param name="value">The stored value - plaintext when the read was decrypted, ciphertext otherwise.</param>
         /// <param name="decrypted">Whether the caller asked to see the value in clear text.</param>
