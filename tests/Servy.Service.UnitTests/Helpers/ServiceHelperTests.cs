@@ -414,9 +414,10 @@ namespace Servy.Service.UnitTests.Helpers
         public void RestartProcess_ProcessActive_StopsParentAndDescendantsThenRestarts()
         {
             // Arrange
+            var startTime = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Local);
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.Id).Returns(1234);
-            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.StartTime).Returns(startTime);
             mockProcess.Setup(p => p.HasExited).Returns(false);
 
             var mockLog = new Mock<IServyLogger>();
@@ -433,7 +434,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             mockProcess.Verify(p => p.Stop(1000), Times.Once);
-            mockProcess.Verify(p => p.StopDescendants(1234, It.IsAny<DateTime>(), 1000), Times.Once);
+            mockProcess.Verify(p => p.StopDescendants(1234, startTime, 1000), Times.Once);
             mockProcess.Verify(p => p.Dispose(), Times.Once);
 
             Assert.NotNull(seen);
@@ -464,9 +465,33 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             mockLog.Verify(l => l.Warn(It.Is<string>(s => s.Contains("error while getting process PID")), It.IsAny<Exception>()), Times.Once);
+            // The parent is gone, so it is not stopped again, but its descendants are still swept,
+            // with the unknown lineage passed through as it stands
             mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+            mockProcess.Verify(p => p.StopDescendants(0, DateTime.MinValue, 1000), Times.Once);
             mockProcess.Verify(p => p.Dispose(), Times.Once);
             Assert.True(startActionInvoked);
+        }
+
+        [Fact]
+        public void RestartProcess_ProcessAlreadyExited_SkipsStopButStillSweepsDescendants()
+        {
+            // Arrange
+            var startTime = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Local);
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(1234);
+            mockProcess.Setup(p => p.StartTime).Returns(startTime);
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+
+            var mockLog = new Mock<IServyLogger>();
+            StartProcessCallback startAction = (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => { };
+
+            // Act
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
+
+            // Assert
+            mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+            mockProcess.Verify(p => p.StopDescendants(1234, startTime, 1000), Times.Once);
         }
 
         [Fact]
