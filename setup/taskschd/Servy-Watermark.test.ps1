@@ -237,6 +237,29 @@ try {
     Write-Host "  [OK] Get-ServyLastErrors keeps only the Servy error event IDs (3000-3199)." -ForegroundColor Gray
 
     # ----------------------------------------------------
+    # Test 7b: Get-ServyLastErrors drops the event the watermark already covers (#7884)
+    # ----------------------------------------------------
+    # Arrange: the event log's StartTime filter is inclusive, so the event the watermark was taken
+    # from comes back on every run. The stub returns it (as local time, like a real event record),
+    # one event a tick older and one a tick newer.
+    $watermark = $base.AddMinutes(-5)
+    $global:WatermarkTestWinEvents = @(
+        [PSCustomObject]@{ Id = 3001; Message = "[Svc] one tick older";  TimeCreated = $watermark.AddTicks(-1).ToLocalTime() },
+        [PSCustomObject]@{ Id = 3002; Message = "[Svc] at the watermark"; TimeCreated = $watermark.ToLocalTime() },
+        [PSCustomObject]@{ Id = 3003; Message = "[Svc] one tick newer";  TimeCreated = $watermark.AddTicks(1).ToLocalTime() }
+    )
+
+    # Act
+    $afterWatermarkIds = (@(Get-ServyLastErrors -LastProcessed $watermark) | ForEach-Object { $_.Id }) -join ','
+
+    # Assert: only the strictly newer event is returned, so the last delivered one is not notified again
+    if ($afterWatermarkIds -ne "3003") {
+        Write-Host "FAIL: Get-ServyLastErrors returned event IDs '$afterWatermarkIds' for a watermark equal to event 3002; expected only '3003'." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Get-ServyLastErrors returns only events strictly newer than the watermark." -ForegroundColor Gray
+
+    # ----------------------------------------------------
     # Test 8: Get-EventsToProcess per-run cap (#7539)
     # ----------------------------------------------------
     # Arrange: thirteen genuine events, three over the default cap of 10, served newest first by the
