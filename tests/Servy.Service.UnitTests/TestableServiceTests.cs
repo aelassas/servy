@@ -124,6 +124,40 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnStart_CopiesTheRecoverySettingsFromOptions()
+        {
+            // Arrange
+            var fullArgs = new[] { "TestService" };
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                EnableHealthMonitoring = true,
+                HeartbeatIntervalInSeconds = 5,
+                MaxFailedChecks = 7,                              // not AppConfig.DefaultMaxFailedChecks
+                MaxRestartAttempts = 11,                          // not AppConfig.DefaultMaxRestartAttempts
+                RecoveryAction = RecoveryAction.RestartProcess    // not the field's default
+            };
+
+            var mockScopedLogger = new Mock<IServyLogger>();
+
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
+            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
+            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
+            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
+
+            var service = _ctx.Build();
+
+            // Act
+            service.StartForTest();
+
+            // Assert
+            Assert.Equal(11, TestReflection.GetField<int>(service, "_maxRestartAttempts"));
+            Assert.Equal(7, TestReflection.GetField<int>(service, "_maxFailedChecks"));
+            Assert.Equal(RecoveryAction.RestartProcess, TestReflection.GetField<RecoveryAction>(service, "_recoveryAction"));
+        }
+
+        [Fact]
         public void SetupHealthMonitoring_ValidParameters_CreatesAndStartsTimer_AndLogs()
         {
             // Arrange
