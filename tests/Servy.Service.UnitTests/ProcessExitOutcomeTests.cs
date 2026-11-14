@@ -316,6 +316,30 @@ namespace Servy.Service.UnitTests
                 It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        [Fact]
+        public void OnProcessExited_UnexpectedFailureInsideTheHandler_IsLoggedAndDoesNotEscape()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var failure = new InvalidOperationException("log sink failed");
+            _ctx.Logger
+                .Setup(l => l.Info("Child process exit detected via event.", It.IsAny<Exception>()))
+                .Throws(failure);
+
+            // Act: the throw happens before the handler's first await, so the handler has finished when the call returns
+            var escaped = Record.Exception(() => service.InvokeOnProcessExited(null, EventArgs.Empty));
+
+            // Assert
+            Assert.Null(escaped);
+            _ctx.Logger.Verify(l => l.Error("OnProcessExited failed.", failure), Times.Once);
+
+            // ... and the failed handler neither stopped the service nor scheduled a recovery
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.Contains("Scheduling recovery")), It.IsAny<Exception>()), Times.Never);
+        }
+
         /// <summary>
         /// Wires the <c>Debug</c> line <c>EmitHeartbeatPing</c> writes before its request, which is the only
         /// observation point of a ping: the request itself goes out from a <c>Task.Run</c>.
