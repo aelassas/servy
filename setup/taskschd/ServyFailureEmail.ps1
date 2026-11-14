@@ -268,7 +268,8 @@ function Send-NotificationEmail {
         return 'PermanentFailure'
     } catch [System.Net.Mail.SmtpException] {
         # SMTP-level errors: Apply granular classification based on RFC 5321 codes.
-        # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
+        # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 553) are Permanent,
+        # except 554, which is retried (see below).
         $status = $_.Exception.StatusCode
         $inner  = $_.Exception.InnerException
 

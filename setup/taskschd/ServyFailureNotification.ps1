@@ -144,7 +144,7 @@ function Show-Notification {
             # Setting probe restricted; proceed with delivery anyway.
         }
 
-        # Track synchronous platform failures safely via local reference tracking blocks.
+        # Track asynchronous platform failures safely via local reference tracking blocks.
         $failedRef = [ref]$false
         $failCode  = [ref]([int]0)
 
@@ -162,7 +162,7 @@ function Show-Notification {
 
         $notifier.Show($toast)
 
-        # ROBUSTNESS: Block execution and loop to await synchronous platform failures.
+        # ROBUSTNESS: Block execution and loop to await asynchronous platform failures.
         # WinRT reports delivery failure asynchronously; poll up to 2s for the add_Failed
         # callback so a late-firing failure is captured before the watermark advances.
         $deadline = [DateTime]::UtcNow.AddMilliseconds(2000)

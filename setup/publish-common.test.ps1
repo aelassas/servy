@@ -174,9 +174,9 @@ try {
 
     # --- Both consumers enforce every pattern in that one array (including bracketed paths) ---
     # The sample filenames are derived from the patterns, so a sixth pattern added to the
-    # array is exercised by both halves of this test without editing it. Using a bracketed
-    # folder name (`exclusions[bracket]`) pins the WildcardPattern::Escape handling so
-    # `-Path` with `-Include` does not treat `[` and `]` as character classes.
+    # array is exercised by both halves of this test without editing it. The bracketed
+    # folder name (`exclusions[bracket]`) is there because `[` and `]` are wildcard
+    # characters to `-Path`: both mechanisms have to read the tree through `-LiteralPath`.
 
     # Arrange
     $bracketRoot = Join-Path $tempDir "exclusions[bracket]"
@@ -276,6 +276,53 @@ try {
         exit 1
     }
     Write-Host "  [OK] Copy-CommonArtifacts post-copy leak check catches leaked files even under bracketed paths." -ForegroundColor Gray
+
+    # --- The leak check sees every pattern, at depth, inside Copy-CommonArtifacts -----
+    # One excluded sample at a time, planted one folder down, with a stand-in copy that
+    # keeps the folder structure: only a leak check that recurses and knows that pattern
+    # can object (#7883).
+
+    # Arrange
+    $structureKeepingCopy = {
+        param([string]$SourcePath, [string]$DestPath)
+        Get-ChildItem -LiteralPath $SourcePath | Copy-Item -Destination $DestPath -Recurse -Force
+    }
+    $realCopyFn = (Get-Item Function:\Copy-TaskSchdArtifacts).ScriptBlock
+    $missedSamples = @()
+
+    # Act
+    try {
+        Set-Item Function:\Copy-TaskSchdArtifacts -Value $structureKeepingCopy
+        $sampleIndex = 0
+        foreach ($sample in $excludedSamples) {
+            $sampleIndex++
+            $sampleRoot = Join-Path $bracketRoot "nested-$sampleIndex"
+            $sampleNested = Join-Path (Join-Path $sampleRoot "taskschd") "SubFolder"
+            $sampleDest = Join-Path $sampleRoot "pkg"
+            [void][System.IO.Directory]::CreateDirectory($sampleNested)
+            [void][System.IO.Directory]::CreateDirectory($sampleDest)
+            [System.IO.File]::WriteAllText((Join-Path (Join-Path $sampleRoot "taskschd") $payloadName), "payload")
+            [System.IO.File]::WriteAllText((Join-Path $sampleNested $sample), "sensitive")
+
+            $sampleError = $null
+            try { Copy-CommonArtifacts -ScriptDir $sampleRoot -CliDir $mockCliDir -DestFolder $sampleDest }
+            catch { $sampleError = $_ }
+
+            if ($null -eq $sampleError -or -not $sampleError.Exception.Message.Contains("SECURITY ERROR") -or -not $sampleError.Exception.Message.Contains($sample)) {
+                $missedSamples += $sample
+            }
+        }
+    }
+    finally {
+        Set-Item Function:\Copy-TaskSchdArtifacts -Value $realCopyFn
+    }
+
+    # Assert
+    if ($missedSamples.Count -ne 0) {
+        Write-Host "FAIL: Copy-CommonArtifacts let a nested leak through for: $($missedSamples -join ', ')." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Copy-CommonArtifacts refuses each excluded pattern when it leaks one folder down." -ForegroundColor Gray
 
     # --- The moniker is resolved by the caller, not a second time in here -----------
     # publish-sc.ps1, the one production caller, reads build-config.ps1 and passes the
