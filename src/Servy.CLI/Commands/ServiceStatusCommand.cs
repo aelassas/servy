@@ -1,7 +1,6 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using System;
@@ -45,19 +44,13 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Core.Resources.Strings.Msg_ServiceNameRequired);
 
-                // 2. Direct execution
-                var status = _serviceManager.GetServiceStatus(opts.ServiceName, cancellationToken: cancellationToken);
-
-                // 3. Log the status and return it to the console. The status token is deliberately
+                // 2. Log the status and return it to the console. The status token is deliberately
                 //    invariant (ServiceControllerStatus member name, "Unknown" when an installed service's
                 //    status cannot be read, or "NotInstalled" when absent):
                 //    it is the machine-readable vocabulary published by the status verb's HelpText and
                 //    parsed by callers' scripts. Only the surrounding Msg_ServiceStatusResult template
                 //    is localized - do not localize the token itself.
-                var statusText = status?.ToString()
-                    ?? (_serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken)
-                            ? nameof(ServiceStatus.Unknown)
-                            : nameof(ServiceStatus.NotInstalled));
+                var statusText = ResolveStatusToken(_serviceManager, opts.ServiceName, cancellationToken);
                 var statusMsg = string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, statusText);
                 return CommandResult.Ok(statusMsg);
             });

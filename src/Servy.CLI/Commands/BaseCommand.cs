@@ -39,6 +39,29 @@ namespace Servy.CLI.Commands
             };
 
         /// <summary>
+        /// Resolves the invariant status token of a service: the SCM value, then
+        /// <see cref="ServiceStatus.Unknown"/> for an installed service whose status cannot be read, then
+        /// <see cref="ServiceStatus.NotInstalled"/>.
+        /// </summary>
+        /// <remarks>
+        /// The single fallback ladder shared by the <c>status</c> and <c>show</c> verbs, so both print the
+        /// same machine-readable token for the same service. The token is never localized.
+        /// </remarks>
+        /// <param name="serviceManager">The <see cref="IServiceManager"/> used to query the service.</param>
+        /// <param name="serviceName">The service name to query.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The status token.</returns>
+        protected static string ResolveStatusToken(IServiceManager serviceManager, string serviceName, CancellationToken cancellationToken)
+        {
+            var status = serviceManager.GetServiceStatus(serviceName, cancellationToken: cancellationToken);
+
+            return status?.ToString()
+                ?? (serviceManager.IsServiceInstalled(serviceName, cancellationToken)
+                        ? nameof(ServiceStatus.Unknown)
+                        : nameof(ServiceStatus.NotInstalled));
+        }
+
+        /// <summary>
         /// Executes a synchronous command action with common error handling: <see cref="OperationCanceledException"/>
         /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
