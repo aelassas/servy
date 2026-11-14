@@ -91,6 +91,19 @@ namespace Servy.UI.UnitTests
         }
 
         [Fact]
+        public void AddRange_NonEmptyCollection_AppendsAfterTheExistingItemsInSourceOrder()
+        {
+            // Arrange
+            var collection = new BulkObservableCollection<int> { 10, 20 };
+
+            // Act
+            collection.AddRange(new[] { 1, 2, 3 });
+
+            // Assert
+            Assert.Equal(new[] { 10, 20, 1, 2, 3 }, collection);
+        }
+
+        [Fact]
         public void AddRange_EmptyItems_RaisesNoNotifications()
         {
             // Arrange
@@ -130,7 +143,7 @@ namespace Servy.UI.UnitTests
             // Act & Assert
             Assert.Throws<InvalidOperationException>(() => collection.AddRange(Faulty()));
 
-            Assert.Equal(2, collection.Count);
+            Assert.Equal(new[] { 1, 2 }, collection);
             Assert.Equal(1, collectionChangedCount);
             Assert.Equal(NotifyCollectionChangedAction.Reset, lastAction);
         }
