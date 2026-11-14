@@ -450,6 +450,74 @@ namespace Servy.Service.UnitTests
             Assert.Equal(PreStopExe, seenPsi.FileName);
         }
 
+        [Fact]
+        public void StartPreStopProcess_ArgsConfigured_LaunchesTheHookWithItsOwnArguments()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
+            var options = CreatePreStopOptions();
+            options.ExecutableArgs = "--main-arg";
+            options.PreLaunchExecutableArgs = "--pre-launch-arg";
+            options.PostLaunchExecutableArgs = "--post-launch-arg";
+            options.FailureProgramExecutableArgs = "--failure-arg";
+            options.PreStopExecutableArgs = "--drain --grace 5";
+            options.PostStopExecutableArgs = "--post-stop-arg";
+
+            ProcessStartInfo seenPsi = null;
+            var preStop = new Mock<IProcessWrapper>();
+            preStop.Setup(p => p.Start()).Returns(true);
+            preStop.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            preStop.Setup(p => p.ExitCode).Returns(0);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(preStop.Object);
+
+            // Act
+            service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.NotNull(seenPsi);
+            Assert.Equal(PreStopExe, seenPsi.FileName);
+            Assert.Equal("--drain --grace 5", seenPsi.Arguments);
+        }
+
+        [Fact]
+        public void StartPostStopProcess_ArgsConfigured_LaunchesTheHookWithItsOwnArguments()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
+            var options = CreatePreStopOptions();
+            options.PostStopExecutablePath = @"C:\hooks\poststop.exe";
+            options.ExecutableArgs = "--main-arg";
+            options.PreLaunchExecutableArgs = "--pre-launch-arg";
+            options.PostLaunchExecutableArgs = "--post-launch-arg";
+            options.FailureProgramExecutableArgs = "--failure-arg";
+            options.PreStopExecutableArgs = "--pre-stop-arg";
+            options.PostStopExecutableArgs = "--cleanup --keep 2";
+            TestReflection.SetField(service, "_options", options);
+
+            ProcessStartInfo seenPsi = null;
+            var postStop = new Mock<IProcessWrapper>();
+            postStop.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(postStop.Object);
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "StartPostStopProcess", new object[0]);
+
+            // Assert
+            Assert.NotNull(seenPsi);
+            Assert.Equal(@"C:\hooks\poststop.exe", seenPsi.FileName);
+            Assert.Equal("--cleanup --keep 2", seenPsi.Arguments);
+        }
+
         [Theory]
         [InlineData(0, false, true)]
         [InlineData(0, true, true)]

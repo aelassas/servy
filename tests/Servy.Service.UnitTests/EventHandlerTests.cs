@@ -187,11 +187,26 @@ namespace Servy.Service.UnitTests
 
             var options = ServiceTestContext.CreateDefaultStartOptions();
             options.FailureProgramPath = @"C:\App\alert.exe";
+            // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
+            options.ExecutableArgs = "--main-arg";
+            options.PreLaunchExecutableArgs = "--pre-launch-arg";
+            options.PostLaunchExecutableArgs = "--post-launch-arg";
+            options.FailureProgramExecutableArgs = "--failure-arg";
+            options.PreStopExecutableArgs = "--pre-stop-arg";
+            options.PostStopExecutableArgs = "--post-stop-arg";
             TestReflection.SetField(service, "_options", options);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
             service.SetChildProcess(mockProcess.Object);
+
+            ProcessStartInfo failurePsi = null;
+            var failureProgram = new Mock<IProcessWrapper>();
+            failureProgram.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => failurePsi = psi)
+                .Returns(failureProgram.Object);
 
             // Act
             service.InvokeOnProcessExited(null, EventArgs.Empty);
@@ -204,6 +219,10 @@ namespace Servy.Service.UnitTests
             // Verify non-zero exit code launches configured failure program
             _ctx.ProcessFactory.Verify(f => f.Create(
                 It.Is<ProcessStartInfo>(psi => psi.FileName == @"C:\App\alert.exe"), It.IsAny<IServyLogger>()), Times.Once);
+
+            // The failure program carries its own arguments, not another program's
+            Assert.NotNull(failurePsi);
+            Assert.Equal("--failure-arg", failurePsi.Arguments);
         }
 
         [Fact]
