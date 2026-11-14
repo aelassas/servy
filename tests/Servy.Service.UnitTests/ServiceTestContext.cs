@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Moq;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
@@ -28,6 +29,11 @@ namespace Servy.Service.UnitTests
         public Mock<IProcessFactory> ProcessFactory { get; } = new Mock<IProcessFactory>();
         public Mock<IPathValidator> PathValidator { get; } = new Mock<IPathValidator>();
         public Mock<INamedPipesService> NamedPipesService { get; } = new Mock<INamedPipesService>();
+
+        /// <summary>
+        /// Every <c>Emitting heartbeat ping to:</c> line logged since <see cref="CaptureHeartbeatPings"/> was called, in logging order.
+        /// </summary>
+        public ConcurrentQueue<string> HeartbeatPingLines { get; } = new ConcurrentQueue<string>();
 
         public ServiceTestContext()
         {
@@ -121,6 +127,7 @@ namespace Servy.Service.UnitTests
                 .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) =>
                 {
+                    HeartbeatPingLines.Enqueue(msg);
                     Interlocked.Increment(ref count);
                     logged.TrySetResult(msg);
                 });

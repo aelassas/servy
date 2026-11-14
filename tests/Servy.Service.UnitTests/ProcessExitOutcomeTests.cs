@@ -397,9 +397,11 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, pingCount) = _ctx.CaptureHeartbeatPings();
+            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
 
-            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+            // Each service pings its own URL, and MaskUrl keeps a 5-character path hint, so the
+            // log line says which service sent it: "clean" for the service under test, "mark-" for the marker.
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/clean-uuid"));
 
             var cleanProcess = new Mock<IProcessWrapper>();
             cleanProcess.Setup(p => p.ExitCode).Returns(0);
@@ -407,26 +409,35 @@ namespace Servy.Service.UnitTests
 
             // Act
             // The ping is logged from a Task.Run, so a bare "never" right after the call would pass
-            // vacuously. Give a wrongly sent ping time to land, then raise an error exit on a second
+            // vacuously. Give a wrongly sent ping time to land - awaited, never spun, so no thread-pool
+            // thread is held while the pool has to run the ping - then raise an error exit on a second
             // service that shares the logger (a stopped service no longer handles exits): its
             // ping is the marker that every earlier one has had its chance to log.
             service.InvokeOnProcessExited(null, EventArgs.Empty);
-            SpinWait.SpinUntil(() => pingCount() > 0, TimeSpan.FromSeconds(1));
+            await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.NegativeObservationWindow, TestContext.Current.CancellationToken));
 
             var failingService = _ctx.Build();
-            TestReflection.SetField(failingService, "_options", ServiceTestContext.CreateDefaultStartOptions());
+            TestReflection.SetField(failingService, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/mark-uuid"));
             var failingProcess = new Mock<IProcessWrapper>();
             failingProcess.Setup(p => p.ExitCode).Returns(42);
             failingService.SetChildProcess(failingProcess.Object);
             failingService.InvokeOnProcessExited(null, EventArgs.Empty);
 
+            // Wait for the marker itself: the first ping may be a wrong one, which completes pingLogged on its own.
+            var deadline = DateTime.UtcNow + TestTimeouts.CiGenerous;
+            while (!_ctx.HeartbeatPingLines.Any(l => l.Contains("/mark-")) && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
+            }
+
             // Assert
-            var completed = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
-            Assert.Same(pingLogged.Task, completed);
-            Assert.Contains("(flag: fail)", await pingLogged.Task);
+            var diagnostics = "Heartbeat ping lines: [" + string.Join(" | ", _ctx.HeartbeatPingLines) + "]; logger invocations: ["
+                + string.Join(" | ", _ctx.Logger.Invocations.Select(i => i.ToString())) + "]";
+            Assert.True(_ctx.HeartbeatPingLines.Any(l => l.Contains("/mark-") && l.Contains("(flag: fail)")),
+                "The marker service's fail-flag ping was never logged. " + diagnostics);
 
             // Only the error exit pinged; the clean exit that stopped the service sent nothing.
-            Assert.Equal(1, pingCount());
+            Assert.DoesNotContain(_ctx.HeartbeatPingLines, l => l.Contains("/clean"));
         }
 
         [Theory]
