@@ -184,12 +184,13 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
 
             // Act
-            // A value no constant in the product equals, so a hard-coded timeout cannot satisfy the verifies.
-            service.InvokeSafeKillProcess(mockProcess.Object, 4321);
+            // A value that equals neither a product constant nor ScannedParentPid, so neither a hard-coded
+            // timeout nor the PID passed in its place can satisfy the verifies.
+            service.InvokeSafeKillProcess(mockProcess.Object, 8765);
 
             // Assert
-            mockProcess.Verify(p => p.Stop(4321), Times.Once);
-            mockProcess.Verify(p => p.StopDescendants(ScannedParentPid, startTime, 4321), Times.Once);
+            mockProcess.Verify(p => p.Stop(8765), Times.Once);
+            mockProcess.Verify(p => p.StopDescendants(ScannedParentPid, startTime, 8765), Times.Once);
             _ctx.Logger.Verify(l => l.Info(
                 It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
         }
@@ -544,8 +545,9 @@ namespace Servy.Service.UnitTests
         }
 
         /// <summary>
-        /// The parent PID the pre-stop scan tests report. It is only ever echoed into the scan's log
-        /// lines: the scan itself is served by the overridden seam, so nothing resolves it.
+        /// The parent PID the pre-stop scan tests report. The scan itself is served by the overridden
+        /// seam, so nothing resolves it: it is echoed into the scan's log lines and is the PID the
+        /// descendant cleanup is expected to receive.
         /// </summary>
         private const int ScannedParentPid = 4321;
 
