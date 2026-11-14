@@ -2009,33 +2009,8 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStandardServiceStart(options);
 
             // The request is accepted and then held: no status line is ever sent back.
-            var requested = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var held = new Stopwatch();
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    var context = await listener.GetContextAsync();
-                    held.Start();
-                    requested.TrySetResult(context.Request.Url?.AbsolutePath ?? string.Empty);
-                    await Task.WhenAny(release.Task, Task.Delay(TestTimeouts.CiGenerous));
-                    context.Response.Abort();
-                }
-                catch
-                {
-                    // Listener stopped or disposed during test cleanup
-                }
-            }, CancellationToken.None);
-
-            var gaveUp = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            scopedLogger
-                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("failed silently")), It.IsAny<Exception>()))
-                .Callback<string, Exception?>((_, error) =>
-                {
-                    held.Stop();
-                    gaveUp.TrySetResult(error);
-                });
+            var (requested, release, held) = HoldFirstRequest(listener);
+            var gaveUp = WatchForGiveUp(scopedLogger, held);
 
             _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -2045,16 +2020,9 @@ namespace Servy.Service.UnitTests
                 // Act
                 _service.StartForTest();
 
-                // Assert: the request went to the configured URL, with the start flag in its path
-                var reached = await Task.WhenAny(requested.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
-                Assert.True(reached == requested.Task, "the start ping never reached the configured heartbeat URL");
-                Assert.Equal("/start-uuid/start", await requested.Task);
-
-                // ... and it was abandoned after the configured two seconds, not after the default or the interval
-                var abandoned = await Task.WhenAny(gaveUp.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
-                Assert.True(abandoned == gaveUp.Task, "the held start ping was never abandoned");
-                Assert.IsAssignableFrom<OperationCanceledException>(await gaveUp.Task);
-                Assert.InRange(held.Elapsed, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(8));
+                // Assert: the request went to the configured URL, with the start flag in its path, and was
+                // abandoned after the configured two seconds
+                await AssertPingHeldThenAbandoned(requested, gaveUp, held, "/start-uuid/start");
             }
             finally
             {
