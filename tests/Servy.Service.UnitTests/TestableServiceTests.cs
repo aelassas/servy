@@ -2,7 +2,9 @@ using Moq;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
+using Servy.Service.ProcessManagement;
 using Servy.Testing;
+using System.Diagnostics;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -121,6 +123,45 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.Equal(expected, TestReflection.GetField<bool>(service, "_recoveryActionEnabled"));
+        }
+
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        [InlineData(@"C:\hooks\prelaunch.exe", true)]
+        public void OnStart_ComputesPreLaunchEnabledFromThePreLaunchPath(string? preLaunchExecutablePath, bool expected)
+        {
+            // Arrange
+            var fullArgs = new[] { "TestService" };
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                PreLaunchExecutablePath = preLaunchExecutablePath,
+                PreLaunchTimeoutInSeconds = 0 // fire-and-forget, so the start is not held up by the hook
+            };
+
+            var mockScopedLogger = new Mock<IServyLogger>();
+
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
+            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
+            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
+            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
+
+            var preLaunch = new Mock<IProcessWrapper>();
+            preLaunch.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(preLaunch.Object);
+
+            var service = _ctx.Build();
+
+            // Act
+            service.StartForTest();
+
+            // Assert
+            Assert.Equal(expected, TestReflection.GetField<bool>(service, "_preLaunchEnabled"));
         }
 
         [Fact]
