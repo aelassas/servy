@@ -178,7 +178,14 @@ namespace Servy.Service.UnitTests
         public void SafeKillProcess_KillsProcessGracefully()
         {
             // Arrange
-            using (var service = BuildScanningService((pid, scanStart) => new List<Process>()))
+            var scannedPid = -1;
+            var scannedStartTime = default(DateTime);
+            using (var service = BuildScanningService((pid, scanStart) =>
+            {
+                scannedPid = pid;
+                scannedStartTime = scanStart;
+                return new List<Process>();
+            }))
             {
                 var startTime = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Local);
 
@@ -194,6 +201,9 @@ namespace Servy.Service.UnitTests
                 service.InvokeSafeKillProcess(mockProcess.Object, 8765);
 
                 // Assert
+                // The pre-stop scan walks the same lineage the descendant cleanup receives
+                Assert.Equal(ScannedParentPid, scannedPid);
+                Assert.Equal(startTime, scannedStartTime);
                 mockProcess.Verify(p => p.Stop(8765), Times.Once);
                 mockProcess.Verify(p => p.StopDescendants(ScannedParentPid, startTime, 8765), Times.Once);
                 _ctx.Logger.Verify(l => l.Info(
