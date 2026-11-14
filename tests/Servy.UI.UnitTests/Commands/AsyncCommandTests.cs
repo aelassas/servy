@@ -215,6 +215,67 @@ namespace Servy.UI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task Execute_InnerTaskCancelled_DoesNotLogAFailure()
+        {
+            // Branch: catch (OperationCanceledException) in Execute(object parameter). Without that arm
+            // the cancellation falls into catch (Exception), which also swallows it but logs it at Error
+            // (#2094). The cancelled row of Execute_DoesNotThrowWhenInnerTaskFails cannot tell the two apart.
+
+            // Arrange
+            var previousContext = SynchronizationContext.Current;
+            var testContext = new TestSynchronizationContext();
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(testContext);
+
+                var command = new AsyncCommand(
+                    _ => Task.FromCanceled(new CancellationToken(true)),
+                    name: "CancelledCommand");
+
+                // Act
+                var log = await LogCapture.RunAsync(async () =>
+                {
+                    command.Execute(null);
+
+                    // Bound the wait: a change that leaves an operation pending must fail the run
+                    // rather than hang it.
+                    var completion = testContext.WaitForCompletionAsync();
+                    var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
+                    Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+                });
+
+                // Assert
+                // Execute_InnerTaskFailsOnNamedCommand_LogsTheCommandName is the positive control: the same
+                // capture does contain this text when the delegate faults instead of being cancelled.
+                Assert.DoesNotContain("execution failed", log);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExecuteAsync_InnerTaskFailsOrIsCancelled_ReleasesTheReentrancyLatch(bool isCancellation)
+        {
+            // Branch: the finally block of ExecuteAsync (Interlocked.Exchange(ref _isExecuting, 0)) on the
+            // faulted and cancelled paths. CanExecute was only ever read after a successful run.
+
+            // Arrange
+            var command = new AsyncCommand(_ => isCancellation
+                ? Task.FromCanceled(new CancellationToken(true))
+                : Task.FromException(new InvalidOperationException("Command Failure")));
+
+            // Act
+            await Assert.ThrowsAnyAsync<Exception>(() => command.ExecuteAsync(null));
+
+            // Assert
+            Assert.True(command.CanExecute(null));
+        }
+
+        [Fact]
         public async Task Execute_SuccessfulInnerTask_CompletesWithoutException()
         {
             // Branch: the success path of the try block in Execute(object parameter). Both existing
