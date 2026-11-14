@@ -999,6 +999,106 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        [Fact]
+        public async Task EmitHeartbeatPing_EmittingLine_MasksTheSecretPath()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+
+            var emittingTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _ctx.Logger.Setup(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception?>((message, _) =>
+                {
+                    if (message.Contains("Emitting heartbeat ping to:"))
+                    {
+                        emittingTcs.TrySetResult(message);
+                    }
+                });
+
+            try
+            {
+                TestReflection.SetField(service, "_options", new StartOptions
+                {
+                    EnableHealthMonitoring = true // Required to pass the first guard check
+                });
+
+                // Act
+                TestReflection.InvokeNonPublic(service, "EmitHeartbeatPing", new object?[] { $"{baseAddress}secret-uuid-value", string.Empty, 2 });
+
+                // Assert
+                var completed = await Task.WhenAny(emittingTcs.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+                Assert.True(completed == emittingTcs.Task, "Heartbeat emitting debug line was never logged");
+
+                var logged = await emittingTcs.Task;
+                Assert.Contains("[MASKED]", logged, StringComparison.Ordinal);
+                Assert.DoesNotContain("secret-uuid-value", logged, StringComparison.Ordinal);
+            }
+            finally
+            {
+                listener.Close();
+            }
+        }
+
+        [Fact]
+        public async Task EmitHeartbeatPing_EndpointNeverAnswers_GivesUpAfterTheTimeoutAndLogsTheMaskedFailure()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+
+            var failure = new TaskCompletionSource<(string Message, Exception? Error)>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _ctx.Logger.Setup(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception?>((message, error) =>
+                {
+                    if (message.Contains("failed silently"))
+                    {
+                        failure.TrySetResult((message, error));
+                    }
+                });
+
+            // The request is accepted and then held: no status line is ever sent back.
+            using var release = new ManualResetEventSlim(false);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var context = await listener.GetContextAsync();
+                    release.Wait(TestTimeouts.CiGenerous);
+                    context.Response.Abort();
+                }
+                catch
+                {
+                    // Listener stopped or disposed during test cleanup
+                }
+            }, CancellationToken.None);
+
+            try
+            {
+                TestReflection.SetField(service, "_options", new StartOptions
+                {
+                    EnableHealthMonitoring = true // Required to pass the first guard check
+                });
+
+                // Act: a one second budget, far below the HttpClient default of 100 s
+                TestReflection.InvokeNonPublic(service, "EmitHeartbeatPing", new object?[] { $"{baseAddress}secret-uuid-value", string.Empty, 1 });
+
+                // Assert
+                var completed = await Task.WhenAny(failure.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+                Assert.True(completed == failure.Task, "Heartbeat failure debug line was never logged");
+
+                var (message, error) = await failure.Task;
+                Assert.IsAssignableFrom<OperationCanceledException>(error);
+                Assert.Contains("[MASKED]", message, StringComparison.Ordinal);
+                Assert.DoesNotContain("secret-uuid-value", message, StringComparison.Ordinal);
+            }
+            finally
+            {
+                release.Set();
+                listener.Close();
+            }
+        }
+
         private static (HttpListener listener, string baseAddress) CreateAndStartHttpListener()
         {
             var random = new Random();
