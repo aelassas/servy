@@ -58,10 +58,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            var pingLogged = new TaskCompletionSource<string>();
-            _ctx.Logger
-                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
-                .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
+            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/fail-heartbeat"));
 
@@ -365,10 +362,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            var pingLogged = new TaskCompletionSource<string>();
-            _ctx.Logger
-                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
-                .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
+            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/start-heartbeat"));
 
@@ -397,10 +391,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            var pingLogged = new TaskCompletionSource<string>();
-            _ctx.Logger
-                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("Emitting heartbeat ping to:")), It.IsAny<Exception>()))
-                .Callback<string, Exception>((msg, ex) => pingLogged.TrySetResult(msg));
+            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/routine-heartbeat"));
 
