@@ -229,8 +229,9 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         [InlineData(new string[0], false)] // no arguments at all
         public async Task OnStartup_ValidEnvironment_SetsForceSoftwareRenderingOnlyFromTheArg(string[] args, bool expected)
         {
-            // Execute entirely within the persistent async STA context pump thread
-            // to ensure internal thread safety boundaries match Application.Current initialization rules.
+            // Run on an STA thread with its own dispatcher pump, which Helper.RunOnSTA spawns for this call.
+            // The shared Application is not created on that thread: Helper.EnsureApplication keeps it on a
+            // separate, persistent STA thread and only returns the instance here.
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
