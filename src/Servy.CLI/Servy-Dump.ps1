@@ -901,7 +901,7 @@ public static class ServySafePs2SqliteRecord
                 }
 
                 if ($customAccountServices.Count -gt 0) {
-                    Write-Host "`nWARNING: $($customAccountServices.Count) of $($exported.Count) service(s) use a custom logon account; their credentials are NOT in the archive and will be deleted from the database upon uninstallation (re-enter them manually after restore):" -ForegroundColor Yellow
+                    Write-Host "`nWARNING: $($customAccountServices.Count) of $($exported.Count) service(s) use a custom logon account; their passwords are NOT in the archive, and the account name is kept only for a local account with a blank password. Both are deleted from the database upon uninstallation (re-enter them manually after restore):" -ForegroundColor Yellow
 
                     $affectedTable = New-Object System.Collections.Generic.List[object]
                     foreach ($svc in $customAccountServices) {
@@ -958,7 +958,9 @@ NOTE ON SERVICE RESTORATION:
 - Service logon Passwords, and the Usernames of accounts that need one, are
   NOT exported for security reasons.
 - Passwordless accounts (LocalService, NetworkService, NT SERVICE\...,
-  IIS APPPOOL\..., gMSA) are exported and restored as they are. Restoring this
+  IIS APPPOOL\..., gMSA) are exported and restored as they are. A local account
+  with a blank password is exported too, and restored only when the target
+  machine has LimitBlankPasswordUse = 0 (not recommended). Restoring this
   backup via Servy-Restore.ps1, servy-cli, or Servy Manager sets every other
   service logon account to 'LocalSystem'.
 - You must manually re-enter Logon Usernames and Passwords for any services that
