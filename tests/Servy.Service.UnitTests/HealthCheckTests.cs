@@ -58,7 +58,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/fail-heartbeat"));
 
@@ -362,7 +362,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/start-heartbeat"));
 
@@ -391,7 +391,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
 
-            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/routine-heartbeat"));
 

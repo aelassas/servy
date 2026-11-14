@@ -1013,7 +1013,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
             var (listener, baseAddress) = CreateAndStartHttpListener();
-            var (emittingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var emittingLogged = _ctx.CaptureHeartbeatPings();
 
             try
             {
