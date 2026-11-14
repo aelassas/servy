@@ -176,5 +176,27 @@ namespace Servy.UnitTests.Helpers
                 Assert.Equal(typedPassword, boundValue);
             }, createApp: true);
         }
+
+        /// <summary>
+        /// Verifies that a view-model update still reaches the control after a user edit, which is
+        /// what the IsUpdating reset in PasswordBox_PasswordChanged exists for.
+        /// </summary>
+        [Fact]
+        public void OnBoundPasswordChanged_AfterAUserEdit_StillUpdatesPasswordBoxPassword()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var passwordBox = new PasswordBox();
+                PasswordBoxHelper.SetBoundPassword(passwordBox, string.Empty); // wires PasswordChanged
+                passwordBox.Password = "UserTypedThisInUI";                    // runs PasswordBox_PasswordChanged
+
+                // Act
+                PasswordBoxHelper.SetBoundPassword(passwordBox, "VmDrivenPassword");
+
+                // Assert
+                Assert.Equal("VmDrivenPassword", passwordBox.Password);
+            }, createApp: true);
+        }
     }
 }
