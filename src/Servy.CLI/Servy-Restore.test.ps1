@@ -118,4 +118,12 @@ $seenEntries4 = New-Object 'System.Collections.Generic.HashSet[string]' ([String
 $e7 = Test-ServyDumpArchiveEntry -EntryName "C:\evil.xml" -EntryFullName "C:\evil.xml" -RootPath $rootPath -SeenEntryNames $seenEntries4
 Assert-True "Absolute-path archive entry rejected" (-not $e7.IsValid -and $e7.ErrorMessage.Contains("outside staging directory"))
 
+# Test 3.8: Upper-case extension
+# Arrange
+$seenEntries5 = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+# Act
+$e8 = Test-ServyDumpArchiveEntry -EntryName "MyService.XML" -EntryFullName "MyService.XML" -RootPath $rootPath -SeenEntryNames $seenEntries5
+# Assert
+Assert-True "Upper-case .XML extension accepted" ($e8.IsValid -and -not $e8.IsDirectory -and $null -eq $e8.ErrorMessage)
+
 Invoke-TestSummary
