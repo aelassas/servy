@@ -146,35 +146,18 @@ namespace Servy.UI.UnitTests.Commands
             // This test ensures the 'async void' entry point does not crash the process.
 
             // Arrange
-            var previousContext = SynchronizationContext.Current;
-            var testContext = new TestSynchronizationContext();
-            try
+            var command = new AsyncCommand(_ => isCancellation
+                ? Task.FromCanceled(new CancellationToken(true))
+                : throw new Exception("Command Failure"));
+
+            // Act
+            var testContext = await ExecuteAndWaitAsync(command);
+
+            // Assert
+            // Read under the same lock Post writes the list with.
+            lock (testContext.UnhandledExceptions)
             {
-                SynchronizationContext.SetSynchronizationContext(testContext);
-
-                var command = new AsyncCommand(_ => isCancellation
-                    ? Task.FromCanceled(new CancellationToken(true))
-                    : throw new Exception("Command Failure"));
-
-                // Act
-                command.Execute(null);
-
-                // Assert
-                // Bound the wait: a change that leaves an operation pending must fail the run
-                // rather than hang it.
-                var completion = testContext.WaitForCompletionAsync();
-                var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
-                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
-
-                // Read under the same lock Post writes the list with.
-                lock (testContext.UnhandledExceptions)
-                {
-                    Assert.Empty(testContext.UnhandledExceptions);
-                }
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
+                Assert.Empty(testContext.UnhandledExceptions);
             }
         }
 
@@ -187,37 +170,17 @@ namespace Servy.UI.UnitTests.Commands
             const string commandName = "StartSelectedCommand";
 
             // Arrange
-            var previousContext = SynchronizationContext.Current;
-            var testContext = new TestSynchronizationContext();
-            try
-            {
-                SynchronizationContext.SetSynchronizationContext(testContext);
+            var command = new AsyncCommand(
+                _ => throw new InvalidOperationException("Command Failure"),
+                name: commandName);
 
-                var command = new AsyncCommand(
-                    _ => throw new InvalidOperationException("Command Failure"),
-                    name: commandName);
+            // Act
+            // LogCapture owns the temporary log directory, the flush before the read and the
+            // restore of the static logger's default folder afterwards.
+            var log = await LogCapture.RunAsync(async () => { await ExecuteAndWaitAsync(command); });
 
-                // Act
-                // LogCapture owns the temporary log directory, the flush before the read and the
-                // restore of the static logger's default folder afterwards.
-                var log = await LogCapture.RunAsync(async () =>
-                {
-                    command.Execute(null);
-
-                    // Bound the wait: a change that leaves an operation pending must fail the run
-                    // rather than hang it.
-                    var completion = testContext.WaitForCompletionAsync();
-                    var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
-                    Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
-                });
-
-                // Assert
-                Assert.Contains($"AsyncCommand '{commandName}' execution failed.", log);
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
-            }
+            // Assert
+            Assert.Contains($"AsyncCommand '{commandName}' execution failed.", log);
         }
 
         [Fact]
@@ -228,37 +191,17 @@ namespace Servy.UI.UnitTests.Commands
             // (#2094). The cancelled row of Execute_DoesNotThrowWhenInnerTaskFails cannot tell the two apart.
 
             // Arrange
-            var previousContext = SynchronizationContext.Current;
-            var testContext = new TestSynchronizationContext();
-            try
-            {
-                SynchronizationContext.SetSynchronizationContext(testContext);
+            var command = new AsyncCommand(
+                _ => Task.FromCanceled(new CancellationToken(true)),
+                name: "CancelledCommand");
 
-                var command = new AsyncCommand(
-                    _ => Task.FromCanceled(new CancellationToken(true)),
-                    name: "CancelledCommand");
+            // Act
+            var log = await LogCapture.RunAsync(async () => { await ExecuteAndWaitAsync(command); });
 
-                // Act
-                var log = await LogCapture.RunAsync(async () =>
-                {
-                    command.Execute(null);
-
-                    // Bound the wait: a change that leaves an operation pending must fail the run
-                    // rather than hang it.
-                    var completion = testContext.WaitForCompletionAsync();
-                    var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
-                    Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
-                });
-
-                // Assert
-                // Execute_InnerTaskFailsOnNamedCommand_LogsTheCommandName is the positive control: the same
-                // capture does contain this text when the delegate faults instead of being cancelled.
-                Assert.DoesNotContain("execution failed", log);
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
-            }
+            // Assert
+            // Execute_InnerTaskFailsOnNamedCommand_LogsTheCommandName is the positive control: the same
+            // capture does contain this text when the delegate faults instead of being cancelled.
+            Assert.DoesNotContain("execution failed", log);
         }
 
         [Theory]
@@ -289,44 +232,27 @@ namespace Servy.UI.UnitTests.Commands
             // fine" path through the async void entry point was never exercised.
 
             // Arrange
-            var previousContext = SynchronizationContext.Current;
-            var testContext = new TestSynchronizationContext();
-            try
+            bool wasExecuted = false;
+            var command = new AsyncCommand(_ =>
             {
-                SynchronizationContext.SetSynchronizationContext(testContext);
+                wasExecuted = true;
+                return Task.CompletedTask;
+            });
 
-                bool wasExecuted = false;
-                var command = new AsyncCommand(_ =>
-                {
-                    wasExecuted = true;
-                    return Task.CompletedTask;
-                });
+            // Act
+            var testContext = await ExecuteAndWaitAsync(command);
 
-                // Act
-                command.Execute(null);
+            // Assert
+            Assert.True(wasExecuted);
 
-                // Assert
-                // Bound the wait: a change that leaves an operation pending must fail the run
-                // rather than hang it.
-                var completion = testContext.WaitForCompletionAsync();
-                var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
-                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
-
-                Assert.True(wasExecuted);
-
-                // Read under the same lock Post writes the list with.
-                lock (testContext.UnhandledExceptions)
-                {
-                    Assert.Empty(testContext.UnhandledExceptions);
-                }
-
-                // The success path must also leave the re-entrancy latch released.
-                Assert.True(command.CanExecute(null));
-            }
-            finally
+            // Read under the same lock Post writes the list with.
+            lock (testContext.UnhandledExceptions)
             {
-                SynchronizationContext.SetSynchronizationContext(previousContext);
+                Assert.Empty(testContext.UnhandledExceptions);
             }
+
+            // The success path must also leave the re-entrancy latch released.
+            Assert.True(command.CanExecute(null));
         }
 
         #endregion
@@ -347,6 +273,36 @@ namespace Servy.UI.UnitTests.Commands
         }
 
         #region Helper Classes
+
+        /// <summary>
+        /// Runs <see cref="AsyncCommand.Execute"/> under a <see cref="TestSynchronizationContext"/>,
+        /// waits (bounded) for the async void operation to finish and restores the previous context.
+        /// </summary>
+        /// <param name="command">The command to execute.</param>
+        /// <returns>The context the operation ran under, for the caller's own assertions.</returns>
+        private static async Task<TestSynchronizationContext> ExecuteAndWaitAsync(AsyncCommand command)
+        {
+            var previousContext = SynchronizationContext.Current;
+            var testContext = new TestSynchronizationContext();
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(testContext);
+
+                command.Execute(null);
+
+                // Bound the wait: a change that leaves an operation pending must fail the run
+                // rather than hang it.
+                var completion = testContext.WaitForCompletionAsync();
+                var finished = await Task.WhenAny(completion, Task.Delay(TestTimeouts.CiGenerous));
+                Assert.True(ReferenceEquals(finished, completion), "The async void operation never completed.");
+
+                return testContext;
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+        }
 
         /// <summary>
         /// A custom <see cref="SynchronizationContext"/> implementation designed to track
