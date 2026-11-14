@@ -1988,7 +1988,8 @@ namespace Servy.Service.UnitTests
                 StderrPath = "C:\\Logs\\stderr.log",
                 EnableHealthMonitoring = true,
                 HeartbeatIntervalInSeconds = 10,
-                MaxFailedChecks = 3
+                MaxFailedChecks = 3,
+                StopTimeoutInSeconds = 42 // not AppConfig.DefaultStopTimeout, and no other option carries this value
             };
 
             // Setup standard dependencies
@@ -2010,8 +2011,9 @@ namespace Servy.Service.UnitTests
             // 1. Verify the stopping event fired successfully
             Assert.True(stopped);
 
-            // 2. Verify process stop was requested
-            _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+            // 2. Verify process stop was requested with the configured stop timeout, in milliseconds
+            _mockProcess.Verify(p => p.Stop(42_000), Times.Once);
+            _mockProcess.Verify(p => p.StopDescendants(It.IsAny<int>(), It.IsAny<DateTime>(), 42_000), Times.Once);
 
             // 3. Verify that the health-monitoring timer was stopped
             _mockTimer.Verify(t => t.Stop(), Times.Once);
