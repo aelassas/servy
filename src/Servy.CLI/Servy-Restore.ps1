@@ -25,7 +25,7 @@
     flag an incomplete restore.
 
     EXIT CODES:
-    - 0 : Success. All service configurations were successfully imported (or no XML files exist in the archive).
+    - 0 : Success. All service configurations were successfully imported. Also returned when no XML files exist in the archive, when the confirmation prompt is declined, or when -WhatIf is used; nothing is imported in those cases.
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Missing. The specified dump archive file does not exist.
