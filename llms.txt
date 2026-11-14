@@ -113,6 +113,5 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 - [GitHub Repository](https://github.com/aelassas/servy): Source code and issue tracker
 - [Latest Release](https://github.com/aelassas/servy/releases/latest): Release packages and installers
 - [Changelog](https://github.com/aelassas/servy/blob/main/CHANGELOG.md): Version history and notes
-- [Roadmap](https://github.com/aelassas/servy/blob/main/ROADMAP.md): Feature planning
 - [License](https://github.com/aelassas/servy/blob/main/LICENSE.txt): MIT License
 - [Sponsor Servy](https://github.com/sponsors/aelassas): Support ongoing development
