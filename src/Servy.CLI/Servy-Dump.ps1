@@ -25,7 +25,7 @@
     directories are always properly cleaned up.
 
     EXIT CODES:
-    - 0 : Success. All registered service configurations were successfully exported and archived (or no services exist).
+    - 0 : Success. All registered service configurations were successfully exported and archived. Also returned when no database or no services exist, when the confirmation prompt is declined, or when -WhatIf is used; no archive is written in those cases.
     - 1 : Execution Failure. The script is not running in an elevated PowerShell session with Administrator privileges.
     - 2 : Import Failure. The official Servy PowerShell module (Servy.psm1) could not be located or imported.
     - 3 : Target Conflict. The destination archive file already exists and the -Overwrite switch was not specified.
