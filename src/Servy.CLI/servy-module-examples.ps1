@@ -120,7 +120,7 @@ Install-ServyService @installParams
 Show-ServyService -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
-# Same, with the parameters and environment variables in clear text.
+# Same, with the parameters, environment variables and heartbeat URL in clear text.
 # The stored password stays masked.
 # ----------------------------------------------------------------
 Show-ServyService -Name "DummyService" -Decrypt -Quiet
