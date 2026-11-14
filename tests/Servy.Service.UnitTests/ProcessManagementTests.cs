@@ -521,6 +521,42 @@ namespace Servy.Service.UnitTests
         }
 
         [Theory]
+        [InlineData(null, @"C:\svc")]
+        [InlineData("", @"C:\svc")]
+        [InlineData("   ", @"C:\svc")]
+        [InlineData(@"C:\hooks\post", @"C:\hooks\post")]
+        public void StartPostStopProcess_WorkingDirectory_FallsBackToStartupDirectoryWhenPostStopDirectoryIsBlank(
+            string? postStopStartupDirectory, string expectedWorkingDirectory)
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            // Every directory is different, so the hook cannot be handed another hook's directory unnoticed.
+            var options = CreatePreStopOptions();
+            options.PostStopExecutablePath = @"C:\hooks\poststop.exe";
+            options.PreLaunchStartupDirectory = @"C:\hooks\prelaunch";
+            options.PostLaunchStartupDirectory = @"C:\hooks\postlaunch";
+            options.FailureProgramStartupDirectory = @"C:\hooks\failure";
+            options.PostStopStartupDirectory = postStopStartupDirectory;
+            TestReflection.SetField(service, "_options", options);
+
+            ProcessStartInfo? seenPsi = null;
+            var postStop = new Mock<IProcessWrapper>();
+            postStop.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(postStop.Object);
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "StartPostStopProcess", new object?[0]);
+
+            // Assert
+            Assert.NotNull(seenPsi);
+            Assert.Equal(expectedWorkingDirectory, seenPsi.WorkingDirectory);
+        }
+
+        [Theory]
         [InlineData(0, false, true)]
         [InlineData(0, true, true)]
         [InlineData(3, false, true)]
