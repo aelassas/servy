@@ -2054,13 +2054,214 @@ namespace Servy.Service.UnitTests
                 var abandoned = await Task.WhenAny(gaveUp.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
                 Assert.True(abandoned == gaveUp.Task, "the held start ping was never abandoned");
                 Assert.IsAssignableFrom<OperationCanceledException>(await gaveUp.Task);
-                Assert.InRange(held.Elapsed, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(8));
+                Assert.InRange(held.Elapsed, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(8));
             }
             finally
             {
                 release.TrySetResult(true);
                 listener.Close();
             }
+        }
+
+        [Fact]
+        public async Task CheckHealth_FailureThresholdPing_GoesToTheConfiguredUrlAndGivesUpAfterTheConfiguredTimeout()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+            var options = ServiceTestContext.CreateDefaultStartOptions($"{baseAddress}threshold-uuid");
+            options.HeartbeatUrlTimeoutInSeconds = 2;   // not the fixture default (10) or the interval (30)
+            TestReflection.SetField(service, "_options", options);
+
+            var (requested, release, held) = HoldFirstRequest(listener);
+            var gaveUp = WatchForGiveUp(_ctx.Logger, held);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(1);
+            service.SetMaxRestartAttempts(3);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetFailedChecks(0);
+
+            try
+            {
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                await AssertPingHeldThenAbandoned(requested, gaveUp, held, "/threshold-uuid/fail");
+            }
+            finally
+            {
+                release.TrySetResult(true);
+                listener.Close();
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_RecoveredPing_GoesToTheConfiguredUrlAndGivesUpAfterTheConfiguredTimeout()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+            var options = ServiceTestContext.CreateDefaultStartOptions($"{baseAddress}recovered-uuid");
+            options.HeartbeatUrlTimeoutInSeconds = 2;   // not the fixture default (10) or the interval (30)
+            TestReflection.SetField(service, "_options", options);
+
+            var (requested, release, held) = HoldFirstRequest(listener);
+            var gaveUp = WatchForGiveUp(_ctx.Logger, held);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            service.SetChildProcess(mockProcess.Object);
+            service.SetFailedChecks(3);
+
+            try
+            {
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert
+                await AssertPingHeldThenAbandoned(requested, gaveUp, held, "/recovered-uuid/start");
+            }
+            finally
+            {
+                release.TrySetResult(true);
+                listener.Close();
+            }
+        }
+
+        [Fact]
+        public async Task CheckHealth_RoutinePing_GoesToTheConfiguredUrlAndGivesUpAfterTheConfiguredTimeout()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+            var options = ServiceTestContext.CreateDefaultStartOptions($"{baseAddress}routine-uuid");
+            options.HeartbeatUrlTimeoutInSeconds = 2;   // not the fixture default (10) or the interval (30)
+            TestReflection.SetField(service, "_options", options);
+
+            var (requested, release, held) = HoldFirstRequest(listener);
+            var gaveUp = WatchForGiveUp(_ctx.Logger, held);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            service.SetChildProcess(mockProcess.Object);
+            service.SetFailedChecks(0);
+
+            try
+            {
+                // Act
+                await service.InvokeCheckHealthAsync(null, null);
+
+                // Assert: the routine ping has no flag in its path
+                await AssertPingHeldThenAbandoned(requested, gaveUp, held, "/routine-uuid");
+            }
+            finally
+            {
+                release.TrySetResult(true);
+                listener.Close();
+            }
+        }
+
+        [Fact]
+        public async Task OnProcessExited_FailureThresholdPing_GoesToTheConfiguredUrlAndGivesUpAfterTheConfiguredTimeout()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var (listener, baseAddress) = CreateAndStartHttpListener();
+            var options = ServiceTestContext.CreateDefaultStartOptions($"{baseAddress}exit-uuid");
+            options.HeartbeatUrlTimeoutInSeconds = 2;   // not the fixture default (10) or the interval (30)
+
+            // Exit code 0 with RecoveryOnCleanExit enabled: the exit is a recovery trigger, so the ping is sent
+            // and the handler schedules a recovery instead of stopping the service.
+            options.RecoveryOnCleanExit = true;
+            TestReflection.SetField(service, "_options", options);
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            var (requested, release, held) = HoldFirstRequest(listener);
+            var gaveUp = WatchForGiveUp(_ctx.Logger, held);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(0);
+            service.SetChildProcess(mockProcess.Object);
+
+            try
+            {
+                // Act
+                service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+                // Assert
+                await AssertPingHeldThenAbandoned(requested, gaveUp, held, "/exit-uuid/fail");
+            }
+            finally
+            {
+                release.TrySetResult(true);
+                listener.Close();
+            }
+        }
+
+        /// <summary>
+        /// Accepts the first request on <paramref name="listener"/> and holds it: no status line is ever sent back
+        /// until <c>release</c> is set. <c>held</c> starts when the request arrives.
+        /// </summary>
+        private static (Task<string> requested, TaskCompletionSource<bool> release, Stopwatch held) HoldFirstRequest(HttpListener listener)
+        {
+            var requested = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var held = new Stopwatch();
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var context = await listener.GetContextAsync();
+                    held.Start();
+                    requested.TrySetResult(context.Request.Url?.AbsolutePath ?? string.Empty);
+                    await Task.WhenAny(release.Task, Task.Delay(TestTimeouts.CiGenerous));
+                    context.Response.Abort();
+                }
+                catch
+                {
+                    // Listener stopped or disposed during test cleanup
+                }
+            }, CancellationToken.None);
+
+            return (requested.Task, release, held);
+        }
+
+        /// <summary>
+        /// Completes with the exception of the first <c>failed silently</c> heartbeat line and stops <paramref name="held"/> at that moment.
+        /// </summary>
+        private static Task<Exception?> WatchForGiveUp(Mock<IServyLogger> logger, Stopwatch held)
+        {
+            var gaveUp = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            logger
+                .Setup(l => l.Debug(It.Is<string>(s => s.Contains("failed silently")), It.IsAny<Exception>()))
+                .Callback<string, Exception?>((_, error) =>
+                {
+                    held.Stop();
+                    gaveUp.TrySetResult(error);
+                });
+
+            return gaveUp.Task;
+        }
+
+        private static async Task AssertPingHeldThenAbandoned(Task<string> requested, Task<Exception?> gaveUp, Stopwatch held, string expectedPath)
+        {
+            var reached = await Task.WhenAny(requested, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+            Assert.True(reached == requested, $"the ping for {expectedPath} never reached the configured heartbeat URL");
+            Assert.Equal(expectedPath, await requested);
+
+            // ... and it was abandoned after the configured two seconds, not after the default, the interval or the start timeout
+            var abandoned = await Task.WhenAny(gaveUp, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+            Assert.True(abandoned == gaveUp, $"the held ping for {expectedPath} was never abandoned");
+            Assert.IsAssignableFrom<OperationCanceledException>(await gaveUp);
+            Assert.InRange(held.Elapsed, TimeSpan.FromSeconds(1.5), TimeSpan.FromSeconds(8));
         }
 
         [Fact]
