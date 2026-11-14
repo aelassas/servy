@@ -345,7 +345,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
 
             TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
 
@@ -367,7 +367,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
 
             // Exit code 0 with RecoveryOnCleanExit enabled: the exit is a recovery trigger, not a stop,
             // so only the needsRecovery half of the condition can send the ping.
@@ -397,7 +397,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var service = _ctx.Build();
-            var (pingLogged, _) = _ctx.CaptureHeartbeatPings();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
 
             // Each service pings its own URL, and MaskUrl keeps a 5-character path hint, so the
             // log line says which service sent it: "clean" for the service under test, "mark-" for the marker.
