@@ -187,6 +187,13 @@ namespace Servy.Service.UnitTests
 
             var options = ServiceTestContext.CreateDefaultStartOptions();
             options.FailureProgramPath = @"C:\App\alert.exe";
+            // Every directory is different, so the hook cannot be handed another hook's directory unnoticed.
+            options.StartupDirectory = @"C:\svc";
+            options.PreLaunchStartupDirectory = @"C:\hooks\prelaunch";
+            options.PostLaunchStartupDirectory = @"C:\hooks\postlaunch";
+            options.FailureProgramStartupDirectory = @"C:\hooks\failure";
+            options.PreStopStartupDirectory = @"C:\hooks\prestop";
+            options.PostStopStartupDirectory = @"C:\hooks\poststop";
             // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
             options.ExecutableArgs = "--main-arg";
             options.PreLaunchExecutableArgs = "--pre-launch-arg";
@@ -223,6 +230,8 @@ namespace Servy.Service.UnitTests
             // The failure program carries its own arguments, not another program's
             Assert.NotNull(failurePsi);
             Assert.Equal("--failure-arg", failurePsi.Arguments);
+            // ... and starts in its own directory, not another hook's
+            Assert.Equal(@"C:\hooks\failure", failurePsi.WorkingDirectory);
         }
 
         [Fact]

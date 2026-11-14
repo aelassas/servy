@@ -1148,6 +1148,13 @@ namespace Servy.Service.UnitTests
                 ExecutablePath = "test.exe",
                 PreLaunchExecutablePath = "prelaunch.exe",
                 PreLaunchTimeoutInSeconds = 0, // 0 means Fire and Forget
+                // Every directory is different, so the hook cannot be handed another hook's directory unnoticed.
+                StartupDirectory = @"C:\svc",
+                PreLaunchStartupDirectory = @"C:\hooks\prelaunch",
+                PostLaunchStartupDirectory = @"C:\hooks\postlaunch",
+                FailureProgramStartupDirectory = @"C:\hooks\failure",
+                PreStopStartupDirectory = @"C:\hooks\prestop",
+                PostStopStartupDirectory = @"C:\hooks\poststop",
                 // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
                 ExecutableArgs = "--main-arg",
                 PreLaunchExecutableArgs = "--pre-launch-arg",
@@ -1171,8 +1178,42 @@ namespace Servy.Service.UnitTests
             // Assert
             Assert.NotNull(preLaunchPsi);
             Assert.Equal("--pre-launch-arg", preLaunchPsi.Arguments);
+            Assert.Equal(@"C:\hooks\prelaunch", preLaunchPsi.WorkingDirectory);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("fire-and-forget")), It.IsAny<Exception>()), Times.AtLeastOnce);
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process still starts
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void OnStart_PreLaunchFireAndForget_BlankPreLaunchDirectory_FallsBackToStartupDirectory(string preLaunchStartupDirectory)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 0, // 0 means Fire and Forget
+                StartupDirectory = @"C:\svc",
+                PreLaunchStartupDirectory = preLaunchStartupDirectory,
+            };
+            SetupStandardServiceStart(options);
+
+            ProcessStartInfo preLaunchPsi = null;
+            var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+            mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => preLaunchPsi = psi)
+                .Returns(mockPreLaunchProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.NotNull(preLaunchPsi);
+            Assert.Equal(@"C:\svc", preLaunchPsi.WorkingDirectory);
         }
 
         [Fact]
@@ -1674,6 +1715,13 @@ namespace Servy.Service.UnitTests
                 ServiceName = "TestService",
                 ExecutablePath = "test.exe",
                 PostLaunchExecutablePath = postLaunchExePath,
+                // Every directory is different, so the hook cannot be handed another hook's directory unnoticed.
+                StartupDirectory = @"C:\svc",
+                PreLaunchStartupDirectory = @"C:\hooks\prelaunch",
+                PostLaunchStartupDirectory = @"C:\hooks\postlaunch",
+                FailureProgramStartupDirectory = @"C:\hooks\failure",
+                PreStopStartupDirectory = @"C:\hooks\prestop",
+                PostStopStartupDirectory = @"C:\hooks\poststop",
                 // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
                 ExecutableArgs = "--main-arg",
                 PreLaunchExecutableArgs = "--pre-launch-arg",
@@ -1697,12 +1745,14 @@ namespace Servy.Service.UnitTests
             using (var postLaunchStarted = new ManualResetEventSlim(false))
             {
                 string postLaunchArguments = null;
+                string postLaunchWorkingDirectory = null;
                 var mockPostLaunchProcess = new Mock<IProcessWrapper>();
                 mockPostLaunchProcess.Setup(p => p.Start()).Returns(true);
                 _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()))
                     .Callback<ProcessStartInfo, IServyLogger>((psi, _) =>
                     {
                         postLaunchArguments = psi.Arguments;
+                        postLaunchWorkingDirectory = psi.WorkingDirectory;
                         postLaunchStarted.Set();
                     })
                     .Returns(mockPostLaunchProcess.Object);
@@ -1722,7 +1772,11 @@ namespace Servy.Service.UnitTests
 
                 // The launched hook carries its own arguments, not another program's
                 if (stillRunning)
+                {
                     Assert.Equal("--post-launch-arg", postLaunchArguments);
+                    // ... and starts in its own directory, not another hook's
+                    Assert.Equal(@"C:\hooks\postlaunch", postLaunchWorkingDirectory);
+                }
             }
         }
 
