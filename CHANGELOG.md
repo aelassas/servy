@@ -817,7 +817,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v9.7...v9.8
 
 **Date:** 2026-08-21 | **Tag:** [`v9.7`](https://github.com/aelassas/servy/tree/v9.7)
 
-* feat(security): add [Set-ServyExePermissions.ps1](https://github.com/aelassas/servy/wiki/Security#executable-permission-hardening-mandatory) to harden service binaries with explicit Read & Execute rights
+* feat(security): add [Set-ServyExePermissions.ps1](https://github.com/aelassas/servy/wiki/Security#servy-101-and-earlier) to harden service binaries with explicit Read & Execute rights
 * feat(security): update service account documentation and UI to require Set-ServyExePermissions.ps1 hardening
 * fix(core): preserve file ACLs across atomic resource extractions in ResourceHelper.cs
 * fix(cli): align install command options sequence with core service schema
