@@ -1005,16 +1005,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var service = _ctx.Build();
             var (listener, baseAddress) = CreateAndStartHttpListener();
-
-            var emittingTcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _ctx.Logger.Setup(l => l.Debug(It.IsAny<string>(), It.IsAny<Exception>()))
-                .Callback<string, Exception?>((message, _) =>
-                {
-                    if (message.Contains("Emitting heartbeat ping to:"))
-                    {
-                        emittingTcs.TrySetResult(message);
-                    }
-                });
+            var (emittingLogged, _) = _ctx.CaptureHeartbeatPings();
 
             try
             {
@@ -1027,10 +1018,10 @@ namespace Servy.Service.UnitTests
                 TestReflection.InvokeNonPublic(service, "EmitHeartbeatPing", new object?[] { $"{baseAddress}secret-uuid-value", string.Empty, 2 });
 
                 // Assert
-                var completed = await Task.WhenAny(emittingTcs.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
-                Assert.True(completed == emittingTcs.Task, "Heartbeat emitting debug line was never logged");
+                var completed = await Task.WhenAny(emittingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+                Assert.True(completed == emittingLogged.Task, "Heartbeat emitting debug line was never logged");
 
-                var logged = await emittingTcs.Task;
+                var logged = await emittingLogged.Task;
                 Assert.Contains("[MASKED]", logged, StringComparison.Ordinal);
                 Assert.DoesNotContain("secret-uuid-value", logged, StringComparison.Ordinal);
             }
