@@ -95,8 +95,9 @@ $script:totalReplacements = 0
 # ----------------------------------------------------------------------
 
 # 1. Bulk file updates (PowerShell, Inno, Projects)
-$bulkFiles = Get-ChildItem -LiteralPath $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch $script:BuildArtifactExclusionRegex -and $_.Name -notlike "*.test.ps1" }
+$bulkExtensions = @('.ps1', '.iss', '.csproj')
+$bulkFiles = Get-ChildItem -LiteralPath $baseDir -Recurse -File -ErrorAction SilentlyContinue |
+    Where-Object { $bulkExtensions -contains $_.Extension -and $_.FullName -notmatch $script:BuildArtifactExclusionRegex -and $_.Name -notlike "*.test.ps1" }
 Update-FilesContent -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # 2. Shared SDK settings: the TFM is declared once in Directory.Build.props (no csproj carries its own)
