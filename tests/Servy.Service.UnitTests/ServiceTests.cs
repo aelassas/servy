@@ -1141,19 +1141,30 @@ namespace Servy.Service.UnitTests
                 ServiceName = "TestService",
                 ExecutablePath = "test.exe",
                 PreLaunchExecutablePath = "prelaunch.exe",
-                PreLaunchTimeoutInSeconds = 0 // 0 means Fire and Forget
+                PreLaunchTimeoutInSeconds = 0, // 0 means Fire and Forget
+                // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
+                ExecutableArgs = "--main-arg",
+                PreLaunchExecutableArgs = "--pre-launch-arg",
+                PostLaunchExecutableArgs = "--post-launch-arg",
+                FailureProgramExecutableArgs = "--failure-arg",
+                PreStopExecutableArgs = "--pre-stop-arg",
+                PostStopExecutableArgs = "--post-stop-arg",
             };
             var scopedLogger = SetupStandardServiceStart(options);
 
+            ProcessStartInfo? preLaunchPsi = null;
             var mockPreLaunchProcess = new Mock<IProcessWrapper>();
             mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
             _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => preLaunchPsi = psi)
                 .Returns(mockPreLaunchProcess.Object);
 
             // Act
             _service.StartForTest();
 
             // Assert
+            Assert.NotNull(preLaunchPsi);
+            Assert.Equal("--pre-launch-arg", preLaunchPsi.Arguments);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("fire-and-forget")), It.IsAny<Exception>()), Times.AtLeastOnce);
             _mockProcess.Verify(p => p.Start(), Times.Once); // Main process still starts
         }
@@ -1655,6 +1666,13 @@ namespace Servy.Service.UnitTests
             ServiceName = "TestService",
             ExecutablePath = "test.exe",
             PostLaunchExecutablePath = postLaunchExePath,
+            // Every argument string is different, so the hook cannot be handed another program's arguments unnoticed.
+            ExecutableArgs = "--main-arg",
+            PreLaunchExecutableArgs = "--pre-launch-arg",
+            PostLaunchExecutableArgs = "--post-launch-arg",
+            FailureProgramExecutableArgs = "--failure-arg",
+            PreStopExecutableArgs = "--pre-stop-arg",
+            PostStopExecutableArgs = "--post-stop-arg",
             StartTimeoutInSeconds = 1
         };
 
@@ -1668,10 +1686,15 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
 
             using var postLaunchStarted = new ManualResetEventSlim(false);
+            string? postLaunchArguments = null;
             var mockPostLaunchProcess = new Mock<IProcessWrapper>();
             mockPostLaunchProcess.Setup(p => p.Start()).Returns(true);
             _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()))
-                .Callback(() => postLaunchStarted.Set())
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) =>
+                {
+                    postLaunchArguments = psi.Arguments;
+                    postLaunchStarted.Set();
+                })
                 .Returns(mockPostLaunchProcess.Object);
 
             _mockProcess.Setup(p => p.WaitAndCheckStillRunningAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
@@ -1687,6 +1710,10 @@ namespace Servy.Service.UnitTests
                 TestContext.Current.CancellationToken));
             _ctx.ProcessFactory.Verify(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == PostLaunchExe), It.IsAny<IServyLogger>()),
                 stillRunning ? Times.Once() : Times.Never());
+
+            // The launched hook carries its own arguments, not another program's
+            if (stillRunning)
+                Assert.Equal("--post-launch-arg", postLaunchArguments);
         }
 
         [Theory]
