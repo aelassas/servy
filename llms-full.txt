@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-13T07:02:06Z
+> Generated on: 2026-11-14T23:35:18Z
 
 ---
 
@@ -4302,7 +4302,7 @@ servy-cli start --name="MyApp"
 
 When packaging software into enterprise installers (such as WiX, Inno Setup, Advanced Installer, or InstallShield), background services are typically installed by writing registry keys or using built-in service tables.
 
-Legacy wrappers like NSSM are not secure for production environments because NSSM stores the service configuration, including application parameters and environment variables, in plaintext in the Windows Registry, where anyone with read access to the registry can inspect it. In contrast, Servy encrypts sensitive fields (the account password, the process and hook parameters, and the environment variables) with AES-256 and HMAC-SHA256 authenticated encryption under a DPAPI-protected, HKDF-derived key, and each service account can reach only its own configuration and logs (see [Security](https://github.com/aelassas/servy/wiki/Security)).
+Legacy wrappers like NSSM are not secure for production environments because NSSM stores the service configuration, including application parameters and environment variables, in plaintext in the Windows Registry, where anyone with read access to the registry can inspect it. In contrast, Servy encrypts sensitive fields (the account password, the process and hook parameters, the environment variables, and the heartbeat URL) with AES-256 and HMAC-SHA256 authenticated encryption under a DPAPI-protected, HKDF-derived key, and each service account can reach only its own configuration and logs (see [Security](https://github.com/aelassas/servy/wiki/Security)).
 
 Servy functions as an enterprise service host rather than a standalone runner script. To maintain production stability, security, and real-time monitoring, services must be installed via the command-line tool (`servy-cli.exe`) during the installation phase and removed during the uninstallation phase.
 
