@@ -294,9 +294,11 @@ namespace Servy.Service.UnitTests
                     // Act
                     service.InvokeSafeKillProcess(mockProcess.Object, 0);
 
-                    // Assert: the wait pulsed the SCM before it gave up
+                    // Assert: the wait pulsed the SCM before it gave up, with the service's wait hint and no other value
                     _ctx.Helper.Verify(h => h.RequestAdditionalTime(
-                        service, It.IsAny<int>(), null), Times.AtLeastOnce);
+                        service, AppConfig.DefaultScmAdditionalTimeMs, null), Times.AtLeastOnce);
+                    _ctx.Helper.Verify(h => h.RequestAdditionalTime(
+                        service, It.Is<int>(ms => ms != AppConfig.DefaultScmAdditionalTimeMs), null), Times.Never);
                     _ctx.Logger.Verify(l => l.Error(
                         "Stop operation exceeded safety limit. The process tree may be hung at the kernel level.",
                         It.IsAny<Exception>()), Times.Once);
