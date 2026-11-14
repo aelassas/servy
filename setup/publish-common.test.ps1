@@ -174,9 +174,9 @@ try {
 
     # --- Both consumers enforce every pattern in that one array (including bracketed paths) ---
     # The sample filenames are derived from the patterns, so a sixth pattern added to the
-    # array is exercised by both halves of this test without editing it. Using a bracketed
-    # folder name (`exclusions[bracket]`) pins the WildcardPattern::Escape handling so
-    # `-Path` with `-Include` does not treat `[` and `]` as character classes.
+    # array is exercised by both halves of this test without editing it. The bracketed
+    # folder name (`exclusions[bracket]`) is there because `[` and `]` are wildcard
+    # characters to `-Path`: both mechanisms have to read the tree through `-LiteralPath`.
 
     # Arrange
     $bracketRoot = Join-Path $tempDir "exclusions[bracket]"
