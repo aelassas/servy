@@ -1424,6 +1424,59 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Contains(CliStrings.Msg_ShowServiceSuggestion, result.Message);
         }
 
+        [Fact]
+        public async Task ExecuteAsync_GenericExceptionWhileListing_ReportsTheListAction()
+        {
+            // Arrange
+            _repository
+                .Setup(r => r.SearchAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("database unreadable"));
+            var opts = new ShowServiceOptions();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(
+                string.Format(CliStrings.Msg_CommandFailedTemplate, CliStrings.Msg_ShowServicesAction, "database unreadable")
+                    + Environment.NewLine
+                    + string.Format(CliStrings.Msg_SuggestionTemplate, CliStrings.Msg_ShowServiceSuggestion),
+                result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_CpuAffinityStored_RendersItsRowInTheLeadingBlock()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.CpuAffinity = "0,2-3";
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.Equal("0,2-3", RowValue(result.Message, CliStrings.Msg_Show_Label_CpuAffinity));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_CpuAffinityNotStored_OmitsItsRow()
+        {
+            // Arrange
+            GivenService(MinimalDto());
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.Null(RowValue(result.Message, CliStrings.Msg_Show_Label_CpuAffinity));
+        }
+
         #endregion
 
         #region Verb metadata
