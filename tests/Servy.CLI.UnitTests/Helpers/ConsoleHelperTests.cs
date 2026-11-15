@@ -274,6 +274,48 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
+        /// The clearing write blanks the line with one space fewer than the window is wide, so the cursor
+        /// never reaches the last column and the console does not wrap to the next line.
+        /// </summary>
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenWindowIsTenWide_ClearsWithNineSpaces()
+        {
+            // Arrange
+            Func<Task> dummyAction = () => Task.Delay(50);
+
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 10);
+
+            try
+            {
+                using (var writer = new ClearingRecordingStringWriter())
+                {
+                    var originalOut = Console.Out;
+                    Console.SetOut(writer);
+
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Working");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.Equal("\r" + new string(' ', 9) + "\r", writer.ClearingWrite);
+                    Assert.False(writer.FallbackWriteLineCalled);
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
         /// A write failure on the spinner frame faults the background spinner task, and the catch around
         /// "await spinnerTask" in RunWithLoadingAnimation's finally is the only thing that keeps that fault
         /// from replacing the result of the caller's action. Without this case the catch can be deleted, or
@@ -568,6 +610,11 @@ namespace Servy.CLI.UnitTests.Helpers
         {
             public bool ClearingWriteSeen { get; private set; }
 
+            /// <summary>
+            /// The text of the clearing write, or null when none ran.
+            /// </summary>
+            public string ClearingWrite { get; private set; }
+
             public bool FallbackWriteLineCalled { get; private set; }
 
             public override void Write(string value)
@@ -575,6 +622,7 @@ namespace Servy.CLI.UnitTests.Helpers
                 if (value != null && value.StartsWith("\r") && value.EndsWith("\r") && value.Contains(" "))
                 {
                     ClearingWriteSeen = true;
+                    ClearingWrite = value;
                 }
 
                 base.Write(value);
