@@ -26,6 +26,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_UninstallServiceAction, serviceName);
 
+        protected override string ExpectedSuggestion => Strings.Msg_UninstallServiceSuggestion;
+
         protected override string ExpectedCommandName => "uninstall";
 
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
