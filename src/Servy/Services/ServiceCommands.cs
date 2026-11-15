@@ -17,7 +17,7 @@ using AppConfig = Servy.Core.Config.AppConfig;
 namespace Servy.Services
 {
     /// <summary>
-    ///  Concrete implementation of <see cref="IServiceCommands"/> that provides service management commands such as install, uninstall, start, stop, and restart.
+    /// Concrete implementation of <see cref="IServiceCommands"/> that provides service management commands such as install, uninstall, start, stop, and restart.
     /// </summary>
     public class ServiceCommands : IServiceCommands
     {
@@ -49,7 +49,7 @@ namespace Servy.Services
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
         /// </summary>
         /// <param name="modelToServiceDto">MainViewModel to ServiceDto mapper.</param>
-        /// <param name="bindServiceDtoToModel">Binds a service dto MainViewModel.</param>
+        /// <param name="bindServiceDtoToModel">Binds a service dto to MainViewModel.</param>
         /// <param name="serviceManager">The service manager responsible for performing service operations.</param>
         /// <param name="messageBoxService">The message box service used to display messages to the user.</param>
         /// <param name="dialogService">File Dialog service.</param>
