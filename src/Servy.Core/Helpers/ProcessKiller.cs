@@ -183,7 +183,11 @@ namespace Servy.Core.Helpers
                     parentStartTime = parent.StartTime;
                 }
             }
-            catch { /* parent already exited; first-level identity check is best-effort */ }
+            catch
+            {
+                // Parent already exited or its start time is unreadable: parentStartTime stays MinValue,
+                // so WalkAndKillChildren skips every child (the PID-reuse guard fails safe).
+            }
 
             // Step 1: Create a handle-less view of the entire system process table in a single pass
             var (snapshot, byParent) = _processAccessor.BuildSnapshotAndChildMap();
