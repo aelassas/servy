@@ -533,6 +533,43 @@ namespace Servy.CLI.UnitTests
             Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe) }, runtime.Calls);
         }
 
+        [Theory]
+        [InlineData("version")]
+        [InlineData("--version")]
+        public async Task RunAsync_VersionRequested_ReturnsSuccessWithoutAnyBootstrap(string versionArgument)
+        {
+            // Arrange
+            // The version text is derived from the entry assembly and differs under the test host, so only the exit
+            // code and the absence of any bootstrap step are pinned.
+            var runtime = new FakeCliRuntime();
+            string[] args = { versionArgument };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.DoesNotContain("Unknown command", result.StdErr);
+            Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe) }, runtime.Calls);
+        }
+
+        [Fact]
+        public async Task RunAsync_UpperCaseVerb_IsFoldedToLowerCaseBeforeParsing()
+        {
+            // Arrange
+            // The unknown-command guard is case-insensitive, the parser is not: the fold in between is what
+            // lets an upper-case verb reach its handler.
+            var runtime = new FakeCliRuntime();
+            string[] args = { "STATUS", "-n", "NonExistentServiceForTestingOnly" };
+
+            // Act
+            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, result.Result);
+            Assert.Contains("Service status for 'NonExistentServiceForTestingOnly': NotInstalled", result.StdOut);
+        }
+
         #endregion
 
         #region Console Probe, Cancellation and Cleanup Seams
