@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T16:36:26Z
+> Generated on: 2026-11-15T16:54:28Z
 
 ---
 
@@ -6466,7 +6466,7 @@ The executable permission hardening protects your deployment against:
 > **Administrative Service Accounts:** Use a dedicated, unprivileged service account. Because Windows evaluates all group SIDs attached to an access token and `Allow` ACEs do not subtract rights, any member of `BUILTIN\Administrators` inherently keeps `FullControl` over the hardened files through group membership, which is why Servy skips the hardening for such an account. Membership through a nested group (for example a domain group added to the local `Administrators` group) cannot always be detected; Servy then applies the hardening and logs that it could not rule it out.
 
 > [!NOTE]
-> Starting from v9.7, Servy automatically captures and preserves existing explicit Access Control Lists (ACLs) across atomic file updates for `*.exe` and `*.dll` files located in `%ProgramData%\Servy`. Once configured, your **Read & Execute** permission boundaries will persist automatically across application updates and embedded resource re-extractions.
+> From v9.7 to v10.5, Servy captured the explicit Access Control List (ACL) of a `*.exe` or `*.dll` file in `%ProgramData%\Servy` and restored it after an atomic file update. Starting from v10.6 the old ACL is no longer restored: a re-extracted file gets the vault's own access list (`SYSTEM` and `Administrators` when Servy runs elevated), and the service accounts recorded in the Servy database get their **Read & Execute** grant back from the vault hardening that runs right after the extraction. Your service accounts keep their access across application updates either way; an ACE added by hand for any other account is not kept (see [Automatic Directory Hardening (ACLs)](https://github.com/aelassas/servy/wiki/Security#1-automatic-directory-hardening-acls)).
 
 #### Servy 10.1 and Earlier
 
