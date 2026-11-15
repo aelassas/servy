@@ -244,39 +244,13 @@ namespace Servy.Core.IntegrationTests.Native
         }
 
         [Fact]
-        public void NtQueryInformationProcess_CurrentProcessHandle_ReturnsBasicInformation()
-        {
-            // Arrange
-            using (var currentProcess = Process.GetCurrentProcess())
-            {
-                IntPtr processHandle = currentProcess.Handle;
-
-                var pbi = new NativeMethods.PROCESS_BASIC_INFORMATION();
-                int size = Marshal.SizeOf<NativeMethods.PROCESS_BASIC_INFORMATION>();
-
-                // Act & Assert
-                int status = NativeMethods.NtQueryInformationProcess(
-                    processHandle,
-                    (int)NativeMethods.ProcessInfoClass.ProcessBasicInformation,
-                    ref pbi,
-                    (uint)size,
-                    out uint returnLength);
-
-                // NTSTATUS 0 == STATUS_SUCCESS
-                Assert.Equal(0, status);
-                Assert.Equal((uint)size, returnLength);
-                Assert.NotEqual(IntPtr.Zero, pbi.PebBaseAddress);
-            }
-        }
-
-        [Fact]
         public void OpenProcess_CurrentProcessId_ReturnsValidHandle()
         {
             // Arrange
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 // Act
-                using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id))
+                using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryLimitedInformation, false, currentProcess.Id))
                 {
                     // Assert
                     Assert.False(handle.IsInvalid);

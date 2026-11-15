@@ -245,24 +245,6 @@ namespace Servy.Core.Native
             public string szExeFile;
         }
 
-        /// <summary>Contains basic information about a process for internal NT queries.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct PROCESS_BASIC_INFORMATION
-        {
-            /// <summary>Exit status of the process (NTSTATUS), padded to pointer size.</summary>
-            public IntPtr Reserved1;
-            /// <summary>Address of the process environment block (PEB).</summary>
-            public IntPtr PebBaseAddress;
-            /// <summary>Affinity mask of the process.</summary>
-            public IntPtr Reserved2_0;
-            /// <summary>Base priority of the process, padded to pointer size.</summary>
-            public IntPtr Reserved2_1;
-            /// <summary>Identifier of the process.</summary>
-            public IntPtr UniqueProcessId;
-            /// <summary>Identifier of the process that created this process.</summary>
-            public IntPtr InheritedFromUniqueProcessId;
-        }
-
         /// <summary>Defines common process access rights.</summary>
         [Flags]
         public enum ProcessAccess : uint
@@ -271,13 +253,6 @@ namespace Servy.Core.Native
             QueryInformation = 0x0400,
             /// <summary>Required to retrieve a subset of information about a process.</summary>
             QueryLimitedInformation = 0x1000,
-        }
-
-        /// <summary>Information classes for NtQueryInformationProcess.</summary>
-        public enum ProcessInfoClass
-        {
-            /// <summary>Retrieves a <see cref="PROCESS_BASIC_INFORMATION"/> structure.</summary>
-            ProcessBasicInformation = 0,
         }
 
         /// <summary>Represents console control signal types.</summary>
@@ -505,15 +480,6 @@ namespace Servy.Core.Native
         /// <c>desiredAccess</c> argument of <see cref="OpenProcessToken"/> to read the token's user.
         /// </summary>
         public const uint TOKEN_QUERY = 0x0008;
-
-        /// <summary>Low-level NT function to retrieve process information.</summary>
-        [DllImport("ntdll.dll")]
-        public static extern int NtQueryInformationProcess(
-            IntPtr processHandle,
-            ProcessInfoClass processInformationClass,
-            ref PROCESS_BASIC_INFORMATION processInformation,
-            uint processInformationLength,
-            out uint returnLength);
 
         /// <summary>Retrieves the number of milliseconds since the system was started.</summary>
         [DllImport("kernel32.dll")]
