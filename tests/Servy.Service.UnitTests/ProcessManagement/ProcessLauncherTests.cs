@@ -1,5 +1,6 @@
 using Microsoft.Win32.SafeHandles;
 using Moq;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Core.Validation;
 using Servy.Service.ProcessManagement;
@@ -737,6 +738,29 @@ namespace Servy.Service.UnitTests.ProcessManagement
                 Times.Never);
             Assert.Null(attachedOut);
             Assert.Null(attachedErr);
+        }
+
+        #endregion
+
+        #region CreateStartInfo - console UI flag (#7896)
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CreateStartInfo_ConsoleUIFlag_DecidesTheWindowRedirectionAndStreamEncodings(bool enableConsoleUI)
+        {
+            // Arrange & Act
+            var psi = ProcessLauncher.CreateStartInfo(
+                @"C:\tools\app.exe", "--arg", @"C:\tools", new List<EnvironmentVariable>(),
+                allowOverriddenRuntimeVars: false, enableConsoleUI: enableConsoleUI, logger: null, auditContext: "Test");
+
+            // Assert
+            Assert.False(psi.UseShellExecute);
+            Assert.Equal(!enableConsoleUI, psi.CreateNoWindow);
+            Assert.Equal(!enableConsoleUI, psi.RedirectStandardOutput);
+            Assert.Equal(!enableConsoleUI, psi.RedirectStandardError);
+            Assert.Equal(enableConsoleUI ? null : Encoding.UTF8, psi.StandardOutputEncoding);
+            Assert.Equal(enableConsoleUI ? null : Encoding.UTF8, psi.StandardErrorEncoding);
         }
 
         #endregion
