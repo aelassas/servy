@@ -390,6 +390,49 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(ExpectedStatusProcessSize, sizeStatusProcess);
         }
 
+        [Fact]
+        public void BufferReadStructs_Marshaling_PinSizesAndFieldOffsets()
+        {
+            // Arrange
+            int ptr = IntPtr.Size;
+            bool is64 = ptr == 8;
+
+            // Act
+            int sizeMember = Marshal.SizeOf<NativeMethods.LOCALGROUP_MEMBERS_INFO_1>();
+            int sizeConfig = Marshal.SizeOf<NativeMethods.QUERY_SERVICE_CONFIG>();
+            int sizeFileInfo = Marshal.SizeOf<NativeMethods.BY_HANDLE_FILE_INFORMATION>();
+
+            int offMemberUsage = (int)Marshal.OffsetOf<NativeMethods.LOCALGROUP_MEMBERS_INFO_1>(nameof(NativeMethods.LOCALGROUP_MEMBERS_INFO_1.lgrmi1_sidusage));
+            int offMemberName = (int)Marshal.OffsetOf<NativeMethods.LOCALGROUP_MEMBERS_INFO_1>(nameof(NativeMethods.LOCALGROUP_MEMBERS_INFO_1.lgrmi1_name));
+
+            int offConfigBinaryPath = (int)Marshal.OffsetOf<NativeMethods.QUERY_SERVICE_CONFIG>(nameof(NativeMethods.QUERY_SERVICE_CONFIG.lpBinaryPathName));
+            int offConfigDependencies = (int)Marshal.OffsetOf<NativeMethods.QUERY_SERVICE_CONFIG>(nameof(NativeMethods.QUERY_SERVICE_CONFIG.lpDependencies));
+            int offConfigStartName = (int)Marshal.OffsetOf<NativeMethods.QUERY_SERVICE_CONFIG>(nameof(NativeMethods.QUERY_SERVICE_CONFIG.lpServiceStartName));
+
+            int offFileVolume = (int)Marshal.OffsetOf<NativeMethods.BY_HANDLE_FILE_INFORMATION>(nameof(NativeMethods.BY_HANDLE_FILE_INFORMATION.VolumeSerialNumber));
+            int offFileIndexHigh = (int)Marshal.OffsetOf<NativeMethods.BY_HANDLE_FILE_INFORMATION>(nameof(NativeMethods.BY_HANDLE_FILE_INFORMATION.FileIndexHigh));
+            int offFileIndexLow = (int)Marshal.OffsetOf<NativeMethods.BY_HANDLE_FILE_INFORMATION>(nameof(NativeMethods.BY_HANDLE_FILE_INFORMATION.FileIndexLow));
+
+            // Assert
+            // LOCALGROUP_MEMBERS_INFO_1: PSID, SID_NAME_USE (padded to pointer size), LPWSTR -> 3 pointers.
+            // The hardener walks the NetLocalGroupGetMembers buffer in strides of this size.
+            Assert.Equal(3 * ptr, sizeMember);
+            Assert.Equal(ptr, offMemberUsage);
+            Assert.Equal(2 * ptr, offMemberName);
+
+            // QUERY_SERVICE_CONFIGW: 3 DWORD, 2 pointers, DWORD, 3 pointers -> 36 bytes on x86, 64 on x64.
+            Assert.Equal(is64 ? 64 : 36, sizeConfig);
+            Assert.Equal(is64 ? 16 : 12, offConfigBinaryPath);
+            Assert.Equal(is64 ? 40 : 24, offConfigDependencies);
+            Assert.Equal(is64 ? 48 : 28, offConfigStartName);
+
+            // BY_HANDLE_FILE_INFORMATION: DWORD + 3 FILETIME + 6 DWORD -> 52 bytes on every architecture.
+            Assert.Equal(52, sizeFileInfo);
+            Assert.Equal(28, offFileVolume);
+            Assert.Equal(44, offFileIndexHigh);
+            Assert.Equal(48, offFileIndexLow);
+        }
+
         #endregion
 
         #region Console & Signal Interface Verification
