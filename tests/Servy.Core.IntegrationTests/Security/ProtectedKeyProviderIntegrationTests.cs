@@ -48,8 +48,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_FileDoesNotExist_GeneratesAndSavesKey()
         {
             // Arrange
-            var keyPath = GetTempFilePath("master.key");
-            var ivPath = GetTempFilePath("master.iv");
+            var keyPath = Path.Combine(TempDirectory, "master.key");
+            var ivPath = Path.Combine(TempDirectory, "master.iv");
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -70,8 +70,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetIV_FileDoesNotExist_GeneratesAndSavesIV()
         {
             // Arrange
-            var keyPath = GetTempFilePath("master.key");
-            var ivPath = GetTempFilePath("master.iv");
+            var keyPath = Path.Combine(TempDirectory, "master.key");
+            var ivPath = Path.Combine(TempDirectory, "master.iv");
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -92,8 +92,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_SubsequentCalls_ReturnIdenticalDataButDifferentReferences()
         {
             // Arrange
-            var keyPath = GetTempFilePath("master.key");
-            var ivPath = GetTempFilePath("master.iv");
+            var keyPath = Path.Combine(TempDirectory, "master.key");
+            var ivPath = Path.Combine(TempDirectory, "master.iv");
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -118,8 +118,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetIV_SubsequentCalls_ReturnIdenticalDataButDifferentReferences()
         {
             // Arrange
-            var keyPath = GetTempFilePath("master.key");
-            var ivPath = GetTempFilePath("master.iv");
+            var keyPath = Path.Combine(TempDirectory, "master.key");
+            var ivPath = Path.Combine(TempDirectory, "master.iv");
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -149,8 +149,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_ExistingValidFile_UnprotectsSuccessfully()
         {
             // Arrange
-            var keyPath = GetTempFilePath("master.key");
-            var ivPath = GetTempFilePath("master.iv");
+            var keyPath = Path.Combine(TempDirectory, "master.key");
+            var ivPath = Path.Combine(TempDirectory, "master.iv");
             byte[] originalKey;
 
             // Generation phase
@@ -173,8 +173,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetIV_ExistingValidFile_UnprotectsSuccessfully()
         {
             // Arrange
-            var keyPath = GetTempFilePath("existing_iv.key");
-            var ivPath = GetTempFilePath("existing_iv.iv");
+            var keyPath = Path.Combine(TempDirectory, "existing_iv.key");
+            var ivPath = Path.Combine(TempDirectory, "existing_iv.iv");
             byte[] originalIv;
 
             // Generation phase
@@ -201,8 +201,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_LegacyNoEntropyFile_MigratesToEntropyProtected()
         {
             // Arrange
-            var keyPath = GetTempFilePath("legacy.key");
-            var ivPath = GetTempFilePath("legacy.iv");
+            var keyPath = Path.Combine(TempDirectory, "legacy.key");
+            var ivPath = Path.Combine(TempDirectory, "legacy.iv");
 
             // 1. Manually create a legacy v7.8 key without machine entropy
             var rawLegacyData = new byte[32];
@@ -251,8 +251,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetIV_LegacyNoEntropyFile_MigratesToEntropyProtected()
         {
             // Arrange
-            var keyPath = GetTempFilePath("legacy_iv_migration.key");
-            var ivPath = GetTempFilePath("legacy_iv_migration.iv");
+            var keyPath = Path.Combine(TempDirectory, "legacy_iv_migration.key");
+            var ivPath = Path.Combine(TempDirectory, "legacy_iv_migration.iv");
 
             // 1. Manually create a v7.8 legacy IV (16 bytes) without machine-unique entropy
             var rawLegacyIvData = new byte[16];
@@ -304,8 +304,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetMaterial_CorruptedFile_ThrowsInvalidOperationException(string targetType, string expectedMessageToken)
         {
             // Arrange
-            var keyPath = GetTempFilePath("corrupt.key");
-            var ivPath = GetTempFilePath("corrupt.iv");
+            var keyPath = Path.Combine(TempDirectory, "corrupt.key");
+            var ivPath = Path.Combine(TempDirectory, "corrupt.iv");
             var targetPath = targetType == "key" ? keyPath : ivPath;
 
             // Write garbage bytes that DPAPI cannot unprotect
@@ -325,8 +325,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_ProtectedBlobOfTheWrongLength_IsRejectedAndTheFileIsKept()
         {
             // Arrange: a blob DPAPI accepts (legacy, no entropy) that holds 16 bytes instead of the 32-byte key
-            var keyPath = GetTempFilePath("short.key");
-            var ivPath = GetTempFilePath("short.iv");
+            var keyPath = Path.Combine(TempDirectory, "short.key");
+            var ivPath = Path.Combine(TempDirectory, "short.iv");
             var blob = ProtectedData.Protect(new byte[16], null, DataProtectionScope.LocalMachine);
             File.WriteAllBytes(keyPath, blob);
 
@@ -347,8 +347,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetMaterial_FileLocked_RetriesAndEventuallyThrows(string targetType)
         {
             // Arrange
-            var keyPath = GetTempFilePath($"locked_{targetType}.key");
-            var ivPath = GetTempFilePath($"locked_{targetType}.iv");
+            var keyPath = Path.Combine(TempDirectory, $"locked_{targetType}.key");
+            var ivPath = Path.Combine(TempDirectory, $"locked_{targetType}.iv");
             var targetPath = targetType == "key" ? keyPath : ivPath;
 
             // Save some mock dummy payload data to force execution past the file creation stage
@@ -409,8 +409,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void Dispose_ZeroesInternalState_ThrowsOnSubsequentAccess()
         {
             // Arrange
-            var keyPath = GetTempFilePath("master.key");
-            var ivPath = GetTempFilePath("master.iv");
+            var keyPath = Path.Combine(TempDirectory, "master.key");
+            var ivPath = Path.Combine(TempDirectory, "master.iv");
             var provider = new ProtectedKeyProvider(keyPath, ivPath);
 
             // Populate the cache
@@ -450,7 +450,7 @@ namespace Servy.Core.IntegrationTests.Security
         public void Dispose_CanBeCalledMultipleTimesSafely()
         {
             // Arrange
-            var provider = new ProtectedKeyProvider(GetTempFilePath("k.key"), GetTempFilePath("i.iv"));
+            var provider = new ProtectedKeyProvider(Path.Combine(TempDirectory, "k.key"), Path.Combine(TempDirectory, "i.iv"));
 
             // Populate the cache, so the zeroing branch of Dispose runs on the first call
             // and has to stay safe on the second and third
@@ -467,15 +467,6 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Assert
             Assert.Null(exception); // Should not throw on multiple disposes
-        }
-
-        #endregion
-
-        #region Test Lifecycle
-
-        private string GetTempFilePath(string fileName)
-        {
-            return Path.Combine(TempDirectory, fileName);
         }
 
         #endregion
@@ -499,8 +490,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_LockNameSquattedByAnotherObjectType_FailsClosedWithoutWritingTheKey()
         {
             // Arrange
-            var keyPath = GetTempFilePath("squatted.key");
-            var ivPath = GetTempFilePath("squatted.iv");
+            var keyPath = Path.Combine(TempDirectory, "squatted.key");
+            var ivPath = Path.Combine(TempDirectory, "squatted.iv");
 
             // A named event carrying the mutex's own name makes MutexAcl.Create throw
             // WaitHandleCannotBeOpenedException: same name, different kernel object type.
@@ -528,8 +519,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_LegacyFileWhenMigrationLockFails_ReturnsLegacyDataAndEscalatesOnTheThirdFailure()
         {
             // Arrange
-            var keyPath = GetTempFilePath("legacy-locked.key");
-            var ivPath = GetTempFilePath("legacy-locked.iv");
+            var keyPath = Path.Combine(TempDirectory, "legacy-locked.key");
+            var ivPath = Path.Combine(TempDirectory, "legacy-locked.iv");
 
             var rawLegacyData = new byte[AppConfig.AesKeySizeBytes];
             using (var rng = RandomNumberGenerator.Create())
@@ -580,8 +571,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_LockAbandonedByPreviousOwner_TakesOwnershipAndGeneratesTheKey()
         {
             // Arrange
-            var keyPath = GetTempFilePath("abandoned.key");
-            var ivPath = GetTempFilePath("abandoned.iv");
+            var keyPath = Path.Combine(TempDirectory, "abandoned.key");
+            var ivPath = Path.Combine(TempDirectory, "abandoned.iv");
 
             // The holder keeps the kernel object alive after the owning thread dies, so the provider
             // opens the abandoned mutex instead of creating a fresh one of the same name.
@@ -608,8 +599,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_LockAlreadyCreatedByAnotherHolder_LogsThatItJoinedTheExistingMutex()
         {
             // Arrange
-            var keyPath = GetTempFilePath("joined.key");
-            var ivPath = GetTempFilePath("joined.iv");
+            var keyPath = Path.Combine(TempDirectory, "joined.key");
+            var ivPath = Path.Combine(TempDirectory, "joined.iv");
 
             // The mutex already exists and is unowned, so MutexAcl.Create joins it rather than
             // creating it, and the DACL it would have applied is the creating process's.
@@ -631,15 +622,15 @@ namespace Servy.Core.IntegrationTests.Security
             // Arrange
             // A real key file for the "winning" process, produced at a side path so this test's lock is not involved
             byte[] winnerKey;
-            var winnerKeyPath = GetTempFilePath("winner.key");
-            using (var winner = new ProtectedKeyProvider(winnerKeyPath, GetTempFilePath("winner.iv")))
+            var winnerKeyPath = Path.Combine(TempDirectory, "winner.key");
+            using (var winner = new ProtectedKeyProvider(winnerKeyPath, Path.Combine(TempDirectory, "winner.iv")))
             {
                 winnerKey = winner.GetKey();
             }
             byte[] winnerFile = File.ReadAllBytes(winnerKeyPath);
 
-            var keyPath = GetTempFilePath("race.key");
-            var ivPath = GetTempFilePath("race.iv");
+            var keyPath = Path.Combine(TempDirectory, "race.key");
+            var ivPath = Path.Combine(TempDirectory, "race.iv");
             byte[]? loserKey = null;
             Exception? loserError = null;
 
@@ -708,16 +699,6 @@ namespace Servy.Core.IntegrationTests.Security
             mutex.WaitOne();
         }
 
-        /// <summary>
-        /// Builds a path inside this test's own temporary directory.
-        /// </summary>
-        /// <param name="fileName">The file name to place in the temporary directory.</param>
-        /// <returns>The absolute path of <paramref name="fileName"/> under the test's temporary directory.</returns>
-        private string GetTempFilePath(string fileName)
-        {
-            return Path.Combine(TempDirectory, fileName);
-        }
-
         #endregion
     }
 
@@ -735,8 +716,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_CorruptedFile_LogsACriticalErrorAndNeverReplacesTheFile()
         {
             // Arrange
-            var keyPath = GetTempFilePath("corrupt_kept.key");
-            var ivPath = GetTempFilePath("corrupt_kept.iv");
+            var keyPath = Path.Combine(TempDirectory, "corrupt_kept.key");
+            var ivPath = Path.Combine(TempDirectory, "corrupt_kept.iv");
             var corrupt = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
             File.WriteAllBytes(keyPath, corrupt);
 
@@ -761,8 +742,8 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetKey_EntropyProtectedBlobOfTheWrongLength_ReportsTheLengthWithoutALegacyFallbackWarning()
         {
             // Arrange: a blob protected with the provider's own machine entropy that holds 16 bytes instead of the 32-byte key
-            var keyPath = GetTempFilePath("short_entropy.key");
-            var ivPath = GetTempFilePath("short_entropy.iv");
+            var keyPath = Path.Combine(TempDirectory, "short_entropy.key");
+            var ivPath = Path.Combine(TempDirectory, "short_entropy.iv");
             var machineEntropy = TestReflection.GetFieldStatic<Lazy<byte[]>>(typeof(ProtectedKeyProvider), "MachineEntropy").Value;
             var blob = ProtectedData.Protect(new byte[16], machineEntropy, DataProtectionScope.LocalMachine);
             File.WriteAllBytes(keyPath, blob);
@@ -780,20 +761,6 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.DoesNotContain("SECURITY DEGRADATION WARNING", captured.Log);
                 Assert.Equal(blob, File.ReadAllBytes(keyPath));
             }
-        }
-
-        #endregion
-
-        #region Test Lifecycle
-
-        /// <summary>
-        /// Builds a path inside this test's own temporary directory.
-        /// </summary>
-        /// <param name="fileName">The file name to place in the temporary directory.</param>
-        /// <returns>The absolute path of <paramref name="fileName"/> under the test's temporary directory.</returns>
-        private string GetTempFilePath(string fileName)
-        {
-            return Path.Combine(TempDirectory, fileName);
         }
 
         #endregion
