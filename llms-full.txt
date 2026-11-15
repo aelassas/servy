@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T15:36:32Z
+> Generated on: 2026-11-15T16:36:26Z
 
 ---
 
@@ -2545,7 +2545,7 @@ Here are the available recovery options:
   - **Max Restart Attempts**: optional, default is 3. The maximum number of recovery attempts before giving up. Minimum is 0 (set to 0 for unlimited restart attempts), maximum is 100000.
   - **Heartbeat URL**: optional string. An absolute HTTP/HTTPS URL (e.g., `https://hc-ping.com/uuid`) used for sending out-of-band diagnostic heartbeat pings to external monitoring services (such as healthchecks.io or Uptime Kuma).
   - **Heartbeat URL Timeout**: optional integer, default is 10 seconds (range: 2-30 seconds). Timeout for the heartbeat HTTP GET request.
-  - **Heartbeat URL Flags**: optional switch/boolean. Appends `/start` when the service starts and `/fail` when recovery fails, to the Heartbeat URL (e.g., transforming `https://hc-ping.com/your-uuid` into `https://hc-ping.com/your-uuid/start` or `https://hc-ping.com/your-uuid/fail`).
+  - **Heartbeat URL Flags**: optional switch/boolean. Appends `/start` to the Heartbeat URL when the service starts and when the process is healthy again after failed checks, and `/fail` when the process fails (right before any recovery action runs, or when the service stops on an error exit) (e.g., transforming `https://hc-ping.com/your-uuid` into `https://hc-ping.com/your-uuid/start` or `https://hc-ping.com/your-uuid/fail`).
   - **Failure Program Path**: optional failure program to run after all recovery attempts have failed (and, when health-monitoring is disabled, when the child process exits with a non-zero code).
   - **Failure Startup Directory**: optional failure program startup directory.
   - **Failure Program Parameters**: optional failure program parameters.
@@ -2570,7 +2570,7 @@ If health-monitoring is disabled, the failure program will run when the **child 
 - `--maxRestartAttempts`: Maximum restart attempts on failure.
 - `--heartbeatUrl`: Absolute URL for out-of-band diagnostic heartbeat pings. This is a sensitive option: prefer the `SERVY_HEARTBEAT_URL` environment variable (v10.4+), which takes precedence over `--heartbeatUrl` when both are set (see [Security](https://github.com/aelassas/servy/wiki/Security) for the full list of sensitive fields).
 - `--heartbeatUrlTimeoutSeconds`: Timeout in seconds for the heartbeat URL request.
-- `--enableHeartbeatUrlFlags`: Appends `/start` when the service starts and `/fail` when recovery fails, to the Heartbeat URL.
+- `--enableHeartbeatUrlFlags`: Appends `/start` to the Heartbeat URL when the service starts and when the process is healthy again after failed checks, and `/fail` when the process fails (right before any recovery action runs, or when the service stops on an error exit).
 - `--failureProgramPath`: Path to an optional program to execute if all recovery attempts fail.
 - `--failureProgramStartupDir`: Optional working directory for the failure program.
 - `--failureProgramParams`: Optional parameters to pass to the failure program.
@@ -2614,7 +2614,7 @@ The following parameters are the PowerShell equivalents of the CLI health monito
 - `-MaxRestartAttempts`: Maximum number of recovery attempts before the service is stopped.
 - `-HeartbeatUrl`: String, optional. Absolute HTTP/HTTPS URL (e.g. `https://hc-ping.com/uuid`) for heartbeat pings. `Install-ServyService` passes it to `servy-cli` (v10.4+) through the `SERVY_HEARTBEAT_URL` environment variable of the child process, not on the command line, so it is not visible in the process list. If `-HeartbeatUrl` is omitted, a `SERVY_HEARTBEAT_URL` already set in the PowerShell session is passed on.
 - `-HeartbeatUrlTimeoutSeconds`: Timeout in seconds for the heartbeat URL request.
-- `-EnableHeartbeatUrlFlags`: Switch parameter, optional. Appends `/start` when the service starts and `/fail` when recovery fails, to the Heartbeat URL.
+- `-EnableHeartbeatUrlFlags`: Switch parameter, optional. Appends `/start` to the Heartbeat URL when the service starts and when the process is healthy again after failed checks, and `/fail` when the process fails (right before any recovery action runs, or when the service stops on an error exit).
 - `-FailureProgramPath`: Path to an optional program to execute after all recovery attempts have failed.
 - `-FailureProgramStartupDir`: Optional working directory for the failure program.
 - `-FailureProgramParams`: Optional parameters passed to the failure program.
@@ -4629,7 +4629,7 @@ Servy allows services to send out-of-band diagnostic heartbeat pings to external
 
 - **Heartbeat URL**: Optional string. An absolute HTTP/HTTPS URL (e.g., `https://hc-ping.com/your-uuid`) used for sending out-of-band diagnostic heartbeat pings to external monitoring services.
 - **Heartbeat URL Timeout**: Optional integer, default is `10` seconds (range: `2`-`30` seconds). Timeout in seconds for the heartbeat HTTP GET request.
-- **Heartbeat URL Flags**: Optional switch/boolean. Appends `/start` when the service starts and `/fail` when recovery fails, to the Heartbeat URL.
+- **Heartbeat URL Flags**: Optional switch/boolean. Appends `/start` to the Heartbeat URL when the service starts and when the process is healthy again after failed checks, and `/fail` when the process fails (right before any recovery action runs, or when the service stops on an error exit).
 
 ### Operational Execution Rules
 
@@ -7796,7 +7796,7 @@ Configure these fields in your service settings:
 
 * **Heartbeat URL:** Set your monitoring endpoint (e.g., `https://hc-ping.com/your-uuid`).
 * **Heartbeat URL Timeout:** Set the HTTP request timeout between 2 and 30 seconds (default is 10 seconds).
-* **Heartbeat URL Flags:** Enable this option to append `/start` when the service starts and `/fail` when process recovery fails.
+* **Heartbeat URL Flags:** Enable this option to append `/start` when the service starts or becomes healthy again after failed checks, and `/fail` when the process fails (right before any recovery action runs, or when the service stops on an error exit).
 
 When configured, Servy handles pings automatically:
 * **Startup:** Sends a GET request to `https://hc-ping.com/your-uuid/start` (if flags are enabled).
