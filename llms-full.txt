@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T13:36:23Z
+> Generated on: 2026-11-15T14:37:04Z
 
 ---
 
@@ -3013,11 +3013,11 @@ The final environment seen by your process will be:
 
 > [!NOTE]
 > **Variable Ordering and Circular References:**
-> Variables are resolved using a multi-pass fixed-point algorithm, so the **order in which you define them does not matter** - `MY_LOGS=%MY_ROOT%\logs` resolves correctly even if `MY_ROOT` is defined later in the list. The expansion engine runs up to 5 passes (`AppConfig.MaxEnvVarExpansionPasses`); chains deeper than that will leave unresolved `%VAR%` placeholders with **no warning logged** - the loop exits silently once the pass cap is reached while values are still changing.
+> Variables are resolved against each other in any order - `MY_LOGS=%MY_ROOT%\logs` resolves correctly even if `MY_ROOT` is defined later in the list. A reference is resolved **one level deep**: if `A=%B%\x` and `B=%C%\y`, `B` is fully resolved but `A` becomes `%C%\y\x`, with the inner placeholder left literal and **no warning logged**. Define a variable that others build on from literal text or System variables (for example `%ProgramData%`), not from another custom variable.
 >
 > **Avoid circular references:**
 > - **Self-reference** (`A=%A%`): caught as soon as the expansion engine encounters a value that contains its own `%NAME%` token. Logged as `Direct cycle detected for variable 'A'; leaving literal placeholder.` and the placeholder is left literal (unless the OS already exports a value for `A`, in which case the inherited value is substituted to mimic Windows `PATH`-append semantics).
-> - **Multi-variable cycles** (`A=%B%`, `B=%A%`, or longer chains like `A=%B%`, `B=%C%`, `C=%A%`): not detected by a dedicated check. Two-variable or indirect cycles typically degenerate into a direct self-reference (`%A%` inside `A`) during intermediate resolution and surface as `Direct cycle detected for variable 'A'` on a subsequent pass. If a cycle does not degenerate within 5 passes, resolution halts silently when the pass limit is reached, leaving the remaining `%VAR%` placeholders intact in the expanded environment.
+> - **Multi-variable cycles** (`A=%B%`, `B=%A%`, or longer chains like `A=%B%`, `B=%C%`, `C=%A%`): not detected and **not logged**. Each variable takes one substitution and keeps the placeholder that substitution brought in (`A=%B%`, `B=%A%` ends as `A=%A%`, `B=%B%`), so the process receives literal `%VAR%` text.
 
 ## GUI
 
