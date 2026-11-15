@@ -297,7 +297,8 @@ namespace Servy.Infrastructure.Data
 
                         // 7. Import the legacy recovery folder, once: only in the start that runs the version 10
                         // migration, which is committed with it. Later starts never scan the folder again, so a file
-                        // that was skipped or could not be read does not keep it, or its leftover grants, alive.
+                        // that was skipped or could not be read is not retried: the folder then stays on disk, and
+                        // its leftover grants are the permissions hardener's to remove (#7532).
                         if (importLegacyRecoveryFolder)
                             deleteLegacyRecoveryFolder = LegacyRecoveryImporter.Import(connection, transaction, legacyRecoveryFolderPath);
 
