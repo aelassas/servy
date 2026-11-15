@@ -35,7 +35,8 @@ namespace Servy.Manager.Converters
         protected override string GetFallbackValue(object value)
         {
             // Unlike StatusConverter, ServiceStartType has no in-band 'not yet known' member
-            // (Unknown is a real SCM value), so null is the loading state and renders as 'Fetching...'.
+            // (Unknown is a real result: the start type could not be read, or is one Servy does not map),
+            // so null is the loading state and renders as 'Fetching...'.
             return value?.ToString() ?? Strings.Label_Fetching;
         }
     }
