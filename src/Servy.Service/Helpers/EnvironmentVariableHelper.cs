@@ -446,8 +446,8 @@ namespace Servy.Service.Helpers
 
         /// <summary>
         /// Expands environment variables in a string using the provided dictionary of variables.
-        /// Custom variables override system variables. Windows built-in expansion is also applied
-        /// to handle system-defined placeholders such as %SystemRoot%.
+        /// Only the names in <paramref name="variables"/> are substituted. Windows built-in expansion of
+        /// the remaining system-defined placeholders such as %SystemRoot% is applied afterwards by the callers.
         /// </summary>
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
@@ -487,7 +487,7 @@ namespace Servy.Service.Helpers
                     // If there is no inherited OS value to append to, leave the placeholder
                     // intact so the user understands why the append operation did not occur.
                     // The warning for this case is emitted once per variable by
-                    // ExpandEnvironmentVariables(List<EnvironmentVariable>); this scan runs once per
+                    // ExpandEnvironmentVariablesEncoded(List<EnvironmentVariable>, bool); this scan runs once per
                     // variable per pass, so warning here would repeat the same line.
                     if (string.IsNullOrEmpty(inheritedValue))
                     {
