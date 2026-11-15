@@ -181,5 +181,24 @@ namespace Servy.Core.UnitTests.Config
             if (!withLogFileName)
                 Assert.Null(TestReflection.GetFieldStatic<RotatingStreamWriter>(typeof(Logger), "_writer"));
         }
+
+        [Theory]
+        [InlineData(true)]   // Logger.Initialize(fileName, ...) arm
+        [InlineData(false)]  // Logger.Initialize(...) arm
+        public void ConfigureFromAppSettings_WithLogLevel_PassesTheParsedLevelToTheStaticLogger(bool withLogFileName)
+        {
+            // Arrange
+            // Error differs from the LogLevel.Info default of both Logger.Initialize overloads.
+            var config = new NameValueCollection
+            {
+                { "LogLevel", "Error" },
+            };
+
+            // Act
+            LoggerConfigurator.ConfigureFromAppSettings(config, logFileName: withLogFileName ? _testFileName : null);
+
+            // Assert
+            Assert.Equal((int)LogLevel.Error, TestReflection.GetFieldStatic<int>(typeof(Logger), "_currentLogLevel"));
+        }
     }
 }
