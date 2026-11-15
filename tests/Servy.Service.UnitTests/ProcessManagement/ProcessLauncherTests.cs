@@ -764,5 +764,67 @@ namespace Servy.Service.UnitTests.ProcessManagement
         }
 
         #endregion
+
+        #region Start - hook log path comparison, encoding and flush (#7897)
+
+        [Fact]
+        public void Start_SameFileSpelledInDifferentCase_IsTreatedAsOneSharedLog()
+        {
+            // Arrange
+            var wrapper = ScriptedWrapper((o, e) =>
+                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one")));
+
+            // Act
+            ProcessLauncher.Start(
+                SyncOptions(UnopenablePath, UnopenablePath.ToUpperInvariant()), FactoryFor(wrapper), _logger.Object);
+
+            // Assert
+            // The shared-writer arm names its scope "multiplexed stdout/stderr"; the independent arm says "stderr"
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Disabling multiplexed stdout/stderr capture")), It.IsAny<Exception?>()),
+                Times.Once);
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Disabling stderr capture")), It.IsAny<Exception?>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public void Start_RedirectedLine_IsWrittenAsUtf8WithoutAByteOrderMark()
+        {
+            // Arrange
+            var log = Path.Combine(_tempDir, "nobom.log");
+            var wrapper = ScriptedWrapper((o, e) =>
+                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first")));
+
+            // Act
+            ProcessLauncher.Start(SyncOptions(log, null), FactoryFor(wrapper), _logger.Object);
+
+            // Assert
+            Assert.Equal(Encoding.UTF8.GetBytes("first" + Environment.NewLine), File.ReadAllBytes(log));
+        }
+
+        [Fact]
+        public void TryOpenAppendWriter_WrittenLine_IsOnDiskAndReadableWhileTheWriterIsStillOpen()
+        {
+            // Arrange
+            var path = Path.Combine(_tempDir, "live.log");
+            using (var writer = ProcessLauncher.TryOpenAppendWriter(
+                path, new UTF8Encoding(false), "app.exe", "stdout", _logger.Object))
+            {
+                Assert.NotNull(writer);
+
+                // Act
+                writer!.WriteLine("first line");
+
+                // Assert
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                using (var reader = new StreamReader(stream))
+                {
+                    Assert.Equal("first line" + Environment.NewLine, reader.ReadToEnd());
+                }
+            }
+        }
+
+        #endregion
     }
 }
