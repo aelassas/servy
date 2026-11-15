@@ -1387,26 +1387,73 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 var vmRef = (MainViewModel)null;
+                Exception exception = null;
 
                 // Act
-                var exception = await SetupAndRunBulkOperation(vm =>
+                var log = await LogCapture.RunAsync(async () =>
                 {
-                    vmRef = vm;
+                    exception = await SetupAndRunBulkOperation(vm =>
+                    {
+                        vmRef = vm;
 
-                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
-                                          .ReturnsAsync(true);
+                        _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
+                                              .ReturnsAsync(true);
 
-                    _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
-                                          .ThrowsAsync(new InvalidOperationException("Fatal Access Violation"));
-                }, async vm =>
-                {
-                    await vm.StartSelectedCommand.ExecuteAsync(null);
+                        _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
+                                              .ThrowsAsync(new InvalidOperationException("Fatal Access Violation"));
+                    }, async vm =>
+                    {
+                        await vm.StartSelectedCommand.ExecuteAsync(null);
+                    });
                 });
 
                 // Assert - the "Handled" half: the catch swallowed it, so nothing escaped the command.
                 // Without this the IsBusy and ResetCursor assertions are satisfied by the finally block
                 // alone, and deleting ExecuteBulkOperationAsync's catch keeps the test green.
                 Assert.Null(exception);
+                Assert.False(vmRef.IsBusy);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.AtLeastOnce);
+
+                // Assert - the failure is attributed in the log, with the cause. Also the positive control
+                // for the cancellation test: the same capture does see the line.
+                Assert.Contains("Failed to start selected services.", log);
+                Assert.Contains("Fatal Access Violation", log);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task BulkOperations_OperationCanceled_IsSwallowedWithoutErrorLog()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vmRef = (MainViewModel)null;
+                Exception exception = null;
+
+                // Act
+                var log = await LogCapture.RunAsync(async () =>
+                {
+                    exception = await SetupAndRunBulkOperation(vm =>
+                    {
+                        vmRef = vm;
+
+                        _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()))
+                                              .ReturnsAsync(true);
+
+                        _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
+                                              .ThrowsAsync(new OperationCanceledException());
+                    }, async vm =>
+                    {
+                        await vm.StartSelectedCommand.ExecuteAsync(null);
+                    });
+                });
+
+                // Assert - cancellation is the expected shutdown path: nothing escapes, nothing is logged as a
+                // failure, no result dialog is shown, and the busy state is released.
+                Assert.Null(exception);
+                Assert.DoesNotContain("Failed to start selected services", log);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
                 Assert.False(vmRef.IsBusy);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.AtLeastOnce);
             }, createApp: true);
