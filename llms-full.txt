@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T14:37:04Z
+> Generated on: 2026-11-15T15:36:32Z
 
 ---
 
@@ -3445,7 +3445,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
   <EnvironmentVariables>APP_ENV=production;APP_CONFIG=C:\Apps\App\config.json</EnvironmentVariables>
   <AllowOverriddenRuntimeVars>false</AllowOverriddenRuntimeVars>
   <ServiceDependencies>ServiceA;ServiceB</ServiceDependencies>
-  <UserAccount>NT SERVICE\TestService</UserAccount>
+  <UserAccount>NT SERVICE\MyTestService</UserAccount>
   <PreLaunchExecutablePath>C:\Program Files\TestService\PreLaunch.exe</PreLaunchExecutablePath>
   <PreLaunchStartupDirectory>C:\Program Files\TestService</PreLaunchStartupDirectory>
   <PreLaunchParameters>-preArg1 -preArg2</PreLaunchParameters>
@@ -3509,7 +3509,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
   "EnvironmentVariables": "APP_ENV=production;APP_CONFIG=C:\\Apps\\App\\config.json",
   "AllowOverriddenRuntimeVars": false,
   "ServiceDependencies": "ServiceA;ServiceB",
-  "UserAccount": "NT SERVICE\\TestService",
+  "UserAccount": "NT SERVICE\\MyTestService",
   "PreLaunchExecutablePath": "C:\\Program Files\\TestService\\PreLaunch.exe",
   "PreLaunchStartupDirectory": "C:\\Program Files\\TestService",
   "PreLaunchParameters": "-preArg1 -preArg2",
@@ -5599,6 +5599,9 @@ servy-cli install `
 
 Running the Windows port of Nginx as a service ensures the web server persists across reboots.
 
+> [!NOTE]
+> The recipes on this page that put double quotes inside a single-quoted `--params` value (the two Nginx recipes, Elixir and the PowerShell script) are written for PowerShell 7.3 or later. Windows PowerShell 5.1 and PowerShell 7.0-7.2 drop those inner quotes when they start `servy-cli.exe`, so the parameters arrive truncated. In those shells, escape each inner double quote with a backslash, for example `--params='-g \"daemon off;\"'`.
+
 ```powershell
 servy-cli install `
   --name="Nginx" `
@@ -5797,7 +5800,7 @@ servy-cli install `
   --name="MyElixirService" `
   --description="Elixir background worker" `
   --path="C:\Windows\System32\cmd.exe" `
-  --params='/c "C:\Program Files\Elixir\bin\elixir.bat C:\apps\elixir\worker.exs"' `
+  --params='/c ""C:\Program Files\Elixir\bin\elixir.bat" C:\apps\elixir\worker.exs"' `
   --startupDir="C:\apps\elixir" `
   --startupType="Automatic"
 ```
