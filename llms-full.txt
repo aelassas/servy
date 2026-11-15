@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T16:54:28Z
+> Generated on: 2026-11-15T18:35:44Z
 
 ---
 
@@ -480,27 +480,27 @@ If you face any issues, enable logging by adding the following option:
 
 To install the CLI only, use these options:
 ```text
-/SetupType=custom /Components=install_cli
+/TYPE=custom /COMPONENTS=install_cli
 ```
 
 To install the desktop app only, use these options:
 ```text
-/SetupType=custom /Components=install_main_app
+/TYPE=custom /COMPONENTS=install_main_app
 ```
 
 To install the manager app only, use these options:
 ```text
-/SetupType=custom /Components=install_manager
+/TYPE=custom /COMPONENTS=install_manager
 ```
 
 To install the desktop app and CLI only, use these options:
 ```text
-/SetupType=custom /Components=install_main_app,install_cli
+/TYPE=custom /COMPONENTS=install_main_app,install_cli
 ```
 
 To install the manager app and CLI only, use these options:
 ```text
-/SetupType=custom /Components=install_manager,install_cli
+/TYPE=custom /COMPONENTS=install_manager,install_cli
 ```
 
 #### Custom Installation Directory
@@ -4115,9 +4115,9 @@ https://github.com/aelassas/servy/releases/download/v<version>/servy-<version>-n
 
 **Silent installation commands (CLI only):**
 ```cmd
-.\servy-<version>-x64-installer.exe /VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL /SetupType=custom /Components=install_cli
-.\servy-<version>-arm64-installer.exe /VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL /SetupType=custom /Components=install_cli
-.\servy-<version>-net48-x64-installer.exe /VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL /SetupType=custom /Components=install_cli
+.\servy-<version>-x64-installer.exe /VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL /TYPE=custom /COMPONENTS=install_cli
+.\servy-<version>-arm64-installer.exe /VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL /TYPE=custom /COMPONENTS=install_cli
+.\servy-<version>-net48-x64-installer.exe /VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL /TYPE=custom /COMPONENTS=install_cli
 ```
 
 For further details, check out the [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide).
@@ -4869,7 +4869,7 @@ When Servy sends a `/fail` signal or stops pinging because the host machine went
 
 ## Tips
 
-* **State Tracking:** The PowerShell scripts maintain a `.dat` timestamp file (e.g., `last-processed-toast.dat`) in the `taskschd` directory to ensure they do not send duplicate alerts for the same error. If you need to test the notification pipeline, delete this file. **Note:** At most the newest 10 errors are processed on the next run; any older unread errors are skipped (and recorded in `ServyWatermarkErrors.log`) to prevent alert floods. To replay history, set the file's contents to a timestamp older than the events you want to see (in ISO 8601 `o` format, e.g. `2026-01-01T00:00:00.0000000Z`).
+* **State Tracking:** The PowerShell scripts maintain a `.dat` timestamp file (e.g., `last-processed-toast.dat`) in the `taskschd` directory to ensure they do not send duplicate alerts for the same error. If you need to test the notification pipeline, delete this file. **Note:** With the file deleted, the next run is treated as a first run: only the single most recent error is delivered, and older errors are ignored without a log entry. To replay history, set the file's contents to a timestamp older than the events you want to see (in ISO 8601 `o` format, e.g. `2026-01-01T00:00:00.0000000Z`); a replay is subject to the per-run cap, so at most the newest 10 errors are delivered and the older ones are skipped and recorded in `ServyWatermarkErrors.log`.
 * **Customization:** You can safely edit the `.ps1` scripts to customize the toast notification titles, icons, or email HTML bodies to fit your organization's monitoring standards.
 * **Defense in Depth:** Combine Toasts, Emails, and Heartbeat Ping URLs. Toasts notify developers locally, emails notify sysadmins via inbox, and Heartbeat Ping URLs integrate into automated incident response tools (PagerDuty, Slack).
 
