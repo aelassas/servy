@@ -1,6 +1,5 @@
 using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Native;
