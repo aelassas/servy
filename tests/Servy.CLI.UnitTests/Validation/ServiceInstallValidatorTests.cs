@@ -228,6 +228,30 @@ namespace Servy.CLI.UnitTests.Validation
         }
 
         [Theory]
+        [InlineData("manual")]
+        [InlineData("MANUAL")]
+        public void Validate_EnumValueInAnotherCase_IsMappedLikeTheDeclaredName(string startupType)
+        {
+            // Arrange
+            // Manual differs from the fixture's Automatic, so a value that is silently dropped cannot pass.
+            var opts = CreateValidOptions();
+            opts.ServiceStartType = startupType;
+
+            _rulesMock.Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(new ValidationResult { });
+
+            // Act
+            var result = _validator.Validate(opts);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto => dto.StartupType == (int)ServiceStartType.Manual),
+                null,    // wrapperExePath - the CLI supplies none, so no ValidatePath check is added
+                null,    // confirmPassword - the CLI deliberately opts out of the confirm-password check
+                false),  // importMode - must stay false or credential validation is skipped
+                Times.Once);
+        }
+
+        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
