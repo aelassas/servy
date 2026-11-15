@@ -379,8 +379,9 @@ namespace Servy.Manager
 
         /// <summary>
         /// Called when the WPF application starts.
-        /// Loads configuration settings, initializes the database, and fire-and-forgets
-        /// the asynchronous application initialization.
+        /// Runs the bootstrapper's synchronous startup (configuration and logger), starts the
+        /// companion-app availability monitor, and fire-and-forgets the asynchronous application
+        /// initialization, which is where the database is initialized and resources are extracted.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
