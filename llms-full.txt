@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T12:36:00Z
+> Generated on: 2026-11-15T13:36:23Z
 
 ---
 
@@ -7225,6 +7225,8 @@ To build and run either version locally, you will need:
 * .NET SDK matching the target version:
   * [.NET 10.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) for the `main` branch. The exact SDK build required is specified in `global.json` at the repository root (`sdk.version`). Because `rollForward` is set to `disable`, you must install that precise SDK version from the [.NET release archives](https://dotnet.microsoft.com/en-us/download/dotnet/10.0).
   * .NET Framework 4.8 Developer Pack (included with Visual Studio) for the `net48` branch. (Not governed by `global.json`).
+* [ReportGenerator](https://github.com/danielpalme/ReportGenerator) on the `PATH`, needed only by `tests\test.ps1` to build the HTML coverage report. Install it as a .NET global tool, in the version pinned in `tests\coverage-filters.ps1`:
+  `dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.10`
 
 > [!NOTE]
 > You will need to run Visual Studio as **Administrator** to be able to manage Windows Services.
