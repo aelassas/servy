@@ -120,13 +120,16 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.Empty(ExplicitRules(Path.Combine(_vault, closed), TargetSid, AccessControlType.Allow));
             }
 
-            // 6. Every hardened file stops inheriting, is owned by Administrators and keeps Full Control for it
+            // 6. Every hardened file stops inheriting, is owned by Administrators and keeps Full Control for it.
+            // The other account's inherited Modify on the vault is dropped with the inheritance, not converted
+            // into an explicit entry on the file.
             foreach (var file in result.Hardened)
             {
                 var acl = new FileInfo(Path.Combine(_vault, file)).GetAccessControl();
                 Assert.True(acl.AreAccessRulesProtected, $"{file} no longer inherits");
                 Assert.Equal(AdministratorsSid, acl.GetOwner(typeof(SecurityIdentifier)));
                 Assert.True(Has(AllowedRights(Path.Combine(_vault, file), AdministratorsSid), FileSystemRights.FullControl));
+                Assert.Equal(0, AllowedRights(Path.Combine(_vault, file), OtherSid));
             }
         }
 
