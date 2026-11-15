@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-14T23:35:18Z
+> Generated on: 2026-11-15T12:36:00Z
 
 ---
 
@@ -2095,6 +2095,7 @@ For more details on CPU affinity, see the [FAQ](https://github.com/aelassas/serv
 1. [Build Configuration Examples](https://github.com/aelassas/servy/wiki/Advanced-Configuration#build-configuration-examples)
    1. [Modern Build (.NET 10.0+)](https://github.com/aelassas/servy/wiki/Advanced-Configuration#modern-build-net-100)
    1. [Legacy Build (.NET Framework 4.8)](https://github.com/aelassas/servy/wiki/Advanced-Configuration#legacy-build-net-framework-48)
+   1. [Servy Host Service (.NET 10.0+ and .NET Framework 4.8)](https://github.com/aelassas/servy/wiki/Advanced-Configuration#servy-host-service-net-100-and-net-framework-48)
 1. [See Also](https://github.com/aelassas/servy/wiki/Advanced-Configuration#see-also)
 
 ## Introduction
@@ -2188,7 +2189,7 @@ The keys below were configurable up to v10.1. Since v10.2 Servy **ignores** them
 | `LogRollingInterval` | `None` | Date-based rotation interval: `Daily`, `Weekly`, `Monthly`, or `None`. See the Log Rolling Interval section above. Available from Servy v7.8+. |
 
 > [!NOTE]
-> The `EnableEventLog` setting is primarily respected by the **Servy Windows Service** wrapper and **Servy Windows Service Restarter** utility. Setting this in the **CLI**, **Desktop App**, or **Manager App** configuration has no effect.
+> The `EnableEventLog` setting is respected by the **Servy Windows Service** wrapper, the **Servy host service** and the **Servy Windows Service Restarter** utility. Setting this in the **CLI**, **Desktop App**, or **Manager App** configuration has no effect.
 
 > [!WARNING]
 > **Side Effect of `EnableEventLog: false` on Service Failure Diagnostics**
@@ -2223,7 +2224,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 
 | Setting | Default | Description |
 | :--- | :--- | :--- |
-| `ManagerAppPublishPath` | `.\Servy.Manager.exe` | Path to the Servy Manager app launched from the Desktop app. Resolved relative to the Desktop app's base directory if not absolute. |
+| `ManagerAppPublishPath` | `.\Servy.Manager.exe` | Path to the Servy Manager app launched from the Desktop app. A relative path is resolved against the Desktop app's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, or a path through a junction or symbolic link is refused, a `Security refusal` warning is written to `Servy.log`, and the Manager is treated as unavailable. |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
 ### Manager App Settings
@@ -2238,7 +2239,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 | `MaxBulkOperationParallelism` | `8` | Maximum concurrent SCM operations during bulk tasks. Bounded to `[1, 64]`. |
 | `SearchDebounceDelayMs` | `300` | Debounce window, in milliseconds, before the search box re-runs the filter in the Console tab. Bounded to `[100, 2000]`. |
 | `LogsWindowDays` | `3` | Number of days of Windows Event Log history shown in the Logs tab. Bounded to `[1, 30]`. |
-| `DesktopAppPublishPath` | `.\Servy.exe` | Path to the Servy desktop app launched from the Manager. Resolved relative to the Manager's base directory if not absolute. |
+| `DesktopAppPublishPath` | `.\Servy.exe` | Path to the Servy desktop app launched from the Manager. A relative path is resolved against the Manager's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, or a path through a junction or symbolic link is refused, a `Security refusal` warning is written to `Servy.Manager.log`, and the desktop app is treated as unavailable. |
 | `ServicesHiddenColumns` | `""` | Comma-separated list of services-grid column headers hidden in the Manager's Services tab, for example `Description,Log On As`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (Display Name, Description, Status, Startup Type, Log On As, PID, CPU, RAM). The Display Name column is hidden by default: the first start of the Manager adds `Display Name` to this value. |
 | `LogsHiddenColumns` | `""` | Comma-separated list of logs-grid column headers hidden in the Manager's Logs tab, for example `Event ID,Level`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the column header text (`Time`, `Level`, `Event ID`). |
 | `IsDisplayNameColumnMigrated` | `false` | One-time migration flag the Manager manages itself. While it is `false`, the next start adds `Display Name` to `ServicesHiddenColumns` and then sets it to `true`. There is no need to edit it; setting it back to `false` hides the Display Name column again on the next start. |
@@ -6855,8 +6856,8 @@ The CLI is designed as a lightweight, script-friendly alternative to the WPF int
 Acts as the shared UI infrastructure and component library. It provides the "glue" that allows `Servy` (Desktop App) and `Servy.Manager` (Manager App) to share a consistent architecture, behavior, and visual style.
 
 **Key Responsibilities:**
-* **AppBootstrapper:** Orchestrates the application lifecycle, manages the `CancellationTokenSource` for application shutdown, and handles dependency injection (DI) registration for UI-specific services.
-* **MVVM Infrastructure:** Provides the foundational implementations for the Model-View-ViewModel pattern, including `ViewModelBase`, `RelayCommand`, and the `AsyncCommand` with `IsBusy` signaling.
+* **AppBootstrapper:** Orchestrates the application lifecycle and manages the `CancellationTokenSource` for application shutdown. Dependency injection (DI) registration is done by each application's `App` class, which passes the services it needs to the bootstrapper.
+* **MVVM Infrastructure:** Provides the foundational implementations for the Model-View-ViewModel pattern, including `ViewModelBase`, `RelayCommand`, and `AsyncCommand`, which reports `CanExecute` as `false` while it is running so a command cannot be started twice.
 * **WPF Services:** Contains shared abstractions for UI-specific interactions that cannot live in the Core library, such as `IFileDialogService` (File/Save dialogs), `IMessageBoxService` (modal prompts), `IHelpService`, `ICursorService`, and `IUiDispatcher` (UI-thread marshalling).
 * **Value Converters:** Hosts `InverseBooleanConverter`, the one converter both apps share. The Manager's display converters (CPU and RAM usage, localized status, startup type, PID and log level) live in `Servy.Manager/Converters`.
 * **Design-Time Mocking:** Provides design-time data providers that allow XAML designers to visualize complex layouts without requiring a live connection to the Service Control Manager (SCM) or the SQLite database.
