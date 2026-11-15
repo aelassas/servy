@@ -19,7 +19,7 @@ namespace Servy.UI.ViewModels
         /// notifies listeners only when necessary.
         /// </summary>
         /// <typeparam name="T">Type of the property.</typeparam>
-        /// <param name="field">Reference to a field with both get and set accessors.</param>
+        /// <param name="field">Reference to the backing field of the property.</param>
         /// <param name="value">Desired value for the property.</param>
         /// <param name="propertyName">Name of the property used to notify listeners.
         /// This value is optional and can be provided automatically when invoked from compilers that support <see cref="CallerMemberNameAttribute"/>.</param>
