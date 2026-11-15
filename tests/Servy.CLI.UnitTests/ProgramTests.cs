@@ -213,8 +213,10 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep and
-            // RunAsync_UnelevatedStatusVerb_TakesTheFastPathWithoutTheElevationCheck, this is one of only three
+            // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep,
+            // RunAsync_UnelevatedStatusVerb_TakesTheFastPathWithoutTheElevationCheck,
+            // RunAsync_UpperCaseVerb_IsFoldedToLowerCaseBeforeParsing and the two RunAsync_BootstrapComplete*
+            // tests (export and import), this is one of six
             // tests that reach the single PrintAndReturnAsync line the nine MapResult verb
             // lambdas return through. Main_QuietFlagProvided_AltersExecutionToQuietPath, the
             // Main_DatabaseBoundVerb_BootstrapsDatabaseBeforeReachingItsHandler theory and the RunAsync tests
