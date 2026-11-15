@@ -32,6 +32,9 @@ namespace Servy.CLI.UnitTests.Runtime
             /// </summary>
             public List<string> Copied { get; } = new List<string>();
 
+            /// <summary>The token <see cref="CopyAsync"/> received on each call, in the order of <see cref="Copied"/>.</summary>
+            public List<CancellationToken> CopyTokens { get; } = new List<CancellationToken>();
+
             /// <summary>What <see cref="DeleteLegacyHandleExecutables"/> reports.</summary>
             public bool LegacyDeletionSucceeds { get; set; } = true;
 
@@ -42,6 +45,7 @@ namespace Servy.CLI.UnitTests.Runtime
             {
                 var resource = $"{fileName}.{extension}";
                 Copied.Add(resource);
+                CopyTokens.Add(cancellationToken);
                 return Task.FromResult(!FailingCopies.Contains(resource));
             }
 
@@ -140,6 +144,59 @@ namespace Servy.CLI.UnitTests.Runtime
             _hostInstaller.Verify(h => h.GetRunningServyServices(It.IsAny<IServiceHelper>()), Times.Once);
             _hostInstaller.Verify(h => h.StopAsync(It.IsAny<CancellationToken>()), Times.Once);
             _hostInstaller.Verify(h => h.StartAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureAsync_HostNeedsExtraction_StopsTheHostBeforeTheFirstCopy()
+        {
+            // Arrange
+            // The stop is recorded in the copy log, so its position relative to the copies is what is asserted.
+            const string hostStopped = "<host stopped>";
+            _extractor.NeedingExtraction.Add($"{AppConfig.ServyHostFileName}.exe");
+            _hostInstaller
+                .Setup(h => h.StopAsync(It.IsAny<CancellationToken>()))
+                .Callback(() => _extractor.Copied.Add(hostStopped))
+                .Returns(Task.CompletedTask);
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await bootstrapper.EnsureAsync(CancellationToken.None);
+
+            // Assert
+            Assert.Equal(hostStopped, _extractor.Copied.First());
+        }
+
+        [Fact]
+        public async Task EnsureAsync_ForwardsTheCallersTokenToTheHostInstallAndTheDependencyUpdate()
+        {
+            // Arrange
+            using var cts = new CancellationTokenSource();
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await bootstrapper.EnsureAsync(cts.Token);
+
+            // Assert
+            _hostInstaller.Verify(h => h.EnsureInstalledAndRunningAsync(It.IsAny<string>(), _serviceHelper.Object, cts.Token), Times.Once);
+            _repository.Verify(r => r.GetAllAsync(false, cts.Token), Times.Once);
+            _hostInstaller.Verify(h => h.EnsureServicesDependOnHostAsync(It.IsAny<IEnumerable<string>>(), cts.Token), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureAsync_ForwardsTheCallersTokenToThePauseAndToEveryCopy()
+        {
+            // Arrange
+            using var cts = new CancellationTokenSource();
+            _extractor.NeedingExtraction.Add($"{AppConfig.ServyHostFileName}.exe");
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await bootstrapper.EnsureAsync(cts.Token);
+
+            // Assert
+            _hostInstaller.Verify(h => h.StopAsync(cts.Token), Times.Once);
+            Assert.NotEmpty(_extractor.CopyTokens);
+            Assert.All(_extractor.CopyTokens, token => Assert.Equal(cts.Token, token));
         }
 
         [Theory]
@@ -260,6 +317,39 @@ namespace Servy.CLI.UnitTests.Runtime
             // whether or not a file was extracted (#7526).
             Assert.Equal(4, _extractor.Copied.Count);
             _hardener.Verify(h => h.SecureVaultAsync(_repository.Object, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task EnsureAsync_ReleaseBuild_SecuresTheVaultAfterTheExtraction()
+        {
+            // Arrange
+            // The purge and re-grant must cover the newly extracted files (#7526), so it is recorded after the last copy.
+            const string vaultSecured = "<vault secured>";
+            _hardener
+                .Setup(h => h.SecureVaultAsync(It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+                .Callback(() => _extractor.Copied.Add(vaultSecured))
+                .Returns(Task.CompletedTask);
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await bootstrapper.EnsureAsync(CancellationToken.None);
+
+            // Assert
+            Assert.Equal(vaultSecured, _extractor.Copied.Last());
+        }
+
+        [Fact]
+        public async Task EnsureAsync_ReleaseBuild_ForwardsTheCallersTokenToTheVaultHardening()
+        {
+            // Arrange
+            using var cts = new CancellationTokenSource();
+            var bootstrapper = CreateBootstrapper();
+
+            // Act
+            await bootstrapper.EnsureAsync(cts.Token);
+
+            // Assert
+            _hardener.Verify(h => h.SecureVaultAsync(_repository.Object, cts.Token), Times.Once);
         }
 #endif
 
