@@ -39,6 +39,8 @@ namespace Servy.Core.Helpers
         /// <remarks>
         /// This method captures a snapshot of all running processes to ensure consistency
         /// during the recursive tree walk. It handles the ".exe" extension automatically.
+        /// Intentionally retained as part of the reusable <c>Servy.Core</c> process-management API
+        /// for external or future callers; Servy's own internal call sites currently terminate by PID or file lock.
         /// </remarks>
         bool KillProcessTreeAndParents(string processName, bool killParents = true);
 

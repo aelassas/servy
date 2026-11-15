@@ -585,6 +585,10 @@ namespace Servy.Core.Helpers
         /// <param name="protectedPids">A set of protected numerical identifiers corresponding to the executing platform infrastructure.</param>
         /// <param name="snapshot">A pre-computed native map establishing hierarchical relationships and names across the system.</param>
         /// <param name="visited">A tracking set of PIDs already evaluated in this walk to prevent StackOverflow exceptions from PID-reuse cycles.</param>
+        /// <remarks>
+        /// Intentionally retained to support callers invoking <see cref="KillProcessTreeAndParents(string, bool)"/>
+        /// or <see cref="KillProcessTreeAndParents(int, bool)"/> with <c>killParents: true</c> as part of the reusable <c>Servy.Core</c> API.
+        /// </remarks>
         private void KillParentProcesses(int childPid, DateTime childStartTime, HashSet<int> protectedPids, Dictionary<int, ProcessInfoNode> snapshot, HashSet<int> visited)
         {
             // CYCLE GUARD: Prevent infinite recursion if Windows PID reuse creates a cycle in the snapshot.
