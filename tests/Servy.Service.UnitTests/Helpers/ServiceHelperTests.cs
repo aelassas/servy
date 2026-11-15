@@ -142,6 +142,36 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void LogStartupArguments_HeartbeatUrlWithCredentials_LogsMaskedUrlAndNoSecrets()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "C:\\test.exe",
+                EnableDebugLogs = false,
+                HeartbeatUrl = "https://hbUser:hbPassw0rd@hc-ping.com/12345678-abcd-ef01-2345?token=QueryTokenSecret"
+            };
+
+            var bodies = new List<string>();
+            var mockLog = new Mock<IServyLogger>();
+            mockLog
+                .Setup(l => l.Report(It.IsAny<LogLevel>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Callback<LogLevel, string, string>((level, title, body) => bodies.Add(body));
+
+            // Act
+            _helper.LogStartupArguments(options, mockLog.Object);
+
+            // Assert
+            string dump = string.Join(Environment.NewLine, bodies);
+            Assert.Contains("- heartbeatUrl: https://hc-ping.com/12345... [MASKED]", dump);
+            Assert.DoesNotContain("hbUser", dump);
+            Assert.DoesNotContain("hbPassw0rd", dump);
+            Assert.DoesNotContain("12345678-abcd", dump);
+            Assert.DoesNotContain("QueryTokenSecret", dump);
+        }
+
+        [Fact]
         public void LogStartupArguments_NullOptions_LogsError()
         {
             // Arrange
