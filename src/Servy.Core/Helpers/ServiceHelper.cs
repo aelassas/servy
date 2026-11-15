@@ -417,7 +417,7 @@ namespace Servy.Core.Helpers
         /// <param name="service">The service instance to evaluate.</param>
         /// <returns>
         /// <c>0</c> if no pre-stop executable path is configured; otherwise, the configured
-        /// <see cref="Service.PreStopTimeoutSeconds"/> or <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> as fallback.
+        /// <see cref="ServiceDto.PreStopTimeoutSeconds"/> or <see cref="AppConfig.DefaultPreStopTimeoutSeconds"/> as fallback.
         /// </returns>
         public static int ResolvePreStopTimeout(ServiceDto? service) =>
             string.IsNullOrEmpty(service?.PreStopExecutablePath)
@@ -430,7 +430,7 @@ namespace Servy.Core.Helpers
         /// <param name="service">The service instance to evaluate.</param>
         /// <returns>
         /// <c>0</c> if no pre-launch executable path is configured; otherwise, the configured
-        /// <see cref="Service.PreLaunchTimeoutSeconds"/> or <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/> as fallback.
+        /// <see cref="ServiceDto.PreLaunchTimeoutSeconds"/> or <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/> as fallback.
         /// </returns>
         public static int ResolvePreLaunchTimeout(ServiceDto? service) =>
             string.IsNullOrEmpty(service?.PreLaunchExecutablePath)
