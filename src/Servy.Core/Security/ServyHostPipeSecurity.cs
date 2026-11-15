@@ -80,6 +80,7 @@ namespace Servy.Core.Security
         /// <param name="serviceAccounts">The service accounts.</param>
         /// <param name="resolveAccount">Resolves an account name to its SID.</param>
         /// <returns>The distinct SIDs, without Local System, Administrators and the broad groups.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="resolveAccount"/> is <see langword="null"/>.</exception>
         public static IReadOnlyList<SecurityIdentifier> ResolveGrantees(IEnumerable<string>? serviceAccounts, Func<string, SecurityIdentifier?> resolveAccount)
         {
             if (resolveAccount == null) throw new ArgumentNullException(nameof(resolveAccount));
