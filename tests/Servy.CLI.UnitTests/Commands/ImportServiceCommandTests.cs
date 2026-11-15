@@ -3,6 +3,7 @@ using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
@@ -452,7 +453,12 @@ namespace Servy.CLI.UnitTests.Commands
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
             _serviceRepoMock.Setup(r => r.GetByNameAsync("OperationalService", true, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
-            _serviceManager.Setup(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+
+            Core.Services.InstallServiceOptions? captured = null;
+            _serviceManager
+                .Setup(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<Core.Services.InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
 
             // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
@@ -460,6 +466,12 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportInstallSuccess, "XML", "OperationalService"), result.Message);
+
+            // The import installs with the CLI wrapper, not the desktop app's.
+            Assert.NotNull(captured);
+            Assert.Equal("OperationalService", captured!.ServiceName);
+            Assert.Equal(realPath, captured.RealExePath);
+            Assert.Equal(AppConfig.ServyServiceCLIExe, Path.GetFileName(captured.WrapperExePath));
         }
 
         [Fact]
