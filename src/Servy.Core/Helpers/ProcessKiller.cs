@@ -460,7 +460,8 @@ namespace Servy.Core.Helpers
                 var visited = new HashSet<int>();
 
                 // HARDENING: Resolve start time safely to prevent Win32Exception/InvalidOperationException from aborting the pipeline.
-                // If query access is denied or the process is short-lived, it falls back to MinValue to ensure the tree kill continues.
+                // If query access is denied or the process is short-lived, it falls back to MinValue: WalkAndKillChildren then skips the
+                // descendants (its PID-reuse guard fails safe) and only the root process below is killed.
                 DateTime rootStartTime = SafeStartTime(process);
                 if (rootStartTime == DateTime.MinValue)
                 {
