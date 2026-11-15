@@ -1460,6 +1460,13 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal("0,2-3", RowValue(result.Message, CliStrings.Msg_Show_Label_CpuAffinity));
+
+            // Leading-block rows are not indented, and the row sits between Priority and Executable.
+            var lines = (result.Message ?? string.Empty).Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+            var index = lines.FindIndex(l => l.StartsWith(CliStrings.Msg_Show_Label_CpuAffinity + " ", StringComparison.Ordinal));
+            Assert.True(index > 0, "The CPU Affinity row is missing or indented under a section heading.");
+            Assert.StartsWith(CliStrings.Msg_Show_Label_Priority + " ", lines[index - 1], StringComparison.Ordinal);
+            Assert.StartsWith(CliStrings.Msg_Show_Label_Executable + " ", lines[index + 1], StringComparison.Ordinal);
         }
 
         [Fact]
