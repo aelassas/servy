@@ -14,6 +14,7 @@ namespace Servy.Core.Services
         /// <b>The caller owns the returned wrapper and must dispose it</b>; it holds a live Service
         /// Control Manager handle, the same as each element <see cref="GetServices"/> returns.
         /// </returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null, empty or white space.</exception>
         IServiceControllerWrapper GetService(string serviceName);
 
         /// <summary>
