@@ -232,6 +232,56 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         /// <summary>
+        /// The fallback catch filter in the finally block also handles ArgumentException and InvalidOperationException
+        /// (ObjectDisposedException derives from the latter, as when Console.Out was replaced by a disposed writer).
+        /// Each row makes the clearing write throw that type; none may escape the finally block, and the fallback
+        /// newline must still be written. Dropping either term from the filter fails its rows.
+        /// </summary>
+        [Theory]
+        [InlineData(typeof(ArgumentException))]
+        [InlineData(typeof(InvalidOperationException))]
+        [InlineData(typeof(ObjectDisposedException))]
+        public async Task RunWithLoadingAnimation_WhenLineClearingHitsAnotherHandledException_ExecutesFallbackNewline(Type exceptionType)
+        {
+            // Arrange
+            Func<Task> dummyAction = () => Task.Delay(50);
+            Exception fault = exceptionType == typeof(ObjectDisposedException)
+                ? new ObjectDisposedException("Console.Out")
+                : (Exception)Activator.CreateInstance(exceptionType, "Simulated failure on the clearing write.");
+
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 80);
+
+            try
+            {
+                using (var faultingWriter = new FaultingStringWriter(fault))
+                {
+                    var originalOut = Console.Out;
+                    Console.SetOut(faultingWriter);
+
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Fallback...");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    // The exception did not escape the finally block, and the fallback newline was written.
+                    Assert.True(faultingWriter.IsFallbackWriteLineCalled);
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, null);
+            }
+        }
+
+        /// <summary>
         /// A zero window width has no line to clear. The width guard must skip the clearing write, because
         /// "new string(' ', width - 1)" throws for a width of 0 and the catch would then print a stray fallback newline.
         /// </summary>
@@ -579,6 +629,13 @@ namespace Servy.CLI.UnitTests.Helpers
         /// </summary>
         private class FaultingStringWriter : StringWriter
         {
+            private readonly Exception _fault;
+
+            public FaultingStringWriter(Exception fault = null)
+            {
+                _fault = fault ?? new IOException("The handle is invalid or screen buffer configuration lost.");
+            }
+
             public bool IsFallbackWriteLineCalled { get; private set; }
 
             public override void Write(string value)
@@ -591,7 +648,7 @@ namespace Servy.CLI.UnitTests.Helpers
                 // with "\r", so match on that and leave the spinner alone.
                 if (value != null && value.StartsWith("\r") && value.EndsWith("\r") && value.Contains(" "))
                 {
-                    throw new IOException("The handle is invalid or screen buffer configuration lost.");
+                    throw _fault;
                 }
                 base.Write(value);
             }
