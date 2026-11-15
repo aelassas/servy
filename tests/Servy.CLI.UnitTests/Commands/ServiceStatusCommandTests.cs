@@ -29,6 +29,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_ServiceStatusAction, serviceName);
 
+        protected override string ExpectedSuggestion => Strings.Msg_ServiceStatusSuggestion;
+
         protected override string ExpectedCommandName => "status";
 
         protected override async Task<CommandResult> ExecuteCommandAsync(ServiceStatusCommand command, ServiceStatusOptions options)

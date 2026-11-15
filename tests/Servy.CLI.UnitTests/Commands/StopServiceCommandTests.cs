@@ -25,6 +25,8 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_StopServiceAction, serviceName);
 
+        protected override string ExpectedSuggestion => Strings.Msg_StopServiceSuggestion;
+
         protected override string ExpectedCommandName => "stop";
 
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)

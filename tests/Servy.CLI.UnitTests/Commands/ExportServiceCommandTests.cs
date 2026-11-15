@@ -214,7 +214,11 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains(string.Format(Strings.Msg_ExportServiceAction, "svc"), result.Message);
+            Assert.Equal(
+                string.Format(Strings.Msg_CommandFailedTemplate, string.Format(Strings.Msg_ExportServiceAction, "svc"), "boom")
+                    + Environment.NewLine
+                    + string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_ExportServiceSuggestion),
+                result.Message);
         }
 
         #endregion

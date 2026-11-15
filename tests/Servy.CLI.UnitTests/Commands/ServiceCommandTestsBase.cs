@@ -85,6 +85,12 @@ namespace Servy.CLI.UnitTests.Commands
         protected abstract string ExpectedGenericActionMessage(string serviceName);
 
         /// <summary>
+        /// When overridden in a derived class, returns the suggestion the command under test passes to
+        /// <c>BaseCommand.ExecuteWithHandling</c>/<c>ExecuteWithHandlingAsync</c>.
+        /// </summary>
+        protected abstract string ExpectedSuggestion { get; }
+
+        /// <summary>
         /// When overridden in a derived class, returns the command name the command under test passes to
         /// <c>BaseCommand.ExecuteWithHandling</c>/<c>ExecuteWithHandlingAsync</c> (e.g. "start", "stop"),
         /// which is the value formatted into <see cref="CliStrings.Msg_CommandCancelled"/>.
@@ -259,13 +265,17 @@ namespace Servy.CLI.UnitTests.Commands
             const string serviceName = "TestService";
             var options = CreateValidOptions(serviceName);
             SetupServiceManagerException<Exception>(MockServiceManager, serviceName);
+            var expectedMessage =
+                string.Format(CliStrings.Msg_CommandFailedTemplate, ExpectedGenericActionMessage(serviceName), new Exception().Message)
+                + Environment.NewLine
+                + string.Format(CliStrings.Msg_SuggestionTemplate, ExpectedSuggestion);
 
             // Act
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
+            Assert.Equal(expectedMessage, result.Message);
         }
 
         /// <summary>

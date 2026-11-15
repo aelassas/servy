@@ -193,14 +193,18 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
-                .Throws<Exception>();
+                .Throws(new InvalidOperationException("boom"));
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
+            Assert.Equal(
+                string.Format(Strings.Msg_CommandFailedTemplate, string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), "boom")
+                    + Environment.NewLine
+                    + string.Format(Strings.Msg_SuggestionTemplate, Strings.Msg_InstallServiceSuggestion),
+                result.Message);
         }
 
         [Fact]
