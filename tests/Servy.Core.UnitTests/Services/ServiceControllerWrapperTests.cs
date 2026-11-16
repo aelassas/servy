@@ -651,6 +651,99 @@ namespace Servy.Core.UnitTests.Services
             }
         }
 
+        [Fact]
+        public void GetDependencies_DisplayNamesThatDifferInCase_SortsCaseInsensitively()
+        {
+            // Arrange: an ordinal sort puts every capital before every lower-case letter,
+            // so it would list "Zulu Service" before "alpha service" (#7943)
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ServiceZ", "ServiceA" });
+                var mockZ = CreateMockWrapper("ServiceZ", "Zulu Service", ServiceControllerStatus.Running, Array.Empty<string>());
+                var mockA = CreateMockWrapper("ServiceA", "alpha service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ServiceZ", mockZ.Object },
+                    { "ServiceA", mockA.Object }
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(name => mocks[name], TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(new[] { "alpha service", "Zulu Service" }, result.Dependencies.Select(n => n.DisplayName).ToArray());
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_CycleNamedInAnotherCase_MarksRevisitedNodeAsCyclic()
+        {
+            // Arrange: ServiceA -> ServiceB -> servicea. The SCM treats both spellings as one service,
+            // so the second visit is a cycle although the strings differ (#7943).
+            using (var wrapper = new ServiceControllerWrapper("ServiceA"))
+            {
+                var mockA = CreateMockWrapper("ServiceA", "Service A", ServiceControllerStatus.Running, new[] { "ServiceB" });
+                var mockB = CreateMockWrapper("ServiceB", "Service B", ServiceControllerStatus.Running, new[] { "servicea" });
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "ServiceA", mockA.Object },
+                    { "ServiceB", mockB.Object }
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(name => mocks[name], TestContext.Current.CancellationToken);
+
+                // Assert
+                var nodeB = Assert.Single(result.Dependencies);
+                var revisited = Assert.Single(nodeB.Dependencies);
+                Assert.True(revisited.IsCyclic);
+                Assert.Empty(revisited.Dependencies);
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_SharedDependencyNamedInAnotherCase_ResolvesFromCache()
+        {
+            // Arrange: Root -> [ServiceB, ServiceC]; ServiceB names the shared service "ServiceShared",
+            // ServiceC names it "SERVICESHARED" (#7943)
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ServiceB", "ServiceC" });
+                var mockB = CreateMockWrapper("ServiceB", "Service B", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockC = CreateMockWrapper("ServiceC", "Service C", ServiceControllerStatus.Running, new[] { "SERVICESHARED" });
+                var mockShared = CreateMockWrapper("ServiceShared", "Shared Service", ServiceControllerStatus.Running, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ServiceB", mockB.Object },
+                    { "ServiceC", mockC.Object },
+                    { "ServiceShared", mockShared.Object }
+                };
+
+                int sharedFactoryInvocations = 0;
+                Func<string, IServiceControllerWrapper> factory = name =>
+                {
+                    if (string.Equals(name, "ServiceShared", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sharedFactoryInvocations++;
+                    }
+                    return mocks[name];
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);
+
+                // Assert: both parents show the shared service, and it was opened once
+                Assert.Equal(2, result.Dependencies.Count);
+                Assert.All(result.Dependencies, parent => Assert.Single(parent.Dependencies));
+                Assert.Equal(1, sharedFactoryInvocations);
+            }
+        }
+
         #endregion
 
         #region Test Helpers
