@@ -370,6 +370,23 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
+        /// Covers the accepting side of Branch 3: a name of exactly AppConfig.MaxServiceNameLength characters is valid.
+        /// </summary>
+        [Fact]
+        public void IsServiceNameValid_ExactlyAtMaxLength_ReturnsSuccess()
+        {
+            // Arrange
+            string atCap = new string('a', AppConfig.MaxServiceNameLength);
+
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(atCap);
+
+            // Assert
+            Assert.True(isValid);
+            Assert.Equal(string.Empty, error);
+        }
+
+        /// <summary>
         /// Covers Branch 3a: serviceName.IndexOfAny(InvalidServiceChars) >= 0
         /// </summary>
         [Theory]
