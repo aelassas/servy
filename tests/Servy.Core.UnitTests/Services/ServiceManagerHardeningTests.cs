@@ -332,7 +332,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result.IsSuccess);
             _serviceRepository.Verify(r => r.DeleteAsync(legacyName, It.IsAny<CancellationToken>()), Times.Once);
             _hardener.Verify(h => h.HardenServiceAsync(It.IsAny<string>(), @".\new-account", It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", It.IsAny<string?>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
             _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
