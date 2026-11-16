@@ -1115,6 +1115,12 @@ namespace Servy.Manager.UnitTests.Services
             Assert.False(await sut.StartServiceAsync(null, cancellationToken: TestContext.Current.CancellationToken));
             Assert.False(await sut.StartServiceAsync(new Service { Name = "" }, cancellationToken: TestContext.Current.CancellationToken));
             Assert.False(await sut.StartServiceAsync(new Service { Name = "  " }, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await sut.StopServiceAsync(null, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await sut.StopServiceAsync(new Service { Name = "" }, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await sut.StopServiceAsync(new Service { Name = "  " }, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await sut.RestartServiceAsync(null, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await sut.RestartServiceAsync(new Service { Name = "" }, cancellationToken: TestContext.Current.CancellationToken));
+            Assert.False(await sut.RestartServiceAsync(new Service { Name = "  " }, cancellationToken: TestContext.Current.CancellationToken));
         }
 
         [Fact]
