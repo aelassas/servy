@@ -256,10 +256,29 @@ namespace Servy.Core.UnitTests.Security
             {
                 string input = "SERVY_ENC:NotBase64!";
 
-                // Act & Assert
+                // Act
                 // Since the string has a marker, it MUST succeed or fail loud.
                 // Returning a substring is no longer permitted as it masks integrity issues.
-                Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+
+                // Assert: a payload without a version tag is cut at 8 characters, never echoed whole (#1382)
+                Assert.Equal("Unsupported encryption version marker: 'NotBase6'", ex.Message);
+            }
+        }
+
+        [Fact]
+        public void Decrypt_MarkedUnknownVersionLongerThanTheSnippetCap_IsCutAtEightCharacters()
+        {
+            // Arrange: a 14-character tag in front of the colon, so the cap and not the colon decides the cut
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                string input = "SERVY_ENC:LongVersionTag:payload";
+
+                // Act
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+
+                // Assert
+                Assert.Equal("Unsupported encryption version marker: 'LongVers'", ex.Message);
             }
         }
 
@@ -270,8 +289,8 @@ namespace Servy.Core.UnitTests.Security
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 // "v3:payload" carries an unrecognized version tag followed by a colon, so the
-                // snippet is capped at the tag. The existing "SERVY_ENC:NotBase64!" case has no
-                // colon at all and only reaches the other arm of that cap.
+                // snippet is capped at the tag. The "SERVY_ENC:NotBase64!" case has no
+                // colon at all and pins the other arm of that cap.
                 string input = "SERVY_ENC:v3:payload";
 
                 // Act & Assert
