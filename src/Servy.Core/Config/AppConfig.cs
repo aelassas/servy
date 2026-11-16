@@ -1574,7 +1574,7 @@ namespace Servy.Core.Config
         public const int PreLaunchRetryInitialDelayMs = 1_000;
 
         /// <summary>
-        /// The maximum cumulative delay in milliseconds allowed between pre-launch process retry attempts.
+        /// The cap, in milliseconds, on the delay before each pre-launch process retry attempt; the delays are not summed against it.
         /// </summary>
         public const int PreLaunchRetryMaxDelayMs = 10_000;
 
