@@ -191,6 +191,45 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void Refresh_Application_ChangedExpandableValueHeldExpandedByTheProcess_IsUpdated()
+        {
+            // Arrange: a REG_EXPAND_SZ value is read raw from the registry, the process holds it expanded
+            var root = UniqueName();
+            var name = UniqueName();
+            Environment.SetEnvironmentVariable(root, @"C:\Root");
+            _system![name] = $@"%{root}%\jdk-17";
+            Environment.SetEnvironmentVariable(name, @"C:\Root\jdk-17");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = $@"%{root}%\jdk-21";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"C:\Root\jdk-21", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_ProcessValueThatOnlyBeginsWithTheOldSystemValue_IsKeptAsAnOverride()
+        {
+            // Arrange: the process value starts with the baseline value, but not at a ';' boundary
+            var name = UniqueName();
+            _system![name] = @"C:\Java\jdk-2";
+            Environment.SetEnvironmentVariable(name, @"C:\Java\jdk-21");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = @"C:\Java\jdk-3";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.DoesNotContain(name, _setNames);
+            Assert.Equal(@"C:\Java\jdk-21", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
         public void Refresh_Application_RemovedVariable_IsRemovedOnlyWhenStillTheSystemValue()
         {
             // Arrange
@@ -400,6 +439,26 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(@"C:\Sys1;C:\Sys2;C:\User", Environment.GetEnvironmentVariable(path));
+        }
+
+        [Fact]
+        public void Refresh_Service_PathWithAnExpandableUserValue_AppendsTheUserValueExpanded()
+        {
+            // Arrange: the user's Path refers to another variable, as %USERPROFILE%\... does
+            var home = UniqueName();
+            var path = UniqueName();
+            Environment.SetEnvironmentVariable(home, @"C:\Users\svc");
+            Environment.SetEnvironmentVariable(path, @"C:\Old");
+            _system![path] = @"C:\Sys1";
+            _user[path] = $@"%{home}%\bin";
+            var refresher = CreateRefresher(path);
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"C:\Sys1;C:\Users\svc\bin", Environment.GetEnvironmentVariable(path));
         }
 
         [Fact]
