@@ -588,19 +588,27 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task UninstallService_OrphanDatabaseRecord_RevokesItsAccount()
+        public async Task UninstallService_OrphanDatabaseRecord_RevokesItsAccountForThatServiceAfterTheDelete()
         {
             // Arrange: the SCM entry is already gone, only the database row remains
             _windowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), ServiceName, It.IsAny<uint>())).Returns(() => _handles.Service(0));
             _win32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
             ArrangeRecord(@".\svc-account");
+            var order = new List<string>();
+            _serviceRepository.Setup(r => r.DeleteAsync(ServiceName, It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("delete")).ReturnsAsync(1);
+            _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("revoke")).ReturnsAsync(true);
 
             // Act
             var result = await CreateUninstallManager().UninstallServiceAsync(ServiceName, CancellationToken.None);
 
             // Assert
             Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", It.IsAny<string>(), _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+
+            // The real RevokeIfUnusedAsync reads the remaining records, so it must run after the orphan row is gone
+            Assert.Equal(new[] { "delete", "revoke" }, order);
         }
 
         [Fact]
