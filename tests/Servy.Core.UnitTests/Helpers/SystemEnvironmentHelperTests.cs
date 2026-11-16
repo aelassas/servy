@@ -1,6 +1,7 @@
 using Servy.Core.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -486,6 +487,124 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal("now", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Service_PathNameInAnotherCaseThanTheRegistryName_StillJoinsBothValues()
+        {
+            // Arrange: the registry names the variable in lower case, the refresher was given it in upper case
+            var path = UniqueName();
+            Environment.SetEnvironmentVariable(path, @"C:\Old");
+            _system[path.ToLowerInvariant()] = @"C:\Sys1";
+            _user[path] = @"C:\User";
+            var refresher = CreateRefresher(path.ToUpperInvariant());
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"C:\Sys1;C:\User", Environment.GetEnvironmentVariable(path));
+        }
+
+        [Fact]
+        public void Refresh_Service_EmptyUserVariableOfTheSameName_DoesNotHideTheSystemValue()
+        {
+            // Arrange
+            var name = UniqueName();
+            Environment.SetEnvironmentVariable(name, "boot");
+            _system[name] = "now";
+            _user[name] = string.Empty;
+            var refresher = CreateRefresher();
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal("now", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void Refresh_Application_ChangedListPrefixHeldInAnotherCase_KeepsTheUserPart()
+        {
+            // Arrange: the process holds the System part in lower case, followed by the user's
+            var name = UniqueName();
+            _system[name] = @"C:\Sys1";
+            Environment.SetEnvironmentVariable(name, @"c:\sys1;C:\User1");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = @"C:\Sys1;C:\Sys2";
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(@"C:\Sys1;C:\Sys2;C:\User1", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void CaptureBaseline_CalledTwice_KeepsTheFirstBaseline()
+        {
+            // Arrange: the System value changes between the two calls
+            var name = UniqueName();
+            _system[name] = "v1";
+            Environment.SetEnvironmentVariable(name, "v1");
+            var refresher = CreateRefresher();
+            refresher.CaptureBaseline();
+            _system[name] = "v2";
+            refresher.CaptureBaseline();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert: the change is still measured against v1, so it is applied
+            Assert.Equal("v2", Environment.GetEnvironmentVariable(name));
+        }
+
+        [Fact]
+        public void CaptureBaseline_RegistryUnreadable_DoesNotThrow_AndTheNextRefreshOnlyAddsMissingVariables()
+        {
+            // Arrange
+            var held = UniqueName();
+            var added = UniqueName();
+            Environment.SetEnvironmentVariable(held, "own");
+            var refresher = CreateRefresher();
+            var readable = _system;
+            _system = null;
+
+            // Act
+            var ex = Record.Exception(() => refresher.CaptureBaseline());
+            _system = readable;
+            _system[held] = "registry";
+            _system[added] = "new";
+            refresher.Refresh();
+
+            // Assert
+            Assert.Null(ex);
+            Assert.Equal("own", Environment.GetEnvironmentVariable(held));
+            Assert.Equal("new", Environment.GetEnvironmentVariable(added));
+        }
+
+        [Fact]
+        public void Refresh_Service_SetsAChangedVariableOnce_AndNeverSetsOneThatIsAlreadyCurrent()
+        {
+            // Arrange
+            var stale = UniqueName();
+            var current = UniqueName();
+            Environment.SetEnvironmentVariable(stale, "boot");
+            Environment.SetEnvironmentVariable(current, "now");
+            _system[stale] = "now";
+            _system[current] = "now";
+            var refresher = CreateRefresher();
+            refresher.UseRegistryAsSource();
+
+            // Act
+            refresher.Refresh();
+
+            // Assert
+            Assert.Equal(1, _setNames.Count(n => n == stale));
+            Assert.DoesNotContain(current, _setNames);
         }
     }
 }
