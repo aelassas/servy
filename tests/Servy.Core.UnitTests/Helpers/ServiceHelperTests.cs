@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
 using System;
+using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1883,6 +1884,25 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, result);
+        }
+
+        #endregion
+
+        #region WrapperExecutableNames Tests
+
+        [Fact]
+        public void WrapperExecutableNames_ListsTheServiceWrappersOfBothBuilds()
+        {
+            // Arrange
+            var expected = new[] { "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Service.Net48.exe", "Servy.Service.CLI.Net48.exe" };
+
+            // Act
+            var actual = ServiceHelper.WrapperExecutableNames;
+
+            // Assert
+            Assert.Equal(expected.OrderBy(n => n, StringComparer.Ordinal), actual.OrderBy(n => n, StringComparer.Ordinal));
+            Assert.Contains(AppConfig.ServyServiceUIExe, actual);
+            Assert.Contains(AppConfig.ServyServiceCLIExe, actual);
         }
 
         #endregion

@@ -10,7 +10,8 @@ namespace Servy.Core.Helpers
     public interface IServiceHelper
     {
         /// <summary>
-        /// Gets the names of all currently running Servy services (GUI and CLI).
+        /// Gets the names of all currently running Servy services (GUI and CLI), whichever build (net10 or net48)
+        /// installed them.
         /// </summary>
         /// <returns>A list of service names.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the Service Control Manager cannot be opened or queried.</exception>

@@ -24,6 +24,16 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ServiceHelper : IServiceHelper
     {
+        /// <summary>
+        /// The file names of the service wrappers of the .NET 10 and the .NET Framework 4.8 build. After a switch between
+        /// the two builds, the services the other build installed still run its wrappers, and they are Servy services too:
+        /// they are stopped while the binaries are replaced and must be started again afterwards (#7941).
+        /// </summary>
+        internal static readonly string[] WrapperExecutableNames =
+        {
+            "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Service.Net48.exe", "Servy.Service.CLI.Net48.exe"
+        };
+
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceControllerProvider _serviceControllerProvider;
 
@@ -73,11 +83,7 @@ namespace Servy.Core.Helpers
         [ExcludeFromCodeCoverage]
         public List<string> GetRunningServyServices()
         {
-            var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                AppConfig.ServyServiceUIExe,
-                AppConfig.ServyServiceCLIExe
-            };
+            var wrapperExes = new HashSet<string>(WrapperExecutableNames, StringComparer.OrdinalIgnoreCase);
             return GetRunningServices(wrapperExes);
         }
 
