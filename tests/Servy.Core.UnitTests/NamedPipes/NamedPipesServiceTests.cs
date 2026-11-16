@@ -490,6 +490,71 @@ namespace Servy.Core.UnitTests.NamedPipes
             }
         }
 
+        [Fact]
+        public async Task Read_TwoFramesBackToBack_FirstLargerThanTheInitialBuffer_LeavesTheSecondFrameUnread()
+        {
+            // Arrange: a first frame above the 4 KB starting buffer and not a power-of-two multiple of it, then a second frame (#7935)
+            var ct = TestContext.Current.CancellationToken;
+            var first = new IpcRequestDto { Action = "GetByName", ServiceName = new string('a', 5000) };
+            byte[] bytes;
+            int firstLength;
+            using (var buffer = new MemoryStream())
+            {
+                _sut.Write(buffer, first, ct);
+                firstLength = (int)buffer.Length - 4;
+                _sut.Write(buffer, new IpcRequestDto { Action = "GetByName", ServiceName = "second" }, ct);
+                bytes = buffer.ToArray();
+            }
+
+            using (var sync = new BufferRecordingStream(bytes))
+            using (var async = new BufferRecordingStream(bytes))
+            {
+                // Act
+                var syncFirst = _sut.Read<IpcRequestDto>(sync, ct);
+                var syncSecond = _sut.Read<IpcRequestDto>(sync, ct);
+                var asyncFirst = await _sut.ReadAsync<IpcRequestDto>(async, ct);
+                var asyncSecond = await _sut.ReadAsync<IpcRequestDto>(async, ct);
+
+                // Assert: the buffer never grew past the first frame, so the second frame was still there to read
+                Assert.Equal(first.ServiceName, syncFirst!.ServiceName);
+                Assert.Equal("second", syncSecond!.ServiceName);
+                Assert.Equal(first.ServiceName, asyncFirst!.ServiceName);
+                Assert.Equal("second", asyncSecond!.ServiceName);
+                Assert.Equal(firstLength, sync.LargestBuffer);
+                Assert.Equal(firstLength, async.LargestBuffer);
+            }
+        }
+
+        [Fact]
+        public async Task Read_TwoSmallFramesBackToBack_EachReadTakesExactlyOneFrame()
+        {
+            // Arrange: two frames far below the 4 KB starting buffer (#7935)
+            var ct = TestContext.Current.CancellationToken;
+            byte[] bytes;
+            using (var buffer = new MemoryStream())
+            {
+                _sut.Write(buffer, new IpcRequestDto { Action = "GetByName", ServiceName = "one" }, ct);
+                _sut.Write(buffer, new IpcRequestDto { Action = "GetByName", ServiceName = "two" }, ct);
+                bytes = buffer.ToArray();
+            }
+
+            using (var sync = new MemoryStream(bytes))
+            using (var async = new MemoryStream(bytes))
+            {
+                // Act
+                var syncFirst = _sut.Read<IpcRequestDto>(sync, ct);
+                var syncSecond = _sut.Read<IpcRequestDto>(sync, ct);
+                var asyncFirst = await _sut.ReadAsync<IpcRequestDto>(async, ct);
+                var asyncSecond = await _sut.ReadAsync<IpcRequestDto>(async, ct);
+
+                // Assert
+                Assert.Equal("one", syncFirst!.ServiceName);
+                Assert.Equal("two", syncSecond!.ServiceName);
+                Assert.Equal("one", asyncFirst!.ServiceName);
+                Assert.Equal("two", asyncSecond!.ServiceName);
+            }
+        }
+
         #endregion
 
         #region Request Argument Contract
