@@ -297,6 +297,73 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void GetDependencies_DependencyThatIsNotRunning_IsReportedAsNotRunning()
+        {
+            // Arrange: one running, one stopped and one paused dependency; the display names fix the order
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ServiceUp", "ServiceDown", "ServicePaused" });
+                var mockUp = CreateMockWrapper("ServiceUp", "A Up", ServiceControllerStatus.Running, Array.Empty<string>());
+                var mockDown = CreateMockWrapper("ServiceDown", "B Down", ServiceControllerStatus.Stopped, Array.Empty<string>());
+                var mockPaused = CreateMockWrapper("ServicePaused", "C Paused", ServiceControllerStatus.Paused, Array.Empty<string>());
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ServiceUp", mockUp.Object },
+                    { "ServiceDown", mockDown.Object },
+                    { "ServicePaused", mockPaused.Object }
+                };
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(name => mocks[name], TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(new[] { true, false, false }, result.Dependencies.Select(n => n.IsRunning).ToArray());
+            }
+        }
+
+        [Fact]
+        public void GetDependencies_SharedDependency_CloneKeepsItsDisplayNameItsStateAndItsUnavailableChild()
+        {
+            // Arrange: Root -> [ServiceB, ServiceC]; both depend on ServiceShared, whose own dependency cannot be resolved
+            using (var wrapper = new ServiceControllerWrapper("Root"))
+            {
+                var mockRoot = CreateMockWrapper("Root", "Root Service", ServiceControllerStatus.Running, new[] { "ServiceB", "ServiceC" });
+                var mockB = CreateMockWrapper("ServiceB", "Service B", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockC = CreateMockWrapper("ServiceC", "Service C", ServiceControllerStatus.Running, new[] { "ServiceShared" });
+                var mockShared = CreateMockWrapper("ServiceShared", "Shared Display", ServiceControllerStatus.Running, new[] { "Missing" });
+
+                var mocks = new Dictionary<string, IServiceControllerWrapper>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Root", mockRoot.Object },
+                    { "ServiceB", mockB.Object },
+                    { "ServiceC", mockC.Object },
+                    { "ServiceShared", mockShared.Object }
+                };
+
+                Func<string, IServiceControllerWrapper> factory = name =>
+                    mocks.TryGetValue(name, out var mock)
+                        ? mock
+                        : throw new InvalidOperationException($"Service {name} was not found on computer '.'.");
+
+                // Act
+                var result = wrapper.GetDependenciesInternal(factory, TestContext.Current.CancellationToken);
+
+                // Assert: the node under ServiceC is the clone of the one built under ServiceB
+                var built = result.Dependencies[0].Dependencies.Single();
+                var clone = result.Dependencies[1].Dependencies.Single();
+                Assert.NotSame(built, clone);
+                Assert.Equal("Shared Display", clone.DisplayName);
+                Assert.True(clone.IsRunning);
+
+                var missing = Assert.Single(clone.Dependencies);
+                Assert.True(missing.IsUnavailable);
+                Assert.Equal(string.Format(Strings.Msg_DependencyUnavailable, "Missing"), missing.DisplayName);
+            }
+        }
+
+        [Fact]
         public void GetDependencies_TokenAlreadyCancelled_ThrowsOperationCanceledException()
         {
             // Arrange
