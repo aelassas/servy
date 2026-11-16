@@ -1157,6 +1157,78 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expectKilled, supervisor.Killed);
         }
 
+        /// <summary>
+        /// Pins the reserved-PID refusal of the by-PID overload: a process at or below
+        /// <see cref="AppConfig.MaxReservedSystemPid"/> is refused whatever its name, the next PID is an ordinary process.
+        /// </summary>
+        [Theory]
+        [InlineData(4, false)] // System: reserved, refused whatever its name
+        [InlineData(5, true)]  // first PID above the reserved range: an ordinary process
+        public void KillProcessTreeAndParents_ByPid_ReservedSystemPid_IsRefused(int pid, bool expectKilled)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var process = new FakeSystemProcess
+            {
+                Id = pid,
+                ProcessName = "notcritical",
+                ExecutablePath = @"C:\Apps\notcritical.exe",
+                StartTime = DateTime.UtcNow
+            };
+
+            accessor.Processes[pid] = process;
+            accessor.Snapshot[pid] = new ProcessInfoNode { ParentId = 0, Name = "notcritical.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(pid, killParents: false);
+
+            // Assert
+            Assert.Equal(expectKilled, result);
+            Assert.Equal(expectKilled, process.Killed);
+        }
+
+        /// <summary>
+        /// Pins every arm of the system-directory provenance check: a critical name is protected under SysWOW64, SystemApps,
+        /// WinSxS or as the Windows-root explorer.exe, and only there (a shared prefix or the Windows root itself is not enough).
+        /// </summary>
+        [Theory]
+        [InlineData("svchost.exe", @"SysWOW64\svchost.exe", false)]
+        [InlineData("searchhost.exe", @"SystemApps\Contoso.Search\SearchHost.exe", false)]
+        [InlineData("wmiprvse.exe", @"WinSxS\amd64_contoso\WmiPrvSE.exe", false)]
+        [InlineData("explorer.exe", @"explorer.exe", false)]
+        [InlineData("svchost.exe", @"System32Evil\svchost.exe", true)] // shares the prefix, not the directory
+        [InlineData("svchost.exe", @"svchost.exe", true)]              // the Windows root itself is not a system directory
+        public void WalkAndKillChildren_CriticalNameUnderTheWindowsDirectory_IsProtectedOnlyInASystemDirectory(
+            string processName, string pathUnderWindows, bool expectKilled)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "wrapped_service", StartTime = now.AddMinutes(-10) };
+            var child = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = processName,
+                ExecutablePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), pathUnderWindows),
+                StartTime = now.AddMinutes(-5)
+            };
+
+            accessor.Processes[100] = parent;
+            accessor.Processes[200] = child;
+            accessor.ByParent[100] = new List<int> { 200 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillChildren(100);
+
+            // Assert
+            Assert.Equal(expectKilled, child.Killed);
+        }
+
         #endregion
     }
 }
