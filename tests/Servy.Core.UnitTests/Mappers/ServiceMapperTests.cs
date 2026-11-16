@@ -235,6 +235,26 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
+        public void ToDomain_OutOfRangeEnumIntegers_FallBackToTheirConfiguredDefaults()
+        {
+            // Arrange: 999 is not a member of any of the four enums, so ParseEnum must reject it
+            var dto = CreateFullyPopulatedDto();
+            dto.StartupType = 999;
+            dto.Priority = 999;
+            dto.DateRotationType = 999;
+            dto.RecoveryAction = 999;
+
+            // Act
+            var service = ServiceDtoMapper.ToDomain(_serviceManagerMock.Object, dto);
+
+            // Assert: each property holds its configured default, not the raw cast of 999
+            Assert.Equal(AppConfig.DefaultStartupType, service.StartupType);
+            Assert.Equal(AppConfig.DefaultProcessPriority, service.Priority);
+            Assert.Equal(AppConfig.DefaultDateRotationType, service.DateRotationType);
+            Assert.Equal(AppConfig.DefaultRecoveryAction, service.RecoveryAction);
+        }
+
+        [Fact]
         public void ToDomain_DoesNotMutateInputDto()
         {
             // Arrange: a fully populated DTO, so an overwrite or a clear is observable. A DTO left
