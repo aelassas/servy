@@ -876,6 +876,8 @@ namespace Servy.Core.UnitTests.IO
         [InlineData(DateRotationType.Monthly, "2026-06-01T00:05:00", "2026-05-31T23:50:00")]
         // Weekly: forward two days, same ISO week (Monday -> Wednesday, both week 16) and under 7 days.
         [InlineData(DateRotationType.Weekly, "2026-04-13T10:00:00", "2026-04-15T10:00:00")]
+        // Monthly: forward two weeks inside the same month.
+        [InlineData(DateRotationType.Monthly, "2026-06-01T00:05:00", "2026-06-15T10:00:00")]
         public void ShouldRotateByDate_WeeklyAndMonthly_DoNotRotate_OnBackwardClockOrSameWeek(DateRotationType type, string last, string now)
         {
             // Arrange
@@ -1539,6 +1541,111 @@ namespace Servy.Core.UnitTests.IO
                 // Verify the original file still exists because the external lock blocked the File.Move
                 Assert.True(File.Exists(filePath), "The original log file should still exist because rotation was deferred.");
             }
+        }
+
+        [Fact]
+        public void Write_SizeRotationDisabled_DoesNotRotatePastTheThreshold()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "size_off.log");
+
+            // Act
+            using (var writer = CreateWriter(filePath, enableSizeRotation: false, rotationSizeInBytes: 5))
+            {
+                writer.Write("123456"); // 6 bytes, over the 5-byte threshold
+                writer.Write("789");
+            }
+
+            // Assert
+            var rotated = Directory.GetFiles(TempDirectory, "size_off.*.log").Where(f => !f.EndsWith("size_off.log"));
+            Assert.Empty(rotated);
+            Assert.Equal("123456789", File.ReadAllText(filePath));
+        }
+
+        [Fact]
+        public void WriteLine_DateRotationDisabled_DoesNotRotateAfterTheDayChanged()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "date_off.log");
+            var fixedTime = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
+
+            // Act
+            using (var writer = CreateWriter(filePath, false, 0, false, DateRotationType.Daily, 0, false, () => fixedTime))
+            {
+                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddDays(-1));
+                writer.WriteLine("no date rotation");
+            }
+
+            // Assert
+            var rotated = Directory.GetFiles(TempDirectory, "date_off.*.log").Where(f => !f.EndsWith("date_off.log"));
+            Assert.Empty(rotated);
+            Assert.True(File.Exists(filePath));
+        }
+
+        [Fact]
+        public void Write_AfterADeferredRotation_DoesNotRetryUntilTheCooldownExpires()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "cooldown.log");
+            File.WriteAllText(filePath, "initial content");
+            var now = new DateTime(2026, 6, 9, 9, 5, 0, DateTimeKind.Utc);
+
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5, timeProvider: () => now))
+            {
+                // A reader without FileShare.Delete makes File.Move fail, so the first rotation is deferred
+                using (new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    writer.Write("first");
+
+                    // Act: still over the threshold and still the same instant, so inside LogRotationCooldownMs
+                    writer.Write("second");
+
+                    // Assert: no second attempt was prepared - PrepareRotation would have closed the writer again
+                    Assert.NotNull(TestReflection.GetField<StreamWriter?>(writer, "_writer"));
+                }
+
+                // Act: the lock is released and the cooldown has run out
+                now = now.AddMilliseconds(AppConfig.LogRotationCooldownMs);
+                writer.Write("third");
+            }
+
+            // Assert
+            var rotated = Directory.GetFiles(TempDirectory, "cooldown.*.log").Where(f => !f.EndsWith("cooldown.log")).ToArray();
+            Assert.Single(rotated);
+            Assert.Contains("second", File.ReadAllText(rotated[0]));
+        }
+
+        [Fact]
+        public void DateRotation_RenameDeferred_KeepsLastRotationDateAndRetriesAfterTheCooldown()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "date_deferred.log");
+            File.WriteAllText(filePath, "initial content");
+            var now = new DateTime(2026, 4, 19, 12, 0, 0, DateTimeKind.Utc);
+            var staleDate = now.AddDays(-1);
+
+            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Daily, 0, false, () => now))
+            {
+                TestReflection.SetField(writer, "_lastRotationDate", staleDate);
+
+                // A reader without FileShare.Delete makes File.Move fail, so the date rotation is deferred
+                using (new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    // Act
+                    writer.WriteLine("deferred");
+                }
+
+                // Assert: the date is committed only by a successful move (#1463)
+                Assert.Equal(staleDate, TestReflection.GetField<DateTime>(writer, "_lastRotationDate"));
+
+                // Act: same day, cooldown over, lock released
+                now = now.AddMilliseconds(AppConfig.LogRotationCooldownMs);
+                writer.WriteLine("retried");
+            }
+
+            // Assert
+            var rotated = Directory.GetFiles(TempDirectory, "date_deferred.*.log").Where(f => !f.EndsWith("date_deferred.log")).ToArray();
+            Assert.Single(rotated);
         }
 
         [Fact]
