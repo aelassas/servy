@@ -297,11 +297,38 @@ namespace Servy.Core.UnitTests.Security
                 // Act
                 var ex = Record.Exception(() => sut.Harden("svc", Services, cts.Token));
 
-                // Assert: GrantFolderAccess creates each folder it grants, so the check before the first one
-                // is what keeps every writable folder absent
+                // Assert: the token is already cancelled, so the first check reached (in front of the closed folders)
+                // throws before any writable folder is created
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
                 foreach (var folder in ServyExePermissionsHardener.GetWritableFolders(Services))
                     Assert.False(Directory.Exists(Path.Combine(TempDirectory, folder)), $"{folder} was granted after cancellation");
+            }
+        }
+
+        [Fact]
+        public void Harden_CancelledWhileTheLastClosedFolderIsRevoked_GrantsNoFolder()
+        {
+            // Arrange: recovery\ is the last closed folder (GetClosedFolders_AreTheDatabaseTheKeysTheLogsAndTheLegacyRecoveryFolder),
+            // so a cancellation raised while its only file is revoked is first seen by the check in front of the writable folders (#7940)
+            var recovery = GrantedFolder(AppConfig.RecoveryFolderName, LocalServiceSid);
+            var counter = Path.Combine(recovery, "svc-one_restartAttempts.dat");
+            File.WriteAllText(counter, "2");
+            AddAce(counter, LocalServiceSid);
+            using (var cts = new CancellationTokenSource())
+            {
+                var sut = new TestableHardener(TempDirectory)
+                {
+                    IsMember = false,
+                    HardLinkCount = _ => { cts.Cancel(); return 1; }
+                };
+
+                // Act
+                var ex = Record.Exception(() => sut.Harden("svc", Services, cts.Token));
+
+                // Assert: GrantFolderAccess creates each folder it grants, so the service log folder must not exist
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.Equal(new[] { "svc-one_restartAttempts.dat" }, sut.HardLinkQueries);
+                Assert.False(Directory.Exists(Path.Combine(TempDirectory, ServiceLogsFolder)));
             }
         }
 
@@ -1256,6 +1283,62 @@ namespace Servy.Core.UnitTests.Security
                 Assert.IsAssignableFrom<OperationCanceledException>(ex);
                 Assert.Equal(new[] { AppConfig.ServyServiceUIExe }, sut.HardLinkQueries);
                 Assert.True(ItemHasAce(cli, LocalServiceSid));
+            }
+        }
+
+        [Fact]
+        public void RevokeIfUnused_CancelledDuringTheFirstFileOfAClosedFolder_DoesNotTouchTheNextFile()
+        {
+            // Arrange: two files in db\, the cancellation is raised while the first one is revoked (#7940)
+            var db = GrantedFolder(AppConfig.DbFolderName, LocalServiceSid);
+            foreach (var name in new[] { "first.db", "second.db" })
+            {
+                File.WriteAllText(Path.Combine(db, name), "x");
+                AddAce(Path.Combine(db, name), LocalServiceSid);
+            }
+
+            using (var cts = new CancellationTokenSource())
+            {
+                var sut = new TestableHardener(TempDirectory)
+                {
+                    HardLinkCount = _ => { cts.Cancel(); return 1; }
+                };
+
+                // Act
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, cts.Token));
+
+                // Assert: one file was revoked, the check in front of the other one stopped the walk
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                var queried = Assert.Single(sut.HardLinkQueries);
+                var untouched = queried == "first.db" ? "second.db" : "first.db";
+                Assert.False(ItemHasAce(Path.Combine(db, queried), LocalServiceSid));
+                Assert.True(ItemHasAce(Path.Combine(db, untouched), LocalServiceSid));
+            }
+        }
+
+        [Fact]
+        public void RevokeIfUnused_CancelledDuringTheLastFileOfAClosedFolder_DoesNotWalkItsSubFolders()
+        {
+            // Arrange: one file and one sub-folder in db\; files are revoked before sub-folders (#7940)
+            var db = GrantedFolder(AppConfig.DbFolderName, LocalServiceSid);
+            var file = Path.Combine(db, AppConfig.DatabaseFileName);
+            File.WriteAllText(file, "db");
+            AddAce(file, LocalServiceSid);
+            var subFolder = GrantedFolder(Path.Combine(AppConfig.DbFolderName, "backup"), LocalServiceSid);
+            using (var cts = new CancellationTokenSource())
+            {
+                var sut = new TestableHardener(TempDirectory)
+                {
+                    HardLinkCount = _ => { cts.Cancel(); return 1; }
+                };
+
+                // Act
+                var ex = Record.Exception(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, cts.Token));
+
+                // Assert: the file was revoked, the sub-folder was never entered
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.False(ItemHasAce(file, LocalServiceSid));
+                Assert.True(ItemHasAce(subFolder, LocalServiceSid));
             }
         }
 
