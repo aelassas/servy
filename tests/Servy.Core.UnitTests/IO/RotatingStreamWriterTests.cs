@@ -132,7 +132,7 @@ namespace Servy.Core.UnitTests.IO
             {
                 writer.Write("123456"); // Triggers rotation, file is moved
 
-                // This assertion passes because Rotate() moved the file and CloseWriter() was called inside it
+                // The first write crossed the 5-byte limit, so the rotation closed the writer and renamed the file
                 Assert.False(File.Exists(filePath), "Original file should have been moved");
 
                 writer.Write("789"); // Triggers lazy init; a NEW file handle is opened here
@@ -280,8 +280,8 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, true, 5, false, DateRotationType.Daily, 0, false, () => fixedTime))
             {
-                writer.WriteLine("123"); // small write
-                writer.Write("456");    // triggers rotation
+                writer.WriteLine("123"); // 3 characters plus CRLF reach the 5-byte limit: this write rotates
+                writer.Write("456");    // recreates the base file through lazy initialization
 
                 // Assert
                 Assert.True(File.Exists(filePath)); // new file recreated
@@ -439,7 +439,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
-                writer.WriteLine("12345"); // exactly 5 bytes -> triggers rotation threshold
+                writer.WriteLine("12345"); // 5 characters plus the line terminator: over the 5-byte limit, so this write rotates
                 writer.Flush();
                 writer.WriteLine("12");    // write to newly initialized stream file
                 writer.Flush();
