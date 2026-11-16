@@ -646,6 +646,20 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void IsSameExecutable_PathTooLongToResolve_IsNotTheSameExecutable()
+        {
+            // Arrange
+            // 40000 characters exceed the 32767-character limit of Windows on every runtime, so Path.GetFullPath throws PathTooLongException
+            var tooLong = "C:\\" + new string('a', 40000) + "\\Servy.Host.exe";
+
+            // Act
+            var result = ServyHostInstaller.IsSameExecutable("\"" + tooLong + "\"", "C:\\ProgramData\\Servy\\Servy.Host.exe");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
         public void GetRunningServyServices_JoinsTheWrapperServicesAndTheRunningDependentsWithoutDuplicates()
         {
             // Arrange
