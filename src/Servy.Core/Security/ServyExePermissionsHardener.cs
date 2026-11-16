@@ -17,7 +17,8 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
-    /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in
+    /// Servy's binaries, those of the .NET build that shares the vault included, Read on its settings files, and Read,
+    /// Write, Delete on the files in
     /// <c>logs\services\&lt;ServiceName&gt;\</c> of each of its own services, the only folders it writes. The account
     /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and nothing at all on <c>db\</c>,
     /// <c>security\</c>, <c>logs\</c> and the legacy <c>recovery\</c> or anything in them, the log folders of other
@@ -80,6 +81,22 @@ namespace Servy.Core.Security
     {
         /// <summary>The file name of the host's settings file in the vault.</summary>
         internal static readonly string HostSettingsFileName = AppConfig.ServyHostSettingsFileName;
+
+        /// <summary>
+        /// The wrappers and the restarter of the .NET build, which share the vault with this build: the services that
+        /// build installed still run them after a switch to this build (#7941), under accounts this build hardens
+        /// (#7945, #7946).
+        /// </summary>
+        internal static readonly string[] OtherBuildExecutableNames =
+        {
+            "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Restarter.exe"
+        };
+
+        /// <summary>The settings files the wrapper and the restarter of the .NET build read from the vault.</summary>
+        internal static readonly string[] OtherBuildSettingsFileNames =
+        {
+            "appsettings.service.json", "appsettings.restarter.json"
+        };
 
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
         private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
@@ -710,8 +727,9 @@ namespace Servy.Core.Security
         /// Lists the files the hardening locks down, relative to <see cref="VaultDirectory"/>, with the rights the target
         /// account keeps on each.
         /// </summary>
-        /// <returns>The binaries and every DLL in the vault (Read &amp; Execute) and the <c>.exe.config</c> files (Read,
-        /// optional). The database and the encryption key are not listed: the service account has no access to them.</returns>
+        /// <returns>The binaries and every DLL in the vault (Read &amp; Execute), the <c>.exe.config</c> files (Read,
+        /// optional), and the binaries (Read &amp; Execute, optional) and settings files (Read, optional) of the .NET build.
+        /// The database and the encryption key are not listed: the service account has no access to them.</returns>
         internal IReadOnlyList<ExePermissionsTarget> GetTargetFiles()
         {
             var executables = new[] { AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.ServyRestarterExe };
@@ -727,6 +745,14 @@ namespace Servy.Core.Security
 
             foreach (var exe in executables)
                 targets.Add(new ExePermissionsTarget(exe + ".config", FileSystemRights.Read, optional: true));
+
+            // The services the other build installed still run its wrappers and its restarter from the vault (#7941), so
+            // their accounts need the same access to those files. They are optional: most vaults hold one build.
+            foreach (var exe in OtherBuildExecutableNames)
+                targets.Add(new ExePermissionsTarget(exe, FileSystemRights.ReadAndExecute, optional: true));
+
+            foreach (var settings in OtherBuildSettingsFileNames)
+                targets.Add(new ExePermissionsTarget(settings, FileSystemRights.Read, optional: true));
 
             return targets;
         }

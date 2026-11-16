@@ -519,7 +519,8 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
-            Assert.Equal(3, result.Skipped.Count);
+            // The three .exe.config files, and the binaries and settings files of the .NET build, which this vault does not hold
+            Assert.Equal(8, result.Skipped.Count);
             Assert.Empty(result.Missing);
         }
 

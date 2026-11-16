@@ -250,7 +250,12 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains(AppConfig.ServyRestarterExe, result.Missing);
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.DbFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.SecurityFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
-            Assert.Equal(new[] { AppConfig.ServyServiceUIExe + ".config", AppConfig.ServyServiceCLIExe + ".config", AppConfig.ServyRestarterExe + ".config" }, result.Skipped);
+            Assert.Equal(new[]
+            {
+                AppConfig.ServyServiceUIExe + ".config", AppConfig.ServyServiceCLIExe + ".config", AppConfig.ServyRestarterExe + ".config",
+                "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Restarter.exe",
+                "appsettings.service.json", "appsettings.restarter.json",
+            }, result.Skipped);
         }
 
         [Fact]
@@ -611,6 +616,66 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(new[] { "Newtonsoft.Json.DLL", "Servy.Core.dll" }, dlls.Select(t => t.RelativePath));
             Assert.All(dlls, d => Assert.Equal(FileSystemRights.ReadAndExecute, d.Rights));
             Assert.All(dlls, d => Assert.False(d.Optional));
+        }
+
+        [Fact]
+        public void GetTargetFiles_OtherBuildExecutables_AreOptionalReadAndExecuteTargets()
+        {
+            // Arrange: the services the .NET build installed keep running its wrappers and its restarter after a switch
+            // to this build (#7945, #7946)
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
+
+            // Assert
+            foreach (var exe in new[] { "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Restarter.exe" })
+            {
+                Assert.True(targets.ContainsKey(exe), $"{exe} is a target");
+                Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
+                Assert.True(targets[exe].Optional, $"{exe} is optional");
+            }
+        }
+
+        [Fact]
+        public void GetTargetFiles_OtherBuildSettingsFiles_AreOptionalReadOnlyTargets()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
+
+            // Assert
+            foreach (var settings in new[] { "appsettings.service.json", "appsettings.restarter.json" })
+            {
+                Assert.True(targets.ContainsKey(settings), $"{settings} is a target");
+                Assert.Equal(FileSystemRights.Read, targets[settings].Rights);
+                Assert.True(targets[settings].Optional, $"{settings} is optional");
+            }
+        }
+
+        [Fact]
+        public void Harden_OtherBuildWrapperInTheVault_IsGrantedReadAndExecute()
+        {
+            // Arrange: a service of the .NET build runs Servy.Service.exe under the account
+            var wrapper = Path.Combine(TempDirectory, "Servy.Service.exe");
+            File.WriteAllText(wrapper, "wrapper");
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var result = sut.Harden("svc", Services, CancellationToken.None);
+
+            // Assert
+            Assert.Contains("Servy.Service.exe", result.Hardened);
+            Assert.Empty(result.Failed);
+            var rights = new FileInfo(wrapper).GetAccessControl(AccessControlSections.Access)
+                .GetAccessRules(true, false, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>()
+                .Where(r => LocalServiceSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow)
+                .Aggregate((FileSystemRights)0, (all, r) => all | r.FileSystemRights);
+            Assert.Equal(FileSystemRights.ReadAndExecute, rights & FileSystemRights.ReadAndExecute);
+            Assert.Equal(0, (int)(rights & (FileSystemRights.WriteData | FileSystemRights.Delete)));
         }
 
         [Fact]
