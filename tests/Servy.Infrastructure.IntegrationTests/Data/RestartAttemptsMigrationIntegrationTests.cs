@@ -413,6 +413,117 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void Initialize_CounterFileWithASecondHardLink_LogsTheSecurityWarningWithTheLinkCount()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "LinkedLog");
+                DowngradeToVersion9(conn);
+                var path = WriteCounterFile("LinkedLog", "6", new DateTime(2026, 9, 26, 0, 0, 0, DateTimeKind.Utc));
+                Assert.True(CreateHardLink(Path.Combine(TempDirectory, "elsewhere-log.dat"), path, IntPtr.Zero), $"CreateHardLink failed: {Marshal.GetLastWin32Error()}");
+
+                // Act
+                var log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+
+                // Assert
+                Assert.Contains($"Security: the legacy restart attempts file '{path}' was not imported because it has 2 hard links. It is not deleted, and the recovery folder is kept.", log);
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileOneByteOverTheSizeCap_LogsTheSecurityWarningWithTheSize()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "HugeLog");
+                DowngradeToVersion9(conn);
+                var path = WriteCounterFile("HugeLog", new string(' ', 1024) + "7", new DateTime(2026, 9, 27, 0, 0, 0, DateTimeKind.Utc));
+
+                // Act
+                var log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+
+                // Assert
+                Assert.Contains($"Security: the legacy restart attempts file '{path}' was not imported because it is 1025 bytes, far more than a restart attempts counter.", log);
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileIsASymbolicLink_LogsTheSecurityWarningNamingTheReparsePoint()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "SymlinkedLog");
+                DowngradeToVersion9(conn);
+                Directory.CreateDirectory(_recoveryFolder);
+                var target = Path.Combine(TempDirectory, "target-log.dat");
+                File.WriteAllText(target, "9");
+                var link = Path.Combine(_recoveryFolder, LegacyRecoveryImporter.GetCounterFileName("SymlinkedLog"));
+
+                // When the runner cannot create a symbolic link there is nothing to assert
+                if (!CreateSymbolicLink(link, target, 0))
+                    return;
+
+                // Act
+                var log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+
+                // Assert
+                Assert.Contains($"Security: the legacy restart attempts file '{link}' was not imported because it is a reparse point (a symbolic link or junction).", log);
+            }
+        }
+
+        [Fact]
+        public void Initialize_CounterFileLocked_LogsThatTheFileWasNotImportedAndTheFolderIsKept()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "LockedLog");
+                DowngradeToVersion9(conn);
+                var path = WriteCounterFile("LockedLog", "5", new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc));
+
+                // Act: the file cannot be read while it is held exclusively
+                string log;
+                using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+                }
+
+                // Assert
+                Assert.Contains($"Could not import the legacy restart attempts file '{path}' of service 'LockedLog'; the recovery folder is kept.", log);
+                Assert.DoesNotContain("Imported ", log);
+            }
+        }
+
+        [Fact]
+        public void Initialize_LegacyRecoveryFolder_LogsHowManyCountersWereImported()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: three services, two of them with a counter file
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "AlphaLog");
+                AddService(conn, "BetaLog");
+                AddService(conn, "GammaLog");
+                DowngradeToVersion9(conn);
+                WriteCounterFile("AlphaLog", "3", new DateTime(2026, 9, 30, 8, 0, 0, DateTimeKind.Utc));
+                WriteCounterFile("BetaLog", "12", new DateTime(2026, 10, 1, 9, 30, 0, DateTimeKind.Utc));
+
+                // Act
+                var log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+
+                // Assert
+                Assert.Contains($"Imported 2 restart attempts counter(s) from the legacy recovery folder '{_recoveryFolder}' into the database.", log);
+            }
+        }
+
+        [Fact]
         public void Initialize_NoRecoveryFolder_ImportsNothing()
         {
             using (var conn = CreateConnection())
