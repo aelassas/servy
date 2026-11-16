@@ -296,17 +296,21 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(new[] { Environment.ProcessId }, results.Select(r => r.ProcessId));
         }
 
-        [Fact]
-        public void GetProcessesUsingFile_PidReusedByALaterProcess_IsSkipped()
+        [Theory]
+        [InlineData(-3600)] // reported an hour before this process started: the PID was reused
+        [InlineData(3600)]  // reported an hour after: only Math.Abs makes this a mismatch
+        [InlineData(-5)]    // a few seconds off in either direction is already outside the
+        [InlineData(5)]     // one-second tolerance, which a looser bound would accept
+        public void GetProcessesUsingFile_ReportedStartTimeDiffersFromTheLiveProcess_IsSkipped(int offsetSeconds)
         {
             // Arrange
-            // The entry claims this PID belonged to a process created an hour before this one: the holder exited and
-            // the PID was reused, so killing the current owner would kill the wrong process.
+            // The entry claims this PID belonged to a process created at a different time than this one: the holder
+            // exited and the PID was reused, so killing the current owner would kill the wrong process.
             DateTime started;
             using (var self = Process.GetCurrentProcess())
                 started = self.StartTime;
             var api = new FakeRestartManager();
-            api.Lists.Add((0, new[] { Entry(Environment.ProcessId, ToFileTime(started.AddHours(-1))) }));
+            api.Lists.Add((0, new[] { Entry(Environment.ProcessId, ToFileTime(started.AddSeconds(offsetSeconds))) }));
 
             // Act
             var results = HandleHelper.GetProcessesUsingFile(@"C:\x.txt", api);
