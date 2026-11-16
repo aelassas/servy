@@ -1086,7 +1086,7 @@ namespace Servy.Core.Config
         /// Set to 120 seconds to ensure maximum resiliency for background operations.
         /// This extended duration allows the restarter to wait out long 'Pending' transitions
         /// (e.g., heavy I/O cleanup or database flushes) without triggering a timeout
-        /// exception in the host service.
+        /// exception in the restarter (<c>Servy.Restarter.exe</c>), which is the process that waits.
         /// </remarks>
         public const int DefaultRestarterTimeoutSeconds = 120;
 
