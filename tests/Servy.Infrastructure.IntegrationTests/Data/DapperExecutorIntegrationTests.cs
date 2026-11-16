@@ -649,6 +649,39 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(AppConfig.DbAsyncMaxAttempts, busyConnectionSpy.DisposeCount);
         }
 
+        [Fact]
+        public void ExecuteWithRetry_NonTransientSQLiteError_IsThrownOnTheFirstAttempt()
+        {
+            // Arrange: a failure that waiting cannot cure
+            var corrupt = new FaultyAsyncDbConnection(SQLiteErrorCode.Corrupt, "database disk image is malformed");
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(corrupt);
+
+            // Act
+            var ex = Assert.Throws<SQLiteException>(() => _executor.ExecuteScalar<int>("SELECT COUNT(*) FROM TestServices;"));
+
+            // Assert: thrown as it is, after one attempt and one release
+            Assert.Equal(SQLiteErrorCode.Corrupt, ex.ResultCode);
+            Assert.Equal(1, corrupt.OpenAttempts);
+            Assert.Equal(1, corrupt.DisposeCount);
+        }
+
+        [Fact]
+        public async Task ExecuteWithRetryAsync_NonTransientSQLiteError_IsThrownOnTheFirstAttempt()
+        {
+            // Arrange: a failure that waiting cannot cure
+            var corrupt = new FaultyAsyncDbConnection(SQLiteErrorCode.Corrupt, "database disk image is malformed");
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(corrupt);
+
+            // Act
+            var ex = await Assert.ThrowsAsync<SQLiteException>(() =>
+                _executor.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TestServices;", cancellationToken: TestContext.Current.CancellationToken));
+
+            // Assert: thrown as it is, after one attempt and one release
+            Assert.Equal(SQLiteErrorCode.Corrupt, ex.ResultCode);
+            Assert.Equal(1, corrupt.OpenAttempts);
+            Assert.Equal(1, corrupt.DisposeCount);
+        }
+
         /// <summary>
         /// Registers a <see cref="IAppDbContext.CreateConnection"/> factory that mints a FRESH
         /// <see cref="TransientFailureDbConnection"/> per call, the way production behaves: the connection is
