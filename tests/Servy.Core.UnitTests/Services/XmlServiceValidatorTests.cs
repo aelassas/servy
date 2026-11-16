@@ -4,7 +4,9 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Logging;
 using Servy.Core.Validation;
+using Servy.Testing;
 using System;
 using Xunit;
 
@@ -19,7 +21,7 @@ namespace Servy.Core.UnitTests.Services
         // The product serializer, so every fixture below is shaped like a real export file
         private readonly XmlServiceSerializer _serializer = new XmlServiceSerializer();
 
-        private sealed class TestableXmlServiceValidator : XmlServiceValidator
+        internal sealed class TestableXmlServiceValidator : XmlServiceValidator
         {
             public TestableXmlServiceValidator(IServiceValidationRules rules, long maxPayloadBytes)
                 : base(rules)
@@ -33,7 +35,7 @@ namespace Servy.Core.UnitTests.Services
         // A validator whose parse step raises a caller-supplied exception, so the detail-message
         // composition shared by both catch arms of ServiceDtoImportValidator can be asserted
         // without depending on the framework serializer's own wording.
-        private sealed class ThrowingXmlServiceValidator : XmlServiceValidator
+        internal sealed class ThrowingXmlServiceValidator : XmlServiceValidator
         {
             private readonly Exception _toThrow;
 
@@ -483,5 +485,152 @@ namespace Servy.Core.UnitTests.Services
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Covers the log entry each rejection arm of <see cref="ServiceDtoImportValidator{TException}"/> writes.
+    /// In a class of its own, like <see cref="XmlServiceSerializerLogTests"/>, so that only these cases leave
+    /// parallel execution for <see cref="LoggerCollection"/>.
+    /// </summary>
+    [Collection(LoggerCollection.Name)] // the rejection entries are asserted through the static Logger
+    public class XmlServiceValidatorLogTests
+    {
+        /// <summary>Domain rules whose path check accepts every path, so only the arranged defect fails.</summary>
+        private static ServiceValidationRules Rules()
+        {
+            var processHelper = new Mock<IProcessHelper>();
+            processHelper.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
+            return new ServiceValidationRules(processHelper.Object);
+        }
+
+        /// <summary>The product validator over the permissive rules.</summary>
+        private static XmlServiceValidator Validator => new XmlServiceValidator(Rules());
+
+        /// <summary>The empty-input arm logs a warning that names the format.</summary>
+        [Fact]
+        public void TryValidate_EmptyInput_LogsTheRejectionAsAWarning()
+        {
+            // Arrange & Act
+            var (_, log) = LogCapture.Run(() => Validator.TryValidate("   ", out _));
+
+            // Assert
+            Assert.Contains("[WARN] | XML import blocked: input was empty or whitespace.", log);
+        }
+
+        /// <summary>The size-gate arm logs the user message at error level.</summary>
+        [Fact]
+        public void TryValidate_PayloadOverTheLimit_LogsTheUserMessageAsAnError()
+        {
+            // Arrange
+            string error = null;
+
+            // Act
+            var (_, log) = LogCapture.Run(() => new XmlServiceValidatorTests.TestableXmlServiceValidator(Rules(), 32).TryValidate(new string('x', 33), out error));
+
+            // Assert
+            Assert.NotNull(error);
+            Assert.Contains("[ERROR] | " + error, log);
+        }
+
+        /// <summary>The structural parse failure logs its own line and not the unexpected-exception line.</summary>
+        [Fact]
+        public void TryValidate_StructuralParseFailure_LogsTheMalformedStructureLineOnly()
+        {
+            // Arrange
+            var thrown = new InvalidOperationException("wrapper-structural", new System.Xml.XmlException("inner-structural"));
+            var validator = new XmlServiceValidatorTests.ThrowingXmlServiceValidator(Rules(), thrown);
+
+            // Act
+            var (_, log) = LogCapture.Run(() => validator.TryValidate("<ServiceDto />", out _));
+
+            // Assert: the two parse-failure arms must stay distinguishable in the log (#4398)
+            Assert.Contains("[ERROR] | XML import blocked: malformed document structure.", log);
+            Assert.DoesNotContain("unexpected parser exception", log);
+        }
+
+        /// <summary>The unexpected parse failure logs the exception type and not the structural line.</summary>
+        [Fact]
+        public void TryValidate_UnexpectedParseFailure_LogsTheExceptionTypeOnly()
+        {
+            // Arrange
+            var thrown = new InvalidOperationException("wrapper-unexpected", new FormatException("inner-unexpected"));
+            var validator = new XmlServiceValidatorTests.ThrowingXmlServiceValidator(Rules(), thrown);
+
+            // Act
+            var (_, log) = LogCapture.Run(() => validator.TryValidate("<ServiceDto />", out _));
+
+            // Assert
+            Assert.Contains("[ERROR] | XML import blocked: unexpected parser exception (InvalidOperationException).", log);
+            Assert.DoesNotContain("malformed document structure", log);
+        }
+
+        /// <summary>The null-definition arm logs a warning.</summary>
+        [Fact]
+        public void TryValidate_DeserializedDtoIsNull_LogsTheRejectionAsAWarning()
+        {
+            // Arrange
+            var xml = "<ServiceDto xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\" />";
+
+            // Act
+            var (_, log) = LogCapture.Run(() => Validator.TryValidate(xml, out _));
+
+            // Assert
+            Assert.Contains("[WARN] | XML import blocked: parser returned no service definition.", log);
+        }
+
+        /// <summary>The domain-failure arm logs the service name and the reason.</summary>
+        [Fact]
+        public void TryValidate_DomainValidationFailure_LogsTheServiceNameAndTheReason()
+        {
+            // Arrange: an out-of-range timeout fails the domain rules of an otherwise valid definition
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = "C:\\path\\to\\exe", StartTimeout = AppConfig.MaxStartTimeout + 1 };
+            var xml = new XmlServiceSerializer().Serialize(dto);
+            var expectedReason = string.Format(Strings.Msg_InvalidStartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout);
+
+            // Act
+            var (_, log) = LogCapture.Run(() => Validator.TryValidate(xml, out _));
+
+            // Assert
+            Assert.Contains("[WARN] | XML import blocked: logical violation for service 'MyService'. Reason: ", log);
+            Assert.Contains(expectedReason, log);
+        }
+
+        /// <summary>A definition whose name is null is still attributed in the log, as <c>Unknown</c>.</summary>
+        /// <remarks>
+        /// The XML serializer never yields a null name (<see cref="ServiceDto.Name"/> defaults to the empty string),
+        /// so the definition is handed over by a double whose parse step returns it directly.
+        /// </remarks>
+        [Fact]
+        public void TryValidate_DomainValidationFailureWithoutName_LogsUnknownAsTheServiceName()
+        {
+            // Arrange
+            var validator = new NullNameXmlServiceValidator(Rules());
+
+            // Act
+            var (_, log) = LogCapture.Run(() => validator.TryValidate("<ServiceDto />", out _));
+
+            // Assert
+            Assert.Contains("[WARN] | XML import blocked: logical violation for service 'Unknown'. Reason: ", log);
+            Assert.Contains(Strings.Msg_ServiceNameRequired, log);
+        }
+
+        /// <summary>A validator whose parse step returns a definition with a null name.</summary>
+        private sealed class NullNameXmlServiceValidator : XmlServiceValidator
+        {
+            /// <summary>Creates the double over the given domain rules.</summary>
+            /// <param name="rules">The domain rules the base validator applies after the parse step.</param>
+            public NullNameXmlServiceValidator(IServiceValidationRules rules)
+                : base(rules)
+            {
+            }
+
+            /// <summary>Ignores the input and returns a definition whose name is null.</summary>
+            /// <param name="content">The raw input; not read.</param>
+            /// <returns>A service definition with a null name and every other field at its default.</returns>
+            protected override ServiceDto Parse(string content)
+            {
+                return new ServiceDto { Name = null };
+            }
+        }
     }
 }
