@@ -18,6 +18,12 @@ namespace Servy.Core.Logging
     /// Uses <see cref="RotatingStreamWriter"/> to rotate logs by size and/or date interval
     /// (daily, weekly, monthly), preventing unbounded file growth.
     /// </summary>
+    /// <remarks>
+    /// While Servy's built-in entry points configure the logger in one call via <see cref="Initialize(string?, LogLevel, bool, int, DateRotationType, bool, int, string?)"/>,
+    /// the individual runtime setters (<see cref="SetLogRotationSize"/>, <see cref="SetMaxBackupLogFiles"/>,
+    /// <see cref="SetDateRotationType"/>, <see cref="SetUseLocalTimeForRotation"/>, and <see cref="SetLogLevel"/>)
+    /// are intentionally retained as part of the public <c>Servy.Core</c> API for live reconfiguration.
+    /// </remarks>
     public static class Logger
     {
         /// <summary>
