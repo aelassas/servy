@@ -413,6 +413,42 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void Decrypt_UnmarkedLegacyCiphertextContainingASlash_WhenLegacyDisabled_IsRefusedNotReturned()
+        {
+            // Arrange
+            Assert.SkipWhen(AppConfig.AllowLegacyV1Decryption, "Test targets disabled legacy v1 decryption policy.");
+
+            // "Z0Kq/vFmziq7aJ8//yXjhw==": uses '/', 'Z', 'z' and '0'
+            string rawBase64Ciphertext = SecureDataHelper.CreateLegacyV1Base64(_key, _iv, "LegacySecret1");
+            Assert.Contains('/', rawBase64Ciphertext);
+
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                Assert.Throws<SecureDataLegacyBlockedException>(() => sp.Decrypt(rawBase64Ciphertext));
+            }
+        }
+
+        [Theory]
+        [InlineData(32)]   // a whole HMAC, no room for the IV
+        [InlineData(47)]   // one byte below IV + HMAC
+        public void DecryptV2_PayloadShorterThanIvPlusHmac_ThrowsInsufficientLength(int length)
+        {
+            // Arrange
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                var shortPayloadBase64 = Convert.ToBase64String(new byte[length]);
+
+                // Act
+                var ex = Assert.Throws<SecureDataIntegrityException>(() =>
+                    TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { shortPayloadBase64 }));
+
+                // Assert
+                Assert.Contains("V2 payload length is insufficient.", ex.Message);
+            }
+        }
+
+        [Fact]
         public void DecryptV2_PayloadTooShort_Throws()
         {
             // Arrange
@@ -563,6 +599,8 @@ namespace Servy.Core.UnitTests.Security
         [InlineData("SGVsbG82", true)]   // 0 padding
         [InlineData("SGVsbA==", true)]   // 2 padding
         [InlineData("YQ==", true)]       // Short valid string
+        [InlineData("ab+/", true)]       // the two non-alphanumeric characters of the alphabet
+        [InlineData("AZaz09+/", true)]   // first and last character of each range
         public void IsStrictBase64_ShouldCoverAllBranches(string? input, bool expected)
         {
             // Arrange & Act
