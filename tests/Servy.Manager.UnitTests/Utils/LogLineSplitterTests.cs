@@ -155,6 +155,66 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
+        /// The terminator strip removes the carriage return at the encoding's own width, so a CRLF log
+        /// written as UTF-16 or UTF-32 yields clean lines, an empty line included. Stripping a single
+        /// byte would leave a stray byte behind that decodes as a garbage character.
+        /// </summary>
+        /// <param name="encodingName">The encoding the row runs under.</param>
+        [Theory]
+        [InlineData("utf-16LE")]
+        [InlineData("utf-16BE")]
+        [InlineData("utf-32LE")]
+        [InlineData("utf-32BE")]
+        public void TryReadLine_CarriageReturnLineFeedInWideEncoding_StripsTheWholeCarriageReturn(string encodingName)
+        {
+            // Arrange
+            Encoding encoding;
+            switch (encodingName)
+            {
+                case "utf-16LE":
+                    encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
+                    break;
+                case "utf-16BE":
+                    encoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
+                    break;
+                case "utf-32LE":
+                    encoding = new UTF32Encoding(bigEndian: false, byteOrderMark: false);
+                    break;
+                case "utf-32BE":
+                    encoding = new UTF32Encoding(bigEndian: true, byteOrderMark: false);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(encodingName), encodingName, null);
+            }
+
+            var splitter = new LogLineSplitter(encoding);
+
+            // Act
+            var lines = ReadAll(splitter, encoding.GetBytes("first\r\n\r\nsecond\r\n"));
+
+            // Assert
+            Assert.Equal(new[] { "first", string.Empty, "second" }, lines);
+            Assert.Equal(0, splitter.PendingByteCount);
+        }
+
+        /// <summary>
+        /// Only ONE carriage return belongs to the terminator, so a line that itself ends in a carriage
+        /// return keeps it when CRLF follows.
+        /// </summary>
+        [Fact]
+        public void TryReadLine_CarriageReturnBeforeCarriageReturnLineFeed_KeepsTheFirstCarriageReturn()
+        {
+            // Arrange
+            var splitter = new LogLineSplitter(Encoding.UTF8);
+
+            // Act
+            var lines = ReadAll(splitter, Encoding.UTF8.GetBytes("a\r\r\n"));
+
+            // Assert
+            Assert.Equal(new[] { "a\r" }, lines);
+        }
+
+        /// <summary>
         /// The constructor rejects a null encoding by name, so a caller that forgot to resolve one fails
         /// at construction and not later inside the first read.
         /// </summary>
