@@ -49,8 +49,19 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("Everyone")]
         [InlineData("Anonymous Logon")]
         [InlineData("NT AUTHORITY\\Interactive")]
+        // Account names are case-insensitive on Windows
+        [InlineData("everyone")]
+        [InlineData("nt authority\\INTERACTIVE")]
+        // Padding is trimmed before the lookup
+        [InlineData("  Everyone  ")]
+        // BUILTIN groups, qualified and bare (#6122)
+        [InlineData("BUILTIN\\Administrators")]
+        [InlineData("builtin\\users")]
+        [InlineData("Guests")]
+        [InlineData("BUILTIN\\Backup Operators")]
         public void ValidateCredentials_ForbiddenGroup_ThrowsArgumentException(string forbiddenGroup)
         {
+            // Arrange, Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(forbiddenGroup, null));
             Assert.Contains("group or logon context", ex.Message);
         }
