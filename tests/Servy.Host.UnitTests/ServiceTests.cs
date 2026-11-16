@@ -48,6 +48,30 @@ namespace Servy.Host.UnitTests
 
         private static IpcRequestDto Request(string action, string? serviceName = ServiceName) => new IpcRequestDto { Action = action, ServiceName = serviceName };
 
+        /// <summary>
+        /// Tells whether the host's current pipe DACL holds a rule for <paramref name="sid"/>.
+        /// </summary>
+        /// <param name="sid">The account to look for.</param>
+        /// <returns><see langword="true"/> when a rule names the account.</returns>
+        private bool Granted(SecurityIdentifier sid)
+            => _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => sid.Equals(r.IdentityReference));
+
+        /// <summary>
+        /// Polls the host's current pipe DACL until it grants <paramref name="sid"/>, for at most about five seconds.
+        /// </summary>
+        /// <param name="sid">The account to wait for.</param>
+        /// <returns><see langword="true"/> when the account was granted in time.</returns>
+        private async Task<bool> WaitUntilGrantedAsync(SecurityIdentifier sid)
+        {
+            for (var i = 0; i < 500; i++)
+            {
+                if (Granted(sid)) return true;
+                await Task.Delay(10, CancellationToken.None);
+            }
+
+            return false;
+        }
+
         #region Remote clients
 
         [Theory]
@@ -614,12 +638,7 @@ namespace Servy.Host.UnitTests
 
             // Act
             _sut.StartListening();
-            var granted = false;
-            for (var i = 0; i < 500 && !granted; i++)
-            {
-                granted = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
-                if (!granted) await Task.Delay(10, CancellationToken.None);
-            }
+            var granted = await WaitUntilGrantedAsync(localService);
             await Task.Delay(100, CancellationToken.None);
             _sut.StopListening();
 
@@ -666,7 +685,6 @@ namespace Servy.Host.UnitTests
             _sut.ResolveProcessAccount = pid => { lock (gate) return pid == ServicePid ? running : null; };
             _sut.UnresolvedAccountRetryDelayMs = 10;
             _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
-            bool Granted(SecurityIdentifier sid) => _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => sid.Equals(r.IdentityReference));
 
             // Act 1: the old process can still report its PID when it stops
             _sut.StartListening();
@@ -901,12 +919,7 @@ namespace Servy.Host.UnitTests
 
             // Act
             _sut.StartListening();
-            var granted = false;
-            for (var i = 0; i < 500 && !granted; i++)
-            {
-                granted = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
-                if (!granted) await Task.Delay(10, CancellationToken.None);
-            }
+            var granted = await WaitUntilGrantedAsync(localService);
             _sut.StopListening();
 
             // Assert: granted once the retry read the services, with no new install or restart
@@ -1017,12 +1030,7 @@ namespace Servy.Host.UnitTests
             await Task.Delay(200, CancellationToken.None);
             _sut.UnresolvedAccountRetryDelayMs = 10;
             _sut.StartListening();
-            var granted = false;
-            for (var i = 0; i < 500 && !granted; i++)
-            {
-                granted = _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => localService.Equals(r.IdentityReference));
-                if (!granted) await Task.Delay(10, CancellationToken.None);
-            }
+            var granted = await WaitUntilGrantedAsync(localService);
             _sut.StopListening();
 
             // Assert: the cancelled wait released the pending flag, so the restarted host retried and granted the account
@@ -1056,7 +1064,6 @@ namespace Servy.Host.UnitTests
 
                     return account == "svc-y" ? accountY : accountX;
                 };
-                bool Granted(SecurityIdentifier sid) => _sut.CurrentPipeSecurity!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => sid.Equals(r.IdentityReference));
 
                 // Act
                 var a = Task.Run(() => _sut.RefreshPipeSecurityAsync(CancellationToken.None));
