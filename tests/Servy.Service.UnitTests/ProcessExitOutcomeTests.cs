@@ -330,7 +330,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public async Task OnProcessExited_CleanExitThatStopsTheService_SendsNoFailFlagPing()
+        public void OnProcessExited_CleanExitThatStopsTheService_SendsNoFailFlagPing()
         {
             // Arrange
             var service = _ctx.Build();
@@ -344,28 +344,27 @@ namespace Servy.Service.UnitTests
             cleanProcess.Setup(p => p.ExitCode).Returns(0);
             service.SetChildProcess(cleanProcess.Object);
 
-            // Act
-            // The ping is logged from a Task.Run, so a bare "never" right after the call would pass
-            // vacuously. Give a wrongly sent ping time to land - awaited, never spun, so no thread-pool
-            // thread is held while the pool has to run the ping - then raise an error exit on a second
-            // service that shares the logger (a stopped service no longer handles exits): its
-            // ping is the marker that every earlier one has had its chance to log.
-            service.InvokeOnProcessExited(null, EventArgs.Empty);
-            await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.NegativeObservationWindow, CancellationToken.None));
+            // The clean exit stops the service, and the stop shuts the service's logger down. A wrongly sent ping
+            // logs from a Task.Run that reads that logger, so hold the teardown for the observation window:
+            // a wrong ping then has its chance to be logged while the logger is still there.
+            service.OnStoppedForTest += () => pingLogged.Task.Wait(TestTimeouts.NegativeObservationWindow);
 
+            // A second service that shares the logger raises an error exit (a stopped service no longer
+            // handles exits): its ping is the marker that every earlier one has had its chance to log.
             var failingService = _ctx.Build();
             TestReflection.SetField(failingService, "_options", ServiceTestContext.CreateDefaultStartOptions("https://127.0.0.1:1/mark-uuid"));
             var failingProcess = new Mock<IProcessWrapper>();
             failingProcess.Setup(p => p.ExitCode).Returns(42);
             failingService.SetChildProcess(failingProcess.Object);
-            failingService.InvokeOnProcessExited(null, EventArgs.Empty);
 
-            // Wait for the marker itself: the first ping may be a wrong one, which completes pingLogged on its own.
-            var deadline = DateTime.UtcNow + TestTimeouts.CiGenerous;
-            while (!_ctx.HeartbeatPingLines.Any(l => l.Contains("/mark-")) && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(50), CancellationToken.None);
-            }
+            // Same race for the marker: hold its teardown until its own line is captured. The first ping
+            // may be a wrong one, which completes pingLogged on its own, so wait for the marker itself.
+            failingService.OnStoppedForTest += () => SpinWait.SpinUntil(
+                () => _ctx.HeartbeatPingLines.Any(l => l.Contains("/mark-")), TestTimeouts.CiGenerous);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+            failingService.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
             var diagnostics = "Heartbeat ping lines: [" + string.Join(" | ", _ctx.HeartbeatPingLines) + "]; logger invocations: ["
