@@ -30,7 +30,8 @@ namespace Servy.Manager.Models
         public LogType Type { get; set; }
 
         /// <summary>
-        /// Gets the UTC time when the log line was processed by the manager.
+        /// Gets the line's timestamp in UTC: the time the line was read for a live-tailed line, or a time derived
+        /// from the log file's last write time for a line loaded from history.
         /// </summary>
         public DateTime Timestamp { get; private set; }
 
@@ -39,7 +40,7 @@ namespace Servy.Manager.Models
         /// </summary>
         /// <param name="text">The string content read from the file.</param>
         /// <param name="type">The stream type (StdOut or StdErr).</param>
-        /// <param name="timestamp"> A timestamp that will be normalized to UTC.</param>
+        /// <param name="timestamp">A timestamp that will be normalized to UTC, or <see langword="null"/> to use the current UTC time.</param>
         public LogLine(string text, LogType type, DateTime? timestamp = null)
         {
             Text = text;
