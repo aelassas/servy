@@ -1349,6 +1349,41 @@ namespace Servy.Host.UnitTests
             }
         }
 
+        [Fact]
+        public void StartListening_FirstInstanceFailsForAnotherReason_IsReportedAndNeverCreatedWithoutTheFlag()
+        {
+            // Arrange: creating an instance fails with an error other than ERROR_ACCESS_DENIED
+            var calls = new List<bool>();
+            using (var reported = new ManualResetEventSlim())
+            {
+                _sut.PipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+                _sut.PipeInstanceFactory = (name, security, firstInstance) =>
+                {
+                    lock (calls)
+                        calls.Add(firstInstance);
+                    throw new Win32Exception(Errors.ERROR_INVALID_PARAMETER, "The parameter is incorrect.");
+                };
+                _logger.Setup(l => l.Error("Error accepting Named Pipe connection.",
+                        It.Is<Win32Exception>(e => e.NativeErrorCode == Errors.ERROR_INVALID_PARAMETER)))
+                    .Callback(() => reported.Set());
+
+                // Act
+                _sut.StartListening();
+                var observed = reported.Wait(TimeSpan.FromSeconds(10));
+                _sut.StopListening();
+
+                // Assert: the failure reached the accept loop as it is, no instance was asked for without the flag,
+                // and the "name is already held" warning was not logged
+                Assert.True(observed);
+                bool[] snapshot;
+                lock (calls)
+                    snapshot = calls.ToArray();
+                Assert.NotEmpty(snapshot);
+                Assert.All(snapshot, firstInstance => Assert.True(firstInstance));
+                _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("FILE_FLAG_FIRST_PIPE_INSTANCE")), It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
         #endregion
 
         #region Connection handling
