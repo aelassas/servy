@@ -9,7 +9,7 @@ namespace Servy.Manager.Converters
         /// Returns the RAM usage as a formatted string.
         /// </summary>
         /// <param name="value">The RAM usage in bytes.</param>
-        /// <returns>A human-readable RAM usage string (e.g., "128 MB").</returns>
+        /// <returns>A human-readable RAM usage string (e.g., "128.0 MB").</returns>
         protected override string Format(long value)
         {
             return ProcessHelper.FormatRamUsage(value);
