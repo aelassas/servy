@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
 using Servy.Core.ProcessManagement;
@@ -1046,6 +1047,114 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Null(ex);
             Assert.True(result, "A root that cannot be killed is logged inside the tree walk, so the call still reports success.");
+        }
+
+        /// <summary>
+        /// Pins the PID-reuse tolerance of the downward walk: a child that started up to <see cref="AppConfig.PidReuseToleranceSeconds"/>
+        /// before its parent is scheduling jitter and is still killed, one that started further back is a recycled PID.
+        /// </summary>
+        [Theory]
+        [InlineData(-1, true)]  // inside the tolerance: scheduling jitter, still a child
+        [InlineData(1, false)]  // outside the tolerance: a recycled PID
+        public void KillProcessTree_ChildOlderThanItsParent_IsDecidedAtThePidReuseTolerance(int secondsBeyondTolerance, bool expectKilled)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var root = new FakeSystemProcess { Id = 100, ProcessName = "root", StartTime = now };
+            var child = new FakeSystemProcess
+            {
+                Id = 101,
+                ProcessName = "child",
+                StartTime = now.AddSeconds(-(AppConfig.PidReuseToleranceSeconds + secondsBeyondTolerance))
+            };
+
+            accessor.Processes[100] = root;
+            accessor.Processes[101] = child;
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 1, Name = "root" };
+            accessor.ByParent[100] = new List<int> { 101 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillProcessTreeAndParents(100, killParents: false);
+
+            // Assert
+            Assert.Equal(expectKilled, child.Killed);
+        }
+
+        /// <summary>
+        /// Pins the PID-reuse tolerance of the upward walk: a parent that started up to <see cref="AppConfig.PidReuseToleranceSeconds"/>
+        /// after its child is still the genuine parent, one that started further on is a recycled PID.
+        /// </summary>
+        [Theory]
+        [InlineData(-1, true)]  // inside the tolerance: still the genuine parent
+        [InlineData(1, false)]  // outside the tolerance: a recycled parent PID
+        public void KillParentProcesses_ParentYoungerThanItsChild_IsDecidedAtThePidReuseTolerance(int secondsBeyondTolerance, bool expectKilled)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+
+            var child = new FakeSystemProcess { Id = 100, ProcessName = "child", StartTime = now };
+            var parent = new FakeSystemProcess
+            {
+                Id = 200,
+                ProcessName = "parent",
+                StartTime = now.AddSeconds(AppConfig.PidReuseToleranceSeconds + secondsBeyondTolerance)
+            };
+
+            accessor.Processes[100] = child;
+            accessor.Processes[200] = parent;
+            accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
+            accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 1, Name = "parent" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillProcessTreeAndParents(100, killParents: true);
+
+            // Assert
+            Assert.Equal(expectKilled, parent.Killed);
+        }
+
+        /// <summary>
+        /// Pins the PID-reuse tolerance of the ancestor walk: a parent that started up to <see cref="AppConfig.PidReuseToleranceSeconds"/>
+        /// after the current process stays in the protected set, one that started further on is a recycled PID.
+        /// </summary>
+        [Theory]
+        [InlineData(-1, false)] // inside the tolerance: a genuine ancestor, stays protected
+        [InlineData(1, true)]   // outside the tolerance: a recycled PID, not an ancestor
+        public void KillProcessTreeAndParents_AncestorYoungerThanTheCurrentProcess_IsDecidedAtThePidReuseTolerance(int secondsBeyondTolerance, bool expectKilled)
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+            var selfStart = now.AddMinutes(-10);
+            accessor.CurrentStartTime = selfStart;
+
+            var target = new FakeSystemProcess { Id = 300, ProcessName = "myworker", StartTime = now };
+            var supervisor = new FakeSystemProcess
+            {
+                Id = 400,
+                ProcessName = "supervisor",
+                StartTime = selfStart.AddSeconds(AppConfig.PidReuseToleranceSeconds + secondsBeyondTolerance)
+            };
+
+            accessor.Processes[300] = target;
+            accessor.Processes[400] = supervisor;
+            accessor.Snapshot[accessor.CurrentPid] = new ProcessInfoNode { ParentId = 400, Name = "TestSelf.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 1, Name = "supervisor.exe" };
+            accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 400, Name = "myworker.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillProcessTreeAndParents("myworker", killParents: true);
+
+            // Assert
+            Assert.Equal(expectKilled, supervisor.Killed);
         }
 
         #endregion
