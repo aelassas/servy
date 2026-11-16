@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-15T18:35:44Z
+> Generated on: 2026-11-16T10:31:47Z
 
 ---
 
@@ -6437,9 +6437,9 @@ A service account gets the least privilege its services need: nothing on the vau
 | `logs\` and everything under it, other than the account's own service log folders | **None**. The account cannot list, read, write or delete the logs of Servy, the shared `Servy.Service.log` that versions before v10.2 wrote to `logs\`, or the log folder of any service it does not run. The account's explicit entries on every file and folder under `logs\` are removed. |
 | `logs\services\<ServiceName>\`, for each service the account runs | On the folder: **List** and **Create Files** (creating the log, and the new file of a log rotation), never **Delete** (it cannot rename or delete the folder). On the files in it: **Read, Write, Delete** (log rotation and pruning). The folder is created if missing. |
 | `Servy.Host.exe` / `Servy.Host.Net48.exe` | **None**. The service account cannot read, write or execute the host binaries. |
-| `*.exe` and `*.dll`: `Servy.Service.exe`, `Servy.Service.CLI.exe`, `Servy.Restarter.exe` (.NET Framework 4.8 build: the `*.Net48.exe` binaries and every `*.dll`) | **Read & Execute** |
+| `*.exe` and `*.dll`: `Servy.Service.exe`, `Servy.Service.CLI.exe`, `Servy.Restarter.exe` (.NET Framework 4.8 build: the `*.Net48.exe` binaries and every `*.dll`). Each build also grants the other build's binaries when they are in the vault: the .NET 10 build the `*.Net48.exe` wrappers and restarter and every `*.dll`, the .NET Framework 4.8 build `Servy.Service.exe`, `Servy.Service.CLI.exe` and `Servy.Restarter.exe`, so a service the other build installed still starts after a switch between the two builds | **Read & Execute** |
 | `appsettings.host.json` / `Servy.Host.Net48.exe.config` | **None**. The service account cannot read the host configuration file. |
-| `*.json` and `*.config`: `appsettings.service.json`, `appsettings.restarter.json` (.NET Framework 4.8 build: the `*.exe.config` files) | **Read** only |
+| `*.json` and `*.config`: `appsettings.service.json`, `appsettings.restarter.json` (.NET Framework 4.8 build: the `*.exe.config` files). Each build also grants the other build's files when they are in the vault: the .NET 10 build the `*.exe.config` files of the `*.Net48.exe` wrappers and restarter, the .NET Framework 4.8 build `appsettings.service.json` and `appsettings.restarter.json` | **Read** only |
 
 The service account needs no right on `logs\` or `logs\services\` to reach `logs\services\<ServiceName>\`: Windows grants every account the **Bypass traverse checking** privilege by default, so a full path can be opened without listing its parents.
 
