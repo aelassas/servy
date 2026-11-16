@@ -25,7 +25,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         internal static readonly string[] WrapperExecutableNames =
         {
-            "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Service.Net48.exe", "Servy.Service.CLI.Net48.exe"
+            AppConfig.ServyServiceUIExe, AppConfig.ServyServiceCLIExe, AppConfig.OtherBuildServiceUIExe, AppConfig.OtherBuildServiceCLIExe
         };
 
         private readonly IServiceRepository _serviceRepository;

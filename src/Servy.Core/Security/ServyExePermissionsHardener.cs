@@ -89,7 +89,7 @@ namespace Servy.Core.Security
         /// </summary>
         internal static readonly string[] OtherBuildExecutableNames =
         {
-            "Servy.Service.Net48.exe", "Servy.Service.CLI.Net48.exe", "Servy.Restarter.Net48.exe"
+            AppConfig.OtherBuildServiceUIExe, AppConfig.OtherBuildServiceCLIExe, AppConfig.OtherBuildRestarterExe
         };
 
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);

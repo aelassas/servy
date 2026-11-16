@@ -1747,6 +1747,30 @@ namespace Servy.Core.Config
         public static readonly string ServyHostExe = $"{ServyHostFileName}.exe";
 
         /// <summary>
+        /// The file name of the service wrapper executable of the .NET Framework 4.8 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildServiceUIExe = "Servy.Service.Net48.exe";
+
+        /// <summary>
+        /// The file name of the CLI service wrapper executable of the .NET Framework 4.8 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildServiceCLIExe = "Servy.Service.CLI.Net48.exe";
+
+        /// <summary>
+        /// The file name of the restarter executable of the .NET Framework 4.8 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildRestarterExe = "Servy.Restarter.Net48.exe";
+
+        /// <summary>
+        /// The file name of the Servy host service executable of the .NET Framework 4.8 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildHostExe = "Servy.Host.Net48.exe";
+
+        /// <summary>
         /// The file name of the Servy host service's settings file.
         /// </summary>
         public const string ServyHostSettingsFileName = "appsettings.host.json";
