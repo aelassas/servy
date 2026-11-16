@@ -304,6 +304,21 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Theory]
+        [InlineData("KEY=\"hello\\\"", "\"hello\"")] // the closing quote is escaped, so the pair is not structural (#1296)
+        [InlineData("KEY=\"", "\"")]                 // a lone quote is its own first and last character
+        [InlineData("KEY=\"\"", "")]                 // the shortest structural pair
+        public void Parse_StructuralQuoteStrip_HoldsAtItsBoundaries(string input, string expectedValue)
+        {
+            // Arrange & Act
+            var result = EnvironmentVariableParser.Parse(input);
+
+            // Assert
+            var variable = Assert.Single(result);
+            Assert.Equal("KEY", variable.Name);
+            Assert.Equal(expectedValue, variable.Value);
+        }
+
+        [Theory]
         [InlineData("KEY=\\\"hello\\\"", "\"hello\"")]
         [InlineData("KEY=\\\"\\\"", "\"\"")]
         public void Parse_LiteralQuotes_PreservedWhenEscaped(string input, string expectedValue)
