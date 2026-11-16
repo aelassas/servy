@@ -739,5 +739,68 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(1, entry.EventId);
             Assert.Equal(AppConfig.EventSource, entry.ProviderName);
         }
+
+        [Fact]
+        public async Task SearchAsync_NamedSource_KeepsAnEventWhoseProviderIsNotTheDefaultSource()
+        {
+            // Arrange: with a source name the XPath query is the only provider filter
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 4, DateTime.UtcNow, "[Service] custom source entry");
+            evt.ProviderName = "MyCustomSource";
+            mockReader
+                .Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Returns(new[] { evt });
+            var service = new EventLogService(mockReader.Object, "MyCustomSource");
+
+            // Act
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert
+            var entry = Assert.Single(results);
+            Assert.Equal("MyCustomSource", entry.ProviderName);
+        }
+
+        [Theory]
+        [InlineData("SERVY")]        // case differs from AppConfig.EventSource
+        [InlineData("Servy.Host")]   // contains AppConfig.EventSource
+        public async Task SearchAsync_WildcardMode_KeepsProvidersThatContainTheSourceNameInAnyCase(string providerName)
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 4, DateTime.UtcNow, "[Service] entry");
+            evt.ProviderName = providerName;
+            mockReader
+                .Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Returns(new[] { evt });
+            var service = new EventLogService(mockReader.Object, string.Empty);
+
+            // Act
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert
+            var entry = Assert.Single(results);
+            Assert.Equal(providerName, entry.ProviderName);
+        }
+
+        [Fact]
+        public async Task SearchAsync_WildcardMode_DropsAnEventWithoutAProviderName()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            var withoutProvider = CreateFakeEvent(1, 4, DateTime.UtcNow, "[Service] no provider");
+            withoutProvider.ProviderName = null;
+            var servyEvent = CreateFakeEvent(2, 4, DateTime.UtcNow, "[Service] Servy entry");
+            mockReader
+                .Setup(r => r.ReadEvents(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<int>()))
+                .Returns(new[] { withoutProvider, servyEvent });
+            var service = new EventLogService(mockReader.Object, string.Empty);
+
+            // Act
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
+
+            // Assert
+            var entry = Assert.Single(results);
+            Assert.Equal(2, entry.EventId);
+        }
     }
 }
