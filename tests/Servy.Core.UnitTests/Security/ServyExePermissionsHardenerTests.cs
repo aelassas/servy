@@ -244,7 +244,13 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains(AppConfig.ServyRestarterExe, result.Missing);
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.DbFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
             Assert.DoesNotContain(result.Missing, m => m.StartsWith(AppConfig.SecurityFolderName + Path.DirectorySeparatorChar, StringComparison.Ordinal));
-            Assert.Equal(new[] { ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName }, result.Skipped);
+            Assert.Equal(new[]
+            {
+                "Servy.Service.Net48.exe", "Servy.Service.Net48.exe.config",
+                "Servy.Service.CLI.Net48.exe", "Servy.Service.CLI.Net48.exe.config",
+                "Servy.Restarter.Net48.exe", "Servy.Restarter.Net48.exe.config",
+                ServyExePermissionsHardener.ServiceSettingsFileName, ServyExePermissionsHardener.RestarterSettingsFileName,
+            }, result.Skipped);
         }
 
         [Fact]
@@ -585,6 +591,86 @@ namespace Servy.Core.UnitTests.Security
             // Nothing in db\ or security\ is granted any more: the wrapper reads through the Servy host
             Assert.DoesNotContain(targets.Keys, k => k.StartsWith("db" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
             Assert.DoesNotContain(targets.Keys, k => k.StartsWith("security" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Fact]
+        public void GetTargetFiles_OtherBuildExecutables_AreOptionalReadAndExecuteTargets()
+        {
+            // Arrange: the services the .NET Framework 4.8 build installed keep running its wrappers and its restarter
+            // after a switch to this build (#7945, #7946)
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
+
+            // Assert
+            foreach (var exe in new[] { "Servy.Service.Net48.exe", "Servy.Service.CLI.Net48.exe", "Servy.Restarter.Net48.exe" })
+            {
+                Assert.True(targets.ContainsKey(exe), $"{exe} is a target");
+                Assert.Equal(FileSystemRights.ReadAndExecute, targets[exe].Rights);
+                Assert.True(targets[exe].Optional, $"{exe} is optional");
+            }
+        }
+
+        [Fact]
+        public void GetTargetFiles_OtherBuildConfigFiles_AreOptionalReadOnlyTargets()
+        {
+            // Arrange
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
+
+            // Assert
+            foreach (var config in new[] { "Servy.Service.Net48.exe.config", "Servy.Service.CLI.Net48.exe.config", "Servy.Restarter.Net48.exe.config" })
+            {
+                Assert.True(targets.ContainsKey(config), $"{config} is a target");
+                Assert.Equal(FileSystemRights.Read, targets[config].Rights);
+                Assert.True(targets[config].Optional, $"{config} is optional");
+            }
+        }
+
+        [Fact]
+        public void GetTargetFiles_DllsInTheVault_AreOptionalReadAndExecuteTargets()
+        {
+            // Arrange: this build is single-file, so a DLL in the vault root belongs to the .NET Framework 4.8 wrappers
+            File.WriteAllText(Path.Combine(TempDirectory, "Servy.Core.dll"), "dll");
+            File.WriteAllText(Path.Combine(TempDirectory, "e_sqlite3.dll"), "dll");
+            var sut = new TestableHardener(TempDirectory);
+
+            // Act
+            var targets = sut.GetTargetFiles().ToDictionary(t => t.RelativePath);
+
+            // Assert
+            foreach (var dll in new[] { "Servy.Core.dll", "e_sqlite3.dll" })
+            {
+                Assert.True(targets.ContainsKey(dll), $"{dll} is a target");
+                Assert.Equal(FileSystemRights.ReadAndExecute, targets[dll].Rights);
+                Assert.True(targets[dll].Optional, $"{dll} is optional");
+            }
+        }
+
+        [Fact]
+        public void Harden_OtherBuildWrapperInTheVault_IsGrantedReadAndExecute()
+        {
+            // Arrange: a service of the .NET Framework 4.8 build runs Servy.Service.Net48.exe under the account
+            var wrapper = Path.Combine(TempDirectory, "Servy.Service.Net48.exe");
+            File.WriteAllText(wrapper, "wrapper");
+            var sut = new TestableHardener(TempDirectory) { IsMember = false };
+
+            // Act
+            var result = sut.Harden("svc", Services, CancellationToken.None);
+
+            // Assert
+            Assert.Contains("Servy.Service.Net48.exe", result.Hardened);
+            Assert.Empty(result.Failed);
+            var rights = new FileInfo(wrapper).GetAccessControl(AccessControlSections.Access)
+                .GetAccessRules(true, false, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>()
+                .Where(r => LocalServiceSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow)
+                .Aggregate((FileSystemRights)0, (all, r) => all | r.FileSystemRights);
+            Assert.Equal(FileSystemRights.ReadAndExecute, rights & FileSystemRights.ReadAndExecute);
+            Assert.Equal(0, (int)(rights & (FileSystemRights.WriteData | FileSystemRights.Delete)));
         }
 
         [Fact]

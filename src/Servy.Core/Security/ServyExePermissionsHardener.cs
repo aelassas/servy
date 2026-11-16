@@ -11,7 +11,8 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Hardens Servy's vault for a service account with the least privilege the service needs: Read &amp; Execute on
-    /// Servy's binaries, Read on its settings files, and Read, Write, Delete on the files in
+    /// Servy's binaries, those of the .NET Framework 4.8 build that shares the vault included, Read on its settings
+    /// files, and Read, Write, Delete on the files in
     /// <c>logs\services\&lt;ServiceName&gt;\</c> of each of its own services, the only folders it writes. The account
     /// gets nothing on the vault root, <c>%ProgramData%\Servy</c>, itself, and nothing at all on <c>db\</c>,
     /// <c>security\</c>, <c>logs\</c> and the legacy <c>recovery\</c> or anything in them, the log folders of other
@@ -80,6 +81,16 @@ namespace Servy.Core.Security
 
         /// <summary>The file name of the host's settings file in the vault.</summary>
         internal const string HostSettingsFileName = AppConfig.ServyHostSettingsFileName;
+
+        /// <summary>
+        /// The wrappers and the restarter of the .NET Framework 4.8 build, which share the vault with this build: the
+        /// services that build installed still run them after a switch to this build (#7941), under accounts this build
+        /// hardens (#7945, #7946).
+        /// </summary>
+        internal static readonly string[] OtherBuildExecutableNames =
+        {
+            "Servy.Service.Net48.exe", "Servy.Service.CLI.Net48.exe", "Servy.Restarter.Net48.exe"
+        };
 
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
         private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
@@ -710,7 +721,8 @@ namespace Servy.Core.Security
         /// Lists the files the hardening locks down, relative to <see cref="VaultDirectory"/>, with the rights the target
         /// account keeps on each.
         /// </summary>
-        /// <returns>The binaries (Read &amp; Execute) and the settings files (Read, optional).</returns>
+        /// <returns>The binaries (Read &amp; Execute), the binaries of the .NET Framework 4.8 build (Read &amp; Execute,
+        /// optional) and its <c>*.exe.config</c> files (Read, optional), and the settings files (Read, optional).</returns>
         internal IReadOnlyList<ExePermissionsTarget> GetTargetFiles()
         {
             var targets = new List<ExePermissionsTarget>
@@ -719,6 +731,18 @@ namespace Servy.Core.Security
                 new ExePermissionsTarget(AppConfig.ServyServiceCLIExe, FileSystemRights.ReadAndExecute),
                 new ExePermissionsTarget(AppConfig.ServyRestarterExe, FileSystemRights.ReadAndExecute),
             };
+
+            // The services the other build installed still run its wrappers and its restarter from the vault (#7941), so
+            // their accounts need the same access to those files. They are optional: most vaults hold one build.
+            foreach (var exe in OtherBuildExecutableNames)
+            {
+                targets.Add(new ExePermissionsTarget(exe, FileSystemRights.ReadAndExecute, optional: true));
+                targets.Add(new ExePermissionsTarget(exe + ".config", FileSystemRights.Read, optional: true));
+            }
+
+            // This build is single-file, so every DLL in the vault root belongs to the .NET Framework 4.8 wrappers
+            foreach (var dll in Directory.GetFiles(VaultDirectory, "*.dll", SearchOption.TopDirectoryOnly).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+                targets.Add(new ExePermissionsTarget(Path.GetFileName(dll), FileSystemRights.ReadAndExecute, optional: true));
 
             AddCommonTargets(targets);
             return targets;

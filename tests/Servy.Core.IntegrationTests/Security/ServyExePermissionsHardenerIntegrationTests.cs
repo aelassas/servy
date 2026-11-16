@@ -510,7 +510,8 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Hardened, result.Status);
-            Assert.Equal(2, result.Skipped.Count);
+            // The two settings files, and the binaries and *.exe.config files of the .NET Framework 4.8 build, which this vault does not hold
+            Assert.Equal(8, result.Skipped.Count);
             Assert.Empty(result.Missing);
         }
 
