@@ -5,6 +5,7 @@ using Servy.Core.Security;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -641,6 +642,95 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.True(needed);
+        }
+
+        [Fact]
+        public async Task CopyResources_UpToDateDllWithALowerFileVersion_ReplacesItWithTheEmbeddedResource()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: an outdated DLL copied into the vault after the running build was made. Its timestamps say "keep",
+            // even "a downgrade to keep", and only Administrators and SYSTEM may write it (so #7530 does not compare it),
+            // but its file version is lower than the embedded resource's (#7942)
+            var (olderPath, newerPath) = OrderByFileVersion(typeof(Mock).Assembly.Location, typeof(ResourceHelper).Assembly.Location);
+            var embedded = File.ReadAllBytes(newerPath);
+            var targetPath = Path.Combine(TempDirectory, "Outdated.dll");
+            File.Copy(olderPath, targetPath);
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddHours(1));
+            SecureLikeTheVault(targetPath);
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.Outdated.dll" ? new MemoryStream(embedded) : null;
+            var items = new List<ResourceItem> { new ResourceItem { FileNameWithoutExtension = "Outdated", Extension = "dll" } };
+
+            // Act
+            bool result = await _resourceHelper.CopyResources(_fakeAssembly, "Servy.Resources", items, stopServices: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(items[0].ShouldCopy);
+            Assert.Equal(embedded, File.ReadAllBytes(targetPath));
+        }
+
+        [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateDllWithAHigherFileVersion_ReturnsFalse()
+        {
+            if (!_isElevated) return; // rewriting file owners and DACLs requires an elevated process
+
+            // Arrange: the vault holds a newer DLL than the running build embeds, which is still kept (#4803, #7942)
+            var (olderPath, newerPath) = OrderByFileVersion(typeof(Mock).Assembly.Location, typeof(ResourceHelper).Assembly.Location);
+            var existing = File.ReadAllBytes(newerPath);
+            var embedded = File.ReadAllBytes(olderPath);
+            var targetPath = Path.Combine(TempDirectory, "Newer.dll");
+            File.WriteAllBytes(targetPath, existing);
+            File.SetLastWriteTimeUtc(targetPath, _resourceHelper.GetHostProcessLastWriteTimeUtc().AddHours(1));
+            SecureLikeTheVault(targetPath);
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.Newer.dll" ? new MemoryStream(embedded) : null;
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_fakeAssembly, "Servy.Resources", "Newer", "dll");
+
+            // Assert
+            Assert.False(needed);
+            Assert.Equal(existing, File.ReadAllBytes(targetPath));
+        }
+
+        [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateDllIdenticalToTheResource_ReturnsFalseAndTakesTheHostExecutableTime()
+        {
+            // Arrange: an identical DLL whose timestamps say "keep" is compared once, then stamped with the host
+            // executable's time so that the next start skips the comparison (#7942)
+            var content = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x07 };
+            var hostExeTime = _resourceHelper.GetHostProcessLastWriteTimeUtc();
+            var targetPath = Path.Combine(TempDirectory, "Current.dll");
+            File.WriteAllBytes(targetPath, content);
+            File.SetLastWriteTimeUtc(targetPath, hostExeTime.AddHours(1));
+            _fakeAssembly.OnGetManifestResourceStream = n => n == "Servy.Resources.Current.dll" ? new MemoryStream(content) : null;
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_fakeAssembly, "Servy.Resources", "Current", "dll");
+
+            // Assert
+            Assert.False(needed);
+            Assert.Equal(hostExeTime, File.GetLastWriteTimeUtc(targetPath));
+        }
+
+        /// <summary>
+        /// Orders two files by the file version of their version resource.
+        /// </summary>
+        /// <param name="first">The first file.</param>
+        /// <param name="second">The second file.</param>
+        /// <returns>The file with the lower version, then the file with the higher version.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when both files have the same version, so neither is older.</exception>
+        private static (string Older, string Newer) OrderByFileVersion(string first, string second)
+        {
+            var firstInfo = FileVersionInfo.GetVersionInfo(first);
+            var secondInfo = FileVersionInfo.GetVersionInfo(second);
+            var firstVersion = new Version(firstInfo.FileMajorPart, firstInfo.FileMinorPart, firstInfo.FileBuildPart, firstInfo.FilePrivatePart);
+            var secondVersion = new Version(secondInfo.FileMajorPart, secondInfo.FileMinorPart, secondInfo.FileBuildPart, secondInfo.FilePrivatePart);
+
+            if (firstVersion == secondVersion)
+                throw new InvalidOperationException($"'{first}' and '{second}' have the same file version {firstVersion}.");
+
+            return firstVersion < secondVersion ? (first, second) : (second, first);
         }
 
         [Fact]

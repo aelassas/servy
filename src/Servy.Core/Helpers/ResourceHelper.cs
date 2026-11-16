@@ -82,7 +82,8 @@ namespace Servy.Core.Helpers
         /// running executable by more than <see cref="AppConfig.ResourceStalenessThresholdMinutes"/> AND its content differs
         /// from the embedded resource. A file identical to the resource is never extracted again, whatever the timestamps say.
         /// A file whose timestamps say "keep" is still compared with the embedded resource, and extracted again when it
-        /// differs, if a principal other than Administrators and SYSTEM owns it or may write to it (#7530).
+        /// differs, if a principal other than Administrators and SYSTEM owns it or may write to it (#7530), or if it is a
+        /// DLL whose file version is lower than the embedded resource's (#7942).
         /// </summary>
         /// <param name="assembly">The assembly that embeds the resource.</param>
         /// <param name="resourceNamespace">The resource namespace.</param>
@@ -92,8 +93,9 @@ namespace Servy.Core.Helpers
         /// <returns><see langword="true"/> when the file has to be written.</returns>
         /// <remarks>
         /// Not a pure query: when the existing file is found identical to the embedded resource, its last write time is
-        /// set to the host executable's, so that later calls skip the byte comparison (#7367). Like the timestamp-only
-        /// overload, it also creates the extraction directory when it is missing.
+        /// set to the host executable's, so that later calls skip the byte comparison (#7367, and #7942 for a DLL whose
+        /// timestamps say "keep"). Like the timestamp-only overload, it also creates the extraction directory when it is
+        /// missing.
         /// </remarks>
         public bool IsExtractionNeeded(Assembly assembly, string resourceNamespace, string fileName, string extension, string subfolder = null)
             => TryPrepareExtraction(assembly, resourceNamespace, fileName, extension, subfolder, out _, out _, out _);
@@ -476,7 +478,8 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required: based on
-        /// timestamps, and, when <paramref name="assembly"/> is given, never for a file identical to the embedded resource.
+        /// timestamps, and, when <paramref name="assembly"/> is given, never for a file identical to the embedded resource,
+        /// and always for a DLL whose file version is lower than the embedded resource's, whatever the timestamps say (#7942).
         /// </summary>
         /// <param name="assembly">The assembly that embeds the resource, used to compare the existing file with it; or
         /// <see langword="null"/> to decide from the timestamps alone.</param>
@@ -562,6 +565,25 @@ namespace Servy.Core.Helpers
                     return false;
                 }
 
+                // A DLL's write time says nothing about its version: a copied DLL keeps the time of its source and an
+                // extracted one gets the time of the extraction, so an outdated DLL put in the vault after the running
+                // build was made looks up to date, or even like a downgrade to keep. Its file version decides instead: an
+                // older one is replaced, a newer one is still kept. An identical DLL takes the host executable's time, so
+                // the next start skips the comparison (#7942).
+                if (!shouldCopy && assembly != null && extension.Equals("dll", StringComparison.OrdinalIgnoreCase) && existingFileTime != hostExeWriteTime)
+                {
+                    if (IsSameAsEmbeddedResource(assembly, resourceName, targetPath))
+                    {
+                        try { File.SetLastWriteTimeUtc(targetPath, hostExeWriteTime); }
+                        catch (Exception ex) { Logger.Debug($"Could not update the write time of '{targetPath}': {ex.Message}"); }
+                    }
+                    else if (IsOlderVersionThanEmbeddedResource(assembly, resourceName, targetPath))
+                    {
+                        Logger.Warn($"Existing file '{targetPath}' has a lower file version than the embedded resource '{resourceName}'. It will be replaced.");
+                        return true;
+                    }
+                }
+
                 // The timestamps only stand for the content while nobody else can write the file or set its times. A
                 // healthy vault file costs one owner and ACL read here and no comparison; only a file another principal
                 // owns or may write to is compared with the embedded resource, and replaced when it differs (#7530).
@@ -640,6 +662,71 @@ namespace Servy.Core.Helpers
                 total += read;
             }
             return total;
+        }
+
+        /// <summary>
+        /// Determines whether a file's version is lower than the version of an embedded resource, both read from their
+        /// version resource (<see cref="FileVersionInfo"/>).
+        /// </summary>
+        /// <param name="assembly">The assembly that embeds the resource.</param>
+        /// <param name="resourceName">The full resource name.</param>
+        /// <param name="filePath">The existing file.</param>
+        /// <returns><see langword="true"/> only when both versions can be read and the file's is the lower one; a missing
+        /// resource, a file or resource without a version, or any failure counts as not older.</returns>
+        /// <remarks>
+        /// <see cref="FileVersionInfo"/> reads from a path only, so the resource is written to a temporary file that is
+        /// deleted afterwards.
+        /// </remarks>
+        private static bool IsOlderVersionThanEmbeddedResource(Assembly assembly, string resourceName, string filePath)
+        {
+            string probePath = null;
+            try
+            {
+                var existingVersion = GetFileVersion(filePath);
+                if (existingVersion == null)
+                    return false;
+
+                using (var resource = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (resource == null)
+                        return false;
+
+                    probePath = Path.GetTempFileName();
+                    using (var probe = new FileStream(probePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        resource.CopyTo(probe, BufferSize);
+                    }
+                }
+
+                var embeddedVersion = GetFileVersion(probePath);
+                return embeddedVersion != null && existingVersion < embeddedVersion;
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Could not compare the version of '{filePath}' with the embedded resource '{resourceName}': {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                if (probePath != null)
+                {
+                    try { File.Delete(probePath); }
+                    catch (Exception ex) { Logger.Debug($"Could not delete the temporary file '{probePath}': {ex.Message}"); }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reads the file version from a file's version resource.
+        /// </summary>
+        /// <param name="filePath">The file.</param>
+        /// <returns>The file version, or <see langword="null"/> when the file has no version resource or its version is
+        /// 0.0.0.0.</returns>
+        private static Version GetFileVersion(string filePath)
+        {
+            var info = FileVersionInfo.GetVersionInfo(filePath);
+            var version = new Version(info.FileMajorPart, info.FileMinorPart, info.FileBuildPart, info.FilePrivatePart);
+            return version == new Version(0, 0, 0, 0) ? null : version;
         }
 
         /// <summary>
