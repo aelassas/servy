@@ -162,7 +162,7 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
             Assert.Contains("could not be resolved", result.Reason);
-            Assert.False(TargetHasVaultAce(LocalServiceSid));
+            Assert.False(ItemHasAce(TempDirectory, LocalServiceSid));
         }
 
         [Theory]
@@ -181,7 +181,7 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.InvalidAccount, result.Status);
             Assert.Contains("broad group", result.Reason);
-            Assert.False(TargetHasVaultAce(sid));
+            Assert.False(ItemHasAce(TempDirectory, sid));
         }
 
         [Theory]
@@ -216,7 +216,7 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(ExePermissionsHardeningStatus.Skipped, result.Status);
             Assert.Contains("member of Administrators", result.Reason);
             Assert.Empty(result.GrantedFolders);
-            Assert.False(TargetHasVaultAce(LocalServiceSid));
+            Assert.False(ItemHasAce(TempDirectory, LocalServiceSid));
         }
 
         [Fact]
@@ -231,11 +231,11 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             Assert.Equal(ExePermissionsHardeningStatus.Incomplete, result.Status);
             Assert.Equal(new[] { ServiceLogsFolder }, result.GrantedFolders);
-            Assert.False(TargetHasVaultAce(LocalServiceSid));
+            Assert.False(ItemHasAce(TempDirectory, LocalServiceSid));
             foreach (var folder in result.GrantedFolders)
             {
                 Assert.True(Directory.Exists(Path.Combine(TempDirectory, folder)), $"{folder} was created");
-                Assert.True(TargetHasAce(Path.Combine(TempDirectory, folder), LocalServiceSid), $"{folder} was granted");
+                Assert.True(ItemHasAce(Path.Combine(TempDirectory, folder), LocalServiceSid), $"{folder} was granted");
             }
             Assert.Empty(result.Hardened);
             Assert.Empty(result.Failed);
@@ -810,7 +810,7 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             Assert.True(result);
             Assert.Equal(0, sut.ResolveCalls);
-            Assert.False(TargetHasVaultAce(LocalServiceSid));
+            Assert.False(ItemHasAce(TempDirectory, LocalServiceSid));
         }
 
         [Fact]
@@ -1929,22 +1929,6 @@ namespace Servy.Core.UnitTests.Security
                 rules = new FileInfo(path).GetAccessControl(AccessControlSections.Access).GetAccessRules(true, false, typeof(SecurityIdentifier));
 
             return rules.Cast<FileSystemAccessRule>().Any(r => sid.Equals(r.IdentityReference));
-        }
-
-        /// <summary>
-        /// Whether the vault directory carries an explicit entry for <paramref name="sid"/>.
-        /// </summary>
-        private bool TargetHasVaultAce(SecurityIdentifier sid) => TargetHasAce(TempDirectory, sid);
-
-        /// <summary>
-        /// Whether a directory carries an explicit entry for <paramref name="sid"/>.
-        /// </summary>
-        private static bool TargetHasAce(string directory, SecurityIdentifier sid)
-        {
-            var acl = new DirectoryInfo(directory).GetAccessControl(AccessControlSections.Access);
-            return acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                .Cast<FileSystemAccessRule>()
-                .Any(r => sid.Equals(r.IdentityReference));
         }
 
         /// <summary>
