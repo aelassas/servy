@@ -595,5 +595,75 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.False(result);
             Assert.True(File.Exists(file));
         }
+
+        [Fact]
+        public void Initialize_CounterFileThatDeniesRead_IsNotImportedAndTheMigrationStillCompletes()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: a counter file whose DACL denies the current user FILE_READ_DATA, so opening it for
+                // reading throws UnauthorizedAccessException rather than IOException
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Denied");
+                DowngradeToVersion9(conn);
+                var path = WriteCounterFile("Denied", "5", new DateTime(2026, 9, 29, 0, 0, 0, DateTimeKind.Utc));
+                var file = new FileInfo(path);
+
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    var deny = new FileSystemAccessRule(identity.User!, FileSystemRights.ReadData, AccessControlType.Deny);
+                    var acl = file.GetAccessControl();
+                    acl.AddAccessRule(deny);
+                    file.SetAccessControl(acl);
+
+                    try
+                    {
+                        // The arrangement holds on this runner: a plain read is refused with the exception under test
+                        Assert.Throws<UnauthorizedAccessException>(() => File.ReadAllText(path));
+
+                        // Act
+                        var ex = Record.Exception(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+
+                        // Assert: nothing imported, nothing deleted, and the migration itself did not fail
+                        Assert.Null(ex);
+                        Assert.Equal((null, null), ReadCounter(conn, "Denied"));
+                        Assert.True(File.Exists(path));
+                        Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                    }
+                    finally
+                    {
+                        // Give the read right back so the temporary directory can be cleaned up
+                        acl.RemoveAccessRule(deny);
+                        file.SetAccessControl(acl);
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void DeleteFolder_FileInsideIsReadOnly_ReturnsFalseAndKeepsTheFolder()
+        {
+            // Arrange: deleting a read-only file is refused with UnauthorizedAccessException, not IOException
+            var folder = Path.Combine(TempDirectory, "recovery-readonly");
+            Directory.CreateDirectory(folder);
+            var file = Path.Combine(folder, "readonly.dat");
+            File.WriteAllText(file, "1");
+            File.SetAttributes(file, FileAttributes.ReadOnly);
+
+            try
+            {
+                // Act
+                var result = LegacyRecoveryImporter.DeleteFolder(folder);
+
+                // Assert
+                Assert.False(result);
+                Assert.True(File.Exists(file));
+            }
+            finally
+            {
+                // Clear the attribute so the temporary directory can be cleaned up
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+        }
     }
 }
