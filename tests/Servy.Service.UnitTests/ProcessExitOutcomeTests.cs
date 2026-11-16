@@ -353,6 +353,12 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.ExitCode).Returns(42);
             service.SetChildProcess(mockProcess.Object);
 
+            // The error exit stops the service right after queueing the ping, and OnStop shuts the service's logger
+            // down once the teardown returns. The ping logs from a Task.Run that reads that logger when it runs, so
+            // a pool that is busy for a few milliseconds lets the shutdown win and the line is never logged. Hold
+            // the teardown until the ping line is out.
+            service.OnStoppedForTest += () => pingLogged.Task.Wait(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken);
+
             // Act
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
