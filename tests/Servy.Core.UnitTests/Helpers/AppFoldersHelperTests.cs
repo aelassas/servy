@@ -231,6 +231,28 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void EnsureFolders_ChildFolderInDifferentCasingThanTheRoot_KeepsInheritance()
+        {
+            // Arrange: the same vault directory, spelled in upper case for the root and in its
+            // original casing for the database folder. Windows treats both as one directory.
+            var upperRoot = TempDirectory.ToUpperInvariant();
+            Assert.NotEqual(TempDirectory, upperRoot);
+
+            var dbFolder = Path.Combine(TempDirectory, "db");
+            var conn = $"Data Source={Path.Combine(dbFolder, "Servy.db")};";
+            var key = Path.Combine(TempDirectory, "keys", "key.aes");
+            var iv = Path.Combine(TempDirectory, "iv", "iv.aes");
+
+            // Act
+            AppFoldersHelper.EnsureFolders(conn, key, iv, rootVaultPath: upperRoot);
+
+            // Assert: a case-sensitive prefix match would call the folder external and break inheritance.
+            Assert.True(Directory.Exists(dbFolder));
+            var dbSecurity = new DirectoryInfo(dbFolder).GetAccessControl();
+            Assert.False(dbSecurity.AreAccessRulesProtected); // child of root in another casing -> inheritance preserved
+        }
+
+        [Fact]
         public void EnsureFolders_ExternalFolder_BreaksInheritance()
         {
             // Arrange: Place root vault and database folder in separate root directories
