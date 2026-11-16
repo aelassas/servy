@@ -658,6 +658,50 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void Initialize_RecoveryFolderCannotBeListed_StillImportsTheCounterAndCompletesTheMigration()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: a counter file to import, in a folder whose DACL denies the current user List Folder, so
+                // the orphan report's Directory.EnumerateFiles throws after the import itself has passed
+                SQLiteDbInitializer.Initialize(conn, legacyRecoveryFolderPath: null);
+                AddService(conn, "Unlistable");
+                DowngradeToVersion9(conn);
+                var time = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc);
+                WriteCounterFile("Unlistable", "4", time);
+                var folder = new DirectoryInfo(_recoveryFolder);
+
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    var deny = new FileSystemAccessRule(identity.User, FileSystemRights.ListDirectory, AccessControlType.Deny);
+                    var acl = folder.GetAccessControl();
+                    acl.AddAccessRule(deny);
+                    folder.SetAccessControl(acl);
+
+                    try
+                    {
+                        // The arrangement holds on this runner: listing is refused with the exception under test
+                        Assert.Throws<UnauthorizedAccessException>(() => Directory.EnumerateFiles(_recoveryFolder).ToList());
+
+                        // Act
+                        var log = LogCapture.Run(() => SQLiteDbInitializer.Initialize(conn, _recoveryFolder));
+
+                        // Assert: the counter was imported, the migration completed, and the listing failure was only logged
+                        Assert.Equal((4, time.Ticks), ReadCounter(conn, "Unlistable"));
+                        Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;"));
+                        Assert.Contains($"Could not list the legacy recovery folder '{_recoveryFolder}' to report files that belong to no installed service.", log);
+                    }
+                    finally
+                    {
+                        // Give the right back so the temporary directory can be cleaned up
+                        acl.RemoveAccessRule(deny);
+                        folder.SetAccessControl(acl);
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void DeleteFolder_FileInsideIsReadOnly_ReturnsFalseAndKeepsTheFolder()
         {
             // Arrange: deleting a read-only file is refused with UnauthorizedAccessException, not IOException
