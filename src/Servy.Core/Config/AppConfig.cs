@@ -1738,6 +1738,30 @@ namespace Servy.Core.Config
         public static readonly string ServyHostExe = $"{ServyHostFileName}.exe";
 
         /// <summary>
+        /// The file name of the service wrapper executable of the .NET 10 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildServiceUIExe = "Servy.Service.exe";
+
+        /// <summary>
+        /// The file name of the CLI service wrapper executable of the .NET 10 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildServiceCLIExe = "Servy.Service.CLI.exe";
+
+        /// <summary>
+        /// The file name of the restarter executable of the .NET 10 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildRestarterExe = "Servy.Restarter.exe";
+
+        /// <summary>
+        /// The file name of the Servy host service executable of the .NET 10 build, which shares
+        /// <see cref="ProgramDataPath"/> with this build (#7941).
+        /// </summary>
+        public const string OtherBuildHostExe = "Servy.Host.exe";
+
+        /// <summary>
         /// The file name of the Servy host service's settings file.
         /// </summary>
         public static readonly string ServyHostSettingsFileName = $"{ServyHostExe}.config";

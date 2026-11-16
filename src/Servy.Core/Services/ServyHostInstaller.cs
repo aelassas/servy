@@ -55,7 +55,7 @@ namespace Servy.Core.Services
         }
 
         /// <summary>The file names of the Servy host executable in the .NET 10 and the .NET Framework 4.8 build.</summary>
-        private static readonly string[] HostExecutableNames = { "Servy.Host.exe", "Servy.Host.Net48.exe" };
+        private static readonly string[] HostExecutableNames = { AppConfig.ServyHostExe, AppConfig.OtherBuildHostExe };
 
         /// <inheritdoc />
         public ServyHostServiceState GetState() => ReadRegistration().State;

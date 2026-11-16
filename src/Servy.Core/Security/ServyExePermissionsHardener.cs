@@ -89,7 +89,7 @@ namespace Servy.Core.Security
         /// </summary>
         internal static readonly string[] OtherBuildExecutableNames =
         {
-            "Servy.Service.exe", "Servy.Service.CLI.exe", "Servy.Restarter.exe"
+            AppConfig.OtherBuildServiceUIExe, AppConfig.OtherBuildServiceCLIExe, AppConfig.OtherBuildRestarterExe
         };
 
         /// <summary>The settings files the wrapper and the restarter of the .NET build read from the vault.</summary>
