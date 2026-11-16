@@ -81,19 +81,21 @@ namespace Servy.Core.UnitTests.Logging
 
         [Theory]
         [InlineData("CON", "%43ON")]
-        [InlineData("con", "%63on")]
+        [InlineData("con", "%43on")]
+        [InlineData("Con.App", "%43on.App")]
+        [InlineData("con.app", "%43on.app")]
         [InlineData("PRN", "%50RN")]
         [InlineData("AUX", "%41UX")]
         [InlineData("NUL", "%4EUL")]
         [InlineData("COM1", "%43OM1")]
         [InlineData("LPT9", "%4CPT9")]
-        [InlineData("nul.log", "%6Eul.log")]
+        [InlineData("nul.log", "%4Eul.log")]
         [InlineData("CON .txt", "%43ON .txt")]
         [InlineData("COM¹", "%43OM¹")]
         [InlineData("COM²", "%43OM²")]
         [InlineData("LPT³", "%4CPT³")]
         [InlineData("CONIN$", "%43ONIN$")]
-        [InlineData("conout$.log", "%63onout$.log")]
+        [InlineData("conout$.log", "%43onout$.log")]
         public void GetFolderName_ReservedDeviceName_HasItsFirstCharacterEncoded(string serviceName, string expected)
         {
             // Act

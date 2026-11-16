@@ -68,11 +68,12 @@ namespace Servy.Core.Logging
             }
 
             // CON, CON.log and "CON .log" all open the console device, so encode the first character of such a name
+            // case-insensitively to match NTFS and Service Control Manager name semantics.
             var stem = serviceName.Split('.')[0];
             if (ReservedNames.IsReservedDeviceName(stem))
             {
                 builder.Remove(0, 1);
-                builder.Insert(0, Encode(serviceName[0]));
+                builder.Insert(0, Encode(char.ToUpperInvariant(serviceName[0])));
             }
 
             var safe = builder.ToString();
