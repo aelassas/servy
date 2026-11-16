@@ -18,10 +18,10 @@ namespace Servy.Core.Services
         ServyHostServiceState GetState();
 
         /// <summary>
-        /// Lists the running Servy services: the ones the wrappers of this build run, and every running service that
-        /// depends on the Servy host service, which includes the services the other build (net10 or net48) installed.
+        /// Lists the running Servy services: the ones the service wrappers of either build (net10 or net48) run, and every
+        /// running service that depends on the Servy host service.
         /// </summary>
-        /// <param name="serviceHelper">Lists the services this build's wrappers run.</param>
+        /// <param name="serviceHelper">Lists the services the wrappers of both builds run.</param>
         /// <returns>The service names, without duplicates.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceHelper"/> is <see langword="null"/>.</exception>
         List<string> GetRunningServyServices(IServiceHelper serviceHelper);
