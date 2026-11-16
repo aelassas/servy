@@ -1104,6 +1104,31 @@ namespace Servy.Host.UnitTests
             await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.RefreshPipeSecurityAsync(CancellationToken.None));
         }
 
+        [Fact]
+        public async Task RefreshPipeSecurityAsync_ServiceProcessRunsAsLocalSystem_IsNotALingeringAccountAndSchedulesNoRecheck()
+        {
+            // Arrange: a running service whose process runs as Local System, with a recheck delay of 1 ms so a
+            // scheduled recheck would show up as further reads
+            var localSystem = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+            var reads = 0;
+            _repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()))
+                .Callback(() => Interlocked.Increment(ref reads))
+                .ReturnsAsync(new[] { new ServiceDto { Name = ServiceName, RunAsLocalSystem = true } });
+            _sut.ResolveProcessAccount = pid => pid == ServicePid ? localSystem : null;
+            _sut.UnresolvedAccountRetryDelayMs = 1;
+            _sut.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+
+            // Act
+            _sut.StartListening();
+            await Task.Delay(300, CancellationToken.None);
+            _sut.StopListening();
+
+            // Assert: one read (the start), no lingering line, and the closed DACL (Local System and Administrators)
+            Assert.Equal(1, Volatile.Read(ref reads));
+            _logger.Verify(l => l.Info(It.Is<string>(m => m.Contains("keep access")), It.IsAny<Exception>()), Times.Never);
+            Assert.Equal(2, _sut.CurrentPipeSecurity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count);
+        }
+
         #endregion
 
         #region Service lifecycle
