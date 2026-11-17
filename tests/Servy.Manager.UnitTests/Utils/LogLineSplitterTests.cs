@@ -33,6 +33,23 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         /// <summary>
+        /// Maps a row name to the encoding it stands for, without a byte order mark.
+        /// </summary>
+        /// <param name="encodingName">The row's encoding name.</param>
+        /// <returns>The encoding, configured not to emit a preamble.</returns>
+        private static Encoding EncodingWithoutByteOrderMark(string encodingName)
+        {
+            switch (encodingName)
+            {
+                case "utf-16LE": return new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
+                case "utf-16BE": return new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
+                case "utf-32LE": return new UTF32Encoding(bigEndian: false, byteOrderMark: false);
+                case "utf-32BE": return new UTF32Encoding(bigEndian: true, byteOrderMark: false);
+                default: throw new ArgumentOutOfRangeException(nameof(encodingName), encodingName, "Unknown encoding row.");
+            }
+        }
+
+        /// <summary>
         /// The defect of #7333: a reader that reached the end of a live log file inside a line returned
         /// the prefix as a finished line, and the remainder the writer appended a moment later came back
         /// as a second one. Splitting on the terminator makes the two reads produce one line.
@@ -130,22 +147,7 @@ namespace Servy.Manager.UnitTests.Utils
         public void TryReadLine_NewlineBytesStraddlingTwoCharacters_DoNotEndTheLine(string encodingName, string text)
         {
             // Arrange
-            Encoding encoding;
-            switch (encodingName)
-            {
-                case "utf-16LE":
-                    encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
-                    break;
-                case "utf-16BE":
-                    encoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
-                    break;
-                case "utf-32LE":
-                    encoding = new UTF32Encoding(bigEndian: false, byteOrderMark: false);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(encodingName), encodingName, null);
-            }
-
+            Encoding encoding = EncodingWithoutByteOrderMark(encodingName);
             var splitter = new LogLineSplitter(encoding);
 
             // Act
@@ -170,25 +172,7 @@ namespace Servy.Manager.UnitTests.Utils
         public void TryReadLine_CarriageReturnLineFeedInWideEncoding_StripsTheWholeCarriageReturn(string encodingName)
         {
             // Arrange
-            Encoding encoding;
-            switch (encodingName)
-            {
-                case "utf-16LE":
-                    encoding = new UnicodeEncoding(bigEndian: false, byteOrderMark: false);
-                    break;
-                case "utf-16BE":
-                    encoding = new UnicodeEncoding(bigEndian: true, byteOrderMark: false);
-                    break;
-                case "utf-32LE":
-                    encoding = new UTF32Encoding(bigEndian: false, byteOrderMark: false);
-                    break;
-                case "utf-32BE":
-                    encoding = new UTF32Encoding(bigEndian: true, byteOrderMark: false);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(encodingName), encodingName, null);
-            }
-
+            Encoding encoding = EncodingWithoutByteOrderMark(encodingName);
             var splitter = new LogLineSplitter(encoding);
 
             // Act
