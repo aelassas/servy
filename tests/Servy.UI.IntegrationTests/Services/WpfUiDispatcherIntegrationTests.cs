@@ -2,11 +2,13 @@ using Servy.Testing;
 using Servy.UI.Services;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
 using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
+    [Collection(UiStaCollection.Name)]
     public class WpfUiDispatcherIntegrationTests
     {
         #region YieldAsync Tests
@@ -79,14 +81,18 @@ namespace Servy.UI.IntegrationTests.Services
         #region InvokeAsync Tests
 
         [Fact]
-        public async Task InvokeAsync_Action_RunsDelegateOnDispatcherThreadBeforeCompleting()
+        public async Task InvokeAsync_Action_RunsDelegateOnTheApplicationDispatcherThreadBeforeCompleting()
         {
             // Execute inside the active STA message loop thread context
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange: the wrapper captures Dispatcher.CurrentDispatcher, i.e. this STA thread
+                // Arrange
+                // createApp makes the precondition explicit instead of leaving it to test order: with an
+                // Application present the wrapper captures Application.Current.Dispatcher, as it does in
+                // the running app, and that dispatcher lives on its own thread, not on this STA thread.
                 var uiDispatcher = new WpfUiDispatcher();
-                var staThreadId = Thread.CurrentThread.ManagedThreadId;
+                int appThreadId = Application.Current.Dispatcher.Thread.ManagedThreadId;
+                int callerThreadId = Thread.CurrentThread.ManagedThreadId;
                 int observedThreadId = -1;
                 bool ranBeforeCompletion = false;
 
@@ -99,11 +105,12 @@ namespace Servy.UI.IntegrationTests.Services
                 await invokeTask;
                 ranBeforeCompletion = observedThreadId != -1;
 
-                // Assert: the delegate ran, it ran on the dispatcher thread, and the returned task
-                // did not complete before it did
+                // Assert: the delegate ran before the task completed, on the application's dispatcher
+                // thread, which is a real cross-thread marshal from the caller
                 Assert.True(ranBeforeCompletion);
-                Assert.Equal(staThreadId, observedThreadId);
-            });
+                Assert.Equal(appThreadId, observedThreadId);
+                Assert.NotEqual(callerThreadId, observedThreadId);
+            }, createApp: true);
         }
 
         [Fact]
@@ -116,17 +123,25 @@ namespace Servy.UI.IntegrationTests.Services
                 var uiDispatcher = new WpfUiDispatcher();
                 var executionOrder = new System.Collections.Concurrent.ConcurrentQueue<string>();
 
-                // Queue the low-priority work FIRST so the asserted sequence is reachable only
-                // through genuine priority ordering and not through FIFO handling of equal priorities
-                var backgroundTask = uiDispatcher.InvokeAsync(
-                    () => executionOrder.Enqueue("Background"),
-                    DispatcherPriority.Background);
-
-                var sendTask = uiDispatcher.InvokeAsync(
-                    () => executionOrder.Enqueue("Send"),
-                    DispatcherPriority.Send);
+                Task backgroundTask = Task.CompletedTask;
+                Task sendTask = Task.CompletedTask;
 
                 // Act
+                // Queue both from inside one callback on the captured dispatcher. It cannot start either
+                // of them until that callback returns, so both are pending together whichever thread owns
+                // the dispatcher. The low-priority work is still queued FIRST, so the asserted sequence is
+                // reachable only through genuine priority ordering and not through FIFO handling.
+                await uiDispatcher.InvokeAsync(() =>
+                {
+                    backgroundTask = uiDispatcher.InvokeAsync(
+                        () => executionOrder.Enqueue("Background"),
+                        DispatcherPriority.Background);
+
+                    sendTask = uiDispatcher.InvokeAsync(
+                        () => executionOrder.Enqueue("Send"),
+                        DispatcherPriority.Send);
+                });
+
                 await Task.WhenAll(backgroundTask, sendTask);
 
                 // Assert
@@ -135,7 +150,7 @@ namespace Servy.UI.IntegrationTests.Services
                 Assert.Equal(2, results.Length);
                 Assert.Equal("Send", results[0]);
                 Assert.Equal("Background", results[1]);
-            });
+            }, createApp: true);
         }
 
         [Fact]
