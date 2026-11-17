@@ -56,14 +56,15 @@ namespace Servy.UI.IntegrationTests.Services
         #region OpenDocumentation Tests
 
         [Fact]
-        public async Task OpenDocumentation_InHeadlessMode_GracefullyDropsExecutionWithoutError()
+        public async Task OpenDocumentation_InHeadlessMode_TakesTheOpenDocumentationPagePath()
         {
             // Arrange & Act
             // UiHeadless is enabled via fixture, so OpenExternalUrl short-circuits before Process.Start;
-            // verify no error dialog is raised.
-            await _service.OpenDocumentationAsync(Caption);
+            // its headless console line is the observable proof of which page was asked for.
+            var captured = await ConsoleCapture.RunAsync(() => _service.OpenDocumentationAsync(Caption));
 
             // Assert
+            Assert.Contains($"[HEADLESS INFO] OpenDocumentation: opening browser URL {AppConfig.DocumentationLink}", captured.StdOut);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
