@@ -111,8 +111,9 @@ namespace Servy.Manager.Utils
         /// <param name="grid">The grid whose columns are watched.</param>
         /// <param name="handler">The handler to call. The sender is the column whose width changed.</param>
         /// <remarks>
-        /// The grid keeps the handler alive until
-        /// <see cref="RemoveWidthChangedHandler(DataGrid, EventHandler)"/> is called with the same handler.
+        /// The handler is registered with the property descriptor of <see cref="DataGridColumn.ActualWidthProperty"/>,
+        /// which lives as long as the process, not with the grid: the descriptor keeps every watched column and the
+        /// handler alive until <see cref="RemoveWidthChangedHandler(DataGrid, EventHandler)"/> is called with the same handler.
         /// </remarks>
         public static void AddWidthChangedHandler(DataGrid grid, EventHandler handler)
         {
