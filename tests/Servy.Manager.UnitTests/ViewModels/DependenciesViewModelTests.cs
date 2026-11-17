@@ -219,6 +219,35 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void SelectedService_SwitchFromRunningToStoppedService_ShowsTheNewSelectionsPidWithoutATick()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        // Arrange
+                        viewModel = CreateViewModel();
+                        viewModel.SelectedService = new DependencyService { Name = "RunningService", Pid = 4321 };
+                        Assert.Equal("4321", viewModel.Pid);
+
+                        // Act - no monitoring tick runs between the two selections (#5591)
+                        viewModel.SelectedService = new DependencyService { Name = "StoppedService", Pid = null };
+
+                        // Assert
+                        Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SelectedService_SetSameReference_DoesNotFireEventsOrReload()
         {
             await Helper.RunOnSTA(async () =>

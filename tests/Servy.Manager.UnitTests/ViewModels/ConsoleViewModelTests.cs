@@ -142,6 +142,28 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Property & Command Lifecycle Tests
 
         [Fact]
+        public void SelectedService_SwitchFromRunningToStoppedService_ShowsTheNewSelectionsPidWithoutATick()
+        {
+            // Arrange, Act & Assert
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    vm.SelectedService = new ConsoleService { Name = "RunningService", Pid = 4321 };
+                    Assert.Equal("4321", vm.Pid);
+
+                    // Act - no monitoring tick runs between the two selections (#5591)
+                    vm.SelectedService = new ConsoleService { Name = "StoppedService", Pid = null };
+
+                    // Assert
+                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                }
+            });
+        }
+
+        [Fact]
         public void SelectedService_Change_ResetsStateAndTriggersMonitoring()
         {
             // Arrange, Act & Assert
