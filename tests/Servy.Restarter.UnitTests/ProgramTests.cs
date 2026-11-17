@@ -376,6 +376,36 @@ namespace Servy.Restarter.UnitTests
             AssertLogDoesNotContainMessage("exceeds the service wrapper's wait limit");
         }
 
+        [Theory]
+        [InlineData("0")]      // below min: 1
+        [InlineData("-5")]     // negative
+        [InlineData("86401")]  // AppConfig.MaxRestarterTimeoutSeconds + 1
+        public void Run_ManagedService_OutOfRangeTimeout_FallsBackToTheDefault(string configured)
+        {
+            // Arrange
+            // The literals 120, 1 and 86400 are spelled out on purpose: read back from AppConfig,
+            // the assertions would move with the constants and pin nothing.
+            string serviceName = "ManagedServiceForTimeoutRange";
+            var environment = ManagedService(serviceName);
+            ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = configured;
+
+            var mockRestarter = new Mock<IServiceRestarter>();
+            mockRestarter
+                .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
+                .Returns(RestartResult.Restarted);
+
+            string[] args = new string[] { serviceName, TempDirectory };
+
+            // Act
+            Program.Run(args, mockRestarter.Object, environment);
+
+            // Assert
+            Assert.Equal(0, Environment.ExitCode);
+            mockRestarter.Verify(r => r.RestartService(serviceName, TimeSpan.FromSeconds(120)), Times.Once);
+            AssertLogContainsMessage($"Configuration value '{configured}' for 'RestartTimeoutSeconds' is out of the safe range [1-86400]. Falling back to default: 120.");
+            AssertLogDoesNotContainMessage("exceeds the service wrapper's wait limit");
+        }
+
         #endregion
 
         #region Fatal Exception Resilience Blocks
