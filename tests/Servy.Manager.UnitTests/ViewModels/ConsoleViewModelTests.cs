@@ -474,6 +474,45 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Theory]
+        [InlineData(100, "old.txt", null, false)]       // nothing changed: no switch
+        [InlineData(100, "OLD.TXT", null, false)]       // case-only difference: no switch (#904)
+        [InlineData(200, "old.txt", null, true)]        // PID changed, same files
+        [InlineData(100, "old.txt", "err.txt", true)]   // only the stderr path changed
+        public async Task OnTickAsync_SnapshotComparedWithCurrentState_SwitchesOnlyWhenPidOrAPathChanged(
+            int snapshotPid, string snapshotStdout, string? snapshotStderr, bool expectSwitch)
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
+                    vm.SelectedService = service;
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = snapshotPid, ActiveStdoutPath = snapshotStdout, ActiveStderrPath = snapshotStderr });
+
+                    // SwitchServiceAsync increments the session id once per call, so it is the "switch ran" observable
+                    int sessionBefore = TestReflection.GetField<int>(vm, "_currentSessionId");
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    await task;
+
+                    // Assert
+                    int sessionAfter = TestReflection.GetField<int>(vm, "_currentSessionId");
+                    Assert.Equal(expectSwitch ? sessionBefore + 1 : sessionBefore, sessionAfter);
+                    Assert.Equal(expectSwitch ? snapshotPid : 100, service.Pid);
+                    Assert.Equal(expectSwitch ? snapshotStdout : "old.txt", service.StdoutPath);
+                    Assert.Equal(expectSwitch ? snapshotStderr : null, service.StderrPath);
+                }
+            });
+        }
+
         #endregion
 
         #region Resource Management & Disposal Tests
