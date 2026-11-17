@@ -542,6 +542,36 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Fact]
+        public async Task OnTickAsync_StderrPathDiffersInCaseOnly_DoesNotSwitch()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt", StderrPath = "err.txt" };
+                    vm.SelectedService = service;
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = 100, ActiveStdoutPath = "old.txt", ActiveStderrPath = "ERR.TXT" });
+
+                    int sessionBefore = TestReflection.GetField<int>(vm, "_currentSessionId");
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
+                    await task;
+
+                    // Assert: no switch ran and the selection kept its own spelling
+                    Assert.Equal(sessionBefore, TestReflection.GetField<int>(vm, "_currentSessionId"));
+                    Assert.Equal("err.txt", service.StderrPath);
+                }
+            });
+        }
+
         #endregion
 
         #region Resource Management & Disposal Tests
