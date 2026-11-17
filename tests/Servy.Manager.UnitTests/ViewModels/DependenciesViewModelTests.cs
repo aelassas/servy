@@ -792,6 +792,63 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task LoadDependencyTreeAsync_SupersededLoadReturningATree_DoesNotAddItsRoot()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    var firstGate = new ManualResetEventSlim(false);
+                    try
+                    {
+                        // Arrange - the walk for ServiceA is held open; the walk for ServiceB returns at once
+                        var staleRoot = new ServiceDependencyNode("ServiceA", "Friendly Service A");
+                        var freshRoot = new ServiceDependencyNode("ServiceB", "Friendly Service B");
+                        var firstStarted = 0;
+
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServiceA", It.IsAny<CancellationToken>()))
+                                           .Returns(() =>
+                                           {
+                                               Volatile.Write(ref firstStarted, 1);
+                                               firstGate.Wait(TestTimeouts.CiGenerous);
+                                               return staleRoot;
+                                           });
+                        _mockServiceManager.Setup(m => m.GetDependencies("ServiceB", It.IsAny<CancellationToken>()))
+                                           .Returns(freshRoot);
+
+                        viewModel = CreateViewModel();
+                        TestReflection.SetField(viewModel, "_selectedService", new DependencyService { Name = "ServiceA" });
+                        var supersededLoad = viewModel.LoadDependencyTreeAsync(null);
+                        await Helper.WaitUntilAsync(
+                            () => Volatile.Read(ref firstStarted) == 1,
+                            TestTimeouts.CiGenerous,
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
+
+                        // The user switches to ServiceB, whose load completes while ServiceA's walk is still running
+                        TestReflection.SetField(viewModel, "_selectedService", new DependencyService { Name = "ServiceB" });
+                        await viewModel.LoadDependencyTreeAsync(null);
+                        Assert.Same(freshRoot, Assert.Single(viewModel.DependencyTree));
+
+                        // Act - the superseded walk now returns its tree
+                        firstGate.Set();
+                        await supersededLoad;
+
+                        // Assert - only the current service's root is shown
+                        Assert.Same(freshRoot, Assert.Single(viewModel.DependencyTree));
+                        Assert.False(viewModel.IsBusy);
+                    }
+                    finally
+                    {
+                        firstGate.Set();
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task Dispose_WhileALoadIsInFlight_CancelsTheLoadToken()
         {
             await Helper.RunOnSTA(async () =>
