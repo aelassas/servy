@@ -772,6 +772,36 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task GetRestartAttemptsAsync_SemaphoreDisposedInsideTheLock_SwallowsTheReleaseFailureAndReturnsTheCounter()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            service.SetRestartAttemptsServiceName(ServiceName);
+
+            var semaphore = TestReflection.GetField<SemaphoreSlim>(service, "_restartAttemptsSemaphore");
+
+            // The host read runs inside the lock: dispose only once the wait has already succeeded,
+            // so the release in the finally is the first call that meets a disposed semaphore.
+            _ctx.NamedPipesService
+                .Setup(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    semaphore.Dispose();
+                    return Task.FromResult(new Servy.Core.DTOs.RestartAttemptsDto { Attempts = 3, UpdatedAtUtc = DateTime.UtcNow });
+                });
+
+            // Act
+            var attempts = await (Task<int?>)TestReflection.InvokeNonPublic(service, "GetRestartAttemptsAsync", CancellationToken.None)!;
+
+            // Assert
+            // The counter that was read is still returned: without the catch in ReleaseSafe, the
+            // ObjectDisposedException thrown from the finally would replace it.
+            Assert.Equal(3, attempts);
+            _ctx.Logger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("is unreadable")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
         public async Task SaveRestartAttemptsAsync_SemaphoreAlreadyDisposed_CompletesWithoutAnErrorLine()
         {
             // Arrange: teardown disposed the semaphore before the wait (#7613)
