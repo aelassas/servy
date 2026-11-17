@@ -1,4 +1,5 @@
 using Servy.Manager.Utils;
+using System.Globalization;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.Utils
@@ -74,7 +75,9 @@ namespace Servy.Manager.UnitTests.Utils
         [Fact]
         public void TryParse_DecimalComma_IsNotReadAsADecimalSeparator()
         {
-            // "10,5" is two fields, never the number 10.5: the persisted form is culture-invariant.
+            // "10,5" is two fields, never the number 10.5: a decimal comma adds a field, so the value is
+            // rejected by its field count before any number is parsed (the culture itself is pinned by
+            // SerializeAndTryParse_UnderADecimalCommaCulture_KeepTheInvariantForm).
             var parsed = WindowPlacement.TryParse("10,5,20,1000,600,Normal", out var placement);
 
             Assert.False(parsed);
@@ -253,6 +256,34 @@ namespace Servy.Manager.UnitTests.Utils
             // Assert
             Assert.Equal(200, fitted.Width);
             Assert.Equal(100, fitted.Height);
+        }
+
+        [Fact]
+        public void SerializeAndTryParse_UnderADecimalCommaCulture_KeepTheInvariantForm()
+        {
+            // Arrange
+            var previous = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            try
+            {
+                var placement = new WindowPlacement(120.456, -80.5, 1200, 700.25, false);
+
+                // Act
+                var text = placement.Serialize();
+                var parsed = WindowPlacement.TryParse("120.5,-80.5,1200,700.25,Normal", out var read);
+
+                // Assert
+                Assert.Equal("120.46,-80.5,1200,700.25,Normal", text);
+                Assert.True(parsed);
+                Assert.NotNull(read);
+                Assert.Equal(120.5, read.Left);
+                Assert.Equal(-80.5, read.Top);
+                Assert.Equal(700.25, read.Height);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
         }
     }
 }
