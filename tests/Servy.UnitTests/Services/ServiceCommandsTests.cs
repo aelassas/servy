@@ -285,6 +285,9 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceInstalled, dto.Name), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            // The constructor defaults every verb to Success, so only a Verify can tell which token the SUT forwarded.
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(dto.Name, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]
@@ -1014,6 +1017,8 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync($"Service '{serviceName}' was started successfully.", UiAppConfig.Caption), Times.Once);
             // The constructor defaults every verb to Success, so only a Verify can tell which verb, flag and token the SUT forwarded.
             _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, true, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(serviceName, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken), Times.Once);
             _serviceManagerMock.Verify(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _serviceManagerMock.Verify(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
@@ -1534,6 +1539,10 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m =>
                 m.ShowInfoAsync(string.Format(Resources.Strings.Msg_ServiceRemoved, serviceName), UiAppConfig.Caption),
                 Times.Once);
+
+            // The constructor defaults every verb to Success, so only a Verify can tell which token the SUT forwarded.
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(serviceName, TestContext.Current.CancellationToken), Times.Once);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken), Times.Once);
         }
 
         #endregion
