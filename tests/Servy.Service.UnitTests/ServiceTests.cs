@@ -1249,6 +1249,68 @@ namespace Servy.Service.UnitTests
             Assert.Equal("main", mainPsi.Environment["SERVY_TEST_SCOPE"]);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_PreLaunchHook_AllowOverriddenRuntimeVars_DecidesWhetherATier2VariableReachesIt(bool allow)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 0, // 0 means Fire and Forget
+                AllowOverriddenRuntimeVars = allow,
+                PreLaunchEnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" } },
+            };
+            SetupStandardServiceStart(options);
+
+            ProcessStartInfo preLaunchPsi = null;
+            var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+            mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => preLaunchPsi = psi)
+                .Returns(mockPreLaunchProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.NotNull(preLaunchPsi);
+            preLaunchPsi.Environment.TryGetValue("JAVA_OPTS", out var actual);
+            Assert.Equal(allow, actual == "-Xmx2048m");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void OnStart_MainProcess_AllowOverriddenRuntimeVars_DecidesWhetherATier2VariableReachesIt(bool allow)
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                AllowOverriddenRuntimeVars = allow,
+                EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" } },
+            };
+            SetupStandardServiceStart(options);
+
+            ProcessStartInfo mainPsi = null;
+            _ctx.ProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "test.exe"), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => mainPsi = psi)
+                .Returns(_mockProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.NotNull(mainPsi);
+            mainPsi.Environment.TryGetValue("JAVA_OPTS", out var actual);
+            Assert.Equal(allow, actual == "-Xmx2048m");
+        }
+
         [Fact]
         public void OnStart_PreLaunchSynchronous_Failure_StopsService()
         {

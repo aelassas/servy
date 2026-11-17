@@ -69,6 +69,32 @@ namespace Servy.Service.UnitTests
             mockProcess.Verify(p => p.BeginErrorReadLine(), Times.Once);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void StartProcess_AllowOverriddenRuntimeVars_DecidesWhetherATier2VariableReachesTheChild(bool allow)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Start()).Returns(true);
+            ProcessStartInfo seenPsi = null;
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(mockProcess.Object);
+            var environmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" } };
+
+            // Act
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", environmentVariables, allow, CancellationToken.None);
+
+            // Assert
+            // The flag decides whether the configured Tier 2 value reaches the launched program.
+            Assert.NotNull(seenPsi);
+            seenPsi.Environment.TryGetValue("JAVA_OPTS", out var actual);
+            Assert.Equal(allow, actual == "-Xmx2048m");
+        }
+
         [Fact]
         public void StartProcess_Started_PersistsThePidAndThePreviousStopTimeout()
         {
@@ -542,6 +568,66 @@ namespace Servy.Service.UnitTests
             Assert.Equal("--cleanup --keep 2", seenPsi.Arguments);
             // ... and receives the main variables, not the pre-launch hook's own
             Assert.Equal("main", seenPsi.Environment["SERVY_TEST_SCOPE"]);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void StartPreStopProcess_AllowOverriddenRuntimeVars_DecidesWhetherATier2VariableReachesTheHook(bool allow)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = CreatePreStopOptions();
+            options.AllowOverriddenRuntimeVars = allow;
+            options.EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" } };
+
+            ProcessStartInfo seenPsi = null;
+            var preStop = new Mock<IProcessWrapper>();
+            preStop.Setup(p => p.Start()).Returns(true);
+            preStop.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
+            preStop.Setup(p => p.ExitCode).Returns(0);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(preStop.Object);
+
+            // Act
+            service.InvokeStartPreStopProcess(options);
+
+            // Assert
+            Assert.NotNull(seenPsi);
+            seenPsi.Environment.TryGetValue("JAVA_OPTS", out var actual);
+            Assert.Equal(allow, actual == "-Xmx2048m");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void StartPostStopProcess_AllowOverriddenRuntimeVars_DecidesWhetherATier2VariableReachesTheHook(bool allow)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var options = CreatePreStopOptions();
+            options.PostStopExecutablePath = @"C:\hooks\poststop.exe";
+            options.AllowOverriddenRuntimeVars = allow;
+            options.EnvironmentVariables = new List<EnvironmentVariable> { new EnvironmentVariable { Name = "JAVA_OPTS", Value = "-Xmx2048m" } };
+            TestReflection.SetField(service, "_options", options);
+
+            ProcessStartInfo seenPsi = null;
+            var postStop = new Mock<IProcessWrapper>();
+            postStop.Setup(p => p.Start()).Returns(true);
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((psi, _) => seenPsi = psi)
+                .Returns(postStop.Object);
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "StartPostStopProcess", new object[0]);
+
+            // Assert
+            Assert.NotNull(seenPsi);
+            seenPsi.Environment.TryGetValue("JAVA_OPTS", out var actual);
+            Assert.Equal(allow, actual == "-Xmx2048m");
         }
 
         [Theory]
