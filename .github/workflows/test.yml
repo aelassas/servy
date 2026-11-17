@@ -234,23 +234,23 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH += ";C:\Program Files\Git\usr\bin"
-          
+
           $gnupgDir = Join-Path $env:USERPROFILE ".gnupg"
           if (-not (Test-Path $gnupgDir)) { New-Item -ItemType Directory -Path $gnupgDir | Out-Null }
-          
+
           $expected = '27034E7FDB850E0BBC2C62FF806BB28AED779869'
           $imported = $false
-          
+
           $keyUrls = @(
               "https://keybase.io/codecovsecops/pgp_keys.asc",
               "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x27034E7FDB850E0BBC2C62FF806BB28AED779869"
           )
-          
+
           $keyPath = Join-Path $env:RUNNER_TEMP "codecov.asc"
           $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
-          
+
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
-          
+
           foreach ($url in $keyUrls) {
               try {
                   Invoke-WebRequest -Uri $url -Headers $headers -OutFile $keyPath -UseBasicParsing
@@ -265,10 +265,10 @@ jobs:
                   }
 
                   & gpg --batch --import $keyPath
-                  
+
                   # Set ultimate trust for the imported key to suppress the uncertified signature warning
                   "${expected}:6:" | & gpg --batch --import-ownertrust
-                  
+
                   & gpg --list-keys $expected
                   if ($LASTEXITCODE -ne 0) { Write-Warning "Key $expected is not in the keyring after importing ${url}"; continue }
 
