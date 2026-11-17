@@ -1797,7 +1797,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(UiAppConfig.Caption), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -1819,7 +1819,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(UiAppConfig.Caption), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -1841,7 +1841,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(
+                    It.Is<string>(text =>
+                        text.Contains("Servy Manager " + Core.Config.AppConfig.Version) &&
+                        text.Contains("Built with " + Core.Helpers.Helper.GetBuiltWithFramework())),
+                    UiAppConfig.Caption), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
