@@ -1281,6 +1281,60 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task BulkOperations_MixedRows_StartsOnlyCheckedAndInstalledServices()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                // Act - the helper adds S1 and S2 (installed and checked); two more rows each fail one term of the filter
+                var exception = await SetupAndRunBulkOperation(vm =>
+                {
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(new Service { Name = "Unchecked", IsInstalled = true }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+                    collection.Add(new ServiceRowViewModel(new Service { Name = "NotInstalled", IsInstalled = false }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true });
+
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+                    _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
+
+                // Assert - only the two checked and installed rows were started
+                Assert.Null(exception);
+                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.Is<Service>(s => s.Name == "S1"), false, It.IsAny<CancellationToken>()), Times.Once);
+                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.Is<Service>(s => s.Name == "S2"), false, It.IsAny<CancellationToken>()), Times.Once);
+                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Exactly(2));
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task BulkOperations_RowsPresentButNoneEligible_ShowsInfoMessageAndAsksNothing()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange - one installed row that is not checked, one checked row that is not installed
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                collection.Add(new ServiceRowViewModel(new Service { Name = "Unchecked", IsInstalled = true }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+                collection.Add(new ServiceRowViewModel(new Service { Name = "NotInstalled", IsInstalled = false }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true });
+
+                _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.StopSelectedCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_NoServicesSelected, It.IsAny<string>()), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                _serviceCommandsMock.Verify(c => c.StopServiceAsync(It.IsAny<Service>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task BulkOperations_NullMessageBoxService_ExitsEarly()
         {
             await Helper.RunOnSTA(async () =>
@@ -1333,6 +1387,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Null(exception);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, It.IsAny<string>()), Times.Once);
+
+                // The Start command asks the Start question, not the Stop or Restart one
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Confirm_StartSelectedServices, UiAppConfig.Caption), Times.Once);
             }, createApp: true);
         }
 
@@ -1356,6 +1413,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Null(exception);
                 _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(It.Is<string>(msg => msg.Contains("S2")), It.IsAny<string>()), Times.Once);
+
+                // The Stop command asks the Stop question, not the Start or Restart one
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Confirm_StopSelectedServices, UiAppConfig.Caption), Times.Once);
             }, createApp: true);
         }
 
@@ -1377,6 +1437,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Null(exception);
                 _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(Strings.Msg_AllOperationsFailed, It.IsAny<string>()), Times.Once);
+
+                // The Restart command asks the Restart question, not the Start or Stop one
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Confirm_RestartSelectedServices, UiAppConfig.Caption), Times.Once);
             }, createApp: true);
         }
 
