@@ -399,7 +399,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 int parentPid = underlyingProcess?.Id ?? wrapper.Id;
                 DateTime parentStartTime = underlyingProcess?.StartTime ?? wrapper.StartTime;
 
-                // Dynamically poll until the child process infrastructure has fully completed initialization (5 second budget)
+                // Dynamically poll until the child process infrastructure has fully completed initialization (TestTimeouts.CiGenerousSeconds budget)
                 int childPid = 0;
                 bool childSpawned = SpinWait.SpinUntil(() =>
                 {
