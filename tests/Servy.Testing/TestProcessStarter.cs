@@ -26,6 +26,9 @@ namespace Servy.Testing
         /// before its first output line, and a stalled instance does not recover with more time, so the fix is a fresh
         /// instance rather than a wider budget (see #7128; #6975 had already widened the tree budget from 15 s to 20 s).
         /// Killing the stalled instance is also what unblocks the reader task still sitting in <c>ReadLine</c>.
+        /// A start that exits early (for example with 0xC0000142, STATUS_DLL_INIT_FAILED, while the runner is loaded) is
+        /// retried only after a pause of 500 ms times the attempt number, because retrying at once lands inside the same
+        /// transient window (see #7988). A stalled instance is replaced without a pause, as its budget already elapsed.
         /// Every started process is handed to <paramref name="onStarted"/>, so the caller's teardown cleans up whatever
         /// this method leaves behind.
         /// </remarks>
@@ -43,7 +46,7 @@ namespace Servy.Testing
             Func<string, bool> accept,
             TimeSpan budget,
             Action<Process> onStarted,
-            int maxAttempts = 3)
+            int maxAttempts = 6)
         {
             var outcomes = new List<string>();
 
@@ -122,6 +125,12 @@ namespace Servy.Testing
                     : $"no handshake in {stopwatch.Elapsed.TotalSeconds:F1} s";
                 outcomes.Add($"attempt {attempt}: {reason}"
                     + (errOutput.Length > 0 ? $", stderr: {errOutput}" : string.Empty));
+
+                // An early exit is typically a transient DLL-init failure; wait it out before the next attempt.
+                if (completed && attempt < maxAttempts)
+                {
+                    System.Threading.Thread.Sleep(500 * attempt);
+                }
             }
 
             throw new InvalidOperationException(
