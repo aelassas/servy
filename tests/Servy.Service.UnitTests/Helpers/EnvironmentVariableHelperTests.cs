@@ -549,6 +549,47 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             int warnings = CountOccurrences(log, "Direct cycle detected for variable 'CYCLE_ONCE_VAR'");
             Assert.Equal(1, warnings);
+
+            // None of the five siblings refers to itself, so the line above is the only one
+            Assert.Equal(1, CountOccurrences(log, "Direct cycle detected"));
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_SelfReferenceWithInheritedOsValue_AppendsWithoutACycleWarning()
+        {
+            // Arrange
+            const string name = "SERVY_TEST_APPEND_NO_WARNING";
+            SetTempOsVariable(name, "C:\\BaseOSPath");
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = name, Value = $"%{name}%;\\MyTools" }
+            };
+            Dictionary<string, string?> expanded = null!;
+
+            // Act
+            string log = CaptureExpansionLog(() => expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
+
+            // Assert
+            Assert.Equal("C:\\BaseOSPath;\\MyTools", expanded[name]);
+            Assert.DoesNotContain("Direct cycle detected", log);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_SelfReferenceInADifferentCase_WarnsAndLeavesThePlaceholder()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "Cycle_Case_Var", Value = "%CYCLE_CASE_VAR%;\\bin" }
+            };
+            Dictionary<string, string?> expanded = null!;
+
+            // Act
+            string log = CaptureExpansionLog(() => expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
+
+            // Assert
+            Assert.Equal(1, CountOccurrences(log, "Direct cycle detected for variable 'Cycle_Case_Var'"));
+            Assert.Equal("%CYCLE_CASE_VAR%;\\bin", expanded["Cycle_Case_Var"]);
         }
 
         /// <summary>
