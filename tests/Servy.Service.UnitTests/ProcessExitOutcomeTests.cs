@@ -459,6 +459,49 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        [Fact]
+        public void OnProcessExited_RecoveryAlreadyInProgress_CountsNoFailureAndSchedulesNoSecondRecovery()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(false);
+            TestReflection.SetField(service, "_options", options);
+
+            // If a recovery were scheduled after all, it must not outlive the test.
+            using (var cancellation = new CancellationTokenSource())
+            {
+                TestReflection.SetField(service, "_cancellationSource", cancellation);
+
+                service.SetRecoveryActionEnabled(true);
+                service.SetRecoveryAction(RecoveryAction.RestartProcess);
+                service.SetMaxFailedChecks(1);
+                service.SetFailedChecks(0);
+
+                // A recovery is already running when the child's exit event arrives.
+                TestReflection.SetField(service, "_isRecovering", true);
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.ExitCode).Returns(1);
+                service.SetChildProcess(mockProcess.Object);
+
+                // Act
+                service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+                // Assert
+                // The exit was evaluated, but the gatekeeper kept it from counting as a new failure:
+                // with one allowed failure, counting it would have scheduled a second recovery.
+                mockProcess.Verify(p => p.ExitCode, Times.Once);
+                Assert.Equal(0, service.GetFailedChecks());
+                _ctx.Logger.Verify(l => l.Warn(
+                    It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Never);
+                _ctx.Logger.Verify(l => l.Info(
+                    It.Is<string>(s => s.StartsWith("[OnProcessExited] Failure threshold reached")), It.IsAny<Exception>()), Times.Never);
+
+                cancellation.Cancel();
+            }
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
