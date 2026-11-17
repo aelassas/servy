@@ -19,6 +19,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 
 namespace Servy.Manager.Views
 {
@@ -53,6 +54,18 @@ namespace Servy.Manager.Views
         private readonly IMessageBoxService _messageBoxService;
         private readonly IProcessKiller _processKiller;
         private readonly IAppConfiguration _appConfig;
+
+        /// <summary>
+        /// How long, in milliseconds, the window layout must stay unchanged before it is persisted.
+        /// Dragging a window edge or a column edge raises a change for every pixel; the delay turns the
+        /// whole gesture into a single write.
+        /// </summary>
+        private const int LayoutSaveDelayMs = 500;
+
+        /// <summary>
+        /// Persists the window layout <see cref="LayoutSaveDelayMs"/> after the last change to it.
+        /// </summary>
+        private readonly DispatcherTimer _layoutSaveTimer;
 
         /// <summary>
         /// The width the window is declared with, restored by the "Reset window layout" menu item.
@@ -102,6 +115,73 @@ namespace Servy.Manager.Views
 
             // Restore the size and position of the previous session before the window is shown
             RestoreWindowPlacement();
+
+            _layoutSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(LayoutSaveDelayMs) };
+            _layoutSaveTimer.Tick += LayoutSaveTimer_Tick;
+        }
+
+        /// <summary>
+        /// Starts persisting the window layout whenever the window is moved, resized, maximized or
+        /// restored, or a column of the services or logs table is resized.
+        /// </summary>
+        /// <remarks>
+        /// Called once the window is loaded and the persisted layout has been applied, so that showing
+        /// the window and restoring its layout are not themselves persisted as changes.
+        /// </remarks>
+        private void TrackLayoutChanges()
+        {
+            SizeChanged += OnLayoutChanged;
+            LocationChanged += OnLayoutChanged;
+            StateChanged += OnLayoutChanged;
+
+            DataGridColumnWidths.AddWidthChangedHandler(ServicesDataGrid, OnLayoutChanged);
+
+            if (LogsTab.Content is LogsView logsView)
+            {
+                logsView.ColumnWidthsChanged += OnLayoutChanged;
+            }
+        }
+
+        /// <summary>
+        /// Stops the notifications started by <see cref="TrackLayoutChanges"/> and cancels a pending save.
+        /// </summary>
+        private void StopTrackingLayoutChanges()
+        {
+            _layoutSaveTimer.Stop();
+
+            SizeChanged -= OnLayoutChanged;
+            LocationChanged -= OnLayoutChanged;
+            StateChanged -= OnLayoutChanged;
+
+            DataGridColumnWidths.RemoveWidthChangedHandler(ServicesDataGrid, OnLayoutChanged);
+
+            if (LogsTab.Content is LogsView logsView)
+            {
+                logsView.ColumnWidthsChanged -= OnLayoutChanged;
+            }
+        }
+
+        /// <summary>
+        /// Handles every change to the window layout by (re)starting the save delay, so the layout is
+        /// persisted once the change has settled.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event arguments containing event data.</param>
+        private void OnLayoutChanged(object sender, EventArgs e)
+        {
+            _layoutSaveTimer.Stop();
+            _layoutSaveTimer.Start();
+        }
+
+        /// <summary>
+        /// Handles the <see cref="DispatcherTimer.Tick"/> event of the save delay: persists the window layout once.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event arguments containing event data.</param>
+        private void LayoutSaveTimer_Tick(object sender, EventArgs e)
+        {
+            _layoutSaveTimer.Stop();
+            SaveWindowLayout();
         }
 
         /// <summary>
@@ -151,11 +231,17 @@ namespace Servy.Manager.Views
         /// </summary>
         /// <returns>
         /// The <c>Left,Top,Width,Height,State</c> string to persist, or <see langword="null"/> when the
-        /// window has no usable bounds, in which case the persisted placement is left as it is.
+        /// window is minimized or has no usable bounds, in which case the persisted placement is left as it is.
         /// </returns>
         private string CaptureWindowPlacement()
         {
-            // A maximized or minimized window reports its restored bounds through RestoreBounds
+            // A minimized window cannot tell whether it was maximized before, so it keeps what was persisted last
+            if (WindowState == WindowState.Minimized)
+            {
+                return null;
+            }
+
+            // A maximized window reports its restored bounds through RestoreBounds
             var bounds = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
             if (bounds.IsEmpty)
             {
@@ -171,7 +257,9 @@ namespace Servy.Manager.Views
         /// Persists the window placement and the column widths of the services and logs tables.
         /// </summary>
         /// <remarks>
-        /// The widths of a table that was never shown in this session are left as they are. Failures are
+        /// Called shortly after every change to the layout and once more when the window closes, so the
+        /// layout survives a killed process and is the one a second Manager instance starts with. The
+        /// widths of a table that was never shown in this session are left as they are. Failures are
         /// logged and never thrown, so they cannot prevent the window from closing.
         /// </remarks>
         private void SaveWindowLayout()
@@ -197,7 +285,8 @@ namespace Servy.Manager.Views
         /// <summary>
         /// Handles the <see cref="MenuItem.Click"/> event of the "Reset window layout" menu item.
         /// Restores the default size of the window, centers it on the primary work area, gives the columns
-        /// of the services and logs tables their default widths back, and clears the persisted layout.
+        /// of the services and logs tables their default widths back, and replaces the persisted layout
+        /// with that default one.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">Event arguments containing event data.</param>
@@ -220,8 +309,12 @@ namespace Servy.Manager.Views
 
             if (Application.Current is App app)
             {
+                // Forget the persisted layout first, so no width of a hidden column survives the reset
                 app.SaveWindowLayout(string.Empty, string.Empty, string.Empty);
             }
+
+            // Then persist the default layout once it has been laid out
+            OnLayoutChanged(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -248,6 +341,9 @@ namespace Servy.Manager.Views
             // Record the declared column widths, then restore the widths of the previous session
             _defaultServicesColumnWidths = DataGridColumnWidths.CaptureDefaults(ServicesDataGrid);
             DataGridColumnWidths.Apply(ServicesDataGrid, _appConfig.ServicesColumnWidths);
+
+            // From here on, persist the layout every time the user changes it
+            TrackLayoutChanges();
 
             // Trigger the global search command to populate the dashboard
             // the moment the shell is ready for interaction.
@@ -750,7 +846,8 @@ namespace Servy.Manager.Views
             // No handler currently sets e.Cancel, so the guard is a placeholder for a future "confirm before closing" feature rather than an active check today.
             if (!e.Cancel)
             {
-                // Remember the size, position and column widths for the next session
+                // Persist the layout a last time; a save still pending is no longer needed
+                StopTrackingLayoutChanges();
                 SaveWindowLayout();
 
                 Application.Current.Shutdown();

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows.Controls;
 using System;
 
@@ -100,6 +101,57 @@ namespace Servy.Manager.Utils
                     column.Width = width;
                 }
             }
+        }
+
+        /// <summary>
+        /// Calls <paramref name="handler"/> every time the width of a handled column of the grid changes,
+        /// whether the user dragged its edge or the layout resized it.
+        /// </summary>
+        /// <param name="grid">The grid whose columns are watched.</param>
+        /// <param name="handler">The handler to call. The sender is the column whose width changed.</param>
+        /// <remarks>
+        /// The grid keeps the handler alive until
+        /// <see cref="RemoveWidthChangedHandler(DataGrid, EventHandler)"/> is called with the same handler.
+        /// </remarks>
+        public static void AddWidthChangedHandler(DataGrid grid, EventHandler handler)
+        {
+            if (grid == null) throw new ArgumentNullException(nameof(grid));
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+
+            var descriptor = GetActualWidthDescriptor();
+            foreach (var column in grid.Columns)
+            {
+                if (IsHandled(column))
+                {
+                    descriptor.AddValueChanged(column, handler);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stops the notifications started by <see cref="AddWidthChangedHandler(DataGrid, EventHandler)"/>.
+        /// </summary>
+        /// <param name="grid">The grid whose columns were watched.</param>
+        /// <param name="handler">The handler to remove.</param>
+        public static void RemoveWidthChangedHandler(DataGrid grid, EventHandler handler)
+        {
+            if (grid == null) throw new ArgumentNullException(nameof(grid));
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+
+            var descriptor = GetActualWidthDescriptor();
+            foreach (var column in grid.Columns)
+            {
+                descriptor.RemoveValueChanged(column, handler);
+            }
+        }
+
+        /// <summary>
+        /// Gets the descriptor used to observe <see cref="DataGridColumn.ActualWidth"/>.
+        /// </summary>
+        /// <returns>The property descriptor of <see cref="DataGridColumn.ActualWidthProperty"/>.</returns>
+        private static DependencyPropertyDescriptor GetActualWidthDescriptor()
+        {
+            return DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn));
         }
 
         /// <summary>
