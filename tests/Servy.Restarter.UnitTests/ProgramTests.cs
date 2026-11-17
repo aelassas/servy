@@ -356,6 +356,34 @@ namespace Servy.Restarter.UnitTests
             // Assert
             Assert.Equal(0, Environment.ExitCode);
             AssertLogContainsMessage("Configured RestartTimeoutSeconds (300s) exceeds the service wrapper's wait limit (240s).");
+            mockRestarter.Verify(r => r.RestartService(serviceName, TimeSpan.FromSeconds(300)), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("30", 30)]
+        [InlineData("240", 240)] // the boundary: equal to the wrapper's wait limit, not above it
+        [InlineData("NotAnInteger", AppConfig.DefaultRestarterTimeoutSeconds)] // the fallback
+        public void Run_ManagedService_HandsTheConfiguredTimeoutToTheRestarterWithoutWarning(string configured, int expectedSeconds)
+        {
+            // Arrange
+            string serviceName = "ManagedServiceForTimeoutHandOff";
+            var environment = ManagedService(serviceName);
+            File.WriteAllText(_tempConfigPath, BuildConfigJson(configured));
+
+            var mockRestarter = new Mock<IServiceRestarter>();
+            mockRestarter
+                .Setup(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()))
+                .Returns(RestartResult.Restarted);
+
+            string[] args = new string[] { serviceName, TempDirectory };
+
+            // Act
+            Program.Run(args, mockRestarter.Object, environment);
+
+            // Assert
+            Assert.Equal(0, Environment.ExitCode);
+            mockRestarter.Verify(r => r.RestartService(serviceName, TimeSpan.FromSeconds(expectedSeconds)), Times.Once);
+            AssertLogDoesNotContainMessage("exceeds the service wrapper's wait limit");
         }
 
         #endregion
