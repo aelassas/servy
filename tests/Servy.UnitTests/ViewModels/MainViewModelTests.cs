@@ -513,15 +513,19 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Theory]
-        [InlineData(nameof(MainViewModel.BrowseStdoutPathCommand), nameof(MainViewModel.StdoutPath))]
-        [InlineData(nameof(MainViewModel.BrowseStderrPathCommand), nameof(MainViewModel.StderrPath))]
-        [InlineData(nameof(MainViewModel.BrowsePreLaunchStdoutPathCommand), nameof(MainViewModel.PreLaunchStdoutPath))]
-        [InlineData(nameof(MainViewModel.BrowsePreLaunchStderrPathCommand), nameof(MainViewModel.PreLaunchStderrPath))]
-        public void BrowseSaveFileCommands_Set_CorrectPaths_When_Selected(string commandName, string propertyName)
+        [InlineData(nameof(MainViewModel.BrowseStdoutPathCommand), nameof(MainViewModel.StdoutPath), false)]
+        [InlineData(nameof(MainViewModel.BrowseStderrPathCommand), nameof(MainViewModel.StderrPath), true)]
+        [InlineData(nameof(MainViewModel.BrowsePreLaunchStdoutPathCommand), nameof(MainViewModel.PreLaunchStdoutPath), false)]
+        [InlineData(nameof(MainViewModel.BrowsePreLaunchStderrPathCommand), nameof(MainViewModel.PreLaunchStderrPath), true)]
+        public void BrowseSaveFileCommands_Set_CorrectPaths_When_Selected(string commandName, string propertyName, bool isStderr)
         {
             // Arrange
             var samplePath = $"C:\\Logs\\{propertyName}.log";
-            _dialogServiceMock.Setup(d => d.SaveFile(It.IsAny<string>())).Returns(samplePath);
+            var expectedTitle = isStderr ? Strings.Dialog_SelectStderrFile : Strings.Dialog_SelectStdoutFile;
+
+            // Only the expected title is set up: the loose mock answers null for any other title,
+            // BrowseAndAssign then assigns nothing and the assertion below fails.
+            _dialogServiceMock.Setup(d => d.SaveFile(expectedTitle)).Returns(samplePath);
 
             var command = (ICommand)typeof(MainViewModel).GetProperty(commandName).GetValue(_viewModel);
             var property = typeof(MainViewModel).GetProperty(propertyName);
@@ -531,14 +535,17 @@ namespace Servy.UnitTests.ViewModels
 
             // Assert
             Assert.Equal(samplePath, property.GetValue(_viewModel));
+            _dialogServiceMock.Verify(d => d.SaveFile(expectedTitle), Times.Once);
         }
 
-        [Fact]
-        public void BrowseAndAssign_DoesNotOverwrite_ExistingPath_When_UserCancelsDialog()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void BrowseAndAssign_DoesNotOverwrite_ExistingPath_When_UserCancelsDialog(string dialogResult)
         {
             // Arrange
             _viewModel.ExecutablePath = "C:\\Existing\\App.exe";
-            _dialogServiceMock.Setup(d => d.OpenExecutable(It.IsAny<string>())).Returns((string)null);
+            _dialogServiceMock.Setup(d => d.OpenExecutable(It.IsAny<string>())).Returns(dialogResult);
 
             // Act
             _viewModel.BrowseExecutablePathCommand.Execute(null);
