@@ -1187,6 +1187,22 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
+        public void RestartService_WithLogger_StopCommandReportsServiceGone_LogsWarnAndReturnsServiceNotFound()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            var goneEx = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _mockController.Setup(c => c.Stop()).Throws(goneEx);
+
+            // Act
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Stop command failed for 'MyService'; treating as uninstalled.")), goneEx), Times.Once);
+        }
+
+        [Fact]
         public void RestartService_WithLogger_StopIssuedWithNoBudgetRemaining_LogsErrorAndThrowsTimeout()
         {
             // Arrange
@@ -1236,6 +1252,22 @@ namespace Servy.Restarter.UnitTests
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
             _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Start-phase initial status check failed")), gone), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_StartCommandReportsServiceGone_LogsWarnAndReturnsServiceNotFound()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            var goneEx = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _mockController.Setup(c => c.Start()).Throws(goneEx);
+
+            // Act
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Start command failed for 'MyService'; treating as uninstalled.")), goneEx), Times.Once);
         }
 
         [Fact]
@@ -1333,6 +1365,27 @@ namespace Servy.Restarter.UnitTests
             Assert.Equal(RestartResult.Restarted, result);
             _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Start operation failed")), startRefused), Times.Once);
             _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Entering transitional recovery loop")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WithLogger_RecoveryPollReportsServiceGone_LogsWarnAndReturnsServiceNotFound()
+        {
+            // Arrange
+            var goneEx = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Returns(ServiceControllerStatus.Stopped)
+                .Throws(goneEx);
+
+            _mockController.Setup(c => c.Start()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+
+            // Act
+            var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
+
+            // Assert
+            Assert.Equal(RestartResult.ServiceNotFound, result);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Recovery poll failed for service 'MyService' while targeting 'Running'; treating as uninstalled.")), goneEx), Times.Once);
         }
 
         [Fact]
