@@ -227,5 +227,36 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+
+        [Fact]
+        public void TryGetWidth_NullList_ReturnsFalse()
+        {
+            // Act
+            var found = ColumnWidths.TryGetWidth(null, "Name", out var width);
+
+            // Assert
+            Assert.False(found);
+            Assert.Equal(0, width);
+        }
+
+        [Fact]
+        public void Merge_NullMeasuredList_KeepsThePreviousWidths()
+        {
+            // Act
+            var text = ColumnWidths.Merge("Name=100", null);
+
+            // Assert
+            Assert.Equal("Name=100", text);
+        }
+
+        [Fact]
+        public void Merge_NullHeader_SkipsThatEntryAndKeepsTheRest()
+        {
+            // Act
+            var text = ColumnWidths.Merge(null, new[] { Entry(null, 120), Entry("Status", 90) });
+
+            // Assert
+            Assert.Equal("Status=90", text);
+        }
     }
 }
