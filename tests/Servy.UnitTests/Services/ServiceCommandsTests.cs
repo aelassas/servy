@@ -605,6 +605,56 @@ namespace Servy.UnitTests.Services
             Assert.Equal(0L, captured.RotationSizeInBytes);
         }
 
+        [Fact]
+        public async Task InstallService_DtoLeavesOptionalFieldsNull_MapsTheAppConfigDefaults()
+        {
+            // Arrange
+            // A DTO carrying only a name takes the right side of every "?? AppConfig.Default*" fallback.
+            var sut = CreateSut();
+            var dto = new ServiceDto { Name = "DefaultsService" };
+
+            InstallServiceOptions captured = null;
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(dto, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(captured);
+
+            Assert.Equal(string.Empty, captured.Description);
+            Assert.Equal(Core.Config.AppConfig.ToBytes(Core.Config.AppConfig.DefaultRotationSizeMB), captured.RotationSizeInBytes);
+            Assert.Equal(Core.Config.AppConfig.DefaultStartupType, captured.StartType);
+            Assert.Equal(Core.Config.AppConfig.DefaultProcessPriority, captured.ProcessPriority);
+            Assert.Equal(Core.Config.AppConfig.DefaultEnableConsoleUI, captured.EnableConsoleUI);
+            Assert.Equal(Core.Config.AppConfig.DefaultEnableSizeRotation, captured.EnableSizeRotation);
+            Assert.Equal(Core.Config.AppConfig.DefaultMaxRotations, captured.MaxRotations);
+            Assert.Equal(Core.Config.AppConfig.DefaultEnableDateRotation, captured.EnableDateRotation);
+            Assert.Equal(Core.Config.AppConfig.DefaultDateRotationType, captured.DateRotationType);
+            Assert.Equal(Core.Config.AppConfig.DefaultUseLocalTimeForRotation, captured.UseLocalTimeForRotation);
+            Assert.Equal(Core.Config.AppConfig.DefaultEnableHealthMonitoring, captured.EnableHealthMonitoring);
+            Assert.Equal(Core.Config.AppConfig.DefaultHeartbeatInterval, captured.HeartbeatInterval);
+            Assert.Equal(Core.Config.AppConfig.DefaultMaxFailedChecks, captured.MaxFailedChecks);
+            Assert.Equal(Core.Config.AppConfig.DefaultRecoveryAction, captured.RecoveryAction);
+            Assert.Equal(Core.Config.AppConfig.DefaultRecoveryOnCleanExit, captured.RecoveryOnCleanExit);
+            Assert.Equal(Core.Config.AppConfig.DefaultMaxRestartAttempts, captured.MaxRestartAttempts);
+            Assert.Equal(Core.Config.AppConfig.DefaultHeartbeatUrlTimeoutSeconds, captured.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(Core.Config.AppConfig.DefaultEnableHeartbeatUrlFlags, captured.EnableHeartbeatUrlFlags);
+            Assert.Equal(Core.Config.AppConfig.DefaultAllowOverriddenRuntimeVars, captured.AllowOverriddenRuntimeVars);
+            Assert.Equal(Core.Config.AppConfig.DefaultPreLaunchTimeoutSeconds, captured.PreLaunchTimeout);
+            Assert.Equal(Core.Config.AppConfig.DefaultPreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
+            Assert.Equal(Core.Config.AppConfig.DefaultPreLaunchIgnoreFailure, captured.PreLaunchIgnoreFailure);
+            Assert.Equal(Core.Config.AppConfig.DefaultStartTimeout, captured.StartTimeout);
+            Assert.Equal(Core.Config.AppConfig.DefaultStopTimeout, captured.StopTimeout);
+            Assert.Equal(Core.Config.AppConfig.DefaultPreStopTimeoutSeconds, captured.PreStopTimeout);
+            Assert.Equal(Core.Config.AppConfig.DefaultPreStopLogAsError, captured.PreStopLogAsError);
+            Assert.Equal(Core.Config.AppConfig.DefaultEnableDebugLogs, captured.EnableDebugLogs);
+        }
+
         #endregion
 
         #region OpenManager Method and Exceptions Tests
