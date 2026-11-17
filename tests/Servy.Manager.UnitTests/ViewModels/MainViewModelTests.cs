@@ -1444,6 +1444,64 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task BulkOperations_RestartSelected_RestartsEachSelectedServiceAndReportsSuccess()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                // Act
+                var exception = await SetupAndRunBulkOperation(vm =>
+                {
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+                    _serviceCommandsMock.Setup(c => c.RestartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                }, async vm => await vm.RestartSelectedCommand.ExecuteAsync(null));
+
+                // Assert - success is only reachable through RestartServiceAsync: Start and Stop are not set up and answer false
+                Assert.Null(exception);
+                _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, It.IsAny<string>()), Times.Once);
+                _serviceCommandsMock.Verify(c => c.RestartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Exactly(2));
+                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                _serviceCommandsMock.Verify(c => c.StopServiceAsync(It.IsAny<Service>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            }, createApp: true);
+        }
+
+        [Theory]
+        [InlineData(false, "Failed to stop selected services.")]
+        [InlineData(true, "Failed to restart selected services.")]
+        public async Task BulkOperations_StopOrRestartThrows_LogsItsOwnOperationName(bool restart, string expectedLogLine)
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                Exception exception = null;
+
+                // Act
+                var log = await LogCapture.RunAsync(async () =>
+                {
+                    exception = await SetupAndRunBulkOperation(vm =>
+                    {
+                        _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+                        _serviceCommandsMock.Setup(c => c.StopServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
+                                            .ThrowsAsync(new InvalidOperationException("stop blew up"));
+                        _serviceCommandsMock.Setup(c => c.RestartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
+                                            .ThrowsAsync(new InvalidOperationException("restart blew up"));
+                    }, async vm =>
+                    {
+                        if (restart) await vm.RestartSelectedCommand.ExecuteAsync(null);
+                        else await vm.StopSelectedCommand.ExecuteAsync(null);
+                    });
+                });
+
+                // Assert
+                Assert.Null(exception);
+                Assert.Contains(expectedLogLine, log);
+                Assert.DoesNotContain("Failed to start selected services", log);
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task BulkOperations_ExceptionThrown_HandledAndBusyStateReset()
         {
             await Helper.RunOnSTA(async () =>
