@@ -374,6 +374,39 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
+        public void TryResolveValidChild_SnapshotTakenBeforeProcessStarted_ReturnsNull()
+        {
+            // Arrange - The current process is alive and readable, so only the lifetime bounds can reject it.
+            // The parent time is 10 days old, so 'startedAfterParent' is true; the snapshot time is 10 days
+            // old, so only 'startedBeforeSnapshot' is false (a process that started after the snapshot
+            // cannot be the child the snapshot listed - it is a recycled PID).
+            using (var current = Process.GetCurrentProcess())
+            {
+                var oldParentTime = DateTime.Now.AddDays(-10);
+                var staleSnapshotTime = DateTime.UtcNow.AddDays(-10);
+
+                // Act
+                var rejected = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", current.Id, oldParentTime, staleSnapshotTime);
+
+                // Control - the same parent time with a current snapshot time is accepted, so the null above
+                // can only come from the snapshot bound.
+                var accepted = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", current.Id, oldParentTime, DateTime.UtcNow) as Process;
+
+                try
+                {
+                    // Assert
+                    Assert.Null(rejected);
+                    Assert.NotNull(accepted);
+                    Assert.Equal(current.Id, accepted.Id);
+                }
+                finally
+                {
+                    accepted?.Dispose();
+                }
+            }
+        }
+
+        [Fact]
         public void TryResolveValidChild_AccessDeniedOnIdleProcess_CatchesWin32ExceptionAndReturnsNull()
         {
             // Arrange - PID 0, the System Idle pseudo-process, is enumerable and resolvable but
