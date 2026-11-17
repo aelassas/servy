@@ -1130,6 +1130,35 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Theory]
+        [InlineData(" \\\\server\\share\\out.log")]     // a space before the two separators
+        [InlineData("\t\\\\server\\share\\out.log")]    // a tab
+        [InlineData(" \\??\\UNC\\server\\share\\out.log")] // whitespace before the NT prefix
+        public async Task SwitchServiceAsync_UncPathWithLeadingWhitespace_ConsultsTheRepositoryAndIsNotOpened(string uncPath)
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the row configures a local file, so the reported share path must be refused
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("PaddedService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "PaddedService", StdoutPath = Path.Combine(Path.GetTempPath(), "configured-stdout.log") });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "PaddedService" });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", uncPath, null)!;
+                    await task;
+
+                    // Assert: the path was treated as UNC (the configured paths were read) and nothing was read from it
+                    _serviceRepoMock.Verify(r => r.GetByNameAsync("PaddedService", false, It.IsAny<CancellationToken>()), Times.Once);
+                    Assert.Empty(vm.RawLines);
+                }
+            });
+        }
+
         [Fact]
         public async Task SwitchServiceAsync_NtPrefixPathThatDiffersFromTheConfiguredPath_IsNotOpened()
         {
