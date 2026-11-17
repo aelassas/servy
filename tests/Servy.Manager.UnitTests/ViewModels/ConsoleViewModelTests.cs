@@ -760,10 +760,11 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Theory]
-        [InlineData(typeof(ObjectDisposedException))]
-        [InlineData(typeof(OperationCanceledException))]
-        [InlineData(typeof(InvalidOperationException))]
-        public async Task SwitchServiceAsync_WhenTheConfiguredPathLookupThrows_CompletesWithoutThrowing(Type exceptionType)
+        [InlineData(typeof(ObjectDisposedException), "Attempted to switch logs after disposal; ignoring.", false)]
+        [InlineData(typeof(OperationCanceledException), "Service switch cancelled (superseded or disposing); ignoring.", false)]
+        [InlineData(typeof(InvalidOperationException), "Failed to resume/switch logs.", true)]
+        public async Task SwitchServiceAsync_WhenTheConfiguredPathLookupThrows_CompletesWithoutThrowingAndLogsItsOwnArm(
+            Type exceptionType, string expectedLogLine, bool expectsErrorLine)
         {
             // Arrange, Act & Assert
             await Helper.RunOnSTA(async () =>
@@ -779,11 +780,17 @@ namespace Servy.Manager.UnitTests.ViewModels
                     TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "UncService" });
 
                     // Act
-                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", @"\\server\share\out.log", null);
-                    var exception = await Record.ExceptionAsync(() => task);
+                    Exception exception = null;
+                    var log = await LogCapture.RunAsync(async () =>
+                    {
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", @"\\server\share\out.log", null);
+                        exception = await Record.ExceptionAsync(() => task);
+                    }, Servy.Core.Logging.LogLevel.Debug);
 
-                    // Assert: the matching catch arm swallowed it (deleting that arm makes the task fault) and the lookup really ran
+                    // Assert: swallowed, by the arm written for it - a disposal or a superseded switch is not reported as a failure
                     Assert.Null(exception);
+                    Assert.Contains(expectedLogLine, log);
+                    Assert.Equal(expectsErrorLine, log.Contains("Failed to resume/switch logs."));
                     _serviceRepoMock.Verify(r => r.GetByNameAsync("UncService", false, It.IsAny<CancellationToken>()), Times.Once);
                 }
             });
