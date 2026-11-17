@@ -209,6 +209,48 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnProcessExited_SemaphoreDisposedInsideTheLock_SwallowsTheReleaseFailureAndStillSchedulesRecovery()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(recoveryOnCleanExit: false);
+            TestReflection.SetField(service, "_options", options);
+
+            // The scheduled recovery must not outlive the test: cancel its delay when the test ends.
+            using var cancellation = new CancellationTokenSource();
+            TestReflection.SetField(service, "_cancellationSource", cancellation);
+
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            var semaphore = TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore");
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            // Dispose only once the wait has already succeeded, so the release in the finally
+            // is the first call that meets a disposed semaphore
+            mockProcess.Setup(p => p.ExitCode).Returns(() => { semaphore.Dispose(); return 1; });
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            // The exit was acted on: without the catch around the release, the ObjectDisposedException
+            // would escape into the outer handler, which reports a teardown and schedules nothing
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.StartsWith("[OnProcessExited] Failure threshold reached. Scheduling recovery in")),
+                It.IsAny<Exception>()), Times.Once);
+            _ctx.Logger.Verify(l => l.Info(
+                "OnProcessExited: Semaphore disposed during wait. Teardown in progress.",
+                It.IsAny<Exception>()), Times.Never);
+
+            cancellation.Cancel();
+        }
+
+        [Fact]
         public void OnProcessExited_SemaphoreDisposedBeforeWait_LogsTeardownInProgressAndEvaluatesNothing()
         {
             // Arrange

@@ -341,6 +341,37 @@ namespace Servy.Service.UnitTests
                 It.Is<string>(s => s.StartsWith("Performing recovery action")), It.IsAny<Exception>()), Times.Never);
         }
 
+        [Fact]
+        public async Task InitiateRecoveryAsync_SemaphoreDisposedInsideTheLock_SwallowsTheReleaseFailureAndStillRecovers()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartService);
+
+            // A capped recovery reads the restart counter inside the lock, which gives the test a point
+            // after the wait has succeeded and before the release in the finally
+            service.SetRestartAttemptsServiceName("ServyTestService");
+            service.SetMaxRestartAttempts(3);
+
+            var semaphore = TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore");
+            _ctx.NamedPipesService
+                .Setup(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    semaphore.Dispose();
+                    return Task.FromResult(new Servy.Core.DTOs.RestartAttemptsDto { Attempts = 0, UpdatedAtUtc = DateTime.UtcNow });
+                });
+
+            // Act
+            var thrown = await Record.ExceptionAsync(() => service.InvokeInitiateRecoveryAsync());
+
+            // Assert
+            // Without the catch around the release, the ObjectDisposedException leaves the method
+            // before the recovery action is dispatched
+            Assert.Null(thrown);
+            _ctx.Helper.Verify(h => h.RestartService("ServyTestService", It.IsAny<IServyLogger?>()), Times.Once);
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
