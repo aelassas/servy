@@ -59,6 +59,12 @@
   <data name="Menu_About" xml:space="preserve">
     <value>About Servy Manager</value>
   </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Menu_ResetWindowLayout" xml:space="preserve">
+    <value>Reset window layout</value>
+  </data>
 
   <data name="Text_About" xml:space="preserve">
     <value>
@@ -498,7 +504,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Main Menu</value>
   </data>
   <data name="Automation_MainMenu_HelpText" xml:space="preserve">
-    <value>Access options to import configuration, configure settings, and access help.</value>
+    <value>Access options to import configuration, configure settings, reset the window layout, and access help.</value>
   </data>
 
   <data name="Automation_ImportMenu_HelpText" xml:space="preserve">
@@ -513,6 +519,13 @@ If the service is disabled and marked for deletion, the installation will fail u
 
   <data name="Automation_ConfigMenu_HelpText" xml:space="preserve">
     <value>Open the configuration app for the selected service.</value>
+  </data>
+
+  <data name="Automation_ViewMenu_HelpText" xml:space="preserve">
+    <value>Open a menu containing window layout options.</value>
+  </data>
+  <data name="Automation_ResetWindowLayoutMenuItem_HelpText" xml:space="preserve">
+    <value>Restore the default window size, position, and column widths.</value>
   </data>
 
   <data name="Automation_HelpMenu_HelpText" xml:space="preserve">

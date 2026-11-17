@@ -82,5 +82,23 @@ namespace Servy.Manager.Config
         /// Gets a value indicating whether the display name column visibility migration has been executed.
         /// </summary>
         bool IsDisplayNameColumnMigrated { get; }
+
+        /// <summary>
+        /// Gets the persisted position, size and state of the main window, in the
+        /// <c>Left,Top,Width,Height,State</c> form, or an empty string when the default placement applies.
+        /// </summary>
+        string MainWindowPlacement { get; }
+
+        /// <summary>
+        /// Gets the persisted column widths of the services table, as a comma-separated list of
+        /// <c>Header=Width</c> entries, or an empty string when the default widths apply.
+        /// </summary>
+        string ServicesColumnWidths { get; }
+
+        /// <summary>
+        /// Gets the persisted column widths of the logs table, as a comma-separated list of
+        /// <c>Header=Width</c> entries, or an empty string when the default widths apply.
+        /// </summary>
+        string LogsColumnWidths { get; }
     }
 }

@@ -39,6 +39,11 @@ namespace Servy.Manager.UnitTests.Config
 
             // Assert - Migration flag: the stub reports the display-name column migration as not done
             Assert.False(config.IsDisplayNameColumnMigrated);
+
+            // Assert - Window layout: nothing is persisted at design time, so the default layout applies
+            Assert.Equal(string.Empty, config.MainWindowPlacement);
+            Assert.Equal(string.Empty, config.ServicesColumnWidths);
+            Assert.Equal(string.Empty, config.LogsColumnWidths);
         }
 
         [Fact]

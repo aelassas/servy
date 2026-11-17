@@ -30,6 +30,10 @@ namespace Servy.Manager.Config
         public string LogsHiddenColumns => string.Empty;
         public bool IsDisplayNameColumnMigrated => false;
 
+        public string MainWindowPlacement => string.Empty;
+        public string ServicesColumnWidths => string.Empty;
+        public string LogsColumnWidths => string.Empty;
+
         public event PropertyChangedEventHandler PropertyChanged
         {
             add { }

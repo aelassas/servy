@@ -141,10 +141,13 @@
     <Compile Include="Models\MetricType.cs" />
     <Compile Include="Models\PerformanceService.cs" />
     <Compile Include="Models\ServiceItemBase.cs" />
+    <Compile Include="Utils\ColumnWidths.cs" />
+    <Compile Include="Utils\DataGridColumnWidths.cs" />
     <Compile Include="Utils\HistoryResult.cs" />
     <Compile Include="Utils\LogLineSplitter.cs" />
     <Compile Include="Utils\LogTailer.cs" />
     <Compile Include="Utils\UiTaskRunner.cs" />
+    <Compile Include="Utils\WindowPlacement.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
     <Compile Include="Models\LogEntryModel.cs" />
     <Compile Include="Models\Service.cs" />
