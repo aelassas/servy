@@ -835,6 +835,53 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Theory]
+        [InlineData(true, true, false, new[] { "O3", "O4", "E3", "E4" })]   // two streams: half the budget each
+        [InlineData(true, false, false, new[] { "O1", "O2", "O3", "O4" })]  // stdout only: the whole budget (#3309)
+        [InlineData(false, true, false, new[] { "E1", "E2", "E3", "E4" })]  // stderr only: the whole budget (#5204)
+        [InlineData(true, true, true, new[] { "O1", "O2", "O3", "O4" })]    // both streams in ONE file: read once
+        public async Task SwitchServiceAsync_HistoryBudget_IsSplitOnlyBetweenTwoDistinctStreams(
+            bool hasStdout, bool hasStderr, bool sameFile, string[] expectedTexts)
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange - a budget of 4 lines, and 4 lines in each file
+                _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(4);
+                string outFile = Path.GetTempFileName();
+                string errFile = Path.GetTempFileName();
+                File.WriteAllLines(outFile, new[] { "O1", "O2", "O3", "O4" });
+                File.WriteAllLines(errFile, new[] { "E1", "E2", "E3", "E4" });
+
+                // The same-file row hands stderr the stdout path in another case, so the comparison mode is pinned too
+                string stdoutPath = hasStdout ? outFile : string.Empty;
+                string stderrPath = !hasStderr ? null : (sameFile ? outFile.ToUpperInvariant() : errFile);
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    try
+                    {
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", stdoutPath, stderrPath);
+                        await task;
+
+                        // Assert - order between the two streams is the sort's business; the budget is about which lines
+                        Assert.Equal(expectedTexts.OrderBy(t => t), vm.RawLines.Select(l => l.Text).OrderBy(t => t));
+                        if (sameFile)
+                        {
+                            Assert.All(vm.RawLines, l => Assert.Equal(LogType.StdOut, l.Type));
+                        }
+                    }
+                    finally
+                    {
+                        try { File.Delete(outFile); } catch { /* fail-silent */ }
+                        try { File.Delete(errFile); } catch { /* fail-silent */ }
+                    }
+                }
+            });
+        }
+
         [Fact]
         public async Task SwitchServiceAsync_DevicePathThatDiffersFromTheConfiguredPath_IsNotOpened()
         {
