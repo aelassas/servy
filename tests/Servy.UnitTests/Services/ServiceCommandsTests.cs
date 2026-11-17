@@ -279,7 +279,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var dto = new ServiceDto { Name = "ValidInstallService" };
 
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, _wrapperPath, null, false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.IsServiceInstalled("ValidInstallService", It.IsAny<CancellationToken>())).Returns(false);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
@@ -1081,7 +1081,7 @@ namespace Servy.UnitTests.Services
                 _dialogServiceMock.Setup(d => d.SaveXml(Resources.Strings.SaveFileDialog_XmlTitle)).Returns(target.Path);
                 _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
                 _serviceConfigurationValidatorMock
-                    .Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                    .Setup(v => v.ValidateAsync(dto, null, "password", false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(true);
 
                 // Act
@@ -1107,7 +1107,7 @@ namespace Servy.UnitTests.Services
                 _dialogServiceMock.Setup(d => d.SaveJson(Resources.Strings.SaveFileDialog_JsonTitle)).Returns(target.Path);
                 _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
                 _serviceConfigurationValidatorMock
-                    .Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                    .Setup(v => v.ValidateAsync(dto, null, "password", false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(true);
 
                 // Act
@@ -1635,7 +1635,7 @@ namespace Servy.UnitTests.Services
             ServiceDto xmlParsedDto = expectedDto;
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError, out xmlParsedDto)).Returns(true);
 
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(expectedDto, null, null, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             bool bindActionWasExecuted = false;
@@ -1679,7 +1679,7 @@ namespace Servy.UnitTests.Services
             ServiceDto jsonParsedDto = expectedDto;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError, out jsonParsedDto)).Returns(true);
 
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(expectedDto, null, null, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             bool bindActionWasExecuted = false;
