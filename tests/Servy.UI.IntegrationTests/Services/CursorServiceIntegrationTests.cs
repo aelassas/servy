@@ -60,6 +60,45 @@ namespace Servy.UI.IntegrationTests.Services
 
         #endregion
 
+        #region Branch: UI Thread (Dispatcher.CheckAccess == true)
+
+        [Fact]
+        public void SetWaitCursorAndResetCursor_OnTheApplicationThread_SetAndClearTheOverrideCursor()
+        {
+            // Arrange
+            // CheckAccess() is true only on the thread that owns Application.Current.Dispatcher,
+            // which is the persistent STA thread Helper.EnsureApplication keeps the Application on.
+            var app = Helper.EnsureApplication();
+            Cursor afterSet = null;
+            Cursor afterReset = Cursors.Hand;
+
+            app.Dispatcher.Invoke(() =>
+            {
+                var previous = Mouse.OverrideCursor;
+                try
+                {
+                    Mouse.OverrideCursor = Cursors.Hand; // neither the wait cursor nor "no override"
+
+                    // Act
+                    _service.SetWaitCursor();
+                    afterSet = Mouse.OverrideCursor;
+
+                    _service.ResetCursor();
+                    afterReset = Mouse.OverrideCursor;
+                }
+                finally
+                {
+                    Mouse.OverrideCursor = previous;
+                }
+            });
+
+            // Assert
+            Assert.Same(Cursors.Wait, afterSet);
+            Assert.Null(afterReset);
+        }
+
+        #endregion
+
         #region Branch: Background Thread (Dispatcher.CheckAccess == false)
 
         [Fact(Skip = "Skipped due to persistent background thread deadlocks on headless CI environments.")]
