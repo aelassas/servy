@@ -767,9 +767,8 @@ namespace Servy.Service
         /// </summary>
         /// <returns>The current UTC time minus the system uptime.</returns>
         /// <remarks>
-        /// This is a seam over <see cref="GetTickCount64"/>; the production implementation performs the
-        /// same call and subtraction <see cref="ConditionalResetRestartAttempts"/> performed inline, so the
-        /// session-persistence check behaves exactly as before. It is overridable because a test that needs a
+        /// This is a seam over <see cref="GetTickCount64"/>, read by the session-persistence check in
+        /// <see cref="ConditionalResetRestartAttempts"/>. It is overridable because a test that needs a
         /// restart counter older than the reset cap cannot have one on a machine that booted more recently
         /// than that: the counter would be treated as written before boot and the threshold would never be
         /// evaluated.
@@ -1143,8 +1142,8 @@ namespace Servy.Service
                     // A counter that was never stamped is treated as written before this boot
                     DateTime lastWriteUtc = state.UpdatedAtUtc ?? DateTime.MinValue;
 
-                    // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
-                    // is mathematically protected against runtime overflow exceptions for ~292 million years.
+                    // The boot time comes from the GetSystemBootTimeUtc seam: the current UTC time minus the 64-bit
+                    // millisecond uptime counter, which cannot overflow for ~292 million years.
                     DateTime systemBootTimeUtc = GetSystemBootTimeUtc();
 
                     // 2. Session Persistence Check
