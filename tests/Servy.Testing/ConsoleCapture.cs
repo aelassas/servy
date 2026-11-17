@@ -17,16 +17,10 @@ namespace Servy.Testing
             private readonly TextWriter _oldOut;
             private readonly TextWriter _oldErr;
 
-            public StringWriter StdOutWriter { get; }
-            public StringWriter StdErrWriter { get; }
-
             public ConsoleRedirect(StringWriter stdOutWriter, StringWriter stdErrWriter)
             {
                 _oldOut = Console.Out;
                 _oldErr = Console.Error;
-                StdOutWriter = stdOutWriter;
-                StdErrWriter = stdErrWriter;
-
                 Console.SetOut(stdOutWriter);
                 Console.SetError(stdErrWriter);
             }
