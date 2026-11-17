@@ -414,6 +414,51 @@ namespace Servy.Service.UnitTests
             cancellation.Cancel();
         }
 
+        [Fact]
+        public void OnProcessExited_ScheduledRecoveryThrows_LogsTheUnexpectedError()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(false);
+            TestReflection.SetField(service, "_options", options);
+
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            // The restart quota is already used up, so the scheduled recovery logs that it is stopping the
+            // service. That line is outside every catch of InitiateRecovery, so a sink that fails on it
+            // makes the recovery itself throw.
+            service.SetRestartAttemptsServiceName("ServyTestService");
+            service.SetMaxRestartAttempts(2);
+            FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, 2);
+
+            var failure = new InvalidOperationException("log sink failed");
+            _ctx.Logger
+                .Setup(l => l.Error(It.Is<string>(s => s.StartsWith("Maximum restart attempts reached")), It.IsAny<Exception>()))
+                .Throws(failure);
+
+            using (var logged = new ManualResetEventSlim(false))
+            {
+                _ctx.Logger
+                    .Setup(l => l.Error("Unexpected error during scheduled recovery: log sink failed", It.IsAny<Exception>()))
+                    .Callback(() => logged.Set());
+
+                var mockProcess = new Mock<IProcessWrapper>();
+                mockProcess.Setup(p => p.ExitCode).Returns(1);
+                service.SetChildProcess(mockProcess.Object);
+
+                // Act
+                service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+                // Assert
+                Assert.True(logged.Wait(TestTimeouts.CiGenerous),
+                    $"The failed scheduled recovery was not logged within {TestTimeouts.CiGenerousSeconds}s.");
+            }
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }
