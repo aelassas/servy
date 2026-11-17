@@ -42,44 +42,8 @@ namespace Servy.Service.UnitTests.Documentation
             string sectionArea = sectionMatch.Groups["section_content"].Value;
 
             // 2. Extract variable names strictly from the 2nd column of each markdown table row
-            var documentedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var documentedList = new List<string>(); // every backticked name, duplicates included
-            var backtickRegex = new Regex(@"`([^`]+)`", RegexOptions.Compiled);
-
-            using (var reader = new StringReader(sectionArea))
-            {
-                string? line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    line = line.Trim();
-
-                    // Process markdown table rows (ignoring header dividers like '| --- |')
-                    if (line.StartsWith("|") && !line.Contains("---"))
-                    {
-                        var columns = line.Split('|');
-
-                        // The 2nd column (index 2 when split by '|') contains the environment variable names
-                        if (columns.Length >= 3)
-                        {
-                            string envVarsColumn = columns[2];
-
-                            // Exclude table headers (e.g., "| Category | Environment Variables | ... |")
-                            if (envVarsColumn.Contains("Environment Variables"))
-                                continue;
-
-                            foreach (Match match in backtickRegex.Matches(envVarsColumn))
-                            {
-                                var varName = match.Groups[1].Value.Trim();
-                                if (!string.IsNullOrWhiteSpace(varName))
-                                {
-                                    documentedList.Add(varName);
-                                    documentedVariables.Add(varName);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            var documentedList = ExtractVariableNames(sectionArea); // every backticked name, duplicates included
+            var documentedVariables = new HashSet<string>(documentedList, StringComparer.OrdinalIgnoreCase);
 
             Assert.NotEmpty(documentedVariables);
 
@@ -109,6 +73,94 @@ namespace Servy.Service.UnitTests.Documentation
                 documentedList.Count == documentedVariables.Count,
                 $"A protected variable is listed more than once in the wiki table: {string.Join(", ", documentedList.GroupBy(v => v, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).Select(g => g.Key))}"
             );
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void ProtectedVariables_EachTierTable_MustMatchItsCodeSet(int tier)
+        {
+            Assert.SkipUnless(
+                !string.IsNullOrWhiteSpace(WikiPath),
+                "SERVY_WIKI_PATH not set; this parity check runs from the wiki workflow's validate-protected-variables job.");
+
+            // Arrange
+            string markdownContent = File.ReadAllText(Path.Combine(WikiPath, WikiPageFileName));
+
+            // The tier tables sit under level-4 headings inside '### Protected Variables'.
+            var sectionMatch = Regex.Match(
+                markdownContent,
+                @"####\s+Tier " + tier + @"\b(?<section_content>.*?)(?=\n#{1,4}\s+[^\#]|\Z)",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            Assert.True(sectionMatch.Success, $"Failed to locate the '#### Tier {tier}' table in the Wiki markdown.");
+
+            var documented = ExtractVariableNames(sectionMatch.Groups["section_content"].Value);
+
+            var expected = tier == 1
+                ? EnvironmentVariableHelper.ImmutableProtectedVariableNames
+                : EnvironmentVariableHelper.OverridableProtectedVariableNames;
+
+            // Act
+            var missingFromDoc = expected.Except(documented, StringComparer.OrdinalIgnoreCase).ToList();
+            var missingFromCode = documented.Except(expected, StringComparer.OrdinalIgnoreCase).ToList();
+
+            // Assert
+            Assert.True(
+                missingFromDoc.Count == 0,
+                $"Tier {tier} names in code but not in the Tier {tier} wiki table: {string.Join(", ", missingFromDoc)}"
+            );
+
+            Assert.True(
+                missingFromCode.Count == 0,
+                $"Names in the Tier {tier} wiki table that the code keeps in the other tier or not at all: {string.Join(", ", missingFromCode)}"
+            );
+        }
+
+        /// <summary>
+        /// Extracts every backticked variable name from the second column of the markdown table rows in
+        /// <paramref name="markdownArea"/>, skipping divider rows and the header row.
+        /// </summary>
+        /// <param name="markdownArea">The wiki markdown text to scan.</param>
+        /// <returns>The documented names in document order, duplicates included.</returns>
+        private static List<string> ExtractVariableNames(string markdownArea)
+        {
+            var names = new List<string>();
+            var backtickRegex = new Regex(@"`([^`]+)`", RegexOptions.Compiled);
+
+            using (var reader = new StringReader(markdownArea))
+            {
+                string? line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    line = line.Trim();
+
+                    // Process markdown table rows (ignoring header dividers like '| --- |')
+                    if (line.StartsWith("|") && !line.Contains("---"))
+                    {
+                        var columns = line.Split('|');
+
+                        // The 2nd column (index 2 when split by '|') contains the environment variable names
+                        if (columns.Length >= 3)
+                        {
+                            string envVarsColumn = columns[2];
+
+                            // Exclude table headers (e.g., "| Category | Environment Variables | ... |")
+                            if (envVarsColumn.Contains("Environment Variables"))
+                                continue;
+
+                            foreach (Match match in backtickRegex.Matches(envVarsColumn))
+                            {
+                                var varName = match.Groups[1].Value.Trim();
+                                if (!string.IsNullOrWhiteSpace(varName))
+                                    names.Add(varName);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return names;
         }
     }
 }
