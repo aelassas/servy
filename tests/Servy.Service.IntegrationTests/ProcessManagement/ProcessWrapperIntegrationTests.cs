@@ -406,59 +406,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 DateTime parentStartTime = underlyingProcess?.StartTime ?? wrapper.StartTime;
 
                 // Dynamically poll until the child process infrastructure has fully completed initialization (TestTimeouts.CiGenerousSeconds budget)
-                int childPid = 0;
-                bool childSpawned = SpinWait.SpinUntil(() =>
-                {
-                    try
-                    {
-                        var verifiedChildren = ProcessExtensions.GetChildren(parentPid, parentStartTime);
-                        foreach (var child in verifiedChildren)
-                        {
-                            using (child)
-                            {
-                                if (child.ProcessName.Equals("cmd", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    childPid = child.Id;
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Suppress intermittent access deviations while process is initializing
-                    }
-                    return false;
-                }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                int childPid = WaitForCmdChild(parentPid, parentStartTime);
 
                 // Act
                 // Pass the actual parent process identity to execute tree termination via the SUT
                 wrapper.StopDescendants(parentPid, parentStartTime, TestTimeouts.CleanupWaitMs);
 
                 // Assert
-                Assert.True(childSpawned && childPid > 0, "Child cmd.exe never spawned; the test cannot verify descendant termination.");
+                Assert.True(childPid > 0, "Child cmd.exe never spawned; the test cannot verify descendant termination.");
 
-                bool childCleanedUp = SpinWait.SpinUntil(() =>
-                {
-                    try
-                    {
-                        using (var targetChild = Process.GetProcessById(childPid))
-                        {
-                            targetChild.Refresh();
-                            return targetChild.HasExited;
-                        }
-                    }
-                    catch (ArgumentException)
-                    {
-                        // Process identifier has been completely cleared out by the OS kernel
-                        return true;
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // Process state tracking references are dead/gone
-                        return true;
-                    }
-                }, TestTimeouts.DescendantExitWait);
+                bool childCleanedUp = WaitForProcessGone(childPid);
 
                 Assert.True(childCleanedUp, $"Descendant process with PID {childPid} survived StopDescendants.");
 
@@ -500,20 +457,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 DateTime parentStartTime = wrapper.StartTime;
 
                 // Wait for the child process to spawn
-                bool childSpawned = SpinWait.SpinUntil(() =>
-                {
-                    try
-                    {
-                        var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
-                        bool spawned = children.Count > 0;
-                        foreach (var c in children) c.Dispose();
-                        return spawned;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                bool childSpawned = WaitForAnyChild(parentPid, parentStartTime);
 
                 Assert.True(childSpawned, "Child process never spawned; the foreach branch cannot be verified.");
 
@@ -562,20 +506,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 DateTime parentStartTime = wrapper.StartTime;
 
                 // Wait for the child process to spawn, so the descendant sweep has something to log about
-                bool childSpawned = SpinWait.SpinUntil(() =>
-                {
-                    try
-                    {
-                        var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
-                        bool spawned = children.Count > 0;
-                        foreach (var c in children) c.Dispose();
-                        return spawned;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                bool childSpawned = WaitForAnyChild(parentPid, parentStartTime);
 
                 Assert.True(childSpawned, "Child process never spawned; the logger-absent stop path cannot be verified.");
 
@@ -1277,6 +1208,97 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         /// <summary>
+        /// Polls until the parent has a cmd.exe child and returns its PID, within the
+        /// <see cref="TestTimeouts.CiGenerousSeconds"/> budget.
+        /// </summary>
+        /// <param name="parentPid">The identifier of the parent process.</param>
+        /// <param name="parentStartTime">The start time of the parent, which guards against identifier reuse.</param>
+        /// <returns>The PID of the cmd.exe child, or 0 when none appeared in time.</returns>
+        private static int WaitForCmdChild(int parentPid, DateTime parentStartTime)
+        {
+            int childPid = 0;
+            SpinWait.SpinUntil(() =>
+            {
+                try
+                {
+                    foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
+                    {
+                        using (child)
+                        {
+                            if (child.ProcessName.Equals("cmd", StringComparison.OrdinalIgnoreCase))
+                            {
+                                childPid = child.Id;
+                                return true;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Suppress intermittent access deviations while the child is initializing
+                }
+                return false;
+            }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+            return childPid;
+        }
+
+        /// <summary>
+        /// Polls until the parent has at least one child process, within the
+        /// <see cref="TestTimeouts.CiGenerousSeconds"/> budget.
+        /// </summary>
+        /// <param name="parentPid">The identifier of the parent process.</param>
+        /// <param name="parentStartTime">The start time of the parent, which guards against identifier reuse.</param>
+        /// <returns><see langword="true"/> when a child appeared in time; otherwise <see langword="false"/>.</returns>
+        private static bool WaitForAnyChild(int parentPid, DateTime parentStartTime)
+        {
+            return SpinWait.SpinUntil(() =>
+            {
+                try
+                {
+                    var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+                    bool spawned = children.Count > 0;
+                    foreach (var c in children) c.Dispose();
+                    return spawned;
+                }
+                catch
+                {
+                    return false;
+                }
+            }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+        }
+
+        /// <summary>
+        /// Polls until the process with the given identifier has exited or no longer exists, within the
+        /// <see cref="TestTimeouts.DescendantExitWait"/> budget.
+        /// </summary>
+        /// <param name="processId">The identifier of the process expected to be gone.</param>
+        /// <returns><see langword="true"/> when the process is gone in time; otherwise <see langword="false"/>.</returns>
+        private static bool WaitForProcessGone(int processId)
+        {
+            return SpinWait.SpinUntil(() =>
+            {
+                try
+                {
+                    using (var process = Process.GetProcessById(processId))
+                    {
+                        process.Refresh();
+                        return process.HasExited;
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // Process identifier has been completely cleared out by the OS kernel
+                    return true;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process state tracking references are dead/gone
+                    return true;
+                }
+            }, TestTimeouts.DescendantExitWait);
+        }
+
+        /// <summary>
         /// Kills a process by identifier when it is still running, swallowing the races a best-effort reap
         /// runs into: the process exiting between the lookup and the kill, or the identifier being reused.
         /// </summary>
@@ -1438,30 +1460,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     DateTime parentStartTime = wrapper.UnderlyingProcess.StartTime;
 
                     // Poll until the child has finished spawning, on the same budget the tree test uses.
-                    bool childSpawned = SpinWait.SpinUntil(() =>
-                    {
-                        try
-                        {
-                            foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
-                            {
-                                using (child)
-                                {
-                                    if (child.ProcessName.Equals("cmd", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        childPid = child.Id;
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                        catch
-                        {
-                            // Suppress intermittent access deviations while the child is initializing
-                        }
-                        return false;
-                    }, TimeSpan.FromSeconds(TestTimeouts.CiGenerousSeconds));
+                    childPid = WaitForCmdChild(parentPid, parentStartTime);
 
-                    Assert.True(childSpawned && childPid > 0,
+                    Assert.True(childPid > 0,
                         "Child cmd.exe never spawned; the test cannot tell a tree kill from a single-process kill.");
 
                     // Act
@@ -1470,27 +1471,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     // Assert
                     Assert.True(result);
 
-                    bool childEnded = SpinWait.SpinUntil(() =>
-                    {
-                        try
-                        {
-                            using (var child = Process.GetProcessById(childPid))
-                            {
-                                child.Refresh();
-                                return child.HasExited;
-                            }
-                        }
-                        catch (ArgumentException)
-                        {
-                            // Process identifier has been completely cleared out by the OS kernel
-                            return true;
-                        }
-                        catch (InvalidOperationException)
-                        {
-                            // Process state tracking references are dead/gone
-                            return true;
-                        }
-                    }, TestTimeouts.DescendantExitWait);
+                    bool childEnded = WaitForProcessGone(childPid);
 
                     Assert.True(childEnded,
                         $"Kill(entireProcessTree: true) left the child cmd.exe with PID {childPid} running.");
