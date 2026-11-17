@@ -289,6 +289,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.NotEmpty(vm.CpuFillPoints);
                     Assert.NotEmpty(vm.RamPointCollection);
                     Assert.NotEmpty(vm.RamFillPoints);
+
+                    // The metric read is preceded by one cache eviction pass for exited processes
+                    _mockProcessHelper.Verify(p => p.MaintainCache(), Times.Once);
                 }
             }, createApp: true);
         }
@@ -431,6 +434,41 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void AddPoint_RamPeakAboveTheFixedFloor_ScalesTheAxisWithHeadroomAndClosesTheFillPolygon()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    // Stop the background DispatcherTimer so only the value added below reaches the buffer
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // 50 MB * 1.2 headroom is 60, which beats the 10 MB RAM floor, so the headroom
+                    // product is the axis maximum. This is the arm the small-process test cannot reach.
+                    const double ramMb = 50;
+
+                    // Act
+                    TestReflection.InvokeNonPublic(vm, "AddPoint", ramMb, MetricType.Ram);
+
+                    // Assert
+                    // y = 200 - (50 / 60) * 200 = 33.333333. Against the bare floor y would be -800,
+                    // and without the headroom factor it would be 0. Literals on purpose, as in the CPU tests.
+                    var point = Assert.Single(vm.RamPointCollection);
+                    Assert.Equal(0d, point.X, 6);
+                    Assert.Equal(200d / 6, point.Y, 6);
+
+                    // The fill is the line plus two points on the baseline (y = GraphHeight = 200) that close
+                    // the polygon: first under the last line point, then under the first one.
+                    Assert.Equal(3, vm.RamFillPoints.Count);
+                    Assert.Equal(point, vm.RamFillPoints[0]);
+                    Assert.Equal(new Point(0, 200), vm.RamFillPoints[1]);
+                    Assert.Equal(new Point(0, 200), vm.RamFillPoints[2]);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void OnTickAsync_SmallProcess_ChartsRamInMegabytesAgainstTheRamFloor()
         {
             Helper.RunOnSTA(() =>
@@ -493,6 +531,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var last = vm.RamPointCollection[vm.RamPointCollection.Count - 1];
                     Assert.Equal(400d, last.X, 6);
                     Assert.Equal(100d, last.Y, 6);
+
+                    // The fill polygon is the 101 line points plus two closing points on the baseline
+                    // (y = GraphHeight = 200): under the last line point first, then under the first one.
+                    Assert.Equal(103, vm.RamFillPoints.Count);
+                    Assert.Equal(new Point(400, 200), vm.RamFillPoints[101]);
+                    Assert.Equal(new Point(0, 200), vm.RamFillPoints[102]);
                 }
             }, createApp: true);
         }
