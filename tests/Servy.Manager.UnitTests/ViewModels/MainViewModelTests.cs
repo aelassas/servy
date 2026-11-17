@@ -1804,7 +1804,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(UiAppConfig.Caption, It.IsAny<CancellationToken>()), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -1826,7 +1826,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(UiAppConfig.Caption, It.IsAny<CancellationToken>()), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -1848,7 +1848,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 });
 
                 // Assert
-                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+                var builtWith = Core.Helpers.Helper.GetBuiltWithFramework(); // C# 7.3: no optional arguments inside an expression tree
+                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(
+                    It.Is<string>(text =>
+                        text.Contains("Servy Manager " + Core.Config.AppConfig.Version) &&
+                        text.Contains("Built with " + builtWith)),
+                    UiAppConfig.Caption,
+                    It.IsAny<CancellationToken>()), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
