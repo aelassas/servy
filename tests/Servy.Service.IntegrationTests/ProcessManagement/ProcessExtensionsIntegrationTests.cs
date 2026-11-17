@@ -7,18 +7,20 @@ using System.Management;
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
     /// <summary>
-    /// Integration tests for ProcessExtensions.
-    /// These tests execute real OS processes and evaluate native Toolhelp32 enumerations.
+    /// Collection that keeps <see cref="ProcessExtensionsIntegrationTests"/> from running in parallel
+    /// with any other collection, because its tests spawn and enumerate real OS process trees.
     /// </summary>
     [CollectionDefinition(Name, DisableParallelization = true)]
     public class ProcessExtensionsIntegrationTestsCollection
     {
         /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
         public const string Name = "ProcessExtensionsIntegrationTests";
-
-        // Enforces strict sequential isolation across the execution suite
     }
 
+    /// <summary>
+    /// Integration tests for ProcessExtensions.
+    /// These tests execute real OS processes and evaluate native Toolhelp32 enumerations.
+    /// </summary>
     [Collection(ProcessExtensionsIntegrationTestsCollection.Name)]
     public class ProcessExtensionsIntegrationTests : IDisposable
     {
