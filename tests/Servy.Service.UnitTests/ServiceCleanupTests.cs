@@ -208,6 +208,77 @@ namespace Servy.Service.UnitTests
             _mockStderrWriter.Verify(w => w.Dispose(), Times.Once);
         }
 
+        [Fact]
+        public void Cleanup_DetachesTheExitedHandlerBeforeTheChildIsStopped()
+        {
+            // Arrange
+            var options = CreateOptions();
+            SetupStart(options);
+            var detachedBeforeStop = false;
+            var detached = false;
+            _mockProcess.SetupRemove(p => p.Exited -= It.IsAny<EventHandler>()).Callback(() => detached = true);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true).Callback(() => detachedBeforeStop = detached);
+            _service.StartForTest();
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            _mockProcess.VerifyRemove(p => p.Exited -= It.IsAny<EventHandler>(), Times.Once);
+            Assert.True(detachedBeforeStop, "the Exited handler was still attached when the child was stopped");
+        }
+
+        [Fact]
+        public void Cleanup_CancelErrorReadThrows_StillDetachesAndFinishesTheTeardown()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            _mockProcess.Setup(p => p.StartInfo)
+                .Returns(new ProcessStartInfo { RedirectStandardOutput = true, RedirectStandardError = true });
+            _mockProcess.Setup(p => p.CancelErrorRead()).Throws(new InvalidOperationException("stream already stopped"));
+            _service.StartForTest();
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            // The swallowing catch is what keeps the rest of the teardown running: the stderr handler
+            // is still detached and the writers are still disposed instead of the exception landing
+            // in Cleanup's catch-all.
+            _mockProcess.VerifyRemove(p => p.ErrorDataReceived -= It.IsAny<DataReceivedEventHandler>(), Times.Once);
+            _mockStdoutWriter.Verify(w => w.Dispose(), Times.Once);
+            _mockStderrWriter.Verify(w => w.Dispose(), Times.Once);
+            scopedLogger.Verify(l => l.Error(
+                It.Is<string>(s => s.StartsWith("Failed to kill child process")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void Cleanup_UnexpectedFailure_IsLoggedAndTheTeardownStillCompletes()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            _service.StartForTest();
+
+            // StartInfo is read after the kill sequence, inside Cleanup's try and outside every inner
+            // catch, so it is armed only after the start path is done.
+            _mockProcess.Setup(p => p.StartInfo).Throws(new InvalidOperationException("handle is gone"));
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            scopedLogger.Verify(l => l.Error("Failed to kill child process: handle is gone", It.IsAny<Exception>()), Times.Once);
+            scopedLogger.Verify(l => l.Error(
+                It.Is<string>(s => s.StartsWith("Teardown error during")), It.IsAny<Exception>()), Times.Never);
+
+            // The finally still releases the child, and the teardown is recorded as done.
+            _mockProcess.Verify(p => p.Dispose(), Times.AtLeastOnce);
+            Assert.Null(_service.GetChildProcess());
+            Assert.True(TestReflection.GetField<bool>(_service, "_disposed"));
+        }
+
         [Theory]
         [InlineData(3, true, 1)]   // failed, policy says error: the line is written
         [InlineData(3, false, 0)]  // failed, policy says warning: no manual-intervention error
