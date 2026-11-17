@@ -1000,6 +1000,33 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.DoesNotContain(EnvironmentVariableHelper.PercentEscapeToken, resultValue);
         }
 
+        [Theory]
+        [InlineData(true)]    // only the token's first character is before the cut: last position of the scan window
+        [InlineData(false)]   // all but its last character are before the cut: first position of the scan window
+        public void ExpandEnvironmentVariables_TokenAtEitherEndOfTheSplitWindow_RollsBackToTheTokenStart(bool onlyFirstCharacterBeforeTheCut)
+        {
+            // Arrange
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+            string token = EnvironmentVariableHelper.PercentEscapeToken;
+            int charactersBeforeTheCut = onlyFirstCharacterBeforeTheCut ? 1 : token.Length - 1;
+            int prefixLength = maxLen - charactersBeforeTheCut;
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "FRAGMENT_VAR", Value = new string('B', prefixLength) + token + "ExtendedContent" }
+            };
+            Dictionary<string, string> expanded = null;
+
+            // Act
+            string log = CaptureExpansionLog(() => expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars, allowOverriddenRuntimeVars: false));
+
+            // Assert
+            string resultValue = expanded["FRAGMENT_VAR"];
+            Assert.Equal(prefixLength, resultValue.Length);
+            Assert.True(resultValue.All(c => c == 'B'), "A fragment of the escape token survived the truncation.");
+            Assert.Contains($"split at boundary position {prefixLength}.", log);
+        }
+
         [Fact]
         public void ExpandEnvironmentVariables_StringOverload_SplitTokenAtLengthCap_IsSanitizedInline()
         {
