@@ -59,7 +59,7 @@ namespace Servy.Service.CommandLine
                 // Main
                 ServiceName = serviceName,
                 ExecutablePath = SafeResolvePath(processHelper, serviceDto.ExecutablePath, nameof(serviceDto.ExecutablePath), serviceName),
-                ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
+                ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters),
                 StartupDirectory = SafeResolvePath(processHelper, serviceDto.StartupDirectory, nameof(serviceDto.StartupDirectory), serviceName),
 
                 // Use ConfigParser.ParseEnum to ensure the priority is a valid member of ProcessPriority.
@@ -98,7 +98,7 @@ namespace Servy.Service.CommandLine
                 // Pre-Launch settings
                 PreLaunchExecutablePath = SafeResolvePath(processHelper, serviceDto.PreLaunchExecutablePath, nameof(serviceDto.PreLaunchExecutablePath), serviceName),
                 PreLaunchStartupDirectory = SafeResolvePath(processHelper, serviceDto.PreLaunchStartupDirectory, nameof(serviceDto.PreLaunchStartupDirectory), serviceName),
-                PreLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreLaunchParameters ?? string.Empty),
+                PreLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreLaunchParameters),
                 PreLaunchEnvironmentVariables = SafeParseEnvVars(serviceDto.PreLaunchEnvironmentVariables, nameof(serviceDto.PreLaunchEnvironmentVariables), serviceName),
                 PreLaunchStdoutPath = serviceDto.PreLaunchStdoutPath,
                 PreLaunchStderrPath = serviceDto.PreLaunchStderrPath,
@@ -109,12 +109,12 @@ namespace Servy.Service.CommandLine
                 // Failure program settings
                 FailureProgramPath = SafeResolvePath(processHelper, serviceDto.FailureProgramPath, nameof(serviceDto.FailureProgramPath), serviceName),
                 FailureProgramStartupDirectory = SafeResolvePath(processHelper, serviceDto.FailureProgramStartupDirectory, nameof(serviceDto.FailureProgramStartupDirectory), serviceName),
-                FailureProgramExecutableArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
+                FailureProgramExecutableArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters),
 
                 // Post-Launch settings
                 PostLaunchExecutablePath = SafeResolvePath(processHelper, serviceDto.PostLaunchExecutablePath, nameof(serviceDto.PostLaunchExecutablePath), serviceName),
                 PostLaunchStartupDirectory = SafeResolvePath(processHelper, serviceDto.PostLaunchStartupDirectory, nameof(serviceDto.PostLaunchStartupDirectory), serviceName),
-                PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters ?? string.Empty),
+                PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters),
 
                 // Operational toggles
                 EnableDebugLogs = serviceDto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs,
@@ -132,14 +132,14 @@ namespace Servy.Service.CommandLine
                 // Pre-Stop settings
                 PreStopExecutablePath = SafeResolvePath(processHelper, serviceDto.PreStopExecutablePath, nameof(serviceDto.PreStopExecutablePath), serviceName),
                 PreStopStartupDirectory = SafeResolvePath(processHelper, serviceDto.PreStopStartupDirectory, nameof(serviceDto.PreStopStartupDirectory), serviceName),
-                PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
+                PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters),
                 PreStopTimeoutInSeconds = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
                 PreStopLogAsError = serviceDto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                 // Post-Stop settings
                 PostStopExecutablePath = SafeResolvePath(processHelper, serviceDto.PostStopExecutablePath, nameof(serviceDto.PostStopExecutablePath), serviceName),
                 PostStopStartupDirectory = SafeResolvePath(processHelper, serviceDto.PostStopStartupDirectory, nameof(serviceDto.PostStopStartupDirectory), serviceName),
-                PostStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostStopParameters ?? string.Empty),
+                PostStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostStopParameters),
             };
         }
 
@@ -179,7 +179,7 @@ namespace Servy.Service.CommandLine
         {
             try
             {
-                return EnvironmentVariableParser.Parse(raw ?? string.Empty);
+                return EnvironmentVariableParser.Parse(raw);
             }
             catch (FormatException ex)
             {
