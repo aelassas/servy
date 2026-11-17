@@ -331,10 +331,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Stop_RunningHeadlessProcess_ReturnsNonNullAndExits()
         {
-            // The name states what the assertion backs. Stop's graceful-success branch - true for a
-            // windowed process whose CloseMainWindow() causes a clean exit within the timeout - is
-            // still covered by no test: this arrangement is headless, so it reaches the force-kill
-            // fallback and Assert.NotNull accepts that false just as readily.
+            // The name states what the assertion backs. This arrangement is headless, so it reaches the
+            // force-kill fallback and Assert.NotNull accepts that false just as readily. The graceful-success
+            // branch (true) is reached through the MainWindowCloser and ExitWaiter seams instead, by
+            // StopTree_DescendantStopsGracefully_LogsCanceledWithExitCode; no test asserts true from Stop itself.
 
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
