@@ -1,4 +1,5 @@
 using Servy.Manager.Utils;
+using System.Globalization;
 
 namespace Servy.Manager.UnitTests.Utils
 {
@@ -200,5 +201,28 @@ namespace Servy.Manager.UnitTests.Utils
             // Assert
             Assert.Equal(measured, widths);
         }
+
+        [Fact]
+        public void MergeAndParse_UnderADecimalCommaCulture_KeepTheInvariantForm()
+        {
+            // Arrange
+            var previous = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+            try
+            {
+                // Act
+                var text = ColumnWidths.Merge(null, new[] { Entry("Status", 95.456) });
+                var widths = ColumnWidths.Parse("Status=95.5");
+
+                // Assert
+                Assert.Equal("Status=95.46", text);
+                Assert.Equal(new[] { Entry("Status", 95.5) }, widths);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
+        }
+
     }
 }
