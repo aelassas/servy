@@ -832,6 +832,50 @@ namespace Servy.UnitTests.Services
             }
         }
 
+        [Fact]
+        public async Task OpenManager_ProcessStartsSuccessfully_StartsInTheAppDirectoryAndDisposesTheProcess()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            ProcessStartInfo captured = null;
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+
+            var sut = CreateSut();
+
+            try
+            {
+                using (var process = new DisposeCountingProcess())
+                {
+                    _processHelperMock
+                        .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                        .Callback<ProcessStartInfo>(psi => captured = psi)
+                        .Returns(process);
+
+                    // Act
+                    await sut.OpenManagerAsync(cancellationToken: CancellationToken.None);
+
+                    // Assert
+                    // Read inside the using block, so the count excludes the test's own disposal.
+                    Assert.Equal(1, process.DisposeCount);
+                }
+
+                Assert.NotNull(captured);
+                Assert.Equal(baseDir, captured.WorkingDirectory);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
         #endregion
 
         #region ExecuteServiceCommandAsync Unified Pipeline Tests
