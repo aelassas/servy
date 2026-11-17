@@ -179,6 +179,29 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void SelectedLogAndSelectedLevel_DuplicateAssignments_DoNotRaisePropertyChanged()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
+            {
+                // Arrange
+                var row = new LogEntryModel { Message = "Error Context" };
+                vm.SelectedLog = row;
+                vm.SelectedLevel = EventLogLevel.Error;
+
+                int notificationCount = 0;
+                vm.PropertyChanged += (s, e) => notificationCount++;
+
+                // Act
+                vm.SelectedLog = row;
+                vm.SelectedLevel = EventLogLevel.Error;
+
+                // Assert
+                Assert.Equal(0, notificationCount);
+            }
+        }
+
+        [Fact]
         public void FromDate_ShouldUpdate_ToDateMinDate()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
