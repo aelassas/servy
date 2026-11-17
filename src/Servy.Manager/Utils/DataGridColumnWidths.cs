@@ -11,7 +11,9 @@ namespace Servy.Manager.Utils
     /// <remarks>
     /// Only the columns the user can resize and that carry a header text are handled. A star-sized column
     /// is left alone on purpose: it keeps absorbing the space the other columns leave, exactly as it does
-    /// with the default layout, so the grid still fills the window after a restore.
+    /// with the default layout, so the grid still fills the window after a restore. An auto-sized column is
+    /// captured only once its width is absolute (the user dragged it, or a persisted width was applied), so a
+    /// column the user never resized keeps sizing itself to its content.
     /// </remarks>
     public static class DataGridColumnWidths
     {
@@ -63,7 +65,8 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
-        /// Builds the <c>Header=Width</c> list to persist from the current width of each handled, visible column.
+        /// Builds the <c>Header=Width</c> list to persist from the current width of each handled, visible column
+        /// whose width is absolute.
         /// </summary>
         /// <param name="grid">The grid whose columns are measured.</param>
         /// <param name="previous">The currently persisted list; its entries for columns that are hidden now are kept.</param>
@@ -75,7 +78,7 @@ namespace Servy.Manager.Utils
             var measured = new List<KeyValuePair<string, double>>();
             foreach (var column in grid.Columns)
             {
-                if (IsHandled(column) && column.Visibility == System.Windows.Visibility.Visible)
+                if (IsHandled(column) && column.Width.IsAbsolute && column.Visibility == System.Windows.Visibility.Visible)
                 {
                     measured.Add(new KeyValuePair<string, double>((string)column.Header, column.ActualWidth));
                 }
@@ -160,7 +163,8 @@ namespace Servy.Manager.Utils
         /// <param name="column">The column to test.</param>
         /// <returns>
         /// <see langword="true"/> when the user can resize <paramref name="column"/>, it is not star-sized
-        /// and its header is a non-empty text.
+        /// and its header is a non-empty text. <see cref="Capture(DataGrid, string)"/> also requires an absolute
+        /// width, so an auto-sized column the user never resized is not persisted.
         /// </returns>
         private static bool IsHandled(DataGridColumn column)
         {

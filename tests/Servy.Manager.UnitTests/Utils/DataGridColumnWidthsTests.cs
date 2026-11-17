@@ -115,6 +115,42 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public void Capture_AutoSizedColumnThatWasNeverResized_IsLeftOut()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange: no Width, so the column sizes itself to its content, like Status or Startup Type
+                var grid = CreateGrid();
+                grid.Columns.Add(new DataGridTextColumn { Header = "Startup Type", MinWidth = 120 });
+
+                // Act
+                var text = DataGridColumnWidths.Capture(grid, null);
+
+                // Assert
+                Assert.Equal("Name=120,Status=90", text);
+            });
+        }
+
+        [Fact]
+        public void Apply_PersistedWidthForAnAutoSizedColumn_PinsItAndCaptureKeepsIt()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var grid = CreateGrid();
+                grid.Columns.Add(new DataGridTextColumn { Header = "Startup Type", MinWidth = 120 });
+
+                // Act
+                DataGridColumnWidths.Apply(grid, "Startup Type=200");
+                var text = DataGridColumnWidths.Capture(grid, "Startup Type=200");
+
+                // Assert
+                AssertPixelWidth(200, grid.Columns[5]);
+                Assert.Equal("Name=120,Status=90,Startup Type=200", text);
+            });
+        }
+
+        [Fact]
         public void Reset_AfterApply_GivesEveryColumnItsDeclaredWidthBack()
         {
             Helper.RunOnSTA(() =>
