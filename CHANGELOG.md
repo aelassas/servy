@@ -1,5 +1,70 @@
 # Changelog
 
+## [Servy 10.9](https://github.com/aelassas/servy/releases/tag/v10.9)
+
+**Date:** 2026-11-17 | **Tag:** [`v10.9`](https://github.com/aelassas/servy/tree/v10.9)
+
+Servy v10.9 introduces silent installation support for x64 and net48 installers under ARM64 emulation, alongside bug fixes, security patches, code quality improvements, and documentation updates.
+
+### Full Changelog
+* fix(core): consolidate duplicate administrative principal checks into `SecurityHelper.IsAdministrativePrincipal` (#7704)
+* fix(core): refactor `Harden` and `RevokeIfUnused` to use centralized `SecurityHelper.IsAdministrativePrincipal` (#7705)
+* fix(core): remove duplicate two-pass `QueryServiceConfig` reads in `ServyHostInstaller` (#7706)
+* fix(core): update `ReportResult` log message to accurately reflect that failed hardening is retried on any elevated start (#7707)
+* fix(core): update `ReportRevokeResult` log message to clarify that failed revocations are purged on the next elevated start (#7709)
+* fix(core): update `ReportRevokeResult` log message to reflect that vault root DACL is reset on startup (#7712)
+* fix(core): remove unused `Parse` method and update XML documentation in `ServiceDependenciesParser` (#7780)
+* fix(core): make `FormatLineInfo` abstract in `ServiceDtoSerializer` (#7785)
+* fix(core): remove unused `KillProcessTreeAndParents` and parent-walking logic (`KillParentProcesses`) from `ProcessKiller` (#7890)
+* fix(core): remove unused `NtQueryInformationProcess` P/Invoke declaration and related process-query types (`PROCESS_BASIC_INFORMATION`, `ProcessInfoClass`, `ProcessAccess.QueryInformation`) from `NativeMethods` (#7893)
+* fix(core): encode the leading character of reserved device names case-insensitively in `ServiceLogPaths.GetFolderName` so log folder resolution and permission revocation match regardless of service name casing (#7933)
+* fix(core): restore custom service account permissions on the alternate runtime's wrapper and restarter executables in `ServyExePermissionsHardener` after vault purge during `net10.0`/`net48` switches (#7945)
+* fix(infra): remove unused `DeleteAsync(int id)` overload from `IServiceRepository` and `ServiceRepository` (#7803)
+* fix(infra): report accurate policy refusal and migration guidance for legacy v1 encrypted records in `ServiceRepository` (#7806)
+* fix(infra): report accurate policy refusal and migration guidance when exporting or installing legacy v1 encrypted services (#7816)
+* fix(host): remove unused `ReportDebug` method from `IServiceBootstrapEnvironment` (#7799)
+* fix(restarter): update restart timeout warning log to reference `Servy.Host` (#7716)
+* fix(restarter): record warning log entries with the underlying SCM exception when stop, start, or recovery poll operations detect a missing or deleted service (#7985)
+* fix(cli): map `AllowOverriddenRuntimeVars` during service installation DTO conversion (#7745)
+* fix(cli): deduplicate status-token fallback logic across `ShowServiceCommand` and `ServiceStatusCommand` (#7886)
+* fix(cli): remove stale, unreferenced `Servy.Service.Net48.CLI.exe` and `.pdb` binaries left over under their pre-rename filenames on `net48` (#7948)
+* fix(ui): pass window owner to deferred startup warning dialog when running without splash screen (#7713)
+* fix(ui): encapsulate internal configuration properties in `AppBootstrapper` (#7722)
+* fix(desktop,manager): remove unused public connection string and AES key pass-through properties (#7718)
+* fix(desktop,manager,cli): restart previously running services across both `net10.0` and `net48` runtimes after resource extraction when switching versions (#7941)
+* fix(desktop,manager,cli): ensure outdated DLLs in `%ProgramData%\Servy` are overwritten during resource extraction on `net48` (#7942)
+* fix(desktop,manager,cli): resolve `Access denied` errors when restarting services running under custom local accounts after switching between `net10.0` and `net48` (#7946)
+* fix(manager): update automation help text string to document all four dependency states (#7708)
+* fix(manager): add `\??\` NT prefix handling in `ConsoleViewModel.IsUncOrDevicePath` for UNC path validation (#7710)
+* fix(manager): fall back to button data context in `ActionButton_PreviewMouseLeftButtonDown` (#7711)
+* fix(manager): remove unused `IsSyntheticTime` property from `LogLine` and `LogTailer` (#7813)
+* fix(setup): suppress x64-on-ARM64 emulation warning during silent installations (#7698)
+* fix(setup): guard .NET Framework 4.8 check in silent installs
+* fix(setup): use `-LiteralPath` with pattern filtering in `Copy-CommonArtifacts` leak check so bracketed checkout paths and nested subdirectories are verified reliably (#7881)
+* fix(bump-runtime.ps1): avoid pairing `-LiteralPath` with `-Include` in bulk file walk so runtime bumps do not modify unintended files (#7885)
+* fix(dump): update `Servy-Dump.ps1` completion banner to reflect that blank-password local accounts are preserved (#7887)
+* ci(test.yml): fetch Codecov PGP key over HTTPS rather than HKPS keyserver lookup
+* ci(test.yml): use pwsh to download and import Codecov PGP key
+* ci(test.yml): fetch Codecov PGP key from codecovsecops keybase endpoint
+* ci(test.yml): set owner trust for Codecov GPG key to suppress the uncertified signature warning
+* ci(loc.yml): replace apt-get with npm for cloc installation
+* chore(dotnet): bump dotnet sdk version from 10.0.403 to 10.0.404
+* chore(deps): update dependencies
+
+### Downloads
+* [servy-10.9-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-arm64-installer.exe) - 112.64 MB
+* [servy-10.9-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-arm64-portable.7z) - 114.85 MB
+* [servy-10.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-net48-sbom.xml) - 0.03 MB
+* [servy-10.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-net48-x64-installer.exe) - 4.31 MB
+* [servy-10.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-net48-x64-portable.7z) - 2.05 MB
+* [servy-10.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-sbom.xml) - 0.04 MB
+* [servy-10.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-x64-installer.exe) - 120.44 MB
+* [servy-10.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v10.9/servy-10.9-x64-portable.7z) - 119.00 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v10.9.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v10.9.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v10.8...v10.9
+
 ## [Servy 10.8](https://github.com/aelassas/servy/releases/tag/v10.8)
 
 **Date:** 2026-11-07 | **Tag:** [`v10.8`](https://github.com/aelassas/servy/tree/v10.8)
