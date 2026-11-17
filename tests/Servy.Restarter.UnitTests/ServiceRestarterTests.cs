@@ -1131,29 +1131,31 @@ namespace Servy.Restarter.UnitTests
         public void RestartService_WithLogger_SettlePhaseStatusReadFails_LogsWarnAndReturnsServiceNotFound()
         {
             // Arrange
-            _mockController.Setup(c => c.Status).Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+            var gone = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _mockController.Setup(c => c.Status).Throws(gone);
 
             // Act
             var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Settle-phase status read failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Settle-phase status read failed")), gone), Times.Once);
         }
 
         [Fact]
         public void RestartService_WithLogger_SettlePhaseRefreshFails_LogsWarnAndReturnsServiceNotFound()
         {
             // Arrange
+            var gone = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
-            _mockController.Setup(c => c.Refresh()).Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+            _mockController.Setup(c => c.Refresh()).Throws(gone);
 
             // Act
             var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Settle-phase controller refresh failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Settle-phase controller refresh failed")), gone), Times.Once);
         }
 
         [Fact]
@@ -1175,16 +1177,17 @@ namespace Servy.Restarter.UnitTests
         public void RestartService_WithLogger_StopPhaseEntryStatusFails_LogsWarnAndReturnsServiceNotFound()
         {
             // Arrange
+            var gone = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Running)
-                .Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+                .Throws(gone);
 
             // Act
             var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Stop-phase entry status check failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Stop-phase entry status check failed")), gone), Times.Once);
         }
 
         [Fact]
@@ -1228,14 +1231,15 @@ namespace Servy.Restarter.UnitTests
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Stopped)
                 .Returns(ServiceControllerStatus.Stopped);
-            _mockController.Setup(c => c.Refresh()).Throws(new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST));
+            var gone = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
+            _mockController.Setup(c => c.Refresh()).Throws(gone);
 
             // Act
             var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Start-phase initial status check failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Start-phase initial status check failed")), gone), Times.Once);
         }
 
         [Fact]
@@ -1285,14 +1289,15 @@ namespace Servy.Restarter.UnitTests
                 .Returns(ServiceControllerStatus.Stopped)
                 .Returns(ServiceControllerStatus.Stopped);
 
-            _mockController.Setup(c => c.Stop()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
+            var stopRefused = new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+            _mockController.Setup(c => c.Stop()).Throws(stopRefused);
 
             // Act
             var result = _restarterWithLogger.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout);
 
             // Assert
             Assert.Equal(RestartResult.Restarted, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Stop operation failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Stop operation failed")), stopRefused), Times.Once);
             _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Entering transitional recovery loop")), It.IsAny<Exception>()), Times.Once);
             _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Re-issuing Stop command")), It.IsAny<Exception>()), Times.Once);
             _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("reached target state")), It.IsAny<Exception>()), Times.AtLeastOnce());
@@ -1305,13 +1310,14 @@ namespace Servy.Restarter.UnitTests
             var currentStatus = ServiceControllerStatus.Stopped;
             _mockController.Setup(c => c.Status).Returns(() => currentStatus);
 
+            var startRefused = new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
             var startCallCount = 0;
             _mockController.Setup(c => c.Start()).Callback(() =>
             {
                 startCallCount++;
                 if (startCallCount == 1)
                 {
-                    throw new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
+                    throw startRefused;
                 }
             });
 
@@ -1329,7 +1335,7 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(RestartResult.Restarted, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Start operation failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Direct Start operation failed")), startRefused), Times.Once);
             _mockLogger.Verify(l => l.Debug(It.Is<string>(s => s.Contains("Entering transitional recovery loop")), It.IsAny<Exception>()), Times.Once);
         }
 
@@ -1343,9 +1349,10 @@ namespace Servy.Restarter.UnitTests
 
             _mockController.Setup(c => c.Stop()).Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL));
 
+            var pollEx = new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL);
             var probeEx = new Win32Exception(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
             _mockController.SetupSequence(c => c.Refresh())
-                .Throws(new Win32Exception(Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL))
+                .Throws(pollEx)
                 .Throws(probeEx);
 
             // Act
@@ -1353,8 +1360,8 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(RestartResult.ServiceNotFound, result);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Transitional error poll encountered exception")), It.IsAny<Exception>()), Times.Once);
-            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Post-exception status probe failed")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Transitional error poll encountered exception")), pollEx), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Post-exception status probe failed")), probeEx), Times.Once);
         }
 
         [Fact]
