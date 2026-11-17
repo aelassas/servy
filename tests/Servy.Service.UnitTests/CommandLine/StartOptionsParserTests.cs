@@ -430,6 +430,45 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(RecoveryAction.None, result.RecoveryAction);
         }
 
+        [Theory]
+        [InlineData(99)]
+        [InlineData(-1)]
+        public void Parse_OutOfRangeRecoveryAction_FallsBackToAppConfigDefault(int stored)
+        {
+            // Arrange
+            string serviceName = "OutOfRangeRecoveryService";
+            string[] args = { "Servy.Service.exe", serviceName };
+
+            // Monitoring is on, otherwise the ternary takes the None arm and ParseEnum is never reached.
+            var serviceDto = new ServiceDto { EnableHealthMonitoring = true, RecoveryAction = stored };
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
+
+            // Act
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultRecoveryAction, result.RecoveryAction);
+        }
+
+        [Theory]
+        [InlineData(99)]
+        [InlineData(-1)]
+        public void Parse_OutOfRangeDateRotationType_FallsBackToAppConfigDefault(int stored)
+        {
+            // Arrange
+            string serviceName = "OutOfRangeRotationService";
+            string[] args = { "Servy.Service.exe", serviceName };
+
+            var serviceDto = new ServiceDto { DateRotationType = stored };
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
+
+            // Act
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
+
+            // Assert
+            Assert.Equal(AppConfig.DefaultDateRotationType, result.DateRotationType);
+        }
+
         #endregion
 
         #region Exception Resiliency Filter Validation Blocks
