@@ -169,7 +169,11 @@ namespace Servy.Restarter
                     }
                     catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                     {
-                        if (IsGone(ex)) return RestartResult.ServiceNotFound;
+                        if (IsGone(ex))
+                        {
+                            _logger?.Warn($"Stop command failed for '{serviceName}'; treating as uninstalled.", ex);
+                            return RestartResult.ServiceNotFound;
+                        }
                         if (!IsTransitional(ex)) throw;
 
                         // Fallback: the SCM returned a transitional error code (the service entered or left a pending state between our check and the call)
@@ -232,7 +236,11 @@ namespace Servy.Restarter
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
-                    if (IsGone(ex)) return RestartResult.ServiceNotFound;
+                    if (IsGone(ex))
+                    {
+                        _logger?.Warn($"Start command failed for '{serviceName}'; treating as uninstalled.", ex);
+                        return RestartResult.ServiceNotFound;
+                    }
                     if (!IsTransitional(ex)) throw;
 
                     // Fallback: the SCM returned a transitional error code (the service entered or left a pending state between our check and the call)
@@ -339,7 +347,11 @@ namespace Servy.Restarter
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception || ex is System.ServiceProcess.TimeoutException)
                 {
-                    if (IsGone(ex)) return RestartResult.ServiceNotFound;
+                    if (IsGone(ex))
+                    {
+                        _logger?.Warn($"Recovery poll failed for service '{serviceName}' while targeting '{targetStatus}'; treating as uninstalled.", ex);
+                        return RestartResult.ServiceNotFound;
+                    }
                     if (!IsTransitional(ex)) throw;
 
                     last = ex;
