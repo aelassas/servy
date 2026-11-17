@@ -276,6 +276,8 @@ namespace Servy.UnitTests.Services
         public async Task InstallService_ValidConfiguration_ReturnsTrueAndDisplaysSuccess()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var sut = CreateSut();
             var dto = new ServiceDto { Name = "ValidInstallService" };
 
@@ -284,13 +286,17 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.InstallServiceAsync(dto, cancellationToken: CancellationToken.None);
+            var result = await sut.InstallServiceAsync(dto, cancellationToken: cts.Token);
 
             // Assert
             Assert.True(result);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceInstalled, dto.Name), UiAppConfig.Caption), Times.Once);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(dto.Name, cts.Token), Times.Once);
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
@@ -997,6 +1003,8 @@ namespace Servy.UnitTests.Services
         public async Task StartService_SuccessfulExecution_DisplaysInfoAndReturnsTrue()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var sut = CreateSut();
             var serviceName = "StartableService";
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
@@ -1005,7 +1013,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, cts.Token);
 
             // Assert
             Assert.True(result);
@@ -1013,11 +1021,15 @@ namespace Servy.UnitTests.Services
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync($"Service '{serviceName}' was started successfully.", UiAppConfig.Caption), Times.Once);
             // The constructor defaults every verb to Success, so only a Verify can tell which verb, flag and token the SUT forwarded.
-            _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, true, CancellationToken.None), Times.Once);
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, true, cts.Token), Times.Once);
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(serviceName, cts.Token), Times.Once);
+            _serviceManagerMock.Verify(m => m.GetServiceStartupType(serviceName, cts.Token), Times.Once);
             _serviceManagerMock.Verify(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _serviceManagerMock.Verify(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
@@ -1516,6 +1528,8 @@ namespace Servy.UnitTests.Services
         public async Task UninstallService_SuccessfulRemoval_DisplaysSuccessMessageBoxAndReturnsTrue()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var sut = CreateSut();
             var serviceName = "ValidInstalledService";
 
@@ -1526,7 +1540,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, cts.Token);
 
             // Assert
             Assert.True(result);
@@ -1535,6 +1549,12 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m =>
                 m.ShowInfoAsync(string.Format(Resources.Strings.Msg_ServiceRemoved, serviceName), UiAppConfig.Caption),
                 Times.Once);
+
+            // The constructor defaults every verb to Success, so only a Verify can tell which token the SUT forwarded.
+            _serviceManagerMock.Verify(m => m.IsServiceInstalled(serviceName, cts.Token), Times.Once);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(serviceName, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         #endregion
