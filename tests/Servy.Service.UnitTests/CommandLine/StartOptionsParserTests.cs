@@ -6,8 +6,10 @@ using Servy.Core.Helpers;
 using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Threading;
 using Xunit;
@@ -313,6 +315,47 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(AppConfig.DefaultPreStopLogAsError, result.PreStopLogAsError);
             Assert.Equal(AppConfig.DefaultDateRotationType, result.DateRotationType);
             Assert.Equal(AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB), result.RotationSizeInBytes);
+        }
+
+        private static readonly string[] BooleanFlags =
+        {
+            nameof(ServiceDto.EnableConsoleUI),
+            nameof(ServiceDto.UseLocalTimeForRotation),
+            nameof(ServiceDto.EnableHealthMonitoring),
+            nameof(ServiceDto.RecoveryOnCleanExit),
+            nameof(ServiceDto.EnableHeartbeatUrlFlags),
+            nameof(ServiceDto.AllowOverriddenRuntimeVars),
+            nameof(ServiceDto.PreLaunchIgnoreFailure),
+            nameof(ServiceDto.EnableDebugLogs),
+            nameof(ServiceDto.EnableSizeRotation),
+            nameof(ServiceDto.EnableDateRotation),
+            nameof(ServiceDto.PreStopLogAsError),
+        };
+
+        public static IEnumerable<object[]> BooleanMappings => BooleanFlags.Select(f => new object[] { f });
+
+        [Theory]
+        [MemberData(nameof(BooleanMappings))]
+        public void Parse_SingleBooleanSet_MapsThatFlagAndNoOther(string flag)
+        {
+            // Arrange
+            string serviceName = "SingleFlagService";
+            string[] args = { "Servy.Service.exe", serviceName };
+
+            var serviceDto = new ServiceDto();
+            typeof(ServiceDto).GetProperty(flag).SetValue(serviceDto, true);
+            _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
+
+            // Act
+            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
+
+            // Assert
+            // Every default is false, so the flag that was set is the only one that may be true.
+            foreach (string name in BooleanFlags)
+            {
+                bool actual = (bool)typeof(StartOptions).GetProperty(name).GetValue(result);
+                Assert.True(actual == (name == flag), $"StartOptions.{name} is {actual} when only ServiceDto.{flag} is set.");
+            }
         }
 
         [Fact]
