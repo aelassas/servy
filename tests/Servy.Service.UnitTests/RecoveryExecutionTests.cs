@@ -273,6 +273,34 @@ namespace Servy.Service.UnitTests
             Assert.Equal(0, service.GetFailedChecks());
         }
 
+        [Theory]
+        [InlineData("_isTearingDown")]
+        [InlineData("_disposed")]
+        [InlineData("_isRebooting")]
+        public void InitiateRecovery_BusyFlagSet_DispatchesNothingAndLeavesTheStateAlone(string flag)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartService);
+            service.SetFailedChecks(3);
+            TestReflection.SetField(service, flag, true);
+
+            // Act
+            service.InvokeInitiateRecovery();
+
+            // Put the flag back so the context's Dispose still runs a real teardown.
+            TestReflection.SetField(service, flag, false);
+
+            // Assert
+            // The guard returns before the recovery state is touched: no action, the gate stays open
+            // and the failure counter keeps its value.
+            VerifyNoRecoveryActionRan(_ctx);
+            Assert.False(TestReflection.GetField<bool>(service, "_isRecovering"));
+            Assert.Equal(3, service.GetFailedChecks());
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Performing recovery action")), It.IsAny<Exception>()), Times.Never);
+        }
+
         public void Dispose()
         {
             _ctx.Dispose();
