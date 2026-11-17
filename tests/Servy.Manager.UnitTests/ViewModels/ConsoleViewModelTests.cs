@@ -1057,6 +1057,50 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
+        [Fact]
+        public async Task SwitchServiceAsync_SupersededWhileTheHistoryIsLoading_AddsNoLinesAndStartsNoLiveTail()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange - a log file with history the superseded call would otherwise show
+                string outFile = Path.GetTempFileName();
+                File.WriteAllLines(outFile, new[] { "O1", "O2" });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    try
+                    {
+                        // SwitchServiceAsync raises PropertyChanged(Pid) after it cleared the buffer and before it starts
+                        // the history read, so the handler moves the session id on where a newer switch would
+                        bool superseded = false;
+                        vm.PropertyChanged += (s, e) =>
+                        {
+                            if (e.PropertyName == nameof(ConsoleViewModel.Pid) && !superseded)
+                            {
+                                superseded = true;
+                                TestReflection.SetField(vm, "_currentSessionId", TestReflection.GetField<int>(vm, "_currentSessionId") + 1);
+                            }
+                        };
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", outFile, null)!;
+                        await task;
+
+                        // Assert: the superseded call neither showed its history nor started tailing the old file
+                        Assert.True(superseded);
+                        Assert.Empty(vm.RawLines);
+                        Assert.Null(TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer"));
+                    }
+                    finally
+                    {
+                        try { File.Delete(outFile); } catch { /* fail-silent */ }
+                    }
+                }
+            });
+        }
+
         [Theory]
         [InlineData("//server/share/out.log")]
         [InlineData(@"\/server\share\out.log")]
