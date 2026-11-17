@@ -568,6 +568,82 @@ namespace Servy.Service.UnitTests
             cancellation.Cancel();
         }
 
+        [Theory]
+        [InlineData("_isTearingDown")]
+        [InlineData("_disposed")]
+        public async Task OnProcessExited_TeardownBeginsWhileWaitingForTheLock_EvaluatesNothing(string flag)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(1);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Hold the lock, so the handler passes its fast-path check with every flag clear and parks on the wait.
+            var semaphore = TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore");
+            await semaphore.WaitAsync(TestContext.Current.CancellationToken);
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Act
+            // Teardown starts while the handler is parked, then the lock is handed over.
+            TestReflection.SetField(service, flag, true);
+            semaphore.Release();
+
+            // The handler is async void: it is done with the guarded region once it has given the lock back.
+            await Helper.WaitUntilAsync(() => semaphore.CurrentCount == 1, TestTimeouts.CiGenerous,
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // Put the flag back so the context's Dispose still runs a real teardown.
+            TestReflection.SetField(service, flag, false);
+
+            // Assert
+            // Only the re-check inside the lock can stop this handler: the exit is never evaluated.
+            mockProcess.Verify(p => p.ExitCode, Times.Never);
+        }
+
+        [Fact]
+        public void OnProcessExited_RecoveryAlreadyInProgress_CountsNoFailureAndSchedulesNoSecondRecovery()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            var options = CreateOptionsWithMinimumRecoveryDelay(recoveryOnCleanExit: false);
+            TestReflection.SetField(service, "_options", options);
+
+            // If a recovery were scheduled after all, it must not outlive the test.
+            using var cancellation = new CancellationTokenSource();
+            TestReflection.SetField(service, "_cancellationSource", cancellation);
+
+            service.SetRecoveryActionEnabled(true);
+            service.SetRecoveryAction(RecoveryAction.RestartProcess);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            // A recovery is already running when the child's exit event arrives.
+            TestReflection.SetField(service, "_isRecovering", true);
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(1);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            // The exit was evaluated, but the gatekeeper kept it from counting as a new failure:
+            // with one allowed failure, counting it would have scheduled a second recovery.
+            mockProcess.Verify(p => p.ExitCode, Times.Once);
+            Assert.Equal(0, service.GetFailedChecks());
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Never);
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.StartsWith("[OnProcessExited] Failure threshold reached")), It.IsAny<Exception>()), Times.Never);
+
+            cancellation.Cancel();
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }

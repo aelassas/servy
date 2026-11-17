@@ -1277,6 +1277,47 @@ namespace Servy.Service.UnitTests
             Assert.Equal(0, service.GetFailedChecks());
         }
 
+        [Theory]
+        [InlineData("_isTearingDown")]
+        [InlineData("_disposed")]
+        [InlineData("_isRecovering")]
+        public async Task CheckHealth_BusyFlagSetWhileWaitingForTheLock_ReturnsWithoutReadingTheProcess(string flag)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetMaxFailedChecks(3);
+            service.SetFailedChecks(0);
+
+            // Hold the lock, so the check passes its fast-fail guard with every flag clear and parks on the wait.
+            var semaphore = TestReflection.GetField<SemaphoreSlim>(service, "_healthCheckSemaphore");
+            await semaphore.WaitAsync(TestContext.Current.CancellationToken);
+            var check = service.InvokeCheckHealthAsync(null, null);
+            Assert.False(check.IsCompleted, "the health check did not wait for the lock");
+
+            // Act
+            // The state changes while the check is parked, then the lock is handed over.
+            TestReflection.SetField(service, flag, true);
+            semaphore.Release();
+            await check;
+
+            // Put the flag back so the context's Dispose still runs a real teardown.
+            TestReflection.SetField(service, flag, false);
+
+            // Assert
+            // Only the double-check inside the lock can stop this check: the process is never read,
+            // no failure is counted and the lock is free again.
+            mockProcess.VerifyGet(p => p.HasExited, Times.Never);
+            Assert.Equal(0, service.GetFailedChecks());
+            Assert.Equal(1, semaphore.CurrentCount);
+        }
+
         [Fact]
         public async Task CheckHealth_ExitCodeThrows_WarnsAndCountsTheFailureAsUnavailable()
         {
