@@ -763,6 +763,24 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Gets the UTC time at which the current OS session started.
+        /// </summary>
+        /// <returns>The current UTC time minus the system uptime.</returns>
+        /// <remarks>
+        /// This is a seam over <see cref="GetTickCount64"/>; the production implementation performs the
+        /// same call and subtraction <see cref="ConditionalResetRestartAttempts"/> performed inline, so the
+        /// session-persistence check behaves exactly as before. It is overridable because a test that needs a
+        /// restart counter older than the reset cap cannot have one on a machine that booted more recently
+        /// than that: the counter would be treated as written before boot and the threshold would never be
+        /// evaluated.
+        /// </remarks>
+        protected virtual DateTime GetSystemBootTimeUtc()
+        {
+            ulong uptimeMilliseconds = GetTickCount64();
+            return DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
+        }
+
+        /// <summary>
         /// Waits up to <paramref name="timeoutMs"/> milliseconds for a tracked hook's process to exit
         /// by calling <see cref="Process.WaitForExit(int)"/>.
         /// </summary>
@@ -1127,8 +1145,7 @@ namespace Servy.Service
 
                     // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
                     // is mathematically protected against runtime overflow exceptions for ~292 million years.
-                    ulong uptimeMilliseconds = GetTickCount64();
-                    DateTime systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
+                    DateTime systemBootTimeUtc = GetSystemBootTimeUtc();
 
                     // 2. Session Persistence Check
                     // If the counter was last written before the current system boot,
