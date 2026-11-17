@@ -1242,6 +1242,40 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void Stop_NoStopRequestDelivered_SkipsTheGracefulWaitAndKills()
+        {
+            // Arrange
+            var waits = new List<int>();
+            var native = new RecordingConsoleNative { AttachResult = false, LastError = Errors.ERROR_INVALID_HANDLE };
+
+            using (var wrapper = StartWrapperWithConsoleSeam(native))
+            {
+                // Neither route delivers a stop request: the console attach fails on a live process, so
+                // SendCtrlC reports false, and the window request reports that there is no window.
+                wrapper.MainWindowCloser = _ => false;
+
+                // The real wait still runs, so the default ProcessKiller's kill is observed and no child
+                // outlives the test; only the budgets are recorded.
+                wrapper.ExitWaiter = (p, ms) =>
+                {
+                    waits.Add(ms);
+                    return p.WaitForExit(ms);
+                };
+
+                // Act
+                var result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
+
+                // Assert
+                Assert.False(result);
+
+                // One wait only, with the post-kill budget: the stop timeout is never waited on, because
+                // nothing was sent that the process could react to.
+                Assert.Equal(new[] { AppConfig.DefaultPostKillWaitMs }, waits);
+                Assert.True(wrapper.HasExited);
+            }
+        }
+
         /// <summary>
         /// Kills a process by identifier when it is still running, swallowing the races a best-effort reap
         /// runs into: the process exiting between the lookup and the kill, or the identifier being reused.
