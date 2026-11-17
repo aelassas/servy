@@ -521,7 +521,7 @@ namespace Servy.Service.UnitTests.Bootstrap
 
         /// <summary>
         /// An <see cref="IServiceBootstrapEnvironment"/> that records what the constructor asked of it and
-        /// answers from memory, so no start-up step touches the event log, ProgramData, SQLite or the
+        /// answers from memory, so no start-up step touches the event log, ProgramData or the
         /// process-global logger.
         /// </summary>
         private sealed class FakeBootstrapEnvironment : IServiceBootstrapEnvironment
