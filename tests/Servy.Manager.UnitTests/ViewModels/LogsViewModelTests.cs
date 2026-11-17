@@ -618,6 +618,52 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task Search_SupersededSearchAnswersLate_KeepsTheNewerRows()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange - the first query hangs, the second answers at once
+                    var staleSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
+                    IEnumerable<ServyEventLogEntry> fresh = new List<ServyEventLogEntry>
+                    {
+                        new ServyEventLogEntry { EventId = 2, Time = DateTimeOffset.Now, Level = EventLogLevel.Information, Message = "fresh" }
+                    };
+
+                    var searchCallCount = 0;
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .Returns(() =>
+                        {
+                            searchCallCount++;
+                            return searchCallCount == 1 ? staleSearchTcs.Task : Task.FromResult(fresh);
+                        });
+
+                    var scrollCount = 0;
+                    vm.ScrollLogsToTopRequested += () => scrollCount++;
+
+                    // Act - the second search supersedes the first, then the first query answers with rows of its own
+                    var staleSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
+                    var freshSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
+                    await freshSearchTask;
+
+                    staleSearchTcs.TrySetResult(new List<ServyEventLogEntry>
+                    {
+                        new ServyEventLogEntry { EventId = 1, Time = DateTimeOffset.Now, Level = EventLogLevel.Information, Message = "stale" }
+                    });
+                    await staleSearchTask;
+
+                    // Assert - the late answer neither replaced the rows nor scrolled the grid again
+                    var rows = vm.LogsView.SourceCollection.Cast<LogEntryModel>().Select(r => r.Message).ToList();
+                    Assert.Equal(new[] { "fresh" }, rows);
+                    Assert.Equal(1, scrollCount);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SearchCommand_ServiceThrowsException_RestoresCursorState()
         {
             await Helper.RunOnSTA(async () =>
