@@ -98,7 +98,6 @@ namespace Servy.Service.UnitTests
             bool enableHealthMonitoring, int heartbeat, int maxFailedChecks, RecoveryAction recovery, bool expected)
         {
             // Arrange
-            var fullArgs = new[] { "TestService" };
             var options = new StartOptions
             {
                 ServiceName = "TestService",
@@ -108,13 +107,7 @@ namespace Servy.Service.UnitTests
                 RecoveryAction = recovery
             };
 
-            var mockScopedLogger = new Mock<IServyLogger>();
-
-            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
-            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
-            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
-            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
+            ArrangeStart(options);
 
             var service = _ctx.Build();
 
@@ -133,7 +126,6 @@ namespace Servy.Service.UnitTests
         public void OnStart_ComputesPreLaunchEnabledFromThePreLaunchPath(string? preLaunchExecutablePath, bool expected)
         {
             // Arrange
-            var fullArgs = new[] { "TestService" };
             var options = new StartOptions
             {
                 ServiceName = "TestService",
@@ -141,13 +133,7 @@ namespace Servy.Service.UnitTests
                 PreLaunchTimeoutInSeconds = 0 // fire-and-forget, so the start is not held up by the hook
             };
 
-            var mockScopedLogger = new Mock<IServyLogger>();
-
-            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
-            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
-            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
-            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
+            ArrangeStart(options);
 
             var preLaunch = new Mock<IProcessWrapper>();
             preLaunch.Setup(p => p.Start()).Returns(true);
@@ -168,7 +154,6 @@ namespace Servy.Service.UnitTests
         public void OnStart_CopiesTheRecoverySettingsFromOptions()
         {
             // Arrange
-            var fullArgs = new[] { "TestService" };
             var options = new StartOptions
             {
                 ServiceName = "TestService",
@@ -179,13 +164,7 @@ namespace Servy.Service.UnitTests
                 RecoveryAction = RecoveryAction.RestartProcess    // not the field's default
             };
 
-            var mockScopedLogger = new Mock<IServyLogger>();
-
-            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
-            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
-            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
-            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
+            ArrangeStart(options);
 
             var service = _ctx.Build();
 
@@ -256,6 +235,20 @@ namespace Servy.Service.UnitTests
             // Assert
             _ctx.TimerFactory.Verify(f => f.Create(It.IsAny<double>()), Times.Never);
             _ctx.Logger.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        /// <summary>
+        /// Arranges the helper and logger mocks so that <c>OnStart</c> parses <paramref name="options"/>,
+        /// promotes the logger and passes validation.
+        /// </summary>
+        /// <param name="options">The options <c>ParseOptions</c> returns.</param>
+        private void ArrangeStart(StartOptions options)
+        {
+            _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "TestService" });
+            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
+            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(new Mock<IServyLogger>().Object);
+            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
+            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
         }
 
         public void Dispose() => _ctx.Dispose();
