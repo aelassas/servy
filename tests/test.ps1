@@ -43,18 +43,18 @@ $TestResultsDir = Join-Path -Path $ScriptDir -ChildPath "TestResults"
 $CoverageReportDir = Join-Path -Path $ScriptDir -ChildPath "coveragereport"
 
 # Cleanup previous results
-if (Test-Path $TestResultsDir) {
+if (Test-Path -LiteralPath $TestResultsDir) {
     Write-Host "Cleaning up previous test results..."
-    Remove-Item -Path $TestResultsDir -Recurse -Force
+    Remove-Item -LiteralPath $TestResultsDir -Recurse -Force
 }
 
-if (Test-Path $CoverageReportDir) {
+if (Test-Path -LiteralPath $CoverageReportDir) {
     Write-Host "Cleaning up previous coverage report..."
-    Remove-Item -Path $CoverageReportDir -Recurse -Force
+    Remove-Item -LiteralPath $CoverageReportDir -Recurse -Force
 }
 
 # The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
-$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj'
+$RawTestProjects = Get-ChildItem -LiteralPath $ScriptDir -Recurse -Filter '*Tests.csproj'
 
 if (-not $RawTestProjects) {
     Write-Host "No '*Tests.csproj' projects found under $ScriptDir - nothing to test." -ForegroundColor Red
