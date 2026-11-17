@@ -257,6 +257,51 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        [Theory]
+        [InlineData("utf-8")]
+        [InlineData("utf-16le")]
+        public async Task GetHistoryAsync_MaxLinesAboveTheSafeCap_ReturnsOnlyTheNewestCapLines(string encodingName)
+        {
+            // Arrange - five lines more than the cap
+            int cap = AppConfig.LogTailerMaxSafeLines;
+            string path = NewTempFilePath("history_cap");
+            string text = string.Concat(Enumerable.Range(1, cap + 5).Select(i => "L" + i + "\n"));
+            Encoding encoding = encodingName == "utf-8" ? new UTF8Encoding(false) : EncodingWithByteOrderMark(encodingName);
+            File.WriteAllText(path, text, encoding);
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, int.MaxValue, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.Equal(cap, result.Lines.Count);
+                Assert.Equal("L6", result.Lines[0].Text);
+                Assert.Equal("L" + (cap + 5), result.Lines[cap - 1].Text);
+            }
+        }
+
+        [Theory]
+        [InlineData("utf-8")]
+        [InlineData("utf-16le")]
+        public async Task GetHistoryAsync_NegativeMaxLines_IsTreatedAsZero(string encodingName)
+        {
+            // Arrange
+            string path = NewTempFilePath("history_negative");
+            Encoding encoding = encodingName == "utf-8" ? new UTF8Encoding(false) : EncodingWithByteOrderMark(encodingName);
+            File.WriteAllText(path, "a\nb\n", encoding);
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(path, LogType.StdOut, -1, TestContext.Current.CancellationToken);
+
+                // Assert - no lines, and the tail resumes at the end of the complete lines
+                Assert.Empty(result.Lines);
+                Assert.Equal(new FileInfo(path).Length, result.Position);
+            }
+        }
+
         [Fact]
         public async Task GetHistoryAsync_ShouldHandleSyntheticTimestampsCorrectly()
         {
