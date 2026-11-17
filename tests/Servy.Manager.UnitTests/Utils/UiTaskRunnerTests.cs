@@ -73,6 +73,45 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public async Task RunAsync_ActionFaultsAfterAnAwait_LogsFailureWithContextAndDoesNotThrow()
+        {
+            // Arrange - an async handler never throws from the call itself; it returns a task that faults later.
+            Func<Task> action = async () =>
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("late boom");
+            };
+
+            // Act
+            Task? task = null;
+            var log = await LogCapture.RunAsync(() => task = UiTaskRunner.RunAsync(action, Context));
+
+            // Assert
+            Assert.Equal(TaskStatus.RanToCompletion, task!.Status);
+            Assert.Contains($"Async UI handler failed in {Context}.", log);
+            Assert.Contains("late boom", log);
+        }
+
+        [Fact]
+        public async Task RunAsync_ActionIsCancelledAfterAnAwait_CompletesSilently()
+        {
+            // Arrange
+            Func<Task> action = async () =>
+            {
+                await Task.Yield();
+                throw new OperationCanceledException();
+            };
+
+            // Act
+            Task? task = null;
+            var log = await LogCapture.RunAsync(() => task = UiTaskRunner.RunAsync(action, Context));
+
+            // Assert
+            Assert.Equal(TaskStatus.RanToCompletion, task!.Status);
+            Assert.DoesNotContain("Async UI handler failed", log);
+        }
+
+        [Fact]
         public async Task RunAsync_ActionSucceeds_InvokesActionAndCompletesSuccessfully()
         {
             // Arrange
