@@ -23,6 +23,12 @@ namespace Servy.Manager.Views
         private IReadOnlyDictionary<DataGridColumn, DataGridLength>? _defaultColumnWidths;
 
         /// <summary>
+        /// Occurs when the width of a column of the logs table changes, once the persisted widths have
+        /// been restored. The main window listens to it to persist the window layout.
+        /// </summary>
+        internal event EventHandler? ColumnWidthsChanged;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LogsView"/> class, subscribing to
         /// <see cref="FrameworkElement.DataContextChanged"/> to re-wire the view model and to
         /// <see cref="FrameworkElement.Unloaded"/> to cancel any search still running.
@@ -65,6 +71,19 @@ namespace Servy.Manager.Views
             {
                 DataGridColumnWidths.Apply(LogsDataGrid, app.LogsColumnWidths);
             }
+
+            // Watch the columns only now, so restoring the widths is not reported as a change
+            DataGridColumnWidths.AddWidthChangedHandler(LogsDataGrid, OnColumnWidthChanged);
+        }
+
+        /// <summary>
+        /// Raises <see cref="ColumnWidthsChanged"/> when the width of a column of the logs table changes.
+        /// </summary>
+        /// <param name="sender">The column whose width changed.</param>
+        /// <param name="e">Event arguments containing event data.</param>
+        private void OnColumnWidthChanged(object? sender, EventArgs e)
+        {
+            ColumnWidthsChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

@@ -152,6 +152,65 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public void AddWidthChangedHandler_HandledColumnResized_CallsTheHandlerWithTheColumn()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var grid = CreateGrid();
+                var senders = new List<object?>();
+                DataGridColumnWidths.AddWidthChangedHandler(grid, (s, e) => senders.Add(s));
+
+                // Act
+                grid.Columns[1].Width = new DataGridLength(250);
+
+                // Assert
+                Assert.Equal(new object?[] { grid.Columns[1] }, senders);
+            });
+        }
+
+        [Fact]
+        public void AddWidthChangedHandler_ColumnThatIsNotPersistedResized_DoesNotCallTheHandler()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var grid = CreateGrid();
+                var calls = 0;
+                DataGridColumnWidths.AddWidthChangedHandler(grid, (s, e) => calls++);
+
+                // Act: the header-less column and the one the user cannot resize
+                grid.Columns[0].Width = new DataGridLength(50);
+                grid.Columns[3].Width = new DataGridLength(200);
+
+                // Assert
+                Assert.Equal(0, calls);
+            });
+        }
+
+        [Fact]
+        public void RemoveWidthChangedHandler_ColumnResizedAfterwards_DoesNotCallTheHandler()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var grid = CreateGrid();
+                var calls = 0;
+                EventHandler handler = (s, e) => calls++;
+                DataGridColumnWidths.AddWidthChangedHandler(grid, handler);
+                grid.Columns[1].Width = new DataGridLength(250);
+
+                // Act
+                DataGridColumnWidths.RemoveWidthChangedHandler(grid, handler);
+                grid.Columns[1].Width = new DataGridLength(300);
+                grid.Columns[2].Width = new DataGridLength(200);
+
+                // Assert: only the change made before the removal was reported
+                Assert.Equal(1, calls);
+            });
+        }
+
+        [Fact]
         public void Methods_NullArguments_Throw()
         {
             Helper.RunOnSTA(() =>
@@ -165,6 +224,10 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.Capture(null!, null));
                 Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.Reset(null!, DataGridColumnWidths.CaptureDefaults(grid)));
                 Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.Reset(grid, null!));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.AddWidthChangedHandler(null!, (s, e) => { }));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.AddWidthChangedHandler(grid, null!));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.RemoveWidthChangedHandler(null!, (s, e) => { }));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.RemoveWidthChangedHandler(grid, null!));
             });
         }
     }
