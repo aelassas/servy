@@ -60,6 +60,17 @@
                 AutomationProperties.AutomationId="ConfigMenu"
                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ConfigMenu_HelpText}" />
 
+      <MenuItem Header="{x:Static resx:Strings.Menu_View}"
+                AutomationProperties.Name="{x:Static resx:Strings.Menu_View}"
+                AutomationProperties.AutomationId="ViewMenu"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ViewMenu_HelpText}">
+        <MenuItem Header="{x:Static resx:Strings.Menu_ResetWindowLayout}"
+                  Click="ResetWindowLayout_Click"
+                  AutomationProperties.Name="{x:Static resx:Strings.Menu_ResetWindowLayout}"
+                  AutomationProperties.AutomationId="ResetWindowLayoutMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ResetWindowLayoutMenuItem_HelpText}" />
+      </MenuItem>
+
       <MenuItem Header="{x:Static resx:Strings.Menu_Help}"
                 AutomationProperties.Name="{x:Static resx:Strings.Menu_Help}"
                 AutomationProperties.AutomationId="HelpMenu"

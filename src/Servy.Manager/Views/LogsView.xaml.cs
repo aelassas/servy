@@ -1,3 +1,4 @@
+using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
@@ -15,6 +16,12 @@ namespace Servy.Manager.Views
     [ExcludeFromCodeCoverage]
     public partial class LogsView : UserControl
     {
+        /// <summary>
+        /// The width each logs column is declared with, recorded the first time the view is loaded and
+        /// before the persisted widths are applied. <see langword="null"/> until then.
+        /// </summary>
+        private IReadOnlyDictionary<DataGridColumn, DataGridLength>? _defaultColumnWidths;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="LogsView"/> class, subscribing to
         /// <see cref="FrameworkElement.DataContextChanged"/> to re-wire the view model and to
@@ -35,6 +42,58 @@ namespace Servy.Manager.Views
         private void LogsView_Loaded(object sender, RoutedEventArgs e)
         {
             RestoreColumnVisibilities();
+            RestoreColumnWidths();
+        }
+
+        /// <summary>
+        /// Restores the column widths of the previous session from the configured LogsColumnWidths string.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="FrameworkElement.Loaded"/> is raised every time the Logs tab is shown, so the widths
+        /// are applied the first time only; later calls would undo what the user resized in this session.
+        /// </remarks>
+        private void RestoreColumnWidths()
+        {
+            if (_defaultColumnWidths != null)
+            {
+                return;
+            }
+
+            _defaultColumnWidths = DataGridColumnWidths.CaptureDefaults(LogsDataGrid);
+
+            if (Application.Current is App app)
+            {
+                DataGridColumnWidths.Apply(LogsDataGrid, app.LogsColumnWidths);
+            }
+        }
+
+        /// <summary>
+        /// Reads the current column widths of the logs table in their persisted form.
+        /// </summary>
+        /// <returns>
+        /// The <c>Header=Width</c> list to persist, or <see langword="null"/> when the view was never
+        /// loaded in this session, in which case the persisted widths are left as they are.
+        /// </returns>
+        internal string? CaptureColumnWidths()
+        {
+            if (_defaultColumnWidths == null)
+            {
+                return null;
+            }
+
+            return DataGridColumnWidths.Capture(LogsDataGrid, (Application.Current as App)?.LogsColumnWidths);
+        }
+
+        /// <summary>
+        /// Gives every column of the logs table the width it is declared with.
+        /// Does nothing when the view was never loaded in this session.
+        /// </summary>
+        internal void ResetColumnWidths()
+        {
+            if (_defaultColumnWidths != null)
+            {
+                DataGridColumnWidths.Reset(LogsDataGrid, _defaultColumnWidths);
+            }
         }
 
         /// <summary>

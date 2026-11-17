@@ -51,6 +51,28 @@ namespace Servy.Manager.Views
         private readonly IAppConfiguration _appConfig;
 
         /// <summary>
+        /// The width the window is declared with, restored by the "Reset window layout" menu item.
+        /// </summary>
+        private readonly double _defaultWidth;
+
+        /// <summary>
+        /// The height the window is declared with, restored by the "Reset window layout" menu item.
+        /// </summary>
+        private readonly double _defaultHeight;
+
+        /// <summary>
+        /// The width each services column is declared with, recorded when the window is loaded and before
+        /// the persisted widths are applied. <see langword="null"/> until then.
+        /// </summary>
+        private IReadOnlyDictionary<DataGridColumn, DataGridLength>? _defaultServicesColumnWidths;
+
+        /// <summary>
+        /// Whether the persisted placement asks for a maximized window. Applied once the window handle
+        /// exists, so the window maximizes on the monitor its restored bounds are on.
+        /// </summary>
+        private bool _restoreMaximized;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
         /// </summary>
         /// <param name="mainViewModel">The primary DataContext for the application.</param>
@@ -70,6 +92,132 @@ namespace Servy.Manager.Views
             DataContext = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
+
+            _defaultWidth = Width;
+            _defaultHeight = Height;
+
+            // Restore the size and position of the previous session before the window is shown
+            RestoreWindowPlacement();
+        }
+
+        /// <summary>
+        /// Applies the persisted <see cref="IAppConfiguration.MainWindowPlacement"/> to the window, after
+        /// fitting it to the current virtual screen. Leaves the default placement when nothing usable is persisted.
+        /// </summary>
+        private void RestoreWindowPlacement()
+        {
+            if (!WindowPlacement.TryParse(_appConfig.MainWindowPlacement, out var saved) || saved == null)
+            {
+                return;
+            }
+
+            var placement = saved.FitTo(
+                SystemParameters.VirtualScreenLeft,
+                SystemParameters.VirtualScreenTop,
+                SystemParameters.VirtualScreenWidth,
+                SystemParameters.VirtualScreenHeight,
+                MinWidth,
+                MinHeight);
+
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = placement.Left;
+            Top = placement.Top;
+            Width = placement.Width;
+            Height = placement.Height;
+            _restoreMaximized = placement.IsMaximized;
+        }
+
+        /// <summary>
+        /// Raises the <see cref="Window.SourceInitialized"/> event and maximizes the window when the
+        /// persisted placement asks for it.
+        /// </summary>
+        /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            if (_restoreMaximized)
+            {
+                WindowState = WindowState.Maximized;
+            }
+        }
+
+        /// <summary>
+        /// Reads the current position, size and state of the window in its persisted form.
+        /// </summary>
+        /// <returns>
+        /// The <c>Left,Top,Width,Height,State</c> string to persist, or <see langword="null"/> when the
+        /// window has no usable bounds, in which case the persisted placement is left as it is.
+        /// </returns>
+        private string? CaptureWindowPlacement()
+        {
+            // A maximized or minimized window reports its restored bounds through RestoreBounds
+            var bounds = WindowState == WindowState.Normal ? new Rect(Left, Top, Width, Height) : RestoreBounds;
+            if (bounds.IsEmpty)
+            {
+                return null;
+            }
+
+            var text = new WindowPlacement(bounds.Left, bounds.Top, bounds.Width, bounds.Height, WindowState == WindowState.Maximized).Serialize();
+
+            return WindowPlacement.TryParse(text, out _) ? text : null;
+        }
+
+        /// <summary>
+        /// Persists the window placement and the column widths of the services and logs tables.
+        /// </summary>
+        /// <remarks>
+        /// The widths of a table that was never shown in this session are left as they are. Failures are
+        /// logged and never thrown, so they cannot prevent the window from closing.
+        /// </remarks>
+        private void SaveWindowLayout()
+        {
+            try
+            {
+                if (Application.Current is App app)
+                {
+                    var servicesColumnWidths = _defaultServicesColumnWidths == null
+                        ? null
+                        : DataGridColumnWidths.Capture(ServicesDataGrid, app.ServicesColumnWidths);
+                    var logsColumnWidths = (LogsTab.Content as LogsView)?.CaptureColumnWidths();
+
+                    app.SaveWindowLayout(CaptureWindowPlacement(), servicesColumnWidths, logsColumnWidths);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save the window layout: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Handles the <see cref="MenuItem.Click"/> event of the "Reset window layout" menu item.
+        /// Restores the default size of the window, centers it on the primary work area, gives the columns
+        /// of the services and logs tables their default widths back, and clears the persisted layout.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event arguments containing event data.</param>
+        private void ResetWindowLayout_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Normal;
+            Width = _defaultWidth;
+            Height = _defaultHeight;
+
+            var workArea = SystemParameters.WorkArea;
+            Left = workArea.Left + Math.Max(0, (workArea.Width - _defaultWidth) / 2);
+            Top = workArea.Top + Math.Max(0, (workArea.Height - _defaultHeight) / 2);
+
+            if (_defaultServicesColumnWidths != null)
+            {
+                DataGridColumnWidths.Reset(ServicesDataGrid, _defaultServicesColumnWidths);
+            }
+
+            (LogsTab.Content as LogsView)?.ResetColumnWidths();
+
+            if (Application.Current is App app)
+            {
+                app.SaveWindowLayout(string.Empty, string.Empty, string.Empty);
+            }
         }
 
         /// <summary>
@@ -92,6 +240,10 @@ namespace Servy.Manager.Views
         {
             // Restore column visibilities based on the configured ServicesHiddenColumns
             RestoreColumnVisibilities();
+
+            // Record the declared column widths, then restore the widths of the previous session
+            _defaultServicesColumnWidths = DataGridColumnWidths.CaptureDefaults(ServicesDataGrid);
+            DataGridColumnWidths.Apply(ServicesDataGrid, _appConfig.ServicesColumnWidths);
 
             // Trigger the global search command to populate the dashboard
             // the moment the shell is ready for interaction.
@@ -585,6 +737,7 @@ namespace Servy.Manager.Views
         /// <remarks>
         /// This explicitly calls <see cref="Application.Shutdown()"/> to guarantee
         /// that no background threads, timers, or hidden windows keep the process alive.
+        /// The window layout is persisted first, while the window still has its bounds.
         /// </remarks>
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -593,6 +746,9 @@ namespace Servy.Manager.Views
             // No handler currently sets e.Cancel, so the guard is a placeholder for a future "confirm before closing" feature rather than an active check today.
             if (!e.Cancel)
             {
+                // Remember the size, position and column widths for the next session
+                SaveWindowLayout();
+
                 Application.Current.Shutdown();
             }
         }

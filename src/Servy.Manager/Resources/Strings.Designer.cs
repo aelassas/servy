@@ -853,7 +853,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Access options to import configuration, configure settings, and access help..
+        ///   Looks up a localized string similar to Access options to import configuration, configure settings, reset the window layout, and access help..
         /// </summary>
         public static string Automation_MainMenu_HelpText {
             get {
@@ -1101,6 +1101,15 @@ namespace Servy.Manager.Resources {
         public static string Automation_RamUsageLabel_Name {
             get {
                 return ResourceManager.GetString("Automation_RamUsageLabel_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restore the default window size, position, and column widths..
+        /// </summary>
+        public static string Automation_ResetWindowLayoutMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ResetWindowLayoutMenuItem_HelpText", resourceCulture);
             }
         }
         
@@ -1479,6 +1488,15 @@ namespace Servy.Manager.Resources {
         public static string Automation_StopServiceButton_Name {
             get {
                 return ResourceManager.GetString("Automation_StopServiceButton_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open a menu containing window layout options..
+        /// </summary>
+        public static string Automation_ViewMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_ViewMenu_HelpText", resourceCulture);
             }
         }
         
@@ -2217,6 +2235,24 @@ namespace Servy.Manager.Resources {
         public static string Menu_ImportXml {
             get {
                 return ResourceManager.GetString("Menu_ImportXml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset window layout.
+        /// </summary>
+        public static string Menu_ResetWindowLayout {
+            get {
+                return ResourceManager.GetString("Menu_ResetWindowLayout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to View.
+        /// </summary>
+        public static string Menu_View {
+            get {
+                return ResourceManager.GetString("Menu_View", resourceCulture);
             }
         }
         

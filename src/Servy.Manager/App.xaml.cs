@@ -45,6 +45,21 @@ namespace Servy.Manager
         /// </summary>
         private const string AppSettingsFileName = "appsettings.manager.json";
 
+        /// <summary>
+        /// The configuration key that holds the persisted position, size and state of the main window.
+        /// </summary>
+        private const string MainWindowPlacementKey = "MainWindowPlacement";
+
+        /// <summary>
+        /// The configuration key that holds the persisted column widths of the services table.
+        /// </summary>
+        private const string ServicesColumnWidthsKey = "ServicesColumnWidths";
+
+        /// <summary>
+        /// The configuration key that holds the persisted column widths of the logs table.
+        /// </summary>
+        private const string LogsColumnWidthsKey = "LogsColumnWidths";
+
         #endregion
 
         #region Static Properties
@@ -182,6 +197,15 @@ namespace Servy.Manager
                 }
             }
         }
+
+        /// <inheritdoc />
+        public string MainWindowPlacement { get; private set; } = string.Empty;
+
+        /// <inheritdoc />
+        public string ServicesColumnWidths { get; private set; } = string.Empty;
+
+        /// <inheritdoc />
+        public string LogsColumnWidths { get; private set; } = string.Empty;
 
         #endregion
 
@@ -364,6 +388,10 @@ namespace Servy.Manager
                     ServicesHiddenColumns = config["ServicesHiddenColumns"] ?? string.Empty;
                     LogsHiddenColumns = config["LogsHiddenColumns"] ?? string.Empty;
                     IsDisplayNameColumnMigrated = ConfigParser.ParseBool(config["IsDisplayNameColumnMigrated"], false, "IsDisplayNameColumnMigrated");
+
+                    MainWindowPlacement = config[MainWindowPlacementKey] ?? string.Empty;
+                    ServicesColumnWidths = config[ServicesColumnWidthsKey] ?? string.Empty;
+                    LogsColumnWidths = config[LogsColumnWidthsKey] ?? string.Empty;
                 }
             };
 
@@ -437,7 +465,7 @@ namespace Servy.Manager
 
         #endregion
 
-        #region Hidden Columns Persistence
+        #region Settings Persistence
 
         /// <summary>
         /// Writes a key-value setting into <c>appsettings.manager.json</c>, creating the file if needed.
@@ -466,6 +494,29 @@ namespace Servy.Manager
         /// </remarks>
         internal static void PersistSetting(string configPath, string key, string value)
         {
+            PersistSettings(configPath, new[] { new KeyValuePair<string, string>(key, value) });
+        }
+
+        /// <summary>
+        /// Writes several key-value settings into the JSON configuration file at <paramref name="configPath"/>
+        /// in a single atomic replacement, creating the file if needed.
+        /// </summary>
+        /// <param name="configPath">The full path of the JSON configuration file to update.</param>
+        /// <param name="settings">The JSON property names to set, each with the string value to store.</param>
+        /// <remarks>
+        /// The file is read once, every key is set, and the result is written once through
+        /// <see cref="Helper.WriteFileAtomic(string, Action{Stream}, System.Threading.CancellationToken)"/>, so
+        /// either all the settings are saved or none is. Nothing is read or written when
+        /// <paramref name="settings"/> is empty. The content is written as UTF-8 without a byte order mark.
+        /// Failures are logged as warnings and never thrown.
+        /// </remarks>
+        internal static void PersistSettings(string configPath, IReadOnlyList<KeyValuePair<string, string>> settings)
+        {
+            if (settings.Count == 0)
+            {
+                return;
+            }
+
             try
             {
                 JObject jsonObject;
@@ -479,7 +530,10 @@ namespace Servy.Manager
                     jsonObject = new JObject();
                 }
 
-                jsonObject[key] = value;
+                foreach (var setting in settings)
+                {
+                    jsonObject[setting.Key] = setting.Value;
+                }
 
                 var content = jsonObject.ToString(Newtonsoft.Json.Formatting.Indented);
                 Helper.WriteFileAtomic(configPath, stream =>
@@ -487,11 +541,17 @@ namespace Servy.Manager
                     var bytes = new UTF8Encoding(false).GetBytes(content);
                     stream.Write(bytes, 0, bytes.Length);
                 });
-                Logger.Info($"Saved {key} setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(value) ? "<empty>" : value)}");
+                foreach (var setting in settings)
+                {
+                    Logger.Info($"Saved {setting.Key} setting to {AppSettingsFileName}: {(string.IsNullOrWhiteSpace(setting.Value) ? "<empty>" : setting.Value)}");
+                }
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to save {key} setting to {AppSettingsFileName}: {ex.Message}");
+                foreach (var setting in settings)
+                {
+                    Logger.Warn($"Failed to save {setting.Key} setting to {AppSettingsFileName}: {ex.Message}");
+                }
             }
         }
 
@@ -520,6 +580,76 @@ namespace Servy.Manager
         {
             IsDisplayNameColumnMigrated = isMigrated;
             PersistSetting("IsDisplayNameColumnMigrated", isMigrated.ToString().ToLowerInvariant());
+        }
+
+        /// <summary>
+        /// Updates the persisted window layout (the placement of the main window and the column widths of the
+        /// services and logs tables) and writes the values that changed to the configuration file.
+        /// </summary>
+        /// <param name="mainWindowPlacement">The new <see cref="MainWindowPlacement"/>, or <see langword="null"/> to leave it as it is.</param>
+        /// <param name="servicesColumnWidths">The new <see cref="ServicesColumnWidths"/>, or <see langword="null"/> to leave it as it is.</param>
+        /// <param name="logsColumnWidths">The new <see cref="LogsColumnWidths"/>, or <see langword="null"/> to leave it as it is.</param>
+        /// <remarks>
+        /// The changed values are written together in one replacement of the file, and the file is not
+        /// touched at all when nothing changed, so closing the window without moving anything costs no write.
+        /// </remarks>
+        public void SaveWindowLayout(string? mainWindowPlacement, string? servicesColumnWidths, string? logsColumnWidths)
+        {
+            var changes = GetLayoutChanges(
+                MainWindowPlacement, mainWindowPlacement,
+                ServicesColumnWidths, servicesColumnWidths,
+                LogsColumnWidths, logsColumnWidths);
+
+            foreach (var change in changes)
+            {
+                switch (change.Key)
+                {
+                    case MainWindowPlacementKey: MainWindowPlacement = change.Value; break;
+                    case ServicesColumnWidthsKey: ServicesColumnWidths = change.Value; break;
+                    case LogsColumnWidthsKey: LogsColumnWidths = change.Value; break;
+                }
+            }
+
+            PersistSettings(Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName), changes);
+        }
+
+        /// <summary>
+        /// Selects the window layout settings whose value differs from the one currently held.
+        /// </summary>
+        /// <param name="currentPlacement">The current <see cref="MainWindowPlacement"/>.</param>
+        /// <param name="newPlacement">The new placement, or <see langword="null"/> to leave it as it is.</param>
+        /// <param name="currentServicesWidths">The current <see cref="ServicesColumnWidths"/>.</param>
+        /// <param name="newServicesWidths">The new services column widths, or <see langword="null"/> to leave them as they are.</param>
+        /// <param name="currentLogsWidths">The current <see cref="LogsColumnWidths"/>.</param>
+        /// <param name="newLogsWidths">The new logs column widths, or <see langword="null"/> to leave them as they are.</param>
+        /// <returns>The configuration key and new value of each setting to write, empty when nothing changed.</returns>
+        internal static IReadOnlyList<KeyValuePair<string, string>> GetLayoutChanges(
+            string currentPlacement, string? newPlacement,
+            string currentServicesWidths, string? newServicesWidths,
+            string currentLogsWidths, string? newLogsWidths)
+        {
+            var changes = new List<KeyValuePair<string, string>>();
+
+            AddIfChanged(changes, MainWindowPlacementKey, currentPlacement, newPlacement);
+            AddIfChanged(changes, ServicesColumnWidthsKey, currentServicesWidths, newServicesWidths);
+            AddIfChanged(changes, LogsColumnWidthsKey, currentLogsWidths, newLogsWidths);
+
+            return changes;
+        }
+
+        /// <summary>
+        /// Adds a setting to <paramref name="changes"/> when a new value is supplied and differs from the current one.
+        /// </summary>
+        /// <param name="changes">The list of settings to write.</param>
+        /// <param name="key">The configuration key of the setting.</param>
+        /// <param name="current">The value currently held.</param>
+        /// <param name="updated">The new value, or <see langword="null"/> to leave the setting as it is.</param>
+        private static void AddIfChanged(List<KeyValuePair<string, string>> changes, string key, string current, string? updated)
+        {
+            if (updated != null && !string.Equals(updated, current, StringComparison.Ordinal))
+            {
+                changes.Add(new KeyValuePair<string, string>(key, updated));
+            }
         }
 
         #endregion
