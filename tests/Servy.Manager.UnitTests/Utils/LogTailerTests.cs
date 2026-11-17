@@ -235,6 +235,28 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// With more complete lines than maxLines AND an unterminated last line, the history keeps the newest
+        /// complete lines and hands the torn line to the live tail (#1515). The backward scan must count the
+        /// torn line, or the hand-over drops the newest complete line instead.
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryAsync_MoreLinesThanMaxLinesWithUnterminatedLastLine_KeepsTheNewestCompleteLine()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "a\nb\nc\nTORN");
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 2, TestContext.Current.CancellationToken);
+
+                // Assert - maxLines - 1 complete lines while a line is mid-flush, and they are the newest ones
+                Assert.Equal(new[] { "c" }, result.Lines.Select(l => l.Text));
+                Assert.Equal("a\nb\nc\n".Length, (int)result.Position);
+            }
+        }
+
         [Fact]
         public async Task GetHistoryAsync_ShouldHandleSyntheticTimestampsCorrectly()
         {
