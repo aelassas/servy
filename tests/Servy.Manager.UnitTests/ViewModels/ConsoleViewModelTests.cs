@@ -979,6 +979,62 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SwitchServiceAsync_SupersededWhileTheConfiguredPathLookupIsPending_LeavesTheNewerSessionsBufferAlone()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange: a newer switch "happens" while the lookup is in flight - the callback moves the session id on
+                    TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "UncService" });
+                    _serviceRepoMock.Setup(r => r.GetByNameAsync("UncService", false, It.IsAny<CancellationToken>()))
+                        .Callback(() => TestReflection.SetField(vm, "_currentSessionId", TestReflection.GetField<int>(vm, "_currentSessionId") + 1))
+                        .ReturnsAsync(new ServiceDto { Name = "UncService", StdoutPath = Path.Combine(Path.GetTempPath(), "configured-stdout.log") });
+                    vm.RawLines.Add(new LogLine("Line of the newer session", LogType.StdOut));
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", @"\\server\share\out.log", null)!;
+                    await task;
+
+                    // Assert: the superseded call returned before it cleared the buffer
+                    var line = Assert.Single(vm.RawLines);
+                    Assert.Equal("Line of the newer session", line.Text);
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData("//server/share/out.log")]
+        [InlineData(@"\/server\share\out.log")]
+        [InlineData(@"/\server\share\out.log")]
+        public async Task SwitchServiceAsync_UncPathWrittenWithForwardSlashes_ConsultsTheRepositoryAndIsNotOpened(string uncPath)
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the row configures a local file, so the reported share path must be refused
+                _serviceRepoMock.Setup(r => r.GetByNameAsync("SlashService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "SlashService", StdoutPath = Path.Combine(Path.GetTempPath(), "configured-stdout.log") });
+
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    TestReflection.SetField(vm, "_selectedService", new ConsoleService { Name = "SlashService" });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", uncPath, null)!;
+                    await task;
+
+                    // Assert: the path was treated as UNC (the configured paths were read) and nothing was read from it
+                    _serviceRepoMock.Verify(r => r.GetByNameAsync("SlashService", false, It.IsAny<CancellationToken>()), Times.Once);
+                    Assert.Empty(vm.RawLines);
+                }
+            });
+        }
+
+        [Fact]
         public async Task SwitchServiceAsync_NtPrefixPathThatDiffersFromTheConfiguredPath_IsNotOpened()
         {
             // Arrange, Act & Assert
