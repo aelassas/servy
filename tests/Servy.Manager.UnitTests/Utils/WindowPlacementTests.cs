@@ -45,6 +45,26 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Theory]
+        [InlineData("10,20,1000,600,Normal")]
+        [InlineData("10,20,1000,600,normal")]
+        [InlineData("10,20,1000,600,NORMAL")]
+        [InlineData(" 10 , 20 , 1000 , 600 , Normal ")]
+        public void TryParse_NormalState_IsReadWithoutRegardToCaseOrSpacing(string value)
+        {
+            // Act
+            var parsed = WindowPlacement.TryParse(value, out var placement);
+
+            // Assert
+            Assert.True(parsed);
+            Assert.NotNull(placement);
+            Assert.False(placement.IsMaximized);
+            Assert.Equal(10, placement.Left);
+            Assert.Equal(20, placement.Top);
+            Assert.Equal(1000, placement.Width);
+            Assert.Equal(600, placement.Height);
+        }
+
+        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
@@ -244,18 +264,23 @@ namespace Servy.Manager.UnitTests.Utils
             Assert.Same(placement, fitted);
         }
 
-        [Fact]
-        public void FitTo_MinimumIsNotUsable_IsTreatedAsNoMinimum()
+        [Theory]
+        [InlineData(double.NaN, -5)]
+        [InlineData(double.PositiveInfinity, double.PositiveInfinity)]
+        [InlineData(double.NegativeInfinity, 0)]
+        public void FitTo_MinimumIsNotUsable_IsTreatedAsNoMinimum(double minWidth, double minHeight)
         {
             // Arrange
             var placement = new WindowPlacement(10, 10, 200, 100, false);
 
             // Act
-            var fitted = placement.FitTo(0, 0, 1920, 1080, double.NaN, -5);
+            var fitted = placement.FitTo(0, 0, 1920, 1080, minWidth, minHeight);
 
             // Assert
             Assert.Equal(200, fitted.Width);
             Assert.Equal(100, fitted.Height);
+            Assert.Equal(10, fitted.Left);
+            Assert.Equal(10, fitted.Top);
         }
 
         [Fact]
