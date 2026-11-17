@@ -937,7 +937,7 @@ namespace Servy.Service
 
                 // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter
                 // is mathematically protected against runtime overflow exceptions for ~292 million years.
-                DateTime systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
+                DateTime systemBootTimeUtc = GetSystemBootTimeUtc();
 
                 // 2. Session Persistence Check
                 // If the counter was last written before the current system boot,
@@ -3002,6 +3002,23 @@ namespace Servy.Service
         protected virtual int GetHookCleanupTimeoutMs()
         {
             return AppConfig.HookCleanupTimeoutMs;
+        }
+
+        /// <summary>
+        /// Gets the UTC time at which the current OS session started.
+        /// </summary>
+        /// <returns>The current UTC time minus the system uptime.</returns>
+        /// <remarks>
+        /// This is a seam over <see cref="Environment.TickCount64"/>; the production implementation performs
+        /// the same subtraction <see cref="ConditionalResetRestartAttemptsAsync"/> performed inline, so the
+        /// session-persistence check behaves exactly as before. It is overridable because a test that needs a
+        /// restart counter older than the reset cap cannot have one on a machine that booted more recently
+        /// than that: the counter would be treated as written before boot and the threshold would never be
+        /// evaluated.
+        /// </remarks>
+        protected virtual DateTime GetSystemBootTimeUtc()
+        {
+            return DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
         }
 
         /// <summary>

@@ -150,5 +150,16 @@ namespace Servy.Service.UnitTests
         // observe the tracked-hook pruning without first driving a whole recovery.
         public void InvokeExecuteRecoveryAction(int attemptCount) =>
             ServiceReflection.ExecuteRecoveryActionMethod.Invoke(this, new object?[] { attemptCount });
+
+        /// <summary>
+        /// Gets or sets the boot time the reset evaluation sees, or <see langword="null"/> for the real one.
+        /// </summary>
+        public DateTime? BootTimeUtcForTest { get; set; }
+
+        /// <summary>
+        /// Serves the boot time from <see cref="BootTimeUtcForTest"/>, or the real one when none was supplied.
+        /// </summary>
+        /// <returns>The supplied boot time, or the value computed from the system uptime.</returns>
+        protected override DateTime GetSystemBootTimeUtc() => BootTimeUtcForTest ?? base.GetSystemBootTimeUtc();
     }
 }

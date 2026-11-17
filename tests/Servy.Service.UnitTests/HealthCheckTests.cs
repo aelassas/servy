@@ -1070,6 +1070,39 @@ namespace Servy.Service.UnitTests
             Assert.Equal(3, store.Attempts);
         }
 
+        [Theory]
+        [InlineData(AppConfig.ConditionalResetMaxThresholdSeconds + 1800, true)]   // past the cap, short of window + buffer: reset only because of the cap
+        [InlineData(AppConfig.ConditionalResetMaxThresholdSeconds - 600, false)]   // short of the cap: kept
+        public async Task CheckHealth_ThresholdAboveTheCap_IsCappedAtOneHour(int secondsSinceWrite, bool expectReset)
+        {
+            // Arrange: window == cap, so window + buffer is twice the cap and only Math.Min brings it back to the cap
+            var service = _ctx.Build();
+            service.BootTimeUtcForTest = DateTime.UtcNow.AddDays(-3);
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 3, updatedAtUtc: DateTime.UtcNow.AddSeconds(-secondsSinceWrite));
+
+            TestReflection.SetField(service, "_options",
+                CreateStabilityOptions(heartbeatIntervalInSeconds: AppConfig.ConditionalResetMaxThresholdSeconds, maxFailedChecks: 1));
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(expectReset ? 0 : 3, store.Attempts);
+            Assert.Equal(expectReset ? new[] { 0 } : Array.Empty<int>(), store.Writes);
+
+            // A window equal to the cap does not exceed it
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.Contains("exceeds the reset cap")), It.IsAny<Exception>()),
+                Times.Never);
+        }
+
         [Fact]
         public async Task CheckHealth_TimerElapsed_ForwardsToTheCoreCheck()
         {
