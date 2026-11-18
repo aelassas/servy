@@ -173,7 +173,7 @@ namespace Servy.Core.Security
                     var owner = security.GetOwner(typeof(SecurityIdentifier));
                     if (!IsAdministrativePrincipal(owner))
                     {
-                        security.SetOwner(new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+                        security.SetOwner(AdministratorsSid);
                     }
                 }
 
@@ -249,11 +249,7 @@ namespace Servy.Core.Security
                 security.SetAccessRuleProtection(isProtected: false, preserveInheritance: true);
             }
 
-            // 2. Define SIDs
-            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-
-            // 3. PURGE: Replace the DACL entirely. Every explicit rule goes, Allow or Deny, whatever its principal;
+            // 2. PURGE: Replace the DACL entirely. Every explicit rule goes, Allow or Deny, whatever its principal;
             // the mandatory rules are added back below. The inherited rules are left to the inheritance setting above.
             var explicitRules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
 
@@ -267,14 +263,14 @@ namespace Servy.Core.Security
             var inheritanceFlags = isDirectory ? (InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit) : InheritanceFlags.None;
             const PropagationFlags propagationFlags = PropagationFlags.None;
 
-            // 4. Add mandatory high-privilege rules
-            security.AddAccessRule(new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, inheritanceFlags, propagationFlags, AccessControlType.Allow));
-            security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, inheritanceFlags, propagationFlags, AccessControlType.Allow));
+            // 3. Add mandatory high-privilege rules
+            security.AddAccessRule(new FileSystemAccessRule(AdministratorsSid, FileSystemRights.FullControl, inheritanceFlags, propagationFlags, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(LocalSystemSid, FileSystemRights.FullControl, inheritanceFlags, propagationFlags, AccessControlType.Allow));
 
-            // 5. Add current user key
+            // 4. Add current user key
             // We grant explicit Full Control to the current user unless they are the
-            // LocalSystem account (which is already covered in Step 4) or have administrator privileges.
-            bool isSystem = currentUserSid != null && currentUserSid.Equals(systemSid);
+            // LocalSystem account (which is already covered in Step 3) or have administrator privileges.
+            bool isSystem = currentUserSid != null && currentUserSid.Equals(LocalSystemSid);
             bool isAdmin = IsAdministrator();
 
             if (currentUserSid != null && !isSystem && !isAdmin)
