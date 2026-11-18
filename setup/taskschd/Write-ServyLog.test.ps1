@@ -21,13 +21,15 @@ $WritesPerWorker  = 100
 # Define test file boundaries
 $TestLogPath = Join-Path $ScriptDir "test_output.log"
 $MaxLogSize = 10240 # Force rotation quickly at a tiny 10 KB threshold
+$DirRoot = Join-Path $ScriptDir "test_logdir_[1]" # Phase 4 creates it; the brackets are wildcard characters
 
-# All three phases write their artifacts into $ScriptDir, so removing them is the suite's own
+# All four phases write their artifacts into $ScriptDir, so removing them is the suite's own
 # responsibility on every exit path, not only before the next run starts.
 function Remove-TestArtifacts {
     if (Test-Path -LiteralPath $TestLogPath) { Remove-Item -LiteralPath $TestLogPath -Force -ErrorAction SilentlyContinue }
     Get-ChildItem -LiteralPath $ScriptDir -Filter "test_output_*.log" -ErrorAction SilentlyContinue | Remove-Item -Force
     Get-ChildItem -LiteralPath $ScriptDir -Filter "test_prune*.log"   -ErrorAction SilentlyContinue | Remove-Item -Force
+    if (Test-Path -LiteralPath $DirRoot) { Remove-Item -LiteralPath $DirRoot -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
 # Clear anything a previous run left behind before starting.
@@ -260,6 +262,46 @@ try {
     }
 
     Write-Host "PASS: Log lines are '[yyyy-MM-dd HH:mm:ss.fffZ] message' in UTC, UTF-8 without BOM, and culture-invariant." -ForegroundColor Green
+
+    # --- PHASE 4: LOG DIRECTORY VERIFICATION ---
+    Write-Host "`nTesting a missing log directory with wildcard characters in its name..." -ForegroundColor Cyan
+
+    # Arrange: a log directory that does not exist yet and whose name holds wildcard characters (#7013)
+    $DirLog    = Join-Path (Join-Path $DirRoot "logs") "nested.log"
+    $DirLogDir = Split-Path $DirLog
+
+    # Act: the first write has to create the directory; each later write forces a rotation,
+    # then a prune down to one backup
+    $dirWarnings = @()
+    for ($i = 1; $i -le 4; $i++) {
+        Write-ServyLog -FilePath $DirLog -Message ("DIR-{0:D2}" -f $i) -MaxSizeBytes 1 -MaxBackupFiles 1 -WarningVariable +dirWarnings -WarningAction SilentlyContinue
+        Start-Sleep -Milliseconds 120
+    }
+
+    # Assert: no write was dropped (a missing directory surfaces as 'Servy Critical Logging Failure')
+    if ($dirWarnings.Count -gt 0) {
+        Write-Host "FAIL: Writing into a new log directory raised: $($dirWarnings -join '; ')" -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: rotation ran inside the bracketed directory, so the active log holds only the last write
+    $dirActive = if (Test-Path -LiteralPath $DirLog) { Get-Content -LiteralPath $DirLog -Raw } else { "" }
+    if ($dirActive -notmatch 'DIR-04' -or $dirActive -match 'DIR-0[123]') {
+        Write-Host "FAIL: Active log in '$DirLogDir' should hold only DIR-04 but holds [$($dirActive.Trim())] - rotation did not run." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: pruning ran inside the bracketed directory, so exactly the newest backup is left
+    $dirBackups = @(Get-ChildItem -LiteralPath $DirLogDir -Filter "nested_*.log")
+    if ($dirBackups.Count -ne 1 -or (Get-Content -LiteralPath $dirBackups[0].FullName -Raw) -notmatch 'DIR-03') {
+        Write-Host "FAIL: Expected one backup holding DIR-03 in '$DirLogDir', found [$($dirBackups.Name -join ', ')] - pruning did not run." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    Write-Host "PASS: A missing, bracketed log directory is created, rotated in and pruned." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
 
 }
