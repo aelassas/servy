@@ -30,6 +30,7 @@ namespace Servy.Infrastructure.Data
         /// Initializes a new instance of <see cref="AppDbContext"/> with the specified connection string.
         /// </summary>
         /// <param name="connectionString">The SQLite connection string used to connect to the database.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="connectionString"/> is null.</exception>
         public AppDbContext(string connectionString)
         {
             _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
@@ -39,6 +40,7 @@ namespace Servy.Infrastructure.Data
         /// Creates a new <see cref="DbConnection"/> for the SQLite database.
         /// </summary>
         /// <returns>A new <see cref="SQLiteConnection"/> instance.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown if this context has already been disposed.</exception>
         public DbConnection CreateConnection()
         {
             ThrowIfDisposed();
