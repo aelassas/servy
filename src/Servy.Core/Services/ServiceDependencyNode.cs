@@ -88,6 +88,7 @@ namespace Servy.Core.Services
         /// <param name="isUnavailable">
         /// Set to <see langword="true"/> if this service dependency is unavailable or access is denied.
         /// </param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/> or <paramref name="displayName"/> is null.</exception>
         public ServiceDependencyNode(
             string serviceName,
             string displayName,
