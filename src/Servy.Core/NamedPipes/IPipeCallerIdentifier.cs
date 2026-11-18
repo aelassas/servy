@@ -24,7 +24,7 @@ namespace Servy.Core.NamedPipes
         /// </summary>
         /// <param name="connectedServer">The connected server end of the pipe.</param>
         /// <param name="pin">The client as pinned by <see cref="Pin"/> at connect time; its process identifier is the one identified.</param>
-        /// <returns>The client's pinned process identifier and whether it is an administrator; never <see langword="null"/>.</returns>
+        /// <returns>The client's pinned process identifier, whether it is an administrator and whether it reached the pipe from another computer; never <see langword="null"/>.</returns>
         PipeCaller Identify(NamedPipeServerStream connectedServer, PipeClientPin pin);
     }
 }
