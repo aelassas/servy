@@ -5,7 +5,7 @@ Write-Host " Running Write-ServyLog.ps1 Tests                   " -ForegroundCol
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Ensure the log function is loaded in the main script thread
+# Locate Write-ServyLog.ps1 next to this script; each worker and Phase 2 dot-source it later
 $ScriptDir = $PSScriptRoot
 $LogScriptPath = Join-Path $ScriptDir "Write-ServyLog.ps1"
 
@@ -102,7 +102,7 @@ try {
     Write-Host "All background writers finished execution." -ForegroundColor Green
     Write-Host "--------------------------------------------------" -ForegroundColor Gray
 
-    # 2. Count total successfully written entries across active and rotated segments
+    # Count total successfully written entries across active and rotated segments
     Write-Host "Auditing total written line counts..." -ForegroundColor Cyan
     $ActiveLines = 0
     if (Test-Path -LiteralPath $TestLogPath) {
