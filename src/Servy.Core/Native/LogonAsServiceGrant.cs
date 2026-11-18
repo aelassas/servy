@@ -42,7 +42,7 @@ namespace Servy.Core.Native
                     GrantLogonAsService(sid);
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is UnauthorizedAccessException)
+            catch (InvalidOperationException ex)
             {
                 Logger.Warn($"Could not verify or grant the direct 'Log on as a service' right for account '{accountName}'. If the privilege is assigned via Group Policy or group membership, or the caller is not elevated, this is expected and service creation will proceed. Details: {ex.Message}");
             }
