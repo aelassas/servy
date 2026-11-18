@@ -27,8 +27,12 @@ namespace Servy.Core.Security
                 return wellKnown;
 
             var sid = TryTranslate(trimmed);
-            if (sid == null && trimmed.StartsWith(@".\", StringComparison.Ordinal))
-                sid = TryTranslate(Environment.MachineName + @"\" + trimmed.Substring(2));
+            if (sid == null)
+            {
+                var expanded = ServiceAccounts.ExpandLocalShorthand(trimmed);
+                if (!string.Equals(expanded, trimmed, StringComparison.Ordinal))
+                    sid = TryTranslate(expanded);
+            }
 
             return sid;
         }
