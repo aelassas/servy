@@ -145,8 +145,15 @@ try {
     # Each write carries its iteration number, so the retained set can be identified rather than
     # only counted. Rotation N moves the file holding payload N, so the rotated segments carry
     # PRUNE-01..PRUNE-07 and the active file keeps PRUNE-08.
+    # Arrange: a sibling log that matches the pruning glob (test_prune_*.log) but carries no rotation
+    # stamp. It is by far the oldest file, so a prune that trusted the glob alone would delete it first (#4994).
+    $SiblingPath = Join-Path $ScriptDir "test_prune_sibling.log"
+    Set-Content -LiteralPath $SiblingPath -Value "sibling live log" -Encoding UTF8
+    (Get-Item -LiteralPath $SiblingPath).LastWriteTime = (Get-Date).AddDays(-1)
+
     $PruneWrites   = 8
     $PruneBackups  = 3
+    # Act: eight size-forced rotations, each followed by a prune down to $PruneBackups backups
     for ($i = 1; $i -le $PruneWrites; $i++) {
         $payload = ("PRUNE-{0:D2} " -f $i) + ("X" * 48)
         Write-ServyLog -FilePath $PrunePath -Message $payload -MaxSizeBytes 1 -MaxBackupFiles $PruneBackups
@@ -155,6 +162,14 @@ try {
         # stamps would make which-three-survive ambiguous and this assertion flaky.
         Start-Sleep -Milliseconds 120
     }
+
+    # Assert: the sibling is not a rotated segment of test_prune.log, so pruning must leave it alone
+    if (-not (Test-Path -LiteralPath $SiblingPath)) {
+        Write-Host "FAIL: Retention pruning deleted 'test_prune_sibling.log', a file that only shares the log's name prefix and is not one of its rotated segments." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+    Remove-Item -LiteralPath $SiblingPath -Force
 
     # The rotated filename embeds yyyyMMdd_HHmmss, so lexical order is chronological order.
     $backups = Get-ChildItem -LiteralPath $ScriptDir -Filter "test_prune_*.log" | Sort-Object Name
