@@ -153,7 +153,7 @@ try {
 
     $PruneWrites   = 8
     $PruneBackups  = 3
-    # Act: eight size-forced rotations, each followed by a prune down to $PruneBackups backups
+    # Act: eight writes; every write after the first forces a rotation, then a prune down to $PruneBackups backups
     for ($i = 1; $i -le $PruneWrites; $i++) {
         $payload = ("PRUNE-{0:D2} " -f $i) + ("X" * 48)
         Write-ServyLog -FilePath $PrunePath -Message $payload -MaxSizeBytes 1 -MaxBackupFiles $PruneBackups
