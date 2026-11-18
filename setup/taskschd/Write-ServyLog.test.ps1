@@ -23,7 +23,7 @@ $TestLogPath = Join-Path $ScriptDir "test_output.log"
 $MaxLogSize = 10240 # Force rotation quickly at a tiny 10 KB threshold
 $DirRoot = Join-Path $ScriptDir "test_logdir_[1]" # Phase 4 creates it; the brackets are wildcard characters
 
-# All four phases write their artifacts into $ScriptDir, so removing them is the suite's own
+# All five phases write their artifacts into $ScriptDir, so removing them is the suite's own
 # responsibility on every exit path, not only before the next run starts.
 function Remove-TestArtifacts {
     if (Test-Path -LiteralPath $TestLogPath) { Remove-Item -LiteralPath $TestLogPath -Force -ErrorAction SilentlyContinue }
@@ -302,6 +302,77 @@ try {
     }
 
     Write-Host "PASS: A missing, bracketed log directory is created, rotated in and pruned." -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor Cyan
+
+    # --- PHASE 5: MUTEX TIMEOUT VERIFICATION ---
+    Write-Host "`nTesting the mutex timeout path (waits about 10 seconds)..." -ForegroundColor Cyan
+
+    # Arrange: another process holds this log's mutex for longer than Write-ServyLog waits for it
+    $BusyLog   = Join-Path $ScriptDir "test_prune_busy.log"
+    $busySha   = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $busyBytes = $busySha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes([System.IO.Path]::GetFullPath($BusyLog).ToLowerInvariant()))
+    } finally {
+        $busySha.Dispose()
+    }
+    $busyName  = "ServyLog_" + [System.BitConverter]::ToString($busyBytes).Replace('-', '')
+    $HolderSeconds = 25
+    $holder = Start-Job -ArgumentList $busyName, $HolderSeconds -ScriptBlock {
+        param([string]$Name, [int]$Seconds)
+        try { $m = New-Object System.Threading.Mutex($false, "Global\$Name") }
+        catch [System.UnauthorizedAccessException] { $m = New-Object System.Threading.Mutex($false, "Local\$Name") }
+        [void]$m.WaitOne()
+        "HELD"
+        Start-Sleep -Seconds $Seconds
+        $m.ReleaseMutex()
+        $m.Dispose()
+    }
+    try {
+        $held = $false
+        for ($i = 0; $i -lt 150 -and -not $held; $i++) {
+            if (@(Receive-Job $holder -Keep) -contains "HELD") { $held = $true } else { Start-Sleep -Milliseconds 200 }
+        }
+        if (-not $held) {
+            Write-Host "FAIL: The helper job never acquired the log mutex, so the timeout path could not be arranged." -ForegroundColor Red
+            Write-Host "====================================================" -ForegroundColor Cyan
+            exit 1
+        }
+
+        # Act: one write while the mutex is held elsewhere
+        $busyWarnings = @()
+        $busyWatch = [System.Diagnostics.Stopwatch]::StartNew()
+        Write-ServyLog -FilePath $BusyLog -Message "BUSY-PROBE" -WarningVariable +busyWarnings -WarningAction SilentlyContinue
+        $busyWatch.Stop()
+    }
+    finally {
+        $holder | Stop-Job
+        $holder | Remove-Job -Force
+    }
+
+    # Assert: exactly the timeout warning, and no failure from releasing a mutex that was never acquired
+    $busyText = @($busyWarnings | ForEach-Object { "$_" })
+    if ($busyText.Count -ne 1 -or $busyText[0] -notmatch 'Mutex timeout after 10s') {
+        Write-Host "FAIL: Expected one 'Mutex timeout after 10s' warning, got [$($busyText -join '; ')]." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: the entry was dropped, not written without the lock
+    if (Test-Path -LiteralPath $BusyLog) {
+        Write-Host "FAIL: '$([System.IO.Path]::GetFileName($BusyLog))' was written although the mutex was never acquired." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: the caller got control back after the 10 s wait, well before the holder let go
+    $busySeconds = $busyWatch.Elapsed.TotalSeconds
+    if ($busySeconds -lt 9 -or $busySeconds -gt 20) {
+        Write-Host ("FAIL: Write-ServyLog returned after {0:N1}s; the wait for the mutex should be about 10s." -f $busySeconds) -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    Write-Host "PASS: A held mutex drops the entry after about 10s with one warning and leaves the caller running." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
 
 }
