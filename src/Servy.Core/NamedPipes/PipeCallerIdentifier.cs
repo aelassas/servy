@@ -61,7 +61,7 @@ namespace Servy.Core.NamedPipes
         /// </summary>
         /// <param name="connectedServer">The connected server end of the pipe; data must have been read from it.</param>
         /// <param name="pin">The client as pinned by <see cref="Pin"/>; its process identifier is the one identified.</param>
-        /// <returns>The client's pinned process identifier and whether it is an administrator; never <see langword="null"/>.</returns>
+        /// <returns>The client's pinned process identifier, whether it is an administrator and whether it reached the pipe from another computer; never <see langword="null"/>.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="connectedServer"/> or <paramref name="pin"/> is <see langword="null"/>.</exception>
         public PipeCaller Identify(NamedPipeServerStream connectedServer, PipeClientPin pin)
         {
