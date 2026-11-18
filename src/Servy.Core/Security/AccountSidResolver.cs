@@ -64,12 +64,10 @@ namespace Servy.Core.Security
             {
                 return (SecurityIdentifier)new NTAccount(name).Translate(typeof(SecurityIdentifier));
             }
-            catch (IdentityNotMappedException)
-            {
-                return null;
-            }
             catch (SystemException)
             {
+                // IdentityNotMappedException (the name does not map) and any other lookup failure
+                // (for example an unreachable domain controller) both mean "not resolved".
                 return null;
             }
         }
