@@ -21,7 +21,8 @@ namespace Servy.Manager.Utils
     /// captured only once its width is absolute (the user dragged it, or a persisted width was applied), so a
     /// column the user never resized keeps sizing itself to its content. A column the user auto-fits by
     /// double-clicking the edge of its header is given its fitted width as an absolute width, see
-    /// <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>, so it is captured like a dragged column.
+    /// <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>, so it is captured like a dragged column. A star-sized
+    /// column the user double-clicks the same way gets its star width back instead, so it is never persisted.
     /// </remarks>
     public static class DataGridColumnWidths
     {
@@ -184,8 +185,10 @@ namespace Servy.Manager.Utils
         /// <remarks>
         /// A double-click on a header gripper sets the width of the column to <see cref="DataGridLength.Auto"/>, which
         /// <see cref="Capture(DataGrid, string)"/> leaves out. Only a column the user double-clicks is changed, so
-        /// an auto-sized column the user never touched keeps sizing itself to its content. Calling this method again
-        /// on the same grid replaces the previous handler.
+        /// an auto-sized column the user never touched keeps sizing itself to its content. The star-sized columns and
+        /// their widths are recorded when this method is called, so call it after <see cref="Apply(DataGrid, string)"/>:
+        /// a recorded column the user double-clicks gets its star width back and <paramref name="handler"/> is not
+        /// called. Calling this method again on the same grid replaces the previous handler.
         /// </remarks>
         /// <exception cref="ArgumentNullException"><paramref name="grid"/> or <paramref name="handler"/> is <see langword="null"/>.</exception>
         public static void AddAutoFitHandler(DataGrid grid, EventHandler handler)
@@ -195,7 +198,11 @@ namespace Servy.Manager.Utils
 
             RemoveAutoFitHandler(grid);
 
-            MouseButtonEventHandler hook = (sender, e) => OnPreviewMouseLeftButtonDown(grid, e, handler);
+            // A double-click turns a star column into an auto-sized one before the pin runs, so the star
+            // columns are recorded now, while their declared width can still be read
+            var starColumns = grid.Columns.Where(column => column.Width.IsStar).ToDictionary(column => column, column => column.Width);
+
+            MouseButtonEventHandler hook = (sender, e) => OnPreviewMouseLeftButtonDown(grid, e, handler, starColumns);
             grid.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent, hook, true);
             grid.SetValue(AutoFitHookProperty, hook);
         }
@@ -249,16 +256,28 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
-        /// Gives an auto-fitted column its current width as an absolute width and calls <paramref name="handler"/>.
+        /// Gives an auto-fitted column its current width as an absolute width and calls <paramref name="handler"/>,
+        /// or gives a recorded star-sized column its star width back.
         /// </summary>
         /// <param name="column">The column the user auto-fitted.</param>
         /// <param name="handler">The handler to call when the width was made absolute. The sender is <paramref name="column"/>.</param>
+        /// <param name="starColumns">
+        /// The columns that were star-sized when <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/> was called,
+        /// with their star width. Such a column gets that width back, so it fills the remaining width again and is
+        /// not persisted; <paramref name="handler"/> is not called for it.
+        /// </param>
         /// <returns>
-        /// <see langword="true"/> when the width was made absolute; <see langword="false"/> when the column is not
-        /// persisted or its width is not <see cref="DataGridLengthUnitType.Auto"/>.
+        /// <see langword="true"/> when the width was made absolute; <see langword="false"/> when the column is in
+        /// <paramref name="starColumns"/>, is not persisted or its width is not <see cref="DataGridLengthUnitType.Auto"/>.
         /// </returns>
-        internal static bool PinAutoFittedWidth(DataGridColumn column, EventHandler handler)
+        internal static bool PinAutoFittedWidth(DataGridColumn column, EventHandler handler, IReadOnlyDictionary<DataGridColumn, DataGridLength> starColumns)
         {
+            if (starColumns.TryGetValue(column, out var starWidth))
+            {
+                column.Width = starWidth;
+                return false;
+            }
+
             if (!IsHandled(column) || !column.Width.IsAuto)
             {
                 return false;
@@ -276,12 +295,13 @@ namespace Servy.Manager.Utils
         /// <param name="grid">The watched grid.</param>
         /// <param name="e">The mouse event; its <see cref="RoutedEventArgs.OriginalSource"/> is the element pressed.</param>
         /// <param name="handler">The handler passed to <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>.</param>
+        /// <param name="starColumns">The star-sized columns recorded by <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>, with their width.</param>
         /// <remarks>
         /// The header sets the width to <see cref="DataGridLength.Auto"/> after this preview handler runs, and the grid
         /// measures the fitted width in its next layout pass, so the width is read at
         /// <see cref="DispatcherPriority.Background"/>, after that pass.
         /// </remarks>
-        private static void OnPreviewMouseLeftButtonDown(DataGrid grid, MouseButtonEventArgs e, EventHandler handler)
+        private static void OnPreviewMouseLeftButtonDown(DataGrid grid, MouseButtonEventArgs e, EventHandler handler, IReadOnlyDictionary<DataGridColumn, DataGridLength> starColumns)
         {
             if (e.ClickCount != 2)
             {
@@ -305,7 +325,7 @@ namespace Servy.Manager.Utils
             var column = GetColumnToFit(grid, header.Column, gripper.Name == LeftHeaderGripperName);
             if (column != null)
             {
-                grid.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => PinAutoFittedWidth(column, handler)));
+                grid.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => PinAutoFittedWidth(column, handler, starColumns)));
             }
         }
 

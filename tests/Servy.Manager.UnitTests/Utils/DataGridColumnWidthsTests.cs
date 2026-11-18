@@ -262,7 +262,7 @@ namespace Servy.Manager.UnitTests.Utils
                 var senders = new List<object>();
 
                 // Act
-                var pinned = DataGridColumnWidths.PinAutoFittedWidth(column, (s, e) => senders.Add(s));
+                var pinned = DataGridColumnWidths.PinAutoFittedWidth(column, (s, e) => senders.Add(s), new Dictionary<DataGridColumn, DataGridLength>());
                 var text = DataGridColumnWidths.Capture(grid, null);
 
                 // Assert
@@ -283,11 +283,12 @@ namespace Servy.Manager.UnitTests.Utils
                 grid.Columns[3].Width = DataGridLength.Auto;
                 var calls = 0;
                 EventHandler handler = (s, e) => calls++;
+                var starColumns = new Dictionary<DataGridColumn, DataGridLength>();
 
                 // Act
-                var pinnedPixel = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[2], handler);
-                var pinnedNotResizable = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[3], handler);
-                var pinnedStar = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[4], handler);
+                var pinnedPixel = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[2], handler, starColumns);
+                var pinnedNotResizable = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[3], handler, starColumns);
+                var pinnedStar = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[4], handler, starColumns);
 
                 // Assert
                 Assert.False(pinnedPixel);
@@ -297,6 +298,32 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.True(grid.Columns[3].Width.IsAuto);
                 Assert.True(grid.Columns[4].Width.IsStar);
                 Assert.Equal(0, calls);
+            });
+        }
+
+        [Fact]
+        public void PinAutoFittedWidth_StarColumnTheDoubleClickTurnedIntoAuto_GetsItsStarWidthBackAndIsNotPersisted()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange: the star column is recorded with its 2* width, then a double-click on its header gripper sets it to Auto
+                var grid = CreateGrid();
+                var message = grid.Columns[4];
+                message.Width = new DataGridLength(2, DataGridLengthUnitType.Star);
+                var starColumns = new Dictionary<DataGridColumn, DataGridLength> { { message, message.Width } };
+                message.Width = DataGridLength.Auto;
+                var calls = 0;
+
+                // Act
+                var pinned = DataGridColumnWidths.PinAutoFittedWidth(message, (s, e) => calls++, starColumns);
+                var text = DataGridColumnWidths.Capture(grid, null);
+
+                // Assert: the column fills the remaining width again, nothing was pinned and Message is not written
+                Assert.False(pinned);
+                Assert.True(message.Width.IsStar);
+                Assert.Equal(2, message.Width.Value);
+                Assert.Equal(0, calls);
+                Assert.Equal("Name=120,Status=90", text);
             });
         }
 
