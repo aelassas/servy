@@ -15,6 +15,7 @@ namespace Servy.Core.Services
         /// Initializes a new instance of the <see cref="ServiceControllerProvider"/> class.
         /// </summary>
         /// <param name="factory">A factory function used to create wrappers for native service controllers.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="factory"/> is null.</exception>
         public ServiceControllerProvider(Func<string, IServiceControllerWrapper> factory)
         {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
