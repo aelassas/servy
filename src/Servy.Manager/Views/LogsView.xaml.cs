@@ -78,6 +78,7 @@ namespace Servy.Manager.Views
 
             // Watch the columns only now, so restoring the widths is not reported as a change
             DataGridColumnWidths.AddWidthChangedHandler(LogsDataGrid, OnColumnWidthChanged);
+            DataGridColumnWidths.AddAutoFitHandler(LogsDataGrid, OnColumnWidthChanged);
         }
 
         /// <summary>

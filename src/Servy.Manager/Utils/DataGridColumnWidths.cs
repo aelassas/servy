@@ -1,7 +1,13 @@
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
 using System;
+using System.Linq;
 
 namespace Servy.Manager.Utils
 {
@@ -13,10 +19,29 @@ namespace Servy.Manager.Utils
     /// is left alone on purpose: it keeps absorbing the space the other columns leave, exactly as it does
     /// with the default layout, so the grid still fills the window after a restore. An auto-sized column is
     /// captured only once its width is absolute (the user dragged it, or a persisted width was applied), so a
-    /// column the user never resized keeps sizing itself to its content.
+    /// column the user never resized keeps sizing itself to its content. A column the user auto-fits by
+    /// double-clicking the edge of its header is given its fitted width as an absolute width, see
+    /// <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>, so it is captured like a dragged column.
     /// </remarks>
     public static class DataGridColumnWidths
     {
+        /// <summary>
+        /// The name of the thumb on the right edge of a column header, which resizes the column of that header.
+        /// </summary>
+        private const string RightHeaderGripperName = "PART_RightHeaderGripper";
+
+        /// <summary>
+        /// The name of the thumb on the left edge of a column header, which resizes the previous visible column.
+        /// </summary>
+        private const string LeftHeaderGripperName = "PART_LeftHeaderGripper";
+
+        /// <summary>
+        /// Attached to a grid by <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>: the mouse handler it
+        /// registered, so <see cref="RemoveAutoFitHandler(DataGrid)"/> can unregister it.
+        /// </summary>
+        private static readonly DependencyProperty AutoFitHookProperty = DependencyProperty.RegisterAttached(
+            "AutoFitHook", typeof(MouseButtonEventHandler), typeof(DataGridColumnWidths));
+
         /// <summary>
         /// Records the width every column of the grid was declared with, so
         /// <see cref="Reset(DataGrid, IReadOnlyDictionary{DataGridColumn, DataGridLength})"/> can bring it back.
@@ -146,6 +171,141 @@ namespace Servy.Manager.Utils
             foreach (var column in grid.Columns)
             {
                 descriptor.RemoveValueChanged(column, handler);
+            }
+        }
+
+        /// <summary>
+        /// Persists the width of a column the user auto-fits by double-clicking the edge of its header: once the
+        /// grid has fitted the column to its content, the fitted width is made absolute and
+        /// <paramref name="handler"/> is called, like for a dragged column.
+        /// </summary>
+        /// <param name="grid">The grid whose column headers are watched.</param>
+        /// <param name="handler">The handler to call. The sender is the auto-fitted column.</param>
+        /// <remarks>
+        /// A double-click on a header gripper sets the width of the column to <see cref="DataGridLength.Auto"/>, which
+        /// <see cref="Capture(DataGrid, string)"/> leaves out. Only a column the user double-clicks is changed, so
+        /// an auto-sized column the user never touched keeps sizing itself to its content. Calling this method again
+        /// on the same grid replaces the previous handler.
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="grid"/> or <paramref name="handler"/> is <see langword="null"/>.</exception>
+        public static void AddAutoFitHandler(DataGrid grid, EventHandler handler)
+        {
+            if (grid == null) throw new ArgumentNullException(nameof(grid));
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+
+            RemoveAutoFitHandler(grid);
+
+            MouseButtonEventHandler hook = (sender, e) => OnPreviewMouseLeftButtonDown(grid, e, handler);
+            grid.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent, hook, true);
+            grid.SetValue(AutoFitHookProperty, hook);
+        }
+
+        /// <summary>
+        /// Stops the notifications started by <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>.
+        /// </summary>
+        /// <param name="grid">The grid whose column headers were watched.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="grid"/> is <see langword="null"/>.</exception>
+        public static void RemoveAutoFitHandler(DataGrid grid)
+        {
+            if (grid == null) throw new ArgumentNullException(nameof(grid));
+
+            if (grid.GetValue(AutoFitHookProperty) is MouseButtonEventHandler hook)
+            {
+                grid.RemoveHandler(UIElement.PreviewMouseLeftButtonDownEvent, hook);
+                grid.ClearValue(AutoFitHookProperty);
+            }
+        }
+
+        /// <summary>
+        /// Finds the column a double-click on a header gripper auto-fits, the same way <see cref="DataGridColumnHeader"/> does.
+        /// </summary>
+        /// <param name="grid">The grid that owns <paramref name="headerColumn"/>.</param>
+        /// <param name="headerColumn">The column of the header whose gripper was double-clicked.</param>
+        /// <param name="leftGripper">
+        /// <see langword="true"/> for the gripper on the left edge of the header, <see langword="false"/> for the one on the right edge.
+        /// </param>
+        /// <returns>
+        /// <paramref name="headerColumn"/> for the right gripper; for the left gripper the closest visible column displayed
+        /// before it, or <see langword="null"/> when there is none.
+        /// </returns>
+        internal static DataGridColumn GetColumnToFit(DataGrid grid, DataGridColumn headerColumn, bool leftGripper)
+        {
+            if (!leftGripper)
+            {
+                return headerColumn;
+            }
+
+            // Ordered by display index; OrderBy is stable, so a grid whose display order is not set up yet keeps its declared order
+            var displayed = grid.Columns.OrderBy(column => column.DisplayIndex).ToList();
+            for (var index = displayed.IndexOf(headerColumn) - 1; index >= 0; index--)
+            {
+                if (displayed[index].Visibility == Visibility.Visible)
+                {
+                    return displayed[index];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gives an auto-fitted column its current width as an absolute width and calls <paramref name="handler"/>.
+        /// </summary>
+        /// <param name="column">The column the user auto-fitted.</param>
+        /// <param name="handler">The handler to call when the width was made absolute. The sender is <paramref name="column"/>.</param>
+        /// <returns>
+        /// <see langword="true"/> when the width was made absolute; <see langword="false"/> when the column is not
+        /// persisted or its width is not <see cref="DataGridLengthUnitType.Auto"/>.
+        /// </returns>
+        internal static bool PinAutoFittedWidth(DataGridColumn column, EventHandler handler)
+        {
+            if (!IsHandled(column) || !column.Width.IsAuto)
+            {
+                return false;
+            }
+
+            column.Width = new DataGridLength(column.ActualWidth);
+            handler(column, EventArgs.Empty);
+            return true;
+        }
+
+        /// <summary>
+        /// Handles a mouse button press anywhere in a watched grid: on a double-click on a column header gripper,
+        /// pins the width of the column it auto-fits once the grid has laid that column out again.
+        /// </summary>
+        /// <param name="grid">The watched grid.</param>
+        /// <param name="e">The mouse event; its <see cref="RoutedEventArgs.OriginalSource"/> is the element pressed.</param>
+        /// <param name="handler">The handler passed to <see cref="AddAutoFitHandler(DataGrid, EventHandler)"/>.</param>
+        /// <remarks>
+        /// The header sets the width to <see cref="DataGridLength.Auto"/> after this preview handler runs, and the grid
+        /// measures the fitted width in its next layout pass, so the width is read at
+        /// <see cref="DispatcherPriority.Background"/>, after that pass.
+        /// </remarks>
+        private static void OnPreviewMouseLeftButtonDown(DataGrid grid, MouseButtonEventArgs e, EventHandler handler)
+        {
+            if (e.ClickCount != 2)
+            {
+                return;
+            }
+
+            var element = e.OriginalSource as DependencyObject;
+            while (element != null && !(element is Thumb) && !(element is DataGrid))
+            {
+                element = element is Visual ? VisualTreeHelper.GetParent(element) : LogicalTreeHelper.GetParent(element);
+            }
+
+            if (!(element is Thumb gripper)
+                || !(gripper.TemplatedParent is DataGridColumnHeader header)
+                || header.Column == null
+                || (gripper.Name != RightHeaderGripperName && gripper.Name != LeftHeaderGripperName))
+            {
+                return;
+            }
+
+            var column = GetColumnToFit(grid, header.Column, gripper.Name == LeftHeaderGripperName);
+            if (column != null)
+            {
+                grid.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => PinAutoFittedWidth(column, handler)));
             }
         }
 
