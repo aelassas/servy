@@ -36,6 +36,10 @@ namespace Servy.Core.NamedPipes
         /// <param name="dto">The object instance to write.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <exception cref="InvalidOperationException">Thrown when the serialized object is larger than the frame limit for its type, which the reading end would refuse.</exception>
+        /// <remarks>
+        /// Kept as part of the public <c>Servy.Core</c> framing API for synchronous callers alongside
+        /// <see cref="WriteAsync{T}"/>, even though the built-in Servy host and client paths use the asynchronous pair.
+        /// </remarks>
         void Write<T>(Stream stream, T dto, CancellationToken ct = default);
 
         /// <summary>
@@ -45,6 +49,10 @@ namespace Servy.Core.NamedPipes
         /// <param name="stream">The source pipe stream.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>The deserialized object instance or <see langword="null"/> if the read fails or the stream ends.</returns>
+        /// <remarks>
+        /// Kept as part of the public <c>Servy.Core</c> framing API for synchronous callers alongside
+        /// <see cref="ReadAsync{T}"/>, even though the built-in Servy host and client paths use the asynchronous pair.
+        /// </remarks>
         T? Read<T>(Stream stream, CancellationToken ct = default);
 
         /// <summary>
