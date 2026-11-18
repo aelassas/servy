@@ -204,6 +204,62 @@ try {
     }
 
     Write-Host "PASS: Retention pruning kept the newest $PruneBackups backups [$($expected -join ', ')] and preserved the active log." -ForegroundColor Green
+
+    # --- PHASE 3: LINE FORMAT, ENCODING AND CULTURE VERIFICATION ---
+    Write-Host "`nTesting log line format, encoding and culture invariance..." -ForegroundColor Cyan
+
+    # Arrange: a fresh log, written under a culture whose default calendar is not Gregorian (#3920)
+    $FormatPath = Join-Path $ScriptDir "test_prune_format.log"
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    $originalCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+    $utcBefore = (Get-Date).ToUniversalTime()
+    try {
+        [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('th-TH')
+
+        # Act: one plain write, then one size-forced write so exactly one rotated segment exists
+        Write-ServyLog -FilePath $FormatPath -Message "FORMAT-PROBE"
+        $formatBytes = [System.IO.File]::ReadAllBytes($FormatPath)
+        Write-ServyLog -FilePath $FormatPath -Message "FORMAT-ROTATE" -MaxSizeBytes 1 -MaxBackupFiles 0
+    }
+    finally {
+        [System.Threading.Thread]::CurrentThread.CurrentCulture = $originalCulture
+    }
+    $utcAfter = (Get-Date).ToUniversalTime()
+
+    # Assert: UTF-8 without a byte order mark (#2057)
+    if ($formatBytes.Length -ge 3 -and $formatBytes[0] -eq 0xEF -and $formatBytes[1] -eq 0xBB -and $formatBytes[2] -eq 0xBF) {
+        Write-Host "FAIL: The log file starts with a UTF-8 byte order mark; Write-ServyLog must write UTF-8 without one." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: one line, '[yyyy-MM-dd HH:mm:ss.fffZ] <message>' (#5880)
+    $formatLine = [System.Text.Encoding]::UTF8.GetString($formatBytes).TrimEnd("`r", "`n")
+    if ($formatLine -notmatch '^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})Z\] FORMAT-PROBE$') {
+        Write-Host "FAIL: Log line '$formatLine' is not '[yyyy-MM-dd HH:mm:ss.fffZ] FORMAT-PROBE'." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: the stamp is the UTC time of the write, in the Gregorian calendar whatever the culture
+    $stampStyles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    $stamp = [datetime]::ParseExact($Matches[1], 'yyyy-MM-dd HH:mm:ss.fff', $inv, $stampStyles)
+    if ($stamp -lt $utcBefore.AddSeconds(-1) -or $stamp -gt $utcAfter.AddSeconds(1)) {
+        Write-Host "FAIL: Log stamp '$($Matches[1])Z' is not the UTC time of the write (between $($utcBefore.ToString('o', $inv)) and $($utcAfter.ToString('o', $inv)))." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: the rotated segment's name carries the Gregorian local date as well
+    $expectedPrefix = "test_prune_format_" + (Get-Date).ToString('yyyy', $inv)
+    $rotated = @(Get-ChildItem -LiteralPath $ScriptDir -Filter "test_prune_format_*.log")
+    if ($rotated.Count -ne 1 -or -not $rotated[0].Name.StartsWith($expectedPrefix, [System.StringComparison]::Ordinal)) {
+        Write-Host "FAIL: Expected one rotated segment named '$expectedPrefix...', found [$($rotated.Name -join ', ')]." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    Write-Host "PASS: Log lines are '[yyyy-MM-dd HH:mm:ss.fffZ] message' in UTC, UTF-8 without BOM, and culture-invariant." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
 
 }
