@@ -34,6 +34,7 @@ namespace Servy.Infrastructure.Data
         /// Initializes a new instance of the <see cref="DapperExecutor"/> class.
         /// </summary>
         /// <param name="dbContext">The database context used to manage SQLite connections.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="dbContext"/> is null.</exception>
         public DapperExecutor(IAppDbContext dbContext)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
