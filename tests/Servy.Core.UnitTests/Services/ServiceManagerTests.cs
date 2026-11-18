@@ -56,6 +56,96 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void Constructor_NullControllerFactory_ThrowsArgumentNullException()
+        {
+            // Arrange
+            // The other four dependencies come from the fixture mocks.
+
+            // Act
+            var exception = Assert.Throws<ArgumentNullException>(() => new ServiceManager(
+                null,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object));
+
+            // Assert
+            Assert.Equal("controllerFactory", exception.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullServiceControllerProvider_ThrowsArgumentNullException()
+        {
+            // Arrange
+            // The other four dependencies come from the fixture mocks.
+
+            // Act
+            var exception = Assert.Throws<ArgumentNullException>(() => new ServiceManager(
+                _ => _mockController.Object,
+                null,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object));
+
+            // Assert
+            Assert.Equal("serviceControllerProvider", exception.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullWindowsServiceApi_ThrowsArgumentNullException()
+        {
+            // Arrange
+            // The other four dependencies come from the fixture mocks.
+
+            // Act
+            var exception = Assert.Throws<ArgumentNullException>(() => new ServiceManager(
+                _ => _mockController.Object,
+                _mockServiceControllerProvider.Object,
+                null,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object));
+
+            // Assert
+            Assert.Equal("windowsServiceApi", exception.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullWin32ErrorProvider_ThrowsArgumentNullException()
+        {
+            // Arrange
+            // The other four dependencies come from the fixture mocks.
+
+            // Act
+            var exception = Assert.Throws<ArgumentNullException>(() => new ServiceManager(
+                _ => _mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                null,
+                _mockServiceRepository.Object));
+
+            // Assert
+            Assert.Equal("win32ErrorProvider", exception.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
+        {
+            // Arrange
+            // The other four dependencies come from the fixture mocks.
+
+            // Act
+            var exception = Assert.Throws<ArgumentNullException>(() => new ServiceManager(
+                _ => _mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                null));
+
+            // Assert
+            Assert.Equal("serviceRepository", exception.ParamName);
+        }
+
+        [Fact]
         public async Task InstallService_OptionsNull_ThrowsArgumentNullException()
         {
             // Act & Assert
