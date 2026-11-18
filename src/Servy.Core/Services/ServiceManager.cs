@@ -911,8 +911,9 @@ namespace Servy.Core.Services
         /// for Local System. The same account (compared case-insensitively) revokes nothing.</param>
         /// <remarks>
         /// The grant this takes back belongs to this one service, so unlike the vault grants it needs no "still used
-        /// by another service" check. The reconfiguration has already succeeded when this runs, so a failure here is
-        /// logged and never turns it into a failed operation.
+        /// by another service" check. The Service Control Manager has already switched the service to the new account
+        /// when this runs (the pre-shutdown, delayed auto-start and database steps still follow), so a failure here is
+        /// logged and never fails the reconfiguration.
         /// </remarks>
         private void RevokeServiceControlRightsIfAccountChanged(SafeServiceHandle serviceHandle, ServiceDto? formerService, string? currentAccount)
         {
