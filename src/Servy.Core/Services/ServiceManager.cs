@@ -105,6 +105,11 @@ namespace Servy.Core.Services
         /// account of a newly installed service can connect and the account of a removed one no longer can.
         /// <see langword="null"/> skips it, which only tests should do; the host also rebuilds the DACL when it starts.
         /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="controllerFactory"/>, <paramref name="serviceControllerProvider"/>,
+        /// <paramref name="windowsServiceApi"/>, <paramref name="win32ErrorProvider"/> or
+        /// <paramref name="serviceRepository"/> is null.
+        /// </exception>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
             IServiceControllerProvider serviceControllerProvider,
