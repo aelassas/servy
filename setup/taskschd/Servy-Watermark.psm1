@@ -130,8 +130,9 @@ function Update-Watermark {
 
     if ($null -eq $TimeCreated) { return }
 
-    # --- CRITICAL: Always advance the watermark ---
-    # Update timestamp immediately for this specific event, regardless of email/toast success.
+    # --- Advance the watermark to this event ---
+    # The callers decide when: after a delivered or permanently failed event, but not after a
+    # transient failure, so that event is retried on the next run.
     $newestTimestamp = ([datetime]$TimeCreated).ToUniversalTime()
     $timestampString = $newestTimestamp.ToString("o")
 
