@@ -23,7 +23,7 @@ $TestLogPath = Join-Path $ScriptDir "test_output.log"
 $MaxLogSize = 10240 # Force rotation quickly at a tiny 10 KB threshold
 $DirRoot = Join-Path $ScriptDir "test_logdir_[1]" # Phase 4 creates it; the brackets are wildcard characters
 
-# All five phases write their artifacts into $ScriptDir, so removing them is the suite's own
+# All six phases write their artifacts into $ScriptDir, so removing them is the suite's own
 # responsibility on every exit path, not only before the next run starts.
 function Remove-TestArtifacts {
     if (Test-Path -LiteralPath $TestLogPath) { Remove-Item -LiteralPath $TestLogPath -Force -ErrorAction SilentlyContinue }
@@ -373,6 +373,88 @@ try {
     }
 
     Write-Host "PASS: A held mutex drops the entry after about 10s with one warning and leaves the caller running." -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor Cyan
+
+    # --- PHASE 6: ABANDONED MUTEX AND FAIL-SAFE VERIFICATION ---
+    Write-Host "`nTesting recovery from an abandoned mutex and the fail-safe catch..." -ForegroundColor Cyan
+
+    # Arrange: a helper process takes this log's mutex and is killed while it holds it (#2253).
+    # The suite keeps its own handle open, so the mutex outlives the helper and is left abandoned.
+    $AbandonLog = Join-Path $ScriptDir "test_prune_abandon.log"
+    $abandonSha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $abandonBytes = $abandonSha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes([System.IO.Path]::GetFullPath($AbandonLog).ToLowerInvariant()))
+    } finally {
+        $abandonSha.Dispose()
+    }
+    $abandonName = "ServyLog_" + [System.BitConverter]::ToString($abandonBytes).Replace('-', '')
+    try { $keeper = New-Object System.Threading.Mutex($false, "Global\$abandonName") }
+    catch [System.UnauthorizedAccessException] { $keeper = New-Object System.Threading.Mutex($false, "Local\$abandonName") }
+    try {
+        $victim = Start-Job -ArgumentList $abandonName -ScriptBlock {
+            param([string]$Name)
+            try { $m = New-Object System.Threading.Mutex($false, "Global\$Name") }
+            catch [System.UnauthorizedAccessException] { $m = New-Object System.Threading.Mutex($false, "Local\$Name") }
+            [void]$m.WaitOne()
+            "HELD"
+            Start-Sleep -Seconds 600
+        }
+        $held = $false
+        for ($i = 0; $i -lt 150 -and -not $held; $i++) {
+            if (@(Receive-Job $victim -Keep) -contains "HELD") { $held = $true } else { Start-Sleep -Milliseconds 200 }
+        }
+        $victim | Stop-Job
+        $victim | Remove-Job -Force
+        if (-not $held) {
+            Write-Host "FAIL: The helper job never acquired the log mutex, so the abandoned state could not be arranged." -ForegroundColor Red
+            Write-Host "====================================================" -ForegroundColor Cyan
+            exit 1
+        }
+
+        # Act: one write that meets the abandoned mutex
+        $abandonWarnings = @()
+        Write-ServyLog -FilePath $AbandonLog -Message "ABANDON-PROBE" -WarningVariable +abandonWarnings -WarningAction SilentlyContinue
+    }
+    finally {
+        $keeper.Dispose()
+    }
+
+    # Assert: the recovery is announced once, and nothing else is reported
+    $abandonText = @($abandonWarnings | ForEach-Object { "$_" })
+    if ($abandonText.Count -ne 1 -or $abandonText[0] -notmatch 'recovered an abandoned log mutex') {
+        Write-Host "FAIL: Expected one 'recovered an abandoned log mutex' warning, got [$($abandonText -join '; ')]." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Assert: the entry that met the abandoned mutex was written, not dropped
+    $abandonLines = @(if (Test-Path -LiteralPath $AbandonLog) { Get-Content -LiteralPath $AbandonLog })
+    if ($abandonLines.Count -ne 1 -or $abandonLines[0] -notmatch 'ABANDON-PROBE$') {
+        Write-Host "FAIL: Expected one ABANDON-PROBE line in '$([System.IO.Path]::GetFileName($AbandonLog))', got [$($abandonLines -join ' | ')]." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    # Arrange: a log path that cannot be opened for writing - the directory Phase 4 created
+    $failWarnings = @()
+    $failError    = $null
+
+    # Act: the write fails inside the lock
+    try {
+        Write-ServyLog -FilePath $DirLogDir -Message "FAILSAFE-PROBE" -WarningVariable +failWarnings -WarningAction SilentlyContinue
+    } catch {
+        $failError = $_
+    }
+
+    # Assert: the failure is reported as one warning and never reaches the caller as an error
+    $failText = @($failWarnings | ForEach-Object { "$_" })
+    if ($null -ne $failError -or $failText.Count -ne 1 -or $failText[0] -notmatch '^Servy Critical Logging Failure: ') {
+        Write-Host "FAIL: Expected one 'Servy Critical Logging Failure' warning and no error, got error [$failError] and warnings [$($failText -join '; ')]." -ForegroundColor Red
+        Write-Host "====================================================" -ForegroundColor Cyan
+        exit 1
+    }
+
+    Write-Host "PASS: An abandoned mutex is recovered with one warning and the entry is written, and a failed write is reported without reaching the caller." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
 
 }
