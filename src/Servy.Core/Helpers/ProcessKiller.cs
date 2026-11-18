@@ -469,7 +469,7 @@ namespace Servy.Core.Helpers
                 DateTime rootStartTime = SafeStartTime(process);
                 if (rootStartTime == DateTime.MinValue)
                 {
-                    Logger.Debug($"Unable to query StartTime for process {process.Id}. Proceeding with best-effort validation.");
+                    Logger.Debug($"Unable to query StartTime for process {process.Id}. Its descendants are skipped by the PID-reuse guard; only the process itself is killed.");
                 }
 
                 // Thread protectedPids into the walk using the securely isolated timestamp
