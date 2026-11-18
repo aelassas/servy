@@ -37,6 +37,7 @@ namespace Servy.Core.Services
         /// the service defaults to the value defined in <see cref="AppConfig.EventSource"/>.
         /// Pass an empty string to disable the provider filter and enable wildcard querying.
         /// </param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="reader"/> is null.</exception>
         public EventLogService(IEventLogReader reader, string sourceName = null)
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
