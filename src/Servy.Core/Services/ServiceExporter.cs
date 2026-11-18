@@ -35,6 +35,10 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="service">The service DTO to serialize.</param>
         /// <returns>An XML-formatted string representing the service, or null if the service is null.</returns>
+        /// <remarks>
+        /// Kept as part of the public <c>Servy.Core</c> API for in-memory serialization callers alongside
+        /// <see cref="ExportXml(ServiceDto?, string)"/>, even though the built-in desktop applications invoke the file-writing overload.
+        /// </remarks>
         public static string ExportXml(ServiceDto service)
         {
             if (service == null)
@@ -80,6 +84,10 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="service">The service DTO to serialize.</param>
         /// <returns>A JSON-formatted string representing the service, or null if the service is null.</returns>
+        /// <remarks>
+        /// Kept as part of the public <c>Servy.Core</c> API for in-memory serialization callers alongside
+        /// <see cref="ExportJson(ServiceDto?, string)"/>, even though the built-in desktop applications invoke the file-writing overload.
+        /// </remarks>
         public static string ExportJson(ServiceDto service)
         {
             if (service == null)
