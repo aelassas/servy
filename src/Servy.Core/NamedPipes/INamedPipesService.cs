@@ -59,6 +59,7 @@ namespace Servy.Core.NamedPipes
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or blank.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
+        /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the host refuses or fails the request.</exception>
         ServiceDto GetByName(string serviceName, CancellationToken ct = default);
 
@@ -73,6 +74,7 @@ namespace Servy.Core.NamedPipes
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="state"/> is <see langword="null"/>.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
+        /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the host refuses or fails the request.</exception>
         int UpdateRuntimeState(string serviceName, ServiceRuntimeStateDto state, CancellationToken ct = default);
 
@@ -85,6 +87,7 @@ namespace Servy.Core.NamedPipes
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or blank.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
+        /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the host refuses or fails the request.</exception>
         Task<RestartAttemptsDto> GetRestartAttemptsAsync(string serviceName, CancellationToken ct = default);
 
@@ -100,6 +103,7 @@ namespace Servy.Core.NamedPipes
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="attempts"/> is negative.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
+        /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the host refuses or fails the request.</exception>
         Task<int> UpdateRestartAttemptsAsync(string serviceName, int attempts, CancellationToken ct = default);
 
