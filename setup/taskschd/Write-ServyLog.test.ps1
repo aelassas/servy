@@ -22,7 +22,7 @@ $WritesPerWorker  = 100
 $TestLogPath = Join-Path $ScriptDir "test_output.log"
 $MaxLogSize = 10240 # Force rotation quickly at a tiny 10 KB threshold
 
-# Both phases write their artifacts into $ScriptDir, so removing them is the suite's own
+# All three phases write their artifacts into $ScriptDir, so removing them is the suite's own
 # responsibility on every exit path, not only before the next run starts.
 function Remove-TestArtifacts {
     if (Test-Path -LiteralPath $TestLogPath) { Remove-Item -LiteralPath $TestLogPath -Force -ErrorAction SilentlyContinue }
