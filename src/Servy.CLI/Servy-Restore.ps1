@@ -308,7 +308,7 @@ try {
         exit 3
     }
 
-    # Verify archive integrity against SHA-256 sidecar file if present
+    # Verify archive integrity against the SHA-256 sidecar file; a missing sidecar aborts the restore unless -SkipIntegrityCheck is specified
     $sidecarPath = "$resolvedArchivePath.sha256"
 
     if ($SkipIntegrityCheck.IsPresent) {
