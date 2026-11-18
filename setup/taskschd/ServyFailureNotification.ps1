@@ -30,7 +30,8 @@
 
 .EXAMPLE
     .\ServyFailureNotification.ps1
-    Displays a toast notification for the latest Servy error event.
+    Displays a toast notification for each new Servy error event: only the latest one on a
+    first run, at most 10 per run afterwards.
 #>
 
 # -------------------------------
