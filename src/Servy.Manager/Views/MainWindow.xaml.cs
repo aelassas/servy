@@ -118,7 +118,7 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Starts persisting the window layout whenever the window is moved, resized, maximized or
-        /// restored, or a column of the services or logs table is resized.
+        /// restored, or a column of the services or logs table is resized or auto-fitted.
         /// </summary>
         /// <remarks>
         /// Called once the window is loaded and the persisted layout has been applied, so that showing
@@ -131,6 +131,7 @@ namespace Servy.Manager.Views
             StateChanged += OnLayoutChanged;
 
             DataGridColumnWidths.AddWidthChangedHandler(ServicesDataGrid, OnLayoutChanged);
+            DataGridColumnWidths.AddAutoFitHandler(ServicesDataGrid, OnLayoutChanged);
 
             if (LogsTab.Content is LogsView logsView)
             {
@@ -150,6 +151,7 @@ namespace Servy.Manager.Views
             StateChanged -= OnLayoutChanged;
 
             DataGridColumnWidths.RemoveWidthChangedHandler(ServicesDataGrid, OnLayoutChanged);
+            DataGridColumnWidths.RemoveAutoFitHandler(ServicesDataGrid);
 
             if (LogsTab.Content is LogsView logsView)
             {

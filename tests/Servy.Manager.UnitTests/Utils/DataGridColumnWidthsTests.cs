@@ -247,6 +247,114 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public void PinAutoFittedWidth_ColumnAutoFittedByADoubleClick_MakesItsWidthAbsoluteAndCallsTheHandler()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange: a double-click on a header gripper sets the width of the column to Auto
+                var grid = CreateGrid();
+                var column = grid.Columns[1];
+                column.Width = DataGridLength.Auto;
+                var fitted = column.ActualWidth;
+                var senders = new List<object?>();
+
+                // Act
+                var pinned = DataGridColumnWidths.PinAutoFittedWidth(column, (s, e) => senders.Add(s));
+                var text = DataGridColumnWidths.Capture(grid, null);
+
+                // Assert
+                Assert.True(pinned);
+                AssertPixelWidth(fitted, column);
+                Assert.Equal(new object?[] { column }, senders);
+                Assert.Equal(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Name={0:0.##},Status=90", fitted), text);
+            });
+        }
+
+        [Fact]
+        public void PinAutoFittedWidth_ColumnThatIsNotAutoSizedOrNotPersisted_IsLeftAsItIs()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange: a pixel column, the column the user cannot resize set to Auto, and the star column
+                var grid = CreateGrid();
+                grid.Columns[3].Width = DataGridLength.Auto;
+                var calls = 0;
+                EventHandler handler = (s, e) => calls++;
+
+                // Act
+                var pinnedPixel = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[2], handler);
+                var pinnedNotResizable = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[3], handler);
+                var pinnedStar = DataGridColumnWidths.PinAutoFittedWidth(grid.Columns[4], handler);
+
+                // Assert
+                Assert.False(pinnedPixel);
+                Assert.False(pinnedNotResizable);
+                Assert.False(pinnedStar);
+                AssertPixelWidth(90, grid.Columns[2]);
+                Assert.True(grid.Columns[3].Width.IsAuto);
+                Assert.True(grid.Columns[4].Width.IsStar);
+                Assert.Equal(0, calls);
+            });
+        }
+
+        [Fact]
+        public void GetColumnToFit_RightGripper_ReturnsTheColumnOfTheHeader()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var grid = CreateGrid();
+
+                // Act
+                var column = DataGridColumnWidths.GetColumnToFit(grid, grid.Columns[2], false);
+
+                // Assert
+                Assert.Same(grid.Columns[2], column);
+            });
+        }
+
+        [Fact]
+        public void GetColumnToFit_LeftGripper_ReturnsThePreviousVisibleColumn()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange: Status is hidden, so the left gripper of Actions resizes Name
+                var grid = CreateGrid();
+                grid.Columns[2].Visibility = Visibility.Collapsed;
+
+                // Act
+                var beforeStatus = DataGridColumnWidths.GetColumnToFit(grid, grid.Columns[2], true);
+                var beforeActions = DataGridColumnWidths.GetColumnToFit(grid, grid.Columns[3], true);
+                var beforeFirst = DataGridColumnWidths.GetColumnToFit(grid, grid.Columns[0], true);
+
+                // Assert
+                Assert.Same(grid.Columns[1], beforeStatus);
+                Assert.Same(grid.Columns[1], beforeActions);
+                Assert.Null(beforeFirst);
+            });
+        }
+
+        [Fact]
+        public void RemoveAutoFitHandler_AfterAddAutoFitHandler_UnregistersTheMouseHook()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var grid = CreateGrid();
+                var hookProperty = TestReflection.GetFieldStatic<DependencyProperty>(typeof(DataGridColumnWidths), "AutoFitHookProperty");
+                DataGridColumnWidths.AddAutoFitHandler(grid, (s, e) => { });
+                var hookAfterAdd = grid.GetValue(hookProperty);
+
+                // Act
+                DataGridColumnWidths.RemoveAutoFitHandler(grid);
+
+                // Assert
+                Assert.NotNull(hookAfterAdd);
+                Assert.Null(grid.GetValue(hookProperty));
+            });
+        }
+
+        [Fact]
         public void Methods_NullArguments_Throw()
         {
             Helper.RunOnSTA(() =>
@@ -264,6 +372,9 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.AddWidthChangedHandler(grid, null!));
                 Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.RemoveWidthChangedHandler(null!, (s, e) => { }));
                 Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.RemoveWidthChangedHandler(grid, null!));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.AddAutoFitHandler(null!, (s, e) => { }));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.AddAutoFitHandler(grid, null!));
+                Assert.Throws<ArgumentNullException>(() => DataGridColumnWidths.RemoveAutoFitHandler(null!));
             });
         }
     }
