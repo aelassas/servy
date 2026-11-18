@@ -194,5 +194,19 @@ namespace Servy.Core.UnitTests.Security
             // Arrange, Act & Assert
             Assert.Equal(LocalService, AccountSidResolver.Resolve(@" NT AUTHORITY\LocalService "));
         }
+
+        [Fact]
+        public void AccountSidResolver_LocalShorthandOfCurrentUser_ResolvesThroughSharedExpansion()
+        {
+            // Arrange
+            var account = @".\" + Environment.UserName;
+            var expected = WindowsIdentity.GetCurrent().User;
+
+            // Act
+            var sid = AccountSidResolver.Resolve(account);
+
+            // Assert
+            Assert.Equal(expected, sid);
+        }
     }
 }
