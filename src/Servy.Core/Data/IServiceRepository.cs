@@ -17,7 +17,7 @@ namespace Servy.Core.Data
         /// <param name="service">The DTO to upsert.</param>
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password),
-        /// unless <paramref name="service"/> names a passwordless account (see <see cref="Servy.Core.Config.ServiceAccounts.IsPasswordlessAccount"/>), which is then kept.</param>
+        /// unless <paramref name="service"/> names an account that may be passwordless and carries no password (see <see cref="Servy.Core.Config.ServiceAccounts.CanBePasswordless"/>: a passwordless account, or a local user account configured with a blank password), which is then kept.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The ID of the upserted service.</returns>
         /// <exception cref="Servy.Core.Security.ServiceDecryptionFailedException">Thrown when the stored row has a sensitive field that no longer decrypts with the current key or that still uses the disabled pre-v2 encryption, or <paramref name="service"/> was read from such a row; nothing is written.</exception>
