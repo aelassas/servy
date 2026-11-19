@@ -309,8 +309,13 @@ namespace Servy.Service.UnitTests
         /// </summary>
         /// <param name="ctx">The context holding the helper mock.</param>
         /// <param name="beforeRelaunch">What happens between the stop of the old process and the relaunch.</param>
-        private static void SetupRestartProcessInvokingTheCallback(ServiceTestContext ctx, Action beforeRelaunch)
+        /// <returns>
+        /// The values the relaunch callback returned, one per invocation, in order: <c>true</c> for a launch,
+        /// <c>false</c> for a skipped one.
+        /// </returns>
+        private static List<bool> SetupRestartProcessInvokingTheCallback(ServiceTestContext ctx, Action beforeRelaunch)
         {
+            var results = new List<bool>();
             ctx.Helper
                 .Setup(h => h.RestartProcess(
                     It.IsAny<IProcessWrapper>(),
@@ -327,8 +332,9 @@ namespace Servy.Service.UnitTests
                     (process, startProcess, exePath, arguments, workingDirectory, environmentVariables, allowOverriddenRuntimeVars, logger, stopTimeoutMs, cancellationToken) =>
                     {
                         beforeRelaunch();
-                        startProcess(exePath, arguments, workingDirectory, environmentVariables ?? new List<EnvironmentVariable>(), allowOverriddenRuntimeVars, cancellationToken);
+                        results.Add(startProcess(exePath, arguments, workingDirectory, environmentVariables ?? new List<EnvironmentVariable>(), allowOverriddenRuntimeVars, cancellationToken));
                     }));
+            return results;
         }
 
         /// <summary>
@@ -422,7 +428,7 @@ namespace Servy.Service.UnitTests
                 .Returns(newProcess.Object);
 
             // The stop begins while the helper is stopping the old process, before it calls back
-            SetupRestartProcessInvokingTheCallback(_ctx, () => TestReflection.SetField(service, "_isTearingDown", true));
+            var relaunchResults = SetupRestartProcessInvokingTheCallback(_ctx, () => TestReflection.SetField(service, "_isTearingDown", true));
 
             // Act
             service.InvokeExecuteRecoveryAction(1);
@@ -436,6 +442,10 @@ namespace Servy.Service.UnitTests
             _ctx.ProcessFactory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()), Times.Never);
             newProcess.Verify(p => p.Start(), Times.Never);
             _ctx.Logger.Verify(l => l.Info("Recovery relaunch skipped: the service is stopping.", It.IsAny<Exception>()), Times.Once);
+
+            // The callback reports the skip, so the helper does not log "Process restarted." for a child
+            // that was never started
+            Assert.Equal(new[] { false }, relaunchResults);
         }
 
         [Fact]
@@ -457,7 +467,7 @@ namespace Servy.Service.UnitTests
                     return newProcess.Object;
                 });
 
-            SetupRestartProcessInvokingTheCallback(_ctx, () => { });
+            var relaunchResults = SetupRestartProcessInvokingTheCallback(_ctx, () => { });
 
             // Act
             service.InvokeExecuteRecoveryAction(1);
@@ -467,6 +477,9 @@ namespace Servy.Service.UnitTests
             // exclusive, so a stop either waits and then kills the new child or makes the relaunch skip
             Assert.True(lockHeldAtCreate);
             Assert.Same(newProcess.Object, service.GetChildProcess());
+
+            // The callback reports the launch, so the helper logs "Process restarted."
+            Assert.Equal(new[] { true }, relaunchResults);
         }
 
         public void Dispose()

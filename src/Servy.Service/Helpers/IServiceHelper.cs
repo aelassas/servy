@@ -18,7 +18,8 @@ namespace Servy.Service.Helpers
     /// <param name="environmentVariables">Environment block to inject.</param>
     /// <param name="allowOverriddenRuntimeVars">If set to <c>true</c>, allows runtime environment variables to be overridden; if <c>false</c>, preserves existing runtime variables.</param>
     /// <param name="cancellationToken">Token observed while starting.</param>
-    public delegate void StartProcessCallback(
+    /// <returns><c>true</c> when the child was launched; <c>false</c> when the launch was skipped.</returns>
+    public delegate bool StartProcessCallback(
         string exePath,
         string arguments,
         string workingDirectory,
