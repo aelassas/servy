@@ -8,6 +8,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
 
@@ -42,6 +43,12 @@ namespace Servy.Core.UnitTests.Services
         private readonly Mock<IServiceRepository> _serviceRepository = new Mock<IServiceRepository>();
         private readonly Mock<IServyExePermissionsHardener> _hardener = new Mock<IServyExePermissionsHardener>();
         private readonly ServiceManager _serviceManager;
+
+        /// <summary>The unmanaged strings the <c>QueryServiceConfig</c> arrangements hand out, freed on dispose.</summary>
+        private readonly List<IntPtr> _strings = new List<IntPtr>();
+
+        /// <summary>The shape of <c>IWindowsServiceApi.QueryServiceConfig</c>, for a callback that sets its out parameter.</summary>
+        private delegate void QueryConfigCallback(SafeServiceHandle handle, IntPtr buffer, int size, out int required);
 
         public ServiceManagerHardeningTests()
         {
@@ -508,6 +515,68 @@ namespace Servy.Core.UnitTests.Services
             _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()), Times.Never);
         }
 
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData(@".\svc-account", @".\svc-account")]
+        public async Task InstallService_ExistingServiceWhoseRowAlreadyNamesTheNewAccount_RevokesTheAccountTheScmHad(string? rowAccount, string? username)
+        {
+            // Arrange: an import has already rewritten the row to the account being installed (reset to Local System,
+            // or replaced by another account), while the Service Control Manager still runs the service as .\test_svc
+            // (#8052). The row and the new account agree, so only the SCM read finds the account being left.
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
+            ArrangeRecord(rowAccount);
+            ArrangeRegisteredAccount(@".\test_svc");
+            var options = CreateOptions(username);
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\test_svc"), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\test_svc", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_ExistingServiceWhoseScmAccountCannotBeRead_FallsBackToTheRowAndSucceeds()
+        {
+            // Arrange: the QueryServiceConfig size probe fails, so the account the service is leaving comes from
+            // the row, as it did before #8052, and the failed read does not fail the install
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
+            ArrangeRecord(@".\old-account");
+            _windowsServiceApi.Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Returns(false);
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), IntPtr.Zero, 0, out It.Ref<int>.IsAny), Times.Once);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\old-account"), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_ExistingServiceWhoseScmAccountIsTheNewAccount_RevokesNothing()
+        {
+            // Arrange: the row still names an older account, but the Service Control Manager already runs the
+            // service under the account being installed, so no account is being left
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
+            ArrangeRecord(@".\old-account");
+            ArrangeRegisteredAccount(@".\svc-account");
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), It.IsAny<string>()), Times.Never);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         [Fact]
         public async Task InstallService_RevokingTheServiceControlRightsThrows_InstallStillSucceedsAndLogsAnError()
         {
@@ -745,6 +814,29 @@ namespace Servy.Core.UnitTests.Services
         }
 
         /// <summary>
+        /// Makes the Service Control Manager report <paramref name="account"/> as the account the service runs under,
+        /// through the two-pass <c>QueryServiceConfig</c> the install reads it with.
+        /// </summary>
+        /// <param name="account">The account the service is registered under.</param>
+        private void ArrangeRegisteredAccount(string account)
+        {
+            var startName = Marshal.StringToHGlobalUni(account);
+            _strings.Add(startName);
+
+            int size = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            _windowsServiceApi.Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), IntPtr.Zero, 0, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) => required = size))
+                .Returns(false);
+            _windowsServiceApi.Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
+                .Callback(new QueryConfigCallback((SafeServiceHandle h, IntPtr p, int s, out int required) =>
+                {
+                    required = size;
+                    Marshal.StructureToPtr(new QUERY_SERVICE_CONFIG { lpServiceStartName = startName }, p, false);
+                }))
+                .Returns(true);
+        }
+
+        /// <summary>
         /// Arranges an installed, already stopped service whose deletion succeeds or fails.
         /// </summary>
         /// <returns>The service's handle.</returns>
@@ -791,6 +883,8 @@ namespace Servy.Core.UnitTests.Services
 
         public void Dispose()
         {
+            foreach (var ptr in _strings)
+                Marshal.FreeHGlobal(ptr);
             _handles.Dispose();
         }
     }
