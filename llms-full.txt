@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-19T14:34:44Z
+> Generated on: 2026-11-19T15:37:19Z
 
 ---
 
@@ -3286,7 +3286,7 @@ If the specified service is not found in Servy's database, the PowerShell cmdlet
 
 ## Import
 > [!NOTE]
-> A passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)) in the file is imported as it is, and the service runs under it. A local user account (`.\name` or `MACHINE\name`) with a blank password is treated the same way, but only when `LimitBlankPasswordUse` is `0` on the importing machine and a blank-password logon for the account succeeds there; setting `LimitBlankPasswordUse` to `0` is not recommended (see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse)). Any other account is discarded and the service is reset to **LocalSystem**: if a password and user are needed, they must be re-entered after import.
+> A passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)) in the file is imported as it is, and the service runs under it. A local user account (`.\name` or `MACHINE\name`) with a blank password is treated the same way, but only when `LimitBlankPasswordUse` is `0` on the importing machine and a blank-password logon for the account succeeds there; setting `LimitBlankPasswordUse` to `0` is not recommended (see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse)). Any other account is discarded. The service is reset to **LocalSystem**, unless it already exists and a `servy-cli`, PowerShell module or Servy Manager import finds a stored account that has a password, which is kept with its password (see the note under [Fields](https://github.com/aelassas/servy/wiki/Export-Import-Services#fields)). If a password and user are needed on a reset service, they must be re-entered after import.
 
 ### Security Note
 
@@ -3344,7 +3344,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
 | EnvironmentVariables | string? | No | Optional environment variables, in `key=value` format separated by semicolons. |
 | AllowOverriddenRuntimeVars | bool? | No | Whether the environment variables may override protected runtime (Tier 2) variables such as `JAVA_HOME` or `JAVA_OPTS` (see [Protected Variables](https://github.com/aelassas/servy/wiki/Environment-Variables#protected-variables)). Defaults to `false`. |
 | ServiceDependencies | string? | No | Optional names of the services this service depends on, separated by semicolons. |
-| UserAccount | string? | No | Optional logon account. Imported and exported only when it is passwordless: LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`), or a local user account with a blank password (imported only when `LimitBlankPasswordUse` is `0` on the importing machine and a blank-password logon succeeds; see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse)). Any other account is discarded on import and the service runs as LocalSystem. |
+| UserAccount | string? | No | Optional logon account. Imported and exported only when it is passwordless: LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`), or a local user account with a blank password (imported only when `LimitBlankPasswordUse` is `0` on the importing machine and a blank-password logon succeeds; see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse)). Any other account is discarded on import and the service runs as LocalSystem, unless it already exists with a stored account that has a password, which a `servy-cli`, PowerShell module or Servy Manager import keeps. |
 | PreLaunchExecutablePath | string? | No | Optional path to an executable that runs before the service starts. |
 | PreLaunchStartupDirectory | string? | No | Optional startup directory for the pre-launch executable. |
 | PreLaunchParameters | string? | No | Optional parameters for the pre-launch executable. |
@@ -6344,7 +6344,7 @@ The value is the security policy **Accounts: Limit local account use of blank pa
 
 **How Servy handles such an account.** When `LimitBlankPasswordUse` is `0` and a logon with a blank password succeeds for a local user account (`.\name` or `MACHINE\name`), Servy treats the account as passwordless, like LocalService, NetworkService, `NT SERVICE\...`, `IIS APPPOOL\...` and gMSA:
 
-* **Import (XML/JSON, from the Desktop App, Servy Manager, `servy-cli` and the PowerShell module):** the account is kept only when both conditions hold on the importing machine. Otherwise it is discarded and the service is reset to `LocalSystem`.
+* **Import (XML/JSON, from the Desktop App, Servy Manager, `servy-cli` and the PowerShell module):** the account is kept only when both conditions hold on the importing machine. Otherwise it is discarded and the service is reset to `LocalSystem`, unless the service already exists with a stored account that has a password, which a `servy-cli`, PowerShell module or Servy Manager import keeps.
 * **Export:** a local account is written when no password is stored for it, which only happens when it was configured with a blank password. No logon is attempted during an export; the importing machine performs the check above.
 
 > [!WARNING]
