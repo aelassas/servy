@@ -1699,6 +1699,32 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RemoveService_LastCheckedRowRemoved_RaisesHasSelectedServices()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel(Dispatcher.CurrentDispatcher);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                collection.Add(new ServiceRowViewModel(new Service { Name = "Checked" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true });
+                collection.Add(new ServiceRowViewModel(new Service { Name = "Unchecked" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+                Assert.True(vm.HasSelectedServices);
+
+                var raised = false;
+                vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.HasSelectedServices)) raised = true; };
+
+                // Act
+                vm.RemoveService("Checked");
+
+                // Assert
+                Assert.False(vm.HasSelectedServices);
+                Assert.True(raised, "HasSelectedServices was not raised after the last checked row was removed.");
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RemoveService_NameNotFound_LeavesCollectionUnchanged()
         {
             await Helper.RunOnSTA(async () =>
