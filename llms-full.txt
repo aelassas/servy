@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-19T15:37:19Z
+> Generated on: 2026-11-19T15:56:32Z
 
 ---
 
@@ -7272,7 +7272,7 @@ On `main`, the test runner uses Microsoft.Testing.Platform (MTP) as configured i
     ```powershell
     .\tests\test.ps1
     ```
-* To run unit tests via standard .NET CLI:
+* To run every test project of the solution (unit and integration tests) without code coverage, via the standard .NET CLI from the repository root. Unlike `test.ps1`, this also runs the tests tagged `Category=Stress`:
     ```powershell
     dotnet test
     ```
