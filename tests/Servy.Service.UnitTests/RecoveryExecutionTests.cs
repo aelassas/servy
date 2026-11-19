@@ -372,6 +372,178 @@ namespace Servy.Service.UnitTests
             _ctx.Helper.Verify(h => h.RestartService("ServyTestService", It.IsAny<IServyLogger?>()), Times.Once);
         }
 
+        /// <summary>
+        /// Makes the helper mock behave like the production <see cref="IServiceHelper.RestartProcess"/>:
+        /// it runs <paramref name="beforeRelaunch"/>, standing in for the stop of the old process and the
+        /// descendant sweep, and then invokes the relaunch callback it was handed.
+        /// </summary>
+        /// <param name="ctx">The context holding the helper mock.</param>
+        /// <param name="beforeRelaunch">What happens between the stop of the old process and the relaunch.</param>
+        private static void SetupRestartProcessInvokingTheCallback(ServiceTestContext ctx, Action beforeRelaunch)
+        {
+            ctx.Helper
+                .Setup(h => h.RestartProcess(
+                    It.IsAny<IProcessWrapper>(),
+                    It.IsAny<StartProcessCallback>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<List<EnvironmentVariable>>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IServyLogger>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback(new Action<IProcessWrapper, StartProcessCallback, string, string, string, List<EnvironmentVariable>, bool, IServyLogger, int, CancellationToken>(
+                    (process, startProcess, exePath, arguments, workingDirectory, environmentVariables, allowOverriddenRuntimeVars, logger, stopTimeoutMs, cancellationToken) =>
+                    {
+                        beforeRelaunch();
+                        startProcess(exePath, arguments, workingDirectory, environmentVariables ?? new List<EnvironmentVariable>(), allowOverriddenRuntimeVars, cancellationToken);
+                    }));
+        }
+
+        /// <summary>
+        /// Creates a child process mock that starts successfully, for the relaunch tests.
+        /// </summary>
+        /// <returns>The mock.</returns>
+        private static Mock<IProcessWrapper> CreateStartableProcess()
+        {
+            var process = new Mock<IProcessWrapper>();
+            process.Setup(p => p.Id).Returns(4242);
+            process.Setup(p => p.Start()).Returns(true);
+            return process;
+        }
+
+        [Fact]
+        public async Task InitiateRecoveryAsync_StopCancelsTheTokenDuringTheAttemptsRead_DispatchesNothing()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartService);
+            service.SetRestartAttemptsServiceName("ServyTestService");
+            service.SetMaxRestartAttempts(3);
+
+            // Handed to the service, whose teardown disposes it
+            var cancellationSource = new CancellationTokenSource();
+            TestReflection.SetField(service, "_cancellationSource", cancellationSource);
+
+            // The stop arrives while the host round trip is in flight: it cancels the service's token and
+            // the read surfaces that cancellation, which GetRestartAttemptsAsync turns into 0. No teardown
+            // flag is set, so only the cancelled token tells that 0 apart from a real count.
+            _ctx.NamedPipesService
+                .Setup(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns<string, CancellationToken>((name, ct) =>
+                {
+                    cancellationSource.Cancel();
+                    throw new OperationCanceledException(ct);
+                });
+
+            // Act
+            await service.InvokeInitiateRecoveryAsync();
+
+            // Assert
+            // Treating the cancelled read as "no attempts yet" would dispatch the action as attempt 1
+            VerifyNoRecoveryActionRan(_ctx);
+            Assert.False(TestReflection.GetField<bool>(service, "_isRecovering"));
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Performing recovery action")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task InitiateRecoveryAsync_TeardownBeginsDuringTheAttemptsSave_DispatchesNothing()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartService);
+            service.SetRestartAttemptsServiceName("ServyTestService");
+            service.SetMaxRestartAttempts(3);
+
+            _ctx.NamedPipesService
+                .Setup(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new Servy.Core.DTOs.RestartAttemptsDto { Attempts = 0, UpdatedAtUtc = DateTime.UtcNow }));
+
+            // Teardown does not take the health-check semaphore, so it can begin after the read has been
+            // checked: here it starts while the incremented counter is being saved
+            _ctx.NamedPipesService
+                .Setup(p => p.UpdateRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns<string, int, CancellationToken>((name, attempts, ct) =>
+                {
+                    TestReflection.SetField(service, "_isTearingDown", true);
+                    return Task.FromResult(attempts);
+                });
+
+            // Act
+            await service.InvokeInitiateRecoveryAsync();
+
+            // Put the flag back so the context's Dispose still runs a real teardown.
+            TestReflection.SetField(service, "_isTearingDown", false);
+
+            // Assert
+            // The save ran, so the stop arrived after the read; the re-check before the dispatch is
+            // what keeps the action from running
+            _ctx.NamedPipesService.Verify(p => p.UpdateRestartAttemptsAsync("ServyTestService", 1, It.IsAny<CancellationToken>()), Times.Once);
+            VerifyNoRecoveryActionRan(_ctx);
+        }
+
+        [Fact]
+        public void ExecuteRecoveryAction_TeardownBeganBeforeTheRelaunch_SkipsStartingANewChild()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartProcess);
+
+            var newProcess = CreateStartableProcess();
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(newProcess.Object);
+
+            // The stop begins while the helper is stopping the old process, before it calls back
+            SetupRestartProcessInvokingTheCallback(_ctx, () => TestReflection.SetField(service, "_isTearingDown", true));
+
+            // Act
+            service.InvokeExecuteRecoveryAction(1);
+
+            // Put the flag back so the context's Dispose still runs a real teardown.
+            TestReflection.SetField(service, "_isTearingDown", false);
+
+            // Assert
+            // A child started now would outlive the service: teardown has already passed the point where
+            // it kills _childProcess
+            _ctx.ProcessFactory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()), Times.Never);
+            newProcess.Verify(p => p.Start(), Times.Never);
+            _ctx.Logger.Verify(l => l.Info("Recovery relaunch skipped: the service is stopping.", It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void ExecuteRecoveryAction_RestartProcessCallback_RelaunchesWhileHoldingTheTeardownLock()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            ArrangeUnlimitedRecovery(service, RecoveryAction.RestartProcess);
+
+            var teardownLock = TestReflection.GetField<object>(service, "_teardownLock");
+            var lockHeldAtCreate = false;
+
+            var newProcess = CreateStartableProcess();
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Returns(() =>
+                {
+                    lockHeldAtCreate = Monitor.IsEntered(teardownLock);
+                    return newProcess.Object;
+                });
+
+            SetupRestartProcessInvokingTheCallback(_ctx, () => { });
+
+            // Act
+            service.InvokeExecuteRecoveryAction(1);
+
+            // Assert
+            // Holding the lock ExecuteTeardown runs under makes the relaunch and teardown mutually
+            // exclusive, so a stop either waits and then kills the new child or makes the relaunch skip
+            Assert.True(lockHeldAtCreate);
+            Assert.Same(newProcess.Object, service.GetChildProcess());
+        }
+
         public void Dispose() => _ctx.Dispose();
     }
 }

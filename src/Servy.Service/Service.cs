@@ -2251,6 +2251,10 @@ namespace Servy.Service
                         var ct = _cancellationSource?.Token ?? CancellationToken.None;
                         var ca = await GetRestartAttemptsAsync(ct);
 
+                        // A read cancelled by a stop comes back as 0, which is not a count: a stop that began
+                        // during the read abandons the recovery instead of dispatching it as attempt 1
+                        if (ct.IsCancellationRequested || _isTearingDown || _disposed) return;
+
                         if (ca == null)
                         {
                             _logger?.Error("Failed to read restart attempts from persistent storage. Aborting recovery.");
@@ -2301,6 +2305,9 @@ namespace Servy.Service
                     Stop();
                     return;
                 }
+
+                // Teardown does not take _healthCheckSemaphore, so a stop may have begun since the guard above
+                if (_isTearingDown || _disposed) return;
 
                 try
                 {
@@ -2376,9 +2383,21 @@ namespace Servy.Service
                         _childProcess,
                         (exe, args, dir, envVars, allowOverriddenRuntimeVars, ct) =>
                         {
-                            StartProcess(exe, args, dir, envVars, allowOverriddenRuntimeVars, ct);
-                            SetProcessPriority(_options?.Priority ?? ProcessPriorityClass.Normal);
-                            SetProcessCpuAffinity(_options?.CpuAffinity);
+                            // Mutually exclusive with ExecuteTeardown, which holds this lock for its whole run:
+                            // either the relaunch completes first and Cleanup kills the new child, or teardown
+                            // has begun and the relaunch is skipped. Teardown never waits on this thread.
+                            lock (_teardownLock)
+                            {
+                                if (_isTearingDown || _disposed)
+                                {
+                                    _logger?.Info("Recovery relaunch skipped: the service is stopping.");
+                                    return;
+                                }
+
+                                StartProcess(exe, args, dir, envVars, allowOverriddenRuntimeVars, ct);
+                                SetProcessPriority(_options?.Priority ?? ProcessPriorityClass.Normal);
+                                SetProcessCpuAffinity(_options?.CpuAffinity);
+                            }
                         },
                         _realExePath!,
                         _realArgs!,
