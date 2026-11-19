@@ -837,8 +837,8 @@ namespace Servy.Manager.ViewModels
 #endif
                 var allServicesDict = BuildUniqueNameDictionary(allServicesList, s => s.Name);
 
-                // 3. Fetch all Repository DTOs in bulk. The tick reads only Pid, StartupType and Description,
-                // so it does not decrypt: a record whose sensitive fields cannot be decrypted is then returned
+                // 3. Fetch all Repository DTOs in bulk. The tick reads only Pid, StartupType, Description, DisplayName,
+                // RunAsLocalSystem and UserAccount, none of them encrypted, so it does not decrypt: a record whose sensitive fields cannot be decrypted is then returned
                 // as stored rather than degraded, and no password is decrypted for nothing (#7328, #6486).
                 var allDtosList = await _serviceRepository.GetAllAsync(decrypt: false, token);
                 var allDtosDict = BuildUniqueNameDictionary(allDtosList, d => d.Name);
@@ -1023,10 +1023,15 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // The SCM does not know this service, so the stored description is the only authority:
-                // never let the row's in-memory copy overwrite it.
+                // never let the row's in-memory copy overwrite it. The same goes for the display name and the
+                // log on account, shown the way the load maps them (ServiceDtoMapper.ToDomain, ServiceMapper.ToModelAsync).
                 if (!update.IsInstalled && serviceDto != null)
                 {
                     update.Description = serviceDto.Description ?? string.Empty;
+                    update.DisplayName = serviceDto.DisplayName ?? string.Empty;
+                    update.LogOnAs = (serviceDto.RunAsLocalSystem ?? AppConfig.DefaultRunAsLocalSystem)
+                        ? Strings.Account_LocalSystem
+                        : ServiceMapper.GetLogOnAsDisplayName(serviceDto.UserAccount);
                 }
 
                 ServiceDto resultDto = null;
