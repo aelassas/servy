@@ -30,7 +30,9 @@ namespace Servy.Manager.Mappers
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <param name="processHelper">Injected process helper used to gather usage metrics.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
+        /// <returns>
+        /// A UI-friendly <see cref="Service"/> model, or <see langword="null"/> when <paramref name="service"/> is null or has no name.
+        /// </returns>
         public static async Task<Service?> ToModelAsync(
             Core.Domain.Service? service,
             bool isDesktopAppAvailable,
