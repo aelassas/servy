@@ -1014,6 +1014,13 @@ namespace Servy.Manager.ViewModels
                     update.StartupType = ConfigParser.ParseEnum(serviceDto.StartupType, AppConfig.DefaultStartupType);
                 }
 
+                // The SCM does not know this service, so the stored description is the only authority:
+                // never let the row's in-memory copy overwrite it.
+                if (!update.IsInstalled && serviceDto != null)
+                {
+                    update.Description = serviceDto.Description ?? string.Empty;
+                }
+
                 ServiceDto? resultDto = null;
                 if (serviceDto != null)
                 {

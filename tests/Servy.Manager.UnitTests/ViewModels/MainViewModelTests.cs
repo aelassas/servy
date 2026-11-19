@@ -1086,6 +1086,53 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_NotInstalledRowWithNewerStoredDescription_KeepsTheStoredDescription()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the row was loaded with "A"; the database now holds "B"; the SCM does not know the service (#8042)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Description = "A"
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>());
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                Description = "B",
+                            }
+                        });
+
+                    // Act
+                    var task = TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None) as Task;
+                    Assert.NotNull(task);
+                    await task;
+
+                    // Assert: the stored description is not overwritten, and the row follows it
+                    _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
+                    Assert.Equal("B", service.Description);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RefreshAllServicesAsync_BlankAndDuplicateNamedOsServices_SkipsThemAndKeepsFirstOccurrence()
         {
             // Arrange, Act & Assert
