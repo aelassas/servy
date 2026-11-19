@@ -320,7 +320,9 @@ namespace Servy.Core.DTOs
         /// </summary>
         /// <remarks>
         /// Exported only for a passwordless account (see <see cref="ShouldSerializeUserAccount"/>); on import,
-        /// an account that is not passwordless is discarded and the service is reset to LocalSystem.
+        /// an account that is not passwordless is discarded and the imported record carries LocalSystem. A CLI or
+        /// Manager import over a service that already exists then keeps its stored account if that account has a
+        /// password (ServiceRepository.ApplyRuntimeState).
         /// </remarks>
         [SqlColumn("TEXT")]
         public string? UserAccount { get; set; }
