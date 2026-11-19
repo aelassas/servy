@@ -1016,7 +1016,8 @@ namespace Servy.Service
         /// <param name="options">The service start options containing the pre-launch configuration.</param>
         /// <returns>
         /// <c>true</c> if the pre-launch process completed successfully or was skipped;
-        /// <c>false</c> if it failed and <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>false</c>.
+        /// <c>false</c> if it failed and <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>false</c>,
+        /// or if a service stop was requested before an attempt or during the back-off wait (whatever that setting is).
         /// </returns>
         /// <remarks>
         /// <para>
@@ -1157,7 +1158,8 @@ namespace Servy.Service
         /// <param name="launchOptions">The initialized process launch parameters.</param>
         /// <param name="options">The original start options for access to retry and ignore settings.</param>
         /// <returns>
-        /// <see langword="true"/> if the process eventually returned exit code 0 or if failures are configured to be ignored.
+        /// <see langword="true"/> if the process eventually returned exit code 0 or if failures are configured to be ignored;
+        /// <see langword="false"/> otherwise, and always when a service stop is requested before an attempt or during the back-off wait.
         /// </returns>
         private bool RunSynchronousPreLaunch(ProcessLaunchOptions launchOptions, StartOptions options)
         {
@@ -2141,7 +2143,7 @@ namespace Servy.Service
                                 EmitHeartbeatPing(_options.HeartbeatUrl, string.Empty, _options.HeartbeatUrlTimeoutInSeconds);
                         }
 
-                        // Flag to perform disk-bound stability check outside the lock
+                        // Flag to perform the stability check (a host pipe round trip) outside the lock
                         performStabilityCheck = true;
                     }
                 }
@@ -2154,7 +2156,7 @@ namespace Servy.Service
                 // Actions outside the critical section
                 if (performStabilityCheck)
                 {
-                    // STABILITY CHECK (Disk I/O)
+                    // STABILITY CHECK (host pipe I/O)
                     // This is safely outside the health lock, preventing it from stalling OnProcessExited.
                     await ConditionalResetRestartAttemptsAsync(_options!, _cancellationSource?.Token ?? CancellationToken.None);
                 }
@@ -2240,7 +2242,7 @@ namespace Servy.Service
 
                 try
                 {
-                    // Guard: prevent concurrent recovery attempts
+                    // Guard: teardown or a reboot may have started while we waited for the lock
                     if (_isTearingDown || _disposed || _isRebooting) return;
 
                     // _maxRestartAttempts == 0 means unlimited restart attempts
