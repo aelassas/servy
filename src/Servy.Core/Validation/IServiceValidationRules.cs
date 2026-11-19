@@ -24,7 +24,8 @@ namespace Servy.Core.Validation
         /// </param>
         /// <param name="importMode">
         /// When <c>true</c>, skips the credential-validation stage entirely (used by XML/JSON imports,
-        /// whose identity fields are reset to LocalSystem after deserialization).
+        /// whose identity is settled by <see cref="Servy.Core.Helpers.ServiceDtoHelper.ApplyDefaultsAndResetIdentity"/>, not here:
+        /// the password is cleared, a passwordless account is kept and any other account is reset to LocalSystem).
         /// </param>
         /// <returns>
         /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues).
