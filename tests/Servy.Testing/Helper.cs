@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -214,19 +213,6 @@ namespace Servy.Testing
 
             // Wait for the test (and the STA thread lifecycle) to complete
             await tcs.Task;
-        }
-
-        /// <summary>
-        /// Checks if the current process is running with administrative privileges by examining the Windows identity and principal.
-        /// </summary>
-        /// <returns>Returns true if the process is running with administrative privileges; otherwise, false.</returns>
-        public static bool IsAdministrator()
-        {
-            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
-            {
-                WindowsPrincipal principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
         }
 
         /// <summary>
