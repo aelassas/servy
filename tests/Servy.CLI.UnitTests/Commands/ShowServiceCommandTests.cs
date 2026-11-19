@@ -1479,6 +1479,40 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Null(RowValue(result.Message, CliStrings.Msg_Show_Label_CpuAffinity));
         }
 
+        [Fact]
+        public async Task ExecuteAsync_DependenciesStored_RendersTheirRowInTheEnvironmentSection()
+        {
+            // Arrange
+            var dto = MinimalDto();
+            dto.ServiceDependencies = "Tcpip;Dnscache";
+            GivenService(dto);
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(
+                "Tcpip;Dnscache",
+                SectionRowValue(result.Message, CliStrings.Msg_Show_Group_Environment, CliStrings.Msg_Show_Label_Dependencies));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_DependenciesNotStored_OmitsTheirRow()
+        {
+            // Arrange
+            GivenService(MinimalDto());
+            GivenStatus(ServiceControllerStatus.Running);
+            var opts = new ShowServiceOptions { ServiceName = ServiceName };
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Null(RowValue(result.Message, CliStrings.Msg_Show_Label_Dependencies));
+        }
+
         #endregion
 
         #region Verb metadata
