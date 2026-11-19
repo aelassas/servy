@@ -2391,12 +2391,13 @@ namespace Servy.Service
                                 if (_isTearingDown || _disposed)
                                 {
                                     _logger?.Info("Recovery relaunch skipped: the service is stopping.");
-                                    return;
+                                    return false;
                                 }
 
                                 StartProcess(exe, args, dir, envVars, allowOverriddenRuntimeVars, ct);
                                 SetProcessPriority(_options?.Priority ?? ProcessPriorityClass.Normal);
                                 SetProcessCpuAffinity(_options?.CpuAffinity);
+                                return true;
                             }
                         },
                         _realExePath!,

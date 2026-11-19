@@ -384,9 +384,10 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                startProcess.Invoke(realExePath, realArgs, workingDir, environmentVariables, allowOverriddenRuntimeVars, cancellationToken);
-
-                logger?.Info("Process restarted.");
+                if (startProcess.Invoke(realExePath, realArgs, workingDir, environmentVariables, allowOverriddenRuntimeVars, cancellationToken))
+                {
+                    logger?.Info("Process restarted.");
+                }
             }
             catch (Exception ex)
             {

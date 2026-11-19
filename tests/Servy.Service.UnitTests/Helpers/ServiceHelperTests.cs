@@ -456,7 +456,11 @@ namespace Servy.Service.UnitTests.Helpers
 
             (string Exe, string Args, string Dir, List<EnvironmentVariable> Env, bool Allow, CancellationToken Token)? seen = null;
             StartProcessCallback startAction =
-                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => seen = (exe, args, dir, env, allowOverriddenRuntimeVars, ct);
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) =>
+                {
+                    seen = (exe, args, dir, env, allowOverriddenRuntimeVars, ct);
+                    return true;
+                };
 
             // Act
             // allowOverriddenRuntimeVars is true, deliberately not its default, so it cannot be replaced by a literal false
@@ -514,7 +518,7 @@ namespace Servy.Service.UnitTests.Helpers
             mockProcess.Setup(p => p.HasExited).Returns(true);
 
             var mockLog = new Mock<IServyLogger>();
-            StartProcessCallback startAction = (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => { };
+            StartProcessCallback startAction = (exe, args, dir, env, allowOverriddenRuntimeVars, ct) => true;
 
             // Act
             _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
@@ -599,6 +603,38 @@ namespace Servy.Service.UnitTests.Helpers
             mockProcess.Verify(p => p.Stop(1000), Times.Once);
             mockLog.Verify(l => l.Error("Failed to restart process.", It.IsAny<InvalidOperationException>()), Times.Once);
             mockProcess.Verify(p => p.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void RestartProcess_StartActionSkipsTheLaunch_DoesNotLogProcessRestarted()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(1234);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            var mockLog = new Mock<IServyLogger>();
+            bool startActionInvoked = false;
+            StartProcessCallback startAction =
+                (exe, args, dir, env, allowOverriddenRuntimeVars, ct) =>
+                {
+                    // The callback declines the launch, as the service's relaunch does once a stop has begun
+                    startActionInvoked = true;
+                    return false;
+                };
+
+            // Act
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), false, mockLog.Object, 1000, TestContext.Current.CancellationToken);
+
+            // Assert
+            // The old process is still stopped and disposed, but no new one exists, so the success line
+            // would be false
+            Assert.True(startActionInvoked);
+            mockProcess.Verify(p => p.Stop(1000), Times.Once);
+            mockProcess.Verify(p => p.Dispose(), Times.Once);
+            mockLog.Verify(l => l.Info("Process restarted.", It.IsAny<Exception>()), Times.Never);
+            mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         #endregion
