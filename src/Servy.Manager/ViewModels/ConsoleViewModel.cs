@@ -476,8 +476,7 @@ namespace Servy.Manager.ViewModels
 
                     // 5. Start Live Tailing, passing the Session ID
                     // Start StdOut tailer. A null result means the matching history task was skipped
-                    // above, so a non-null result is itself the "this stream is in play" signal and
-                    // the path term repeated here cannot change the outcome.
+                    // above, so a non-null result is itself the "this stream is in play" signal.
                     if (outRes != null)
                     {
                         StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTimeUtc, sessionId, token);
@@ -485,7 +484,7 @@ namespace Servy.Manager.ViewModels
 
                     // Start StdErr tailer. The same-file check that prevents duplicate UI entries was
                     // already made where stderrTask was built: errRes is non-null only when
-                    // hasUniqueStderr held there, so the term repeated here cannot change the outcome.
+                    // hasUniqueStderr held there.
                     if (errRes != null)
                     {
                         StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTimeUtc, sessionId, token);
