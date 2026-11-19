@@ -563,6 +563,28 @@ namespace Servy.Core.UnitTests.Services
             _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task InstallService_ExistingServiceWhoseScmReportsNoAccount_FallsBackToTheRowAndLogsAWarning(string registeredAccount)
+        {
+            // Arrange: the Service Control Manager answers the query, but with a blank account, so the account the
+            // service is leaving has to come from the row
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
+            ArrangeRecord(@".\old-account");
+            ArrangeRegisteredAccount(registeredAccount);
+            var options = CreateOptions(@".\svc-account");
+
+            // Act
+            var capture = await LogCapture.RunAsync(() => _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None));
+
+            // Assert
+            Assert.True(capture.Result.IsSuccess);
+            Assert.Contains($"The Service Control Manager reported no account for service '{ServiceName}'.", capture.Log);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\old-account"), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         [Fact]
         public async Task InstallService_ExistingServiceWhoseScmAccountIsTheNewAccount_RevokesNothing()
         {
