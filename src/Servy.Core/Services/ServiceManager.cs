@@ -1391,12 +1391,14 @@ namespace Servy.Core.Services
                             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                             {
                                 info.Description = Strings.Msg_DetailsUnavailableTimedOut;
+                                info.DetailsUnavailable = true;
                                 Logger.Warn($"Native SCM query timed out for service: {info.Name}");
                             }
                             catch (Exception ex) when (!(ex is OperationCanceledException))
                             {
                                 Logger.Debug($"Native details collection faulted for {info.Name}: {ex.Message}");
                                 info.Description = string.Format(Strings.Msg_DetailsUnavailableFaulted, ex.GetType().Name);
+                                info.DetailsUnavailable = true;
                             }
                         }
 
@@ -1467,6 +1469,7 @@ namespace Servy.Core.Services
                     int err = _win32ErrorProvider.GetLastWin32Error();
                     Logger.Debug($"Could not open '{info.Name}' for native details (Win32 {err}); leaving details unset.");
                     info.Description = Strings.Msg_DetailsUnavailableAccessDenied;
+                    info.DetailsUnavailable = true;
                     return;
                 }
 
