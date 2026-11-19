@@ -1133,6 +1133,97 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_NotInstalledRowWithNewerStoredDisplayName_ShowsTheStoredDisplayName()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the row was loaded with "Old Name"; the database now holds "New Name"; the SCM does not know the service (#8046)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        DisplayName = "Old Name"
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>());
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                DisplayName = "New Name",
+                            }
+                        });
+
+                    // Act
+                    var task = TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None) as Task;
+                    Assert.NotNull(task);
+                    await task;
+
+                    // Assert: the row follows the stored display name
+                    Assert.Equal("New Name", service.DisplayName);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task RefreshAllServicesAsync_NotInstalledRowWithNewerStoredUserAccount_ShowsTheStoredLogOnAs()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the row was loaded as LocalSystem; the database now holds a custom account; the SCM does not know the service (#8046)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        LogOnAs = "OldUser"
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>());
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                RunAsLocalSystem = false,
+                                UserAccount = "NewUser",
+                            }
+                        });
+
+                    // Act
+                    var task = TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None) as Task;
+                    Assert.NotNull(task);
+                    await task;
+
+                    // Assert: the row shows the stored account the way the load maps it
+                    Assert.Equal("NewUser", service.LogOnAs);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RefreshAllServicesAsync_ScmDetailsUnavailable_ShowsThePlaceholderAndStoresNothing()
         {
             // Arrange, Act & Assert
