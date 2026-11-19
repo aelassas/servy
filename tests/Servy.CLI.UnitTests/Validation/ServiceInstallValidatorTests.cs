@@ -106,6 +106,23 @@ namespace Servy.CLI.UnitTests.Validation
             Assert.DoesNotContain("--rotationSize", result.Message);
         }
 
+        [Fact]
+        public void Validate_TwoInvalidEnums_ReportsOnlyTheFirst()
+        {
+            // Arrange
+            var opts = CreateValidOptions();
+            opts.ServiceStartType = "CorruptValue1"; // First MapEnum call
+            opts.RecoveryAction = "CorruptValue2";   // Last MapEnum call
+
+            // Act
+            var result = _validator.Validate(opts);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("--startupType", result.Message);
+            Assert.DoesNotContain("--recoveryAction", result.Message);
+        }
+
         [Theory]
         [InlineData("RestartService, RestartProcess")]
         [InlineData("RestartService, RestartComputer")]
