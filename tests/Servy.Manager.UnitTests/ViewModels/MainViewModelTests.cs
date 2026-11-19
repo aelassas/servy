@@ -2175,8 +2175,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
-        [Fact]
-        public void GetServiceUpdateInfo_StartupTypeNullInOsButPresentInDto_FallbackToDtoStartupType()
+        [Theory]
+        [InlineData((int)ServiceStartType.Manual, ServiceStartType.Manual)] // a valid stored value wins over the default
+        [InlineData(99, ServiceStartType.Automatic)] // out of range falls back to AppConfig.DefaultStartupType (#6073)
+        public void GetServiceUpdateInfo_StartupTypeNullInOsButPresentInDto_FallsBackToTheValidatedDtoStartupType(
+            int storedStartupType, ServiceStartType expected)
         {
             // Arrange
             Helper.RunOnSTA(() =>
@@ -2190,8 +2193,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // forcing the calculation pipeline to execute its ServiceDto fallback path.
                 var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
 
-                // Provide a distinct configuration setting type profile in the database DTO layer
-                var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Automatic };
+                // Store a non-default member or an out-of-range integer: Automatic is AppConfig.DefaultStartupType,
+                // so it could not tell the stored value from the default.
+                var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = storedStartupType };
 
                 // Act
                 var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
@@ -2200,9 +2204,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(result);
                 var updateInfo = (ServiceUpdateInfo)result.GetType().GetField("Item1").GetValue(result);
 
-                // Asserting Automatic explicitly proves that the data payload bypassed the missing OS lookup frame
-                // and correctly unrolled into the database DTO fallback value layer.
-                Assert.Equal(ServiceStartType.Automatic, updateInfo.StartupType);
+                Assert.Equal(expected, updateInfo.StartupType);
             }, createApp: true);
         }
 
