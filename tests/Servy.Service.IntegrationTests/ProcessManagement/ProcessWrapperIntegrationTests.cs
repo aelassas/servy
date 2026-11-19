@@ -357,8 +357,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                bool exited = wrapper.WaitForExit(TestTimeouts.CiGenerousMs);
-                Assert.True(exited, "The child did not exit within the CI budget, so the already-exited precondition does not hold.");
+                WaitUntilExited(wrapper);
 
                 // Act
                 bool? result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
@@ -559,7 +558,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                WaitUntilExited(wrapper);
 
                 // Act - Pass an exited process to StopTree (TryStopGracefullyOrKill returns null)
                 TestReflection.InvokeNonPublic(wrapper, "StopTree", wrapper.UnderlyingProcess, TestTimeouts.ProcessWrapperGracefulStopMs);
@@ -1206,6 +1205,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         /// <summary>
+        /// Waits for the wrapped child to exit and fails the test when it does not, so a test that needs an
+        /// already-exited process checks that precondition instead of assuming it.
+        /// </summary>
+        /// <param name="wrapper">The started wrapper whose child is expected to exit on its own.</param>
+        private static void WaitUntilExited(ProcessWrapper wrapper)
+        {
+            bool exited = wrapper.WaitForExit(TestTimeouts.CiGenerousMs);
+            Assert.True(exited, "The child did not exit within the CI budget, so the already-exited precondition does not hold.");
+        }
+
+        /// <summary>
         /// Polls until the parent has a cmd.exe child and returns its PID, within the
         /// <see cref="TestTimeouts.CiGenerousSeconds"/> budget.
         /// </summary>
@@ -1333,7 +1343,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                WaitUntilExited(wrapper);
 
                 // Act
                 var exception = Record.Exception(() => wrapper.Kill());
@@ -1390,7 +1400,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                WaitUntilExited(wrapper);
 
                 // Act
                 bool result = wrapper.Kill();
@@ -1494,7 +1504,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                WaitUntilExited(wrapper);
 
                 // Act
                 // Act on an already exited process handle to trigger the initial null/exited evaluation checks
@@ -1531,7 +1541,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                WaitUntilExited(wrapper);
 
                 // Act - Pass an exited process instance directly to SendCtrlC
                 var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
