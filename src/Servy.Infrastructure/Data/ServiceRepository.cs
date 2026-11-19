@@ -396,7 +396,8 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Flags a record whose ciphertext was refused by legacy policy. The payload was never examined,
-        /// so the record is intact and the sensitive fields are left as stored ciphertext.
+        /// so the record is intact; the field that was refused and the ones after it are left as stored ciphertext,
+        /// while the ones <see cref="DecryptDto"/> had already decrypted stay in clear text.
         /// </summary>
         private void HandleLegacyBlockedDecryption(ServiceDto? dto, SecureDataLegacyBlockedException ex)
         {
