@@ -152,7 +152,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Contains(wrapper.Id.ToString(), formatString);
 
                 // Act: Await terminal completion
-                bool exited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                bool exited = wrapper.WaitForExit(TestTimeouts.CiGenerousMs);
 
                 // Assert: Verify post-execution properties
                 Assert.True(exited);
