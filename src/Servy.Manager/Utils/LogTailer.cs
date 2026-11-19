@@ -22,7 +22,7 @@ namespace Servy.Manager.Utils
     ///      digest fallback, via NativeMethodsHelpers.GetFileIdentity. Fails safe:
     ///      an undeterminable identity is reported as "different".
     ///   2. CreationTimeUtc drift.
-    ///   3. Length < lastPosition, which also covers in-place truncation.
+    ///   3. Length &lt; lastPosition, which also covers in-place truncation.
     ///
     /// Signals 2 and 3 are the fallback rather than the primary check because on
     /// FAT32, network shares and NAS - and under Windows "File System Tunneling",
