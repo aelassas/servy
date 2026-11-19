@@ -63,6 +63,7 @@ namespace Servy.Infrastructure.Data
         /// Thrown when the version 12 migration finds a heartbeat URL stored in clear text: it can only be encrypted with
         /// the keys, so production callers use <see cref="Initialize(DbConnection, ISecureData)"/>.
         /// </exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> is <see langword="null"/>.</exception>
         public static void Initialize(DbConnection connection)
             => Initialize(connection, AppConfig.RecoveryFolderPath);
 
@@ -77,6 +78,7 @@ namespace Servy.Infrastructure.Data
         /// </remarks>
         /// <param name="connection">An open database connection to execute commands on.</param>
         /// <param name="secureData">Encrypts the values a migration moves under encryption at rest.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> is <see langword="null"/>.</exception>
         public static void Initialize(DbConnection connection, ISecureData secureData)
             => Initialize(connection, AppConfig.RecoveryFolderPath, secureData);
 
@@ -94,6 +96,7 @@ namespace Servy.Infrastructure.Data
         /// Encrypts the heartbeat URLs the version 12 migration finds in clear text; <see langword="null"/> makes that
         /// migration throw, rolling every migration of this start back, when there is one to encrypt.
         /// </param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> is <see langword="null"/>.</exception>
         internal static void Initialize(DbConnection connection, string legacyRecoveryFolderPath, ISecureData secureData = null)
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
