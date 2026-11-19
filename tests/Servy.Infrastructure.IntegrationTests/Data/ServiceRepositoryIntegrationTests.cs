@@ -1,6 +1,9 @@
+using Moq;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Mappers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -537,6 +540,78 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.NotNull(recovered);
             Assert.Equal("SerializeJson", recovered.Description);
             Assert.Equal("round_json.exe", recovered.ExecutablePath);
+        }
+
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ImportWithoutUserAccount_OverStoredPasswordlessLocalAccount_ResetsStoredIdentityToLocalSystem(string format)
+        {
+            // Arrange - a service stored with a passwordless local account, the way an import or install of .\test_svc leaves it (#8050)
+            var name = "ResetIdentity_" + format;
+            var stored = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe", RunAsLocalSystem = false, UserAccount = @".\test_svc", Password = null };
+            await _repository.UpsertAsync(stored, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
+
+            // Act - re-import a configuration of the same service that names no account, as servy-cli import and the Manager do
+            var imported = ImportWithoutUserAccount(name, format);
+            await _repository.UpsertAsync(imported, preserveExistingRuntimeState: true, preserveExistingCredentials: true, CancellationToken.None);
+
+            // Assert - the stored identity is back to LocalSystem
+            var recovered = await _repository.GetByNameAsync(name, decrypt: true, CancellationToken.None);
+            Assert.NotNull(recovered);
+            Assert.True(recovered.RunAsLocalSystem);
+            Assert.Null(recovered.UserAccount);
+            Assert.Null(recovered.Password);
+        }
+
+        [Theory]
+        [InlineData("xml")]
+        [InlineData("json")]
+        public async Task ImportAndInstallWithoutUserAccount_OverStoredPasswordlessLocalAccount_InstallsAsLocalSystem(string format)
+        {
+            // Arrange - a service stored with a passwordless local account, and a service manager that records what it installs
+            var name = "ResetInstall_" + format;
+            var stored = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe", RunAsLocalSystem = false, UserAccount = @".\test_svc", Password = null };
+            await _repository.UpsertAsync(stored, preserveExistingRuntimeState: false, preserveExistingCredentials: false, CancellationToken.None);
+
+            InstallServiceOptions installed = null;
+            var serviceManager = new Mock<IServiceManager>();
+            serviceManager
+                .Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((options, token) => installed = options)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act - re-import with --install: the import writes the row, then the install reads it back and installs it
+            var imported = ImportWithoutUserAccount(name, format);
+            await _repository.UpsertAsync(imported, preserveExistingRuntimeState: true, preserveExistingCredentials: true, CancellationToken.None);
+            var row = await _repository.GetByNameAsync(name, decrypt: true, CancellationToken.None);
+            Assert.NotNull(row);
+            var result = await ServiceDtoMapper.ToDomain(serviceManager.Object, row).InstallAsync(isCLI: true, cancellationToken: CancellationToken.None);
+
+            // Assert - the service is installed as LocalSystem, with no account and no password
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(installed);
+            Assert.Null(installed.Username);
+            Assert.Null(installed.Password);
+        }
+
+        /// <summary>
+        /// Serializes a configuration of <paramref name="name"/> that names no account and reads it back with the
+        /// serializer of <paramref name="format"/>, which applies the identity policy of every import path.
+        /// </summary>
+        /// <param name="name">The service name.</param>
+        /// <param name="format">"xml" or "json".</param>
+        /// <returns>The imported DTO.</returns>
+        private ServiceDto ImportWithoutUserAccount(string name, string format)
+        {
+            var source = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe" };
+            var content = format == "xml" ? _xmlSerializer.Serialize(source) : _jsonSerializer.Serialize(source);
+            Assert.NotNull(content);
+            Assert.DoesNotContain("UserAccount", content);
+
+            var imported = format == "xml" ? _xmlSerializer.Deserialize(content) : _jsonSerializer.Deserialize(content);
+            Assert.NotNull(imported);
+            return imported;
         }
 
         [Fact]
