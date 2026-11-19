@@ -284,8 +284,6 @@ namespace Servy.Core.IntegrationTests.Logging
             {
                 using (var logger = new EventLogLogger(source, LogLevel.Info, true))
                 {
-                    int expectedMaxLength = AppConfig.EventLogMessageMaxChars + AppConfig.EventLogTruncationSuffix.Length;
-
                     // Create a massive string guaranteed to exceed the configured truncation threshold
                     string massiveString = new string('A', AppConfig.EventLogMessageMaxChars + 9_000);
 
@@ -308,9 +306,10 @@ namespace Servy.Core.IntegrationTests.Logging
 
                             if (foundEntry != null)
                             {
-                                // Verify absolute length bounds and suffix marker format compliance
-                                Assert.True(foundEntry.Message.Length <= expectedMaxLength,
-                                    $"Persisted message length ({foundEntry.Message.Length}) exceeds the configured ceiling of {expectedMaxLength}.");
+                                // Verify absolute length bounds and suffix marker format compliance.
+                                // The cut reserves room for the suffix (#5525), so a truncated entry never exceeds the cap itself.
+                                Assert.True(foundEntry.Message.Length <= AppConfig.EventLogMessageMaxChars,
+                                    $"Persisted message length ({foundEntry.Message.Length}) exceeds the configured ceiling of {AppConfig.EventLogMessageMaxChars}.");
 
                                 Assert.EndsWith(AppConfig.EventLogTruncationSuffix, foundEntry.Message);
                             }
