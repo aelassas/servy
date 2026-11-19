@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-19T11:56:21Z
+> Generated on: 2026-11-19T12:59:36Z
 
 ---
 
@@ -514,7 +514,7 @@ Using a custom path will not allow you to bypass the need for administrative rig
 
 If you also want to prevent the installer from modifying the system `PATH` environment variable, you can explicitly deselect the `addpath` task using `/MERGETASKS="!addpath"`. If you want to skip all optional tasks entirely, including both the `PATH` update and desktop shortcuts, you can pass an empty task list using `/TASKS=""`.
 
-If you do not have administrative access on the target machine, you will not be able to use the `.exe` installer at all. In that scenario, you should use the portable package instead (`servy-<version>-x64-portable.7z`). The portable archive can be extracted and executed directly from any folder where your user account has standard write access, such as `%LOCALAPPDATA%` or a user folder, without requiring elevation or installer scripts.
+If you cannot or do not want to run the `.exe` installer, use the portable package instead (`servy-<version>-x64-portable.7z`). The archive can be extracted to any folder without an installer. Running Servy from it still requires administrator privileges: the desktop app and Servy Manager request elevation at startup, and `servy-cli` must be run from an elevated prompt.
 
 #### Silent Uninstall
 
