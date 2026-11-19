@@ -363,7 +363,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+                bool exited = wrapper.WaitForExit(TestTimeouts.CiGenerousMs);
+                Assert.True(exited, "The child did not exit within the CI budget, so the already-exited precondition does not hold.");
 
                 // Act
                 bool? result = wrapper.Stop(TestTimeouts.ProcessWrapperGracefulStopMs);
