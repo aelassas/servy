@@ -13,7 +13,8 @@ namespace Servy.Restarter
     /// application that restarts a Servy Windows service.
     /// </summary>
     /// <remarks>
-    /// Intended to be used as an SCM recovery action for services that need to be restarted.
+    /// Launched by the service wrapper when a service's recovery action is <c>RestartService</c>; Servy registers
+    /// no failure action with the Service Control Manager.
     /// Expects the service name as <c>args[0]</c> and sets a non-zero exit code on failure.
     /// </remarks>
     public static class Program
