@@ -41,9 +41,10 @@
     Passwordless accounts (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\..., gMSA) are exported
     and restored as they are. A local account with a blank password is restored only when the target machine has
     LimitBlankPasswordUse = 0 and the account can still log on with a blank password (setting it to 0 is not
-    recommended). Every other service logon account is reset to 'LocalSystem' on import.
+    recommended). Every other service logon account is reset to 'LocalSystem' on import, except on a service that
+    already exists on this machine with a stored account and password, which are kept.
     You must manually re-enter Logon Usernames and Passwords via Servy Manager, servy-cli, or the Servy PowerShell
-    module for any services that require specific custom service runner accounts with a password.
+    module for any reset services that require specific custom service runner accounts with a password.
 
 .PARAMETER DumpArchivePath
     Mandatory path specifying the Servy dump zip archive file to restore (e.g., 'C:\Backups\Servy_Dump.zip').
@@ -565,10 +566,12 @@ NOTE ON SERVICE RESTORATION & CREDENTIALS:
   IIS APPPOOL\..., gMSA) were restored as they were exported. A local account
   with a blank password was restored only if this machine has
   LimitBlankPasswordUse = 0 and the account logs on with a blank password.
-  Every other service logon account was reset to 'LocalSystem'.
+  Every other service logon account was reset to 'LocalSystem', except on a
+  service that already existed here with a stored account and password,
+  which were kept.
 - You must manually re-enter Logon Usernames and Passwords via Servy Manager,
-  servy-cli, or the PowerShell module for any services that require specific
-  custom service runner accounts with a password.
+  servy-cli, or the PowerShell module for any reset services that require
+  specific custom service runner accounts with a password.
 ================================================================================
 "@ -ForegroundColor Yellow
 

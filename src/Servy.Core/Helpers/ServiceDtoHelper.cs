@@ -115,8 +115,10 @@ namespace Servy.Core.Helpers
             // POLICY: Global Identity Reset on Import, except for passwordless accounts
             // A password is never read from an import file, so an account that needs one cannot be
             // applied: it is reset to the password-less LocalSystem baseline and must be set manually
-            // after import. A passwordless account (LocalService, NetworkService, NT SERVICE\..., IIS
-            // APPPOOL\..., a gMSA) carries no secret, so it is kept as the file names it. So is a local
+            // after import, unless the service already exists and a CLI or Manager import keeps its
+            // stored account that has a password (ServiceRepository.ApplyRuntimeState). A passwordless
+            // account (LocalService, NetworkService, NT SERVICE\..., IIS APPPOOL\..., a gMSA) carries no
+            // secret, so it is kept as the file names it. So is a local
             // user account with a blank password, but only when this machine allows a service to log on
             // with one (LimitBlankPasswordUse = 0) and a blank-password logon for it succeeds.
             dto.Password = null;
@@ -146,10 +148,12 @@ namespace Servy.Core.Helpers
             dto.UserAccount = null;
 
             // Log an informational notice to satisfy operator visibility requirements.
-            // An account that needs a password is never exported, so this notice alerts
-            // administrators that the service defaults safely to LocalSystem.
-            Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The Global Identity Reset policy enforces " +
-                        "the LocalSystem identity on imported manifests that do not name a passwordless account. A custom account can be configured manually if required.");
+            // An account that needs a password is never exported, so this notice says what the file
+            // carries, not what the service ends up with: a CLI or Manager import over an existing
+            // service keeps a stored account that has a password (ServiceRepository.ApplyRuntimeState).
+            Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The imported manifest names no passwordless account, " +
+                        "so it carries the LocalSystem identity. A CLI or Manager import over a service that already exists keeps " +
+                        "its stored account if that account has a password. A custom account can be configured manually if required.");
         }
     }
 }
