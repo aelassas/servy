@@ -375,12 +375,15 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void Report_WhenTitleAndBodyAreNullOrEmpty_DoesNotEmit()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var logger = new RecordingEventLogLogger(source, LogLevel.Debug, "Test"))
             {
+                // Act
                 logger.Report(LogLevel.Info, null, null);
                 logger.Report(LogLevel.Info, string.Empty, string.Empty);
 
+                // Assert
                 Assert.Empty(logger.Formatted);
             }
         }
@@ -474,11 +477,14 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void Report_WithTitleOnly_FormatsWithoutNewline()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var logger = new RecordingEventLogLogger(source, LogLevel.Info, "TitlePrefix"))
             {
+                // Act
                 logger.Report(LogLevel.Info, "Standalone Title", null);
 
+                // Assert
                 Assert.Contains(logger.Formatted, f => f.Equals("Standalone Title", StringComparison.Ordinal));
             }
         }
@@ -514,13 +520,17 @@ namespace Servy.Core.IntegrationTests.Logging
         [InlineData(LogLevel.Debug, EventLogEntryType.Information, EventIds.Info)]
         public void MapEventLogCategory_MapsCorrectEntryTypeAndEventId(LogLevel targetLevel, EventLogEntryType expectedType, int expectedId)
         {
+            // Arrange
             // Invoke internal static MapEventLogCategory via reflection
             var method = typeof(EventLogLogger).GetMethod("MapEventLogCategory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             Assert.NotNull(method);
 
             object[] parameters = new object[] { targetLevel, null, null };
+
+            // Act
             method.Invoke(null, parameters);
 
+            // Assert
             EventLogEntryType actualType = (EventLogEntryType)parameters[1];
             int actualId = (int)parameters[2];
 
@@ -591,16 +601,19 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_Report_DelegatesToParentWithCombinedPrefix()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: false, prefix: "Root"))
             {
                 var scoped = logger.CreateScoped("Scope");
 
+                // Act
                 string logOutput = LogCapture.Run(() =>
                 {
                     scoped.Report(LogLevel.Info, "Scoped Report Title", "Scoped Report Body");
                 }, LogLevel.Info);
 
+                // Assert
                 Assert.Contains("[Root] [Scope] Scoped Report Title", logOutput);
                 Assert.Contains("Scoped Report Body", logOutput);
             }
@@ -613,9 +626,11 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_EmptyOrWhitespacePrefix_ReturnsSameInstanceWithoutAllocation()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false))
             {
+                // Act
                 var scope1 = rootLogger.CreateScoped("    ");
                 var scope2 = rootLogger.CreateScoped(null);
 
