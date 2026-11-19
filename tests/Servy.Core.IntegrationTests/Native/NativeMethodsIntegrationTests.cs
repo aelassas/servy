@@ -63,7 +63,6 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(0x0u, NativeMethods.VOLUME_NAME_DOS);
             Assert.Equal(0x01u, NativeMethods.MOVEFILE_REPLACE_EXISTING);
             Assert.Equal(0x08u, NativeMethods.MOVEFILE_WRITE_THROUGH);
-            Assert.Equal(122, Errors.ERROR_INSUFFICIENT_BUFFER);
             Assert.Equal(0x0001u, NativeMethods.SC_MANAGER_CONNECT);
             Assert.Equal(0x0002u, NativeMethods.SC_MANAGER_CREATE_SERVICE);
             Assert.Equal(0x0002u, NativeMethods.SERVICE_CHANGE_CONFIG);
@@ -107,6 +106,35 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.Equal(32, NativeMethods.CCH_RM_SESSION_KEY);
             Assert.Equal(255, NativeMethods.CCH_RM_MAX_APP_NAME);
             Assert.Equal(63, NativeMethods.CCH_RM_MAX_SVC_NAME);
+        }
+
+        // The Win32 error codes of Errors.cs, from winerror.h. Each one selects a branch on a native call's
+        // last error, so a wrong digit changes behaviour while every test that never meets the code stays green
+        // (#657 declared ERROR_INVALID_PARAMETER as 7 instead of 87). One row per code, so every wrong value
+        // fails its own row.
+        [Theory]
+        [InlineData(5, Errors.ERROR_ACCESS_DENIED)]
+        [InlineData(6, Errors.ERROR_INVALID_HANDLE)]
+        [InlineData(17, Errors.ERROR_NOT_SAME_DEVICE)]
+        [InlineData(24, Errors.ERROR_BAD_LENGTH)]
+        [InlineData(31, Errors.ERROR_GEN_FAILURE)]
+        [InlineData(87, Errors.ERROR_INVALID_PARAMETER)]
+        [InlineData(122, Errors.ERROR_INSUFFICIENT_BUFFER)]
+        [InlineData(229, Errors.ERROR_PIPE_LOCAL)]
+        [InlineData(233, Errors.ERROR_PIPE_NOT_CONNECTED)]
+        [InlineData(234, Errors.ERROR_MORE_DATA)]
+        [InlineData(1056, Errors.ERROR_SERVICE_ALREADY_RUNNING)]
+        [InlineData(1060, Errors.ERROR_SERVICE_DOES_NOT_EXIST)]
+        [InlineData(1061, Errors.ERROR_SERVICE_CANNOT_ACCEPT_CTRL)]
+        [InlineData(1062, Errors.ERROR_SERVICE_NOT_ACTIVE)]
+        [InlineData(1072, Errors.ERROR_SERVICE_MARKED_FOR_DELETE)]
+        [InlineData(1326, Errors.ERROR_LOGON_FAILURE)]
+        [InlineData(1327, Errors.ERROR_ACCOUNT_RESTRICTION)]
+        [InlineData(1385, Errors.ERROR_LOGON_TYPE_NOT_GRANTED)]
+        public void Errors_ValueMatching_VerifyWinErrorValues(int expected, int actual)
+        {
+            // Arrange, Act & Assert
+            Assert.Equal(expected, actual);
         }
 
         [Fact]
