@@ -228,6 +228,21 @@ namespace Servy.Core.IntegrationTests.NamedPipes
             Assert.Equal(AppConfig.ServyHostRefreshPipeAccessAction, (await served).Action);
         }
 
+        [Fact(Timeout = IntegrationTestTimeoutMs)]
+        public async Task RefreshPipeAccessAsync_HostClosesWithoutAnswering_ReturnsFalse()
+        {
+            // Arrange: the server reads the request and closes the pipe without writing an answer
+            var ct = CancellationToken.None;
+            var served = ServeOnceAsync(_ => null, ct);
+
+            // Act
+            var refreshed = await CreateClient().RefreshPipeAccessAsync(ct);
+
+            // Assert: an empty answer is "not refreshed", and the request did reach the host
+            Assert.False(refreshed);
+            Assert.Equal(AppConfig.ServyHostRefreshPipeAccessAction, (await served).Action);
+        }
+
         #endregion
 
         #region Timeouts and an absent host
