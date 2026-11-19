@@ -4115,6 +4115,90 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void GetAllServices_ShouldSetFaultSentinel_WhenDelayedAutoStartQueryFails()
+        {
+            // Arrange
+            var scmHandle = _handles.Scm(1);
+            var svcHandle = _handles.Service(2);
+            var mockSvc = new Mock<IServiceControllerWrapper>();
+            mockSvc.Setup(s => s.ServiceName).Returns("TestSvc");
+            mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Automatic); // Required to enter delayed check
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
+
+            // Both string queries succeed, so the delayed auto-start query is the only one that fails
+            int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
+                {
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = configStructSize;
+                        return false; // Win32 size-probe behavior
+                    }
+
+                    var zeroedConfig = new QUERY_SERVICE_CONFIG
+                    {
+                        lpServiceStartName = IntPtr.Zero,
+                        lpBinaryPathName = IntPtr.Zero,
+                        lpDependencies = IntPtr.Zero,
+                        lpDisplayName = IntPtr.Zero,
+                        lpLoadOrderGroup = IntPtr.Zero
+                    };
+
+                    Marshal.StructureToPtr(zeroedConfig, buf, false);
+                    bytesNeeded = size;
+                    return true;
+                }));
+
+            int descStructSize = Marshal.SizeOf<SERVICE_DESCRIPTION>();
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr buf, int size, ref int bytesNeeded) =>
+                {
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = descStructSize;
+                        return false; // Win32 size-probe behavior
+                    }
+
+                    var zeroedDesc = new SERVICE_DESCRIPTION
+                    {
+                        lpDescription = IntPtr.Zero
+                    };
+
+                    Marshal.StructureToPtr(zeroedDesc, buf, false);
+                    bytesNeeded = size;
+                    return true;
+                }));
+
+            // The delayed auto-start query fails: "could not determine" must not read as "not delayed"
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
+                svcHandle,
+                SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
+                It.IsAny<int>(),
+                out It.Ref<int>.IsAny))
+                .Returns(false);
+
+            // ERROR_ACCESS_DENIED, the code IsDelayedStart reads before it throws.
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5);
+
+            // Act
+            var result = _serviceManager.GetAllServices(CancellationToken.None);
+
+            // Assert
+            // IsDelayedStart's Win32Exception escapes PopulateNativeDetails and lands in the generic arm.
+            Assert.Single(result);
+            Assert.True(result[0].DetailsUnavailable);
+            Assert.Equal(string.Format(Strings.Msg_DetailsUnavailableFaulted, nameof(Win32Exception)), result[0].Description);
+            Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
+        }
+
+        [Fact]
         public void GetAllServices_ShouldRetrieveServiceDescription_WhenBufferIsAllocated()
         {
             // Arrange
