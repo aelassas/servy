@@ -1181,6 +1181,7 @@ namespace Servy.Manager.ViewModels
                 Logger.Debug($"RemoveService({serviceName}) finished in {stopwatch.ElapsedMilliseconds} ms");
                 ClearActiveSearchContext();
                 UpdateSelectAllState();
+                OnPropertyChanged(nameof(HasSelectedServices));
             };
 
             if (_dispatcher.CheckAccess())
