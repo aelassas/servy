@@ -91,6 +91,8 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Gets or sets a value indicating whether standard output and error should be appended
         /// to the files named by <see cref="StdoutPath"/>/<see cref="StderrPath"/>.
+        /// Honoured only for a synchronous launch without a console window: it is ignored when
+        /// <see cref="FireAndForget"/> or <see cref="EnableConsoleUI"/> is true, and a stream whose path is not set is not captured.
         /// Unlike the main monitored process, these writers do not rotate.
         /// </summary>
         public bool RedirectToWriters { get; set; } = false;
