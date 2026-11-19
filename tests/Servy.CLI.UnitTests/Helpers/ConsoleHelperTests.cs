@@ -163,9 +163,7 @@ namespace Servy.CLI.UnitTests.Helpers
                     // Assert
                     // Neither the spinner frames nor the clearing write carries a newline, so a trailing
                     // newline can only come from the fallback Console.WriteLine() in the clearing catch.
-                    // EndsWith reports the captured output when it is missing, where the previous
-                    // LastIndexOf/Substring pair threw ArgumentOutOfRangeException and said nothing about
-                    // the console.
+                    // EndsWith reports the captured output when the newline is missing.
                     Assert.EndsWith(Environment.NewLine, sw.ToString());
                 }
             }
