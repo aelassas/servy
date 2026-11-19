@@ -105,6 +105,49 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void ReadVariables_MissingKey_ReturnsNull()
+        {
+            // Arrange: a key that does not exist under HKCU
+            var subKey = $@"Software\ServyTest-{Guid.NewGuid():N}";
+
+            // Act
+            var variables = TestReflection.InvokeNonPublicStatic(
+                typeof(SystemEnvironmentHelper), "ReadVariables", Registry.CurrentUser, subKey);
+
+            // Assert: "could not be read" is null, never an empty set, which Refresh would read as "every variable was removed"
+            Assert.Null(variables);
+        }
+
+        [Fact]
+        public void ReadVariables_UnnamedDefaultValue_IsSkipped()
+        {
+            // Arrange: a scratch key whose unnamed (Default) value is set next to one named value
+            var subKey = $@"Software\ServyTest-{Guid.NewGuid():N}";
+            using (var key = Registry.CurrentUser.CreateSubKey(subKey))
+            {
+                key.SetValue(string.Empty, "default-value", RegistryValueKind.String);
+                key.SetValue("Text", "plain", RegistryValueKind.String);
+            }
+
+            try
+            {
+                // Act
+                var variables = (IReadOnlyDictionary<string, string>?)TestReflection.InvokeNonPublicStatic(
+                    typeof(SystemEnvironmentHelper), "ReadVariables", Registry.CurrentUser, subKey);
+
+                // Assert: only the named value is a variable
+                Assert.NotNull(variables);
+                var only = Assert.Single(variables!);
+                Assert.Equal("Text", only.Key);
+                Assert.Equal("plain", only.Value);
+            }
+            finally
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(subKey, throwOnMissingSubKey: false);
+            }
+        }
+
+        [Fact]
         public void Refresh_Application_VariableMissingFromTheProcess_IsAddedFromTheRegistry()
         {
             // Arrange: remove the variable from this process, as if it had been added after the process started
