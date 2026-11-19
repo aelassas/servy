@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-19T12:59:36Z
+> Generated on: 2026-11-19T14:34:44Z
 
 ---
 
@@ -5040,7 +5040,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 >
 > `Servy-Restore.ps1` asks for one confirmation for the whole archive (`ConfirmImpact = 'High'`),
 > then imports every configuration in it. If a service of the same name already exists on the
-> target machine, its stored configuration is **replaced**; and with the `-Install` option, its
+> target machine, its stored configuration is **replaced**, except the logon account and password of an account that has a password, which are kept (see the credential callout below); and with the `-Install` option, its
 > Windows SCM registration is rewritten.
 > There is no undo capability: any configuration changes made on the target since the dump was taken will be overwritten.
 > `-Confirm:$false` suppresses the prompt, so an unattended restore overwrites without asking.
@@ -5115,14 +5115,14 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 > [!IMPORTANT]
 > **CREDENTIAL RESET TO LOCALSYSTEM ON RESTORE**
 >
-> For security reasons, Servy does not export Windows Service Account passwords, nor the user name of an account that needs one. Restoring configurations via `Servy-Restore.ps1`, `servy-cli`, or Servy Manager resets those service logon identities to `LocalSystem`.
+> For security reasons, Servy does not export Windows Service Account passwords, nor the user name of an account that needs one. Restoring configurations via `Servy-Restore.ps1`, `servy-cli`, or Servy Manager resets those service logon identities to `LocalSystem`. This applies to a service that does not exist on the target yet. When a service of the same name already exists there, a stored account that has a password is kept together with its password, and a stored passwordless account that the archive does not name is reset to `LocalSystem` (see [Export & Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services)).
 >
 > Passwordless accounts (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)) are exported and restored as they are, so a service that ran under one keeps it. A local user account with a blank password is exported too, and restored only when the target machine has `LimitBlankPasswordUse` set to `0` and the account still logs on there with a blank password. Setting `LimitBlankPasswordUse` to `0` is not recommended; see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse).
 >
 > **Post-Restore Action Required:**
 >
-> If any restored service runs under a custom account with a password
-> (`.\svc_account` or `DOMAIN\svc_account`), you must manually re-enter the logon
+> If any restored service ran under a custom account with a password
+> (`.\svc_account` or `DOMAIN\svc_account`) and did not already exist on the target, you must manually re-enter the logon
 > **username and password** via [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager), [`servy-cli`](https://github.com/aelassas/servy/wiki/Servy-CLI)
 > or the [PowerShell module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module). Reinstalling the service this way re-applies the hardening
 > automatically (v10.2+): the account gets write access to the log folder of the service (`logs\services\<ServiceName>\`) and access to the `Servy` service's named pipe,
@@ -5136,9 +5136,9 @@ before relying on a restored clone being identical to its template:
 
 | Field | Behavior on import | Operational impact |
 | --- | --- | --- |
-| `UserAccount` | Exported and kept for a passwordless account; a local account with a blank password is exported and kept only when the target allows it (`LimitBlankPasswordUse` = `0`); otherwise not exported and reset to `LocalSystem` | Re-enter for every service using an account with a password |
-| `Password` | Not exported; reset to empty | Re-enter alongside `UserAccount` |
-| `RunAsLocalSystem` | Not exported; `false` for a kept passwordless account, otherwise forced to the `LocalSystem` baseline | This is the field that causes the reset above |
+| `UserAccount` | Exported and kept for a passwordless account; a local account with a blank password is exported and kept only when the target allows it (`LimitBlankPasswordUse` = `0`); otherwise not exported and reset to `LocalSystem`, unless the service already exists on the target with a stored account that has a password, which is kept | Re-enter for every service using an account with a password |
+| `Password` | Not exported; reset to empty, unless the service already exists on the target with a stored password, which is kept | Re-enter alongside `UserAccount` |
+| `RunAsLocalSystem` | Not exported; `false` for a kept passwordless account or a kept stored account, otherwise forced to the `LocalSystem` baseline | This is the field that causes the reset above |
 | `Pid` | Silently ignored | Runtime state; expected |
 | `PreviousStopTimeout` | Silently ignored | Recovery tuning is not carried over |
 | `ActiveStdoutPath` | Silently ignored | The resolved log destination is re-derived on the clone |
@@ -5146,8 +5146,9 @@ before relying on a restored clone being identical to its template:
 | `RestartAttempts` | Silently ignored | The restart attempts counter starts empty on the clone; recovery counts from zero |
 | `RestartAttemptsUpdatedAtTicks` | Silently ignored | As above (the time the counter was last written) |
 
-An informational notice is written to the log on import, saying whether the passwordless account
-was kept or the identity was reset to `LocalSystem`. The six
+An informational notice is written to the log on import, saying whether a passwordless account
+named by the file was kept or the file carries the `LocalSystem` identity. When an import over an existing service keeps
+a stored account that has a password, a second notice names that account. The six
 silently-ignored fields produce no warning at all, so check them explicitly if your
 template depends on them.
 
