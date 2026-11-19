@@ -89,11 +89,14 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetByName_ServiceHasNoRow_ReturnsNull()
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true, Data = null }, ct);
 
+            // Act
             var dto = await Task.Run(() => CreateClient().GetByName("svc", ct), ct);
 
+            // Assert
             Assert.Null(dto);
             await served;
         }
@@ -101,11 +104,14 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetByName_HostRefuses_ThrowsWithTheHostsReason()
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = false, ErrorMessage = "Access denied." }, ct);
 
+            // Act
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Task.Run(() => CreateClient().GetByName("svc", ct), ct));
 
+            // Assert
             Assert.Contains("Failed to retrieve configuration for service 'svc'", ex.Message);
             Assert.Contains("Access denied.", ex.Message);
             await served;
@@ -114,11 +120,14 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetByName_HostClosesWithoutAnswering_Throws()
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             var served = ServeOnceAsync(_ => null, ct);
 
+            // Act
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Task.Run(() => CreateClient().GetByName("svc", ct), ct));
 
+            // Assert
             Assert.Contains("No additional error details received.", ex.Message);
             await served;
         }
@@ -164,11 +173,14 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetRestartAttemptsAsync_AnswerWithoutCounter_ReturnsZero()
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true }, ct);
 
+            // Act
             var attempts = await CreateClient().GetRestartAttemptsAsync("svc", ct);
 
+            // Assert
             Assert.Equal(0, attempts.Attempts);
             Assert.Null(attempts.UpdatedAtUtc);
             await served;
@@ -198,11 +210,14 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [InlineData(false, false)]
         public async Task RefreshPipeAccessAsync_ReportsTheHostsAnswer(bool success, bool expected)
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = success }, ct);
 
+            // Act
             var refreshed = await CreateClient().RefreshPipeAccessAsync(ct);
 
+            // Assert
             Assert.Equal(expected, refreshed);
             Assert.Equal(AppConfig.ServyHostRefreshPipeAccessAction, (await served)!.Action);
         }
@@ -214,10 +229,13 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetByName_NoHost_ThrowsTimeoutAfterTheConnectTimeout()
         {
+            // Arrange
             var stopwatch = Stopwatch.StartNew();
 
+            // Act
             var ex = await Assert.ThrowsAsync<TimeoutException>(() => Task.Run(() => CreateClient(connectTimeoutMs: 200).GetByName("svc", TestContext.Current.CancellationToken)));
 
+            // Assert
             Assert.Contains("timed out after 200 ms", ex.Message);
             Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(30));
         }
@@ -225,6 +243,7 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task RefreshPipeAccessAsync_NoHost_ReturnsFalseInsteadOfThrowing()
         {
+            // Arrange, Act & Assert
             Assert.False(await CreateClient(connectTimeoutMs: 200).RefreshPipeAccessAsync(TestContext.Current.CancellationToken));
         }
 
@@ -250,6 +269,7 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetRestartAttemptsAsync_CallerCancels_ThrowsOperationCanceledNotTimeout()
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             using (var stopServer = CancellationTokenSource.CreateLinkedTokenSource(ct))
             using (var caller = CancellationTokenSource.CreateLinkedTokenSource(ct))
@@ -257,6 +277,7 @@ namespace Servy.Core.IntegrationTests.NamedPipes
                 var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true }, stopServer.Token, delayBeforeAnswer: TimeSpan.FromMinutes(5));
                 caller.CancelAfter(300);
 
+                // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => CreateClient(requestTimeoutMs: 60000).GetRestartAttemptsAsync("svc", caller.Token));
 
                 stopServer.Cancel();
@@ -332,10 +353,12 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact(Timeout = IntegrationTestTimeoutMs)]
         public async Task GetByName_HostServiceNotRunning_Refuses()
         {
+            // Arrange
             var ct = TestContext.Current.CancellationToken;
             _api.Setup(a => a.GetServiceProcessId(AppConfig.ServyHostServiceName)).Returns(0);
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true }, ct);
 
+            // Act & Assert
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => Task.Run(() => CreateClient().GetByName("svc", ct), ct));
             Assert.Null(await served);
         }
@@ -367,8 +390,10 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         [Fact]
         public void PipePeer_NotConnected_ReturnsFalse()
         {
+            // Arrange
             using (var server = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
             {
+                // Act & Assert
                 Assert.False(PipePeer.TryGetClientProcessId(server, out var pid));
                 Assert.Equal(0, pid);
                 Assert.False(PipePeer.TryGetServerProcessId(null!, out _));
