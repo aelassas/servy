@@ -1091,13 +1091,15 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
-        [Fact]
-        public async Task RefreshAllServicesAsync_NotInstalledRowWithNewerStoredDescription_KeepsTheStoredDescription()
+        [Theory]
+        [InlineData("B", "B")]
+        [InlineData(null, "")]
+        public async Task RefreshAllServicesAsync_NotInstalledRowWithNewerStoredDescription_KeepsTheStoredDescription(string storedDescription, string expectedRowDescription)
         {
             // Arrange, Act & Assert
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange: the row was loaded with "A"; the database now holds "B"; the SCM does not know the service (#8042)
+                // Arrange: the row was loaded with "A"; the database now holds a different value (a null one included); the SCM does not know the service (#8042)
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
                 using (var vm = CreateViewModel())
                 {
@@ -1121,7 +1123,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                             new ServiceDto
                             {
                                 Name = "TestService",
-                                Description = "B",
+                                Description = storedDescription,
                             }
                         });
 
@@ -1130,10 +1132,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.NotNull(task);
                     await task;
 
-                    // Assert: the stored description is not overwritten, and the row follows it
+                    // Assert: the stored description is not overwritten, and the row follows it (a null one shows as empty)
                     _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
-                    Assert.Equal("B", service.Description);
+                    Assert.Equal(expectedRowDescription, service.Description);
                 }
             }, createApp: true);
         }
