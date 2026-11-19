@@ -1639,17 +1639,24 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
         /// <returns><c>true</c> if it has delayed start configured; otherwise, <c>false</c>.</returns>
+        /// <exception cref="Win32Exception">Thrown when the delayed auto-start query fails, so a failed query is never reported as "not delayed".</exception>
         private bool IsDelayedStart(SafeServiceHandle svcHandle)
         {
             var info = new SERVICE_DELAYED_AUTO_START_INFO();
             int structSize = Marshal.SizeOf<SERVICE_DELAYED_AUTO_START_INFO>();
 
-            return _windowsServiceApi.QueryServiceConfig2(
+            if (!_windowsServiceApi.QueryServiceConfig2(
                 svcHandle,
                 SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
                 ref info,
                 structSize,
-                out _) && info.fDelayedAutostart;
+                out _))
+            {
+                // "Could not determine" is not "not delayed": fail like the two string queries do
+                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error());
+            }
+
+            return info.fDelayedAutostart;
         }
 
         /// <summary>
