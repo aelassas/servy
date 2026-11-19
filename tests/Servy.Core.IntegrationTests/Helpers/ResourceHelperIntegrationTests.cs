@@ -561,6 +561,33 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void IsExtractionNeeded_WithAssembly_UpToDateAndWritableByOthersButIdenticalContent_ReturnsFalse()
+        {
+            // Arrange: the timestamps say "keep" and a standard user may write the file, so it is compared (#7530),
+            // but it is the same build as the embedded resource
+            var content = new byte[] { 0x01, 0x02, 0x03 };
+            var targetPath = Path.Combine(TempDirectory, "writable_same.exe");
+            File.WriteAllBytes(targetPath, content);
+            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+
+            var security = new FileInfo(targetPath).GetAccessControl();
+            security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.Write, AccessControlType.Allow));
+            new FileInfo(targetPath).SetAccessControl(security);
+
+            // The premise: without it the comparison is never reached and the result proves nothing
+            Assert.True(ResourceHelper.IsWritableByOthers(targetPath));
+
+            _mockAssembly.Setup(a => a.GetManifestResourceStream("Servy.Resources.writable_same.exe")).Returns(() => new MemoryStream(content));
+
+            // Act
+            var needed = _resourceHelper.IsExtractionNeeded(_mockAssembly.Object, "Servy.Resources", "writable_same", "exe");
+
+            // Assert: compared, found identical, left alone
+            Assert.False(needed);
+            _mockAssembly.Verify(a => a.GetManifestResourceStream("Servy.Resources.writable_same.exe"), Times.Once);
+        }
+
+        [Fact]
         public void IsExtractionNeeded_WithAssembly_UpToDateButOwnedByAnotherPrincipalAndDifferentContent_ReturnsTrue()
         {
             Assert.SkipUnless(_isElevated, NotElevatedSkipReason);
