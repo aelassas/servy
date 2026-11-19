@@ -986,7 +986,10 @@ namespace Servy.Manager.ViewModels
                     update.IsInstalled = true;
                     update.Status = info.Status;
                     update.StartupType = info.StartupType;
-                    update.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? UiAppConfig.LocalSystem);
+                    // An account the SCM query never returned is unknown, not Local System: keep the row's current value.
+                    update.LogOnAs = info.DetailsUnavailable && string.IsNullOrEmpty(info.LogOnAs)
+                        ? null
+                        : ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? UiAppConfig.LocalSystem);
                     update.Description = info.Description;
                     update.DisplayName = info.DisplayName;
                     scmDetailsUnavailable = info.DetailsUnavailable;

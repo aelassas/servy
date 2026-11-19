@@ -1290,6 +1290,119 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_ScmDetailsUnavailableAndAccountUnread_KeepsTheRowLogOnAs()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the row was loaded with a custom account; the SCM lists the service but returned no account (#8051)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        LogOnAs = @".\svc-account"
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                Status = ServiceStatus.Running,
+                                StartupType = ServiceStartType.Automatic,
+                                Description = Servy.Core.Resources.Strings.Msg_DetailsUnavailableTimedOut,
+                                DetailsUnavailable = true,
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                RunAsLocalSystem = false,
+                                UserAccount = @".\svc-account",
+                            }
+                        });
+
+                    // Act
+                    var task = TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None) as Task;
+                    Assert.NotNull(task);
+                    await task;
+
+                    // Assert: an unread account is not shown as Local System; the row keeps the account it had
+                    Assert.Equal(@".\svc-account", service.LogOnAs);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task RefreshAllServicesAsync_ScmDetailsUnavailableButAccountRead_ShowsTheReadAccount()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the SCM read the account, then a later detail query failed (#8051)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        LogOnAs = "OldUser"
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                Status = ServiceStatus.Running,
+                                StartupType = ServiceStartType.Automatic,
+                                LogOnAs = @".\svc-account",
+                                Description = Servy.Core.Resources.Strings.Msg_DetailsUnavailableTimedOut,
+                                DetailsUnavailable = true,
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                RunAsLocalSystem = false,
+                                UserAccount = "OldUser",
+                            }
+                        });
+
+                    // Act
+                    var task = TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None) as Task;
+                    Assert.NotNull(task);
+                    await task;
+
+                    // Assert: the account the SCM did return is shown
+                    Assert.Equal(@".\svc-account", service.LogOnAs);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RefreshAllServicesAsync_BlankAndDuplicateNamedOsServices_SkipsThemAndKeepsFirstOccurrence()
         {
             // Arrange, Act & Assert
