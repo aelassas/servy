@@ -43,5 +43,22 @@ namespace Servy.CLI.UnitTests.Commands
             mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             mockManager.Setup(sm => sm.StopServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<TException>();
         }
+
+        [Fact]
+        public async Task Execute_ValidOptions_AsksTheManagerToLogTheSuccessfulStop()
+        {
+            // Arrange
+            const string serviceName = "TestService";
+            SetupServiceManagerSuccess(MockServiceManager, serviceName);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, CreateValidOptions(serviceName));
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            MockServiceManager.Verify(
+                sm => sm.StopServiceAsync(serviceName, true, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
     }
 }

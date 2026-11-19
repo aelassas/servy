@@ -49,5 +49,22 @@ namespace Servy.CLI.UnitTests.Commands
 
         [Fact]
         public Task Execute_ServiceIsDisabled_ReturnsServiceDisabledError() => AssertDisabledStartupTypeIsRefusedAsync();
+
+        [Fact]
+        public async Task Execute_ValidOptions_AsksTheManagerToLogTheSuccessfulStart()
+        {
+            // Arrange
+            const string serviceName = "TestService";
+            SetupServiceManagerSuccess(MockServiceManager, serviceName);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, CreateValidOptions(serviceName));
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            MockServiceManager.Verify(
+                sm => sm.StartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
     }
 }
