@@ -1139,6 +1139,64 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task RefreshAllServicesAsync_ScmDetailsUnavailable_ShowsThePlaceholderAndStoresNothing()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: the SCM lists the service, but its native details could not be read (#8044)
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_processKillerMock.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new Service
+                    {
+                        Name = "TestService",
+                        Description = "Real description"
+                    };
+
+                    var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                    collection.Add(new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+
+                    _serviceManagerMock
+                        .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                        .Returns(new List<ServiceInfo>
+                        {
+                            new ServiceInfo
+                            {
+                                Name = "TestService",
+                                Status = ServiceStatus.Running,
+                                StartupType = ServiceStartType.Automatic,
+                                Description = Servy.Core.Resources.Strings.Msg_DetailsUnavailableTimedOut,
+                                DetailsUnavailable = true,
+                            }
+                        });
+
+                    _serviceRepositoryMock
+                        .Setup(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new List<ServiceDto>
+                        {
+                            new ServiceDto
+                            {
+                                Name = "TestService",
+                                Description = "Real description",
+                                StartupType = (int)ServiceStartType.AutomaticDelayedStart,
+                            }
+                        });
+
+                    // Act
+                    var task = TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None) as Task;
+                    Assert.NotNull(task);
+                    await task;
+
+                    // Assert: the row shows the placeholder, and neither it nor the unrefined start type is stored
+                    _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
+                    Assert.Equal(Servy.Core.Resources.Strings.Msg_DetailsUnavailableTimedOut, service.Description);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task RefreshAllServicesAsync_BlankAndDuplicateNamedOsServices_SkipsThemAndKeepsFirstOccurrence()
         {
             // Arrange, Act & Assert

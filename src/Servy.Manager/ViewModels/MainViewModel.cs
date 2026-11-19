@@ -964,7 +964,8 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Calculates what needs to change for one service without touching the UI models. When the stored description or
         /// startup type has drifted from the service control manager's, it writes the current values into
-        /// <paramref name="serviceDto"/> in place and returns that same instance as the DTO to write back.
+        /// <paramref name="serviceDto"/> in place and returns that same instance as the DTO to write back, unless the
+        /// native details could not be read (<see cref="ServiceInfo.DetailsUnavailable"/>), in which case nothing is written back.
         /// </summary>
         private (ServiceUpdateInfo UpdateInfo, ServiceDto UpdatedDto) GetServiceUpdateInfo(
             Service service,
@@ -977,6 +978,7 @@ namespace Servy.Manager.ViewModels
                 token.ThrowIfCancellationRequested();
 
                 var update = new ServiceUpdateInfo(service);
+                bool scmDetailsUnavailable = false;
 
                 // 1. Evaluate OS Status First
                 if (!string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
@@ -987,6 +989,7 @@ namespace Servy.Manager.ViewModels
                     update.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? UiAppConfig.LocalSystem);
                     update.Description = info.Description;
                     update.DisplayName = info.DisplayName;
+                    scmDetailsUnavailable = info.DetailsUnavailable;
                 }
                 else
                 {
@@ -1047,7 +1050,9 @@ namespace Servy.Manager.ViewModels
                     bool descDrifted = !string.Equals(dbDesc, currDesc, StringComparison.Ordinal);
                     bool startupDrifted = currentStartupType.HasValue && serviceDto.StartupType != (int)currentStartupType.Value;
 
-                    if (descDrifted || startupDrifted)
+                    // A placeholder description and an unrefined start type are not the SCM's values:
+                    // show them on the row, but never store them.
+                    if (!scmDetailsUnavailable && (descDrifted || startupDrifted))
                     {
                         serviceDto.Description = currentDescription;
                         if (currentStartupType.HasValue)

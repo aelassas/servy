@@ -41,5 +41,12 @@ namespace Servy.Core.DTOs
         /// This corresponds to the <c>Description</c> field in Windows services.
         /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the native details could not be read, so that
+        /// <see cref="Description"/> holds a placeholder text rather than the service's description and
+        /// <see cref="LogOnAs"/> and the delayed auto-start refinement of <see cref="StartupType"/> may be missing.
+        /// </summary>
+        public bool DetailsUnavailable { get; set; }
     }
 }
