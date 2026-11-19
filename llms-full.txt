@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-17T20:20:15Z
+> Generated on: 2026-11-19T11:56:21Z
 
 ---
 
@@ -3367,7 +3367,7 @@ Only the **Name** and **ExecutablePath** fields are required; all others are opt
 | PostStopParameters | string? | No | Optional parameters for the post-stop executable. |
 
 > [!IMPORTANT]
-> `Password` and `RunAsLocalSystem` are never exported or imported. `UserAccount` is exported only for a passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)), or a local user account with no stored password, on a service that does not run as LocalSystem. On import, a passwordless `UserAccount` is **kept** and the service runs under it. A local user account (`.\name` or `MACHINE\name`) with a blank password is treated the same way, but only when `LimitBlankPasswordUse` is `0` on the importing machine and a blank-password logon for the account succeeds there; setting `LimitBlankPasswordUse` to `0` is not recommended (see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse)). Any other account in the file is **discarded** (the service is reset to a password-less **LocalSystem** baseline). Either way an informational notice is logged; re-enter an account that needs a password manually after import. When the service already exists, an imported passwordless account replaces its stored account and password; otherwise the stored account and password are kept. `Pid`, `PreviousStopTimeout`, `ActiveStdoutPath`, `ActiveStderrPath`, `RestartAttempts` and `RestartAttemptsUpdatedAtTicks` are silently ignored and cannot be set through an import file.
+> `Password` and `RunAsLocalSystem` are never exported or imported. `UserAccount` is exported only for a passwordless account (LocalService, NetworkService, `NT SERVICE\<name>`, `IIS APPPOOL\<pool>` or a gMSA (`DOMAIN\name$`)), or a local user account with no stored password, on a service that does not run as LocalSystem. On import, a passwordless `UserAccount` is **kept** and the service runs under it. A local user account (`.\name` or `MACHINE\name`) with a blank password is treated the same way, but only when `LimitBlankPasswordUse` is `0` on the importing machine and a blank-password logon for the account succeeds there; setting `LimitBlankPasswordUse` to `0` is not recommended (see [Local Accounts with a Blank Password](https://github.com/aelassas/servy/wiki/Security#7-local-accounts-with-a-blank-password-limitblankpassworduse)). Any other account in the file is **discarded** (the service is reset to a password-less **LocalSystem** baseline). Either way an informational notice is logged; re-enter an account that needs a password manually after import. When the service already exists, an imported passwordless account replaces its stored account and password. When the file names no such account, a stored passwordless account (one an export would have written) is cleared and the service is reset to LocalSystem, while a stored account that has a password is kept together with its password. `Pid`, `PreviousStopTimeout`, `ActiveStdoutPath`, `ActiveStderrPath`, `RestartAttempts` and `RestartAttemptsUpdatedAtTicks` are silently ignored and cannot be set through an import file.
 
 #### StartupType
 
