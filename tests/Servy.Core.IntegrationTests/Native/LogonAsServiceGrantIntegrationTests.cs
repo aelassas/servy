@@ -207,6 +207,38 @@ namespace Servy.Core.IntegrationTests.Native
             Assert.DoesNotContain("SeServiceLogonRight", GetAccountRightsViaNativeMethods(sidBytes));
         }
 
+        [Fact]
+        public void Ensure_AccountHoldingOnlyAnotherRight_StillGrantsTheLogonRight()
+        {
+            // Arrange
+            Assert.SkipUnless(_canModifyLsaPolicy, NoLsaAccessSkipReason);
+            Assert.SkipUnless(TryEnsureTestAccount(), AccountProvisioningSkipReason());
+            const string otherRight = "SeBatchLogonRight";
+            byte[] sidBytes = ResolveSidBytes(FullAccountName);
+
+            try
+            {
+                // The account gets an LSA entry that lists one right, and it is not the service logon right
+                GrantAccountRight(sidBytes, otherRight);
+                var before = GetAccountRightsViaNativeMethods(sidBytes);
+                Assert.Contains(otherRight, before);
+                Assert.DoesNotContain("SeServiceLogonRight", before);
+
+                // Act
+                LogonAsServiceGrant.Ensure(FullAccountName);
+
+                // Assert
+                var after = GetAccountRightsViaNativeMethods(sidBytes);
+                Assert.Contains("SeServiceLogonRight", after);
+                Assert.Contains(otherRight, after);
+            }
+            finally
+            {
+                // Dispose revokes SeServiceLogonRight only; the extra right must not outlive the account either
+                RevokeLsaPrivilegeBeforeDeletion(_testAccountName, otherRight);
+            }
+        }
+
         #endregion
 
         #region Native Methods LSA Inspection Helper
@@ -235,6 +267,39 @@ namespace Servy.Core.IntegrationTests.Native
             IntPtr buffer = Marshal.AllocHGlobal(sidBytes.Length);
             Marshal.Copy(sidBytes, 0, buffer, sidBytes.Length);
             return buffer;
+        }
+
+        /// <summary>
+        /// Adds one account right to the SID through the LSA policy, so a test can start from an account
+        /// that already holds a right.
+        /// </summary>
+        private static void GrantAccountRight(byte[] sidBytes, string right)
+        {
+            var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES { Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>() };
+            uint access = NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES | NativeMethods.POLICY_ACCESS.POLICY_CREATE_ACCOUNT;
+            Assert.Equal(0, NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref objectAttributes, access, out IntPtr policyHandle));
+
+            IntPtr sidBuffer = AllocSidBuffer(sidBytes);
+            IntPtr rightBuffer = Marshal.StringToHGlobalUni(right);
+            try
+            {
+                var rights = new[]
+                {
+                    new NativeMethods.LSA_UNICODE_STRING
+                    {
+                        Buffer = rightBuffer,
+                        Length = (ushort)(right.Length * 2),
+                        MaximumLength = (ushort)((right.Length + 1) * 2),
+                    },
+                };
+                Assert.Equal(0, NativeMethods.LsaAddAccountRights(policyHandle, sidBuffer, rights, 1));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(rightBuffer);
+                Marshal.FreeHGlobal(sidBuffer);
+                NativeMethods.LsaClose(policyHandle);
+            }
         }
 
         private static List<string> GetAccountRightsViaNativeMethods(byte[] sidBytes)
