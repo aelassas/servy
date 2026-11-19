@@ -3903,7 +3903,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetAllServices_ShouldHandleEmptyConfig_AndDelayedFalse()
+        public void GetAllServices_ShouldSetFaultSentinel_WhenQueryServiceConfigSizeProbeFails()
         {
             // Arrange
             var scmHandle = _handles.Scm(1);
@@ -3916,27 +3916,93 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
-            // 1. Force 'bytesNeeded > 0' to be FALSE for User/Description
+            // The size probe of QueryServiceConfig reports 0 bytes, which is a failed query.
             int zero = 0;
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out zero)).Returns(false);
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, out zero)).Returns(false);
 
-            // 2. Force 'info.fDelayedAutostart' to be FALSE (Coverage for THIRD branch)
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO, ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny))
+            // Act
+            var result = _serviceManager.GetAllServices(CancellationToken.None);
+
+            // Assert
+            // A size probe that reports no size is a failed query: the row keeps the mapped start type
+            // and carries the fault placeholder, and the later queries are not attempted.
+            Assert.Single(result);
+            Assert.Equal(string.Format(Strings.Msg_DetailsUnavailableFaulted, nameof(Win32Exception)), result[0].Description);
+            Assert.True(result[0].DetailsUnavailable);
+            Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
+            Assert.Empty(result[0].LogOnAs);
+            _mockWindowsServiceApi.Verify(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny), Times.Never);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldKeepAutomatic_WhenDelayedAutoStartFlagIsFalse()
+        {
+            // Arrange
+            var scmHandle = _handles.Scm(1);
+            var svcHandle = _handles.Service(2);
+            var mockSvc = new Mock<IServiceControllerWrapper>();
+            mockSvc.Setup(s => s.ServiceName).Returns("TestSvc");
+            mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Automatic); // Required to enter delayed check
+
+            _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
+
+            // Dual-pass QueryServiceConfig simulation: the size probe succeeds, the fill returns a struct of null string pointers
+            int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
+                {
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = configStructSize;
+                        return false; // Win32 size-probe behavior
+                    }
+
+                    Marshal.StructureToPtr(new QUERY_SERVICE_CONFIG(), buf, false);
+                    bytesNeeded = size;
+                    return true;
+                }));
+
+            // Dual-pass QueryServiceConfig2 simulation for the description, null string pointer
+            int descStructSize = Marshal.SizeOf<SERVICE_DESCRIPTION>();
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr buf, int size, ref int bytesNeeded) =>
+                {
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = descStructSize;
+                        return false; // Win32 size-probe behavior
+                    }
+
+                    Marshal.StructureToPtr(new SERVICE_DESCRIPTION { lpDescription = IntPtr.Zero }, buf, false);
+                    bytesNeeded = size;
+                    return true;
+                }));
+
+            // The delayed-start query succeeds and answers "not delayed"
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                    ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                 {
-                    // Branch Coverage: This ensures 'info.fDelayedAutostart' is false
-                    // so the 'if (ok && info.fDelayedAutostart)' block is skipped.
                     info.fDelayedAutostart = false;
-                    return true; // ok = true
+                    return true;
                 }));
 
             // Act
             var result = _serviceManager.GetAllServices(CancellationToken.None);
 
             // Assert
+            // The query was made and answered "not delayed": Automatic stays, and the details are complete.
+            Assert.Single(result);
             Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
-            Assert.Empty(result[0].LogOnAs); // Stayed empty because bytesNeeded was 0
+            Assert.False(result[0].DetailsUnavailable);
+            Assert.Equal(ServiceAccounts.LocalSystem, result[0].LogOnAs);
+            _mockWindowsServiceApi.Verify(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny), Times.Once);
         }
 
         [Theory]
