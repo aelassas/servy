@@ -1647,6 +1647,53 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public void ApplyRuntimeState_PreserveCredentialsOverStoredPasswordAccount_LogsThatTheStoredAccountIsKept()
+        {
+            // Arrange: the import notice only describes the file, so the kept account must be reported here (#8054)
+            var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @"DOMAIN\svc", Password = "stored_password" };
+
+            // Act
+            var (_, log) = LogCapture.Run(() => TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                false,
+                true));
+
+            // Assert
+            Assert.Contains(@"Import: Service 'Test' already exists with the logon account 'DOMAIN\svc', which has a stored password.", log);
+            Assert.Contains("the stored account and its password are kept.", log);
+            Assert.DoesNotContain("stored_password", log);
+        }
+
+        [Theory]
+        [InlineData(false, @"NT SERVICE\Test", null)] // a stored passwordless account the file no longer names is reset (#8050)
+        [InlineData(false, @".\test_svc", null)]      // a local account stored with no password is reset too (#8050)
+        [InlineData(true, null, null)]                // a stored LocalSystem row
+        [InlineData(true, @"DOMAIN\svc", "stored_password")] // a stored LocalSystem row with a leftover account
+        [InlineData(false, @"DOMAIN\svc", null)]      // a kept account with no stored password
+        public void ApplyRuntimeState_PreserveCredentialsWithoutAStoredPasswordAccount_DoesNotLogAKeptAccount(bool storedRunAsLocalSystem, string? storedAccount, string? storedPassword)
+        {
+            // Arrange: only a stored account that has a password is kept by name, so nothing else may be reported as kept
+            var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = storedRunAsLocalSystem, UserAccount = storedAccount, Password = storedPassword };
+
+            // Act
+            var (_, log) = LogCapture.Run(() => TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                false,
+                true));
+
+            // Assert
+            Assert.DoesNotContain("already exists with the logon account", log);
+        }
+
+        [Fact]
         public async Task CreateEncryptedClone_CatchBlock_ThrowsInvalidOperationException()
         {
             // Arrange

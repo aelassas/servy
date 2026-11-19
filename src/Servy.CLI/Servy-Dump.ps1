@@ -43,7 +43,8 @@
     gMSA) are exported and restored as they are. A local account with a blank password is exported too, and restored
     only when the target machine has LimitBlankPasswordUse = 0 (not recommended). When restoring configurations via Servy Manager, servy-cli, or
     Servy-Restore.ps1, every other imported service will default to 'LocalSystem' and its account and password
-    must be re-entered manually for security reasons.
+    must be re-entered manually for security reasons, except a service that already exists on the target machine
+    with a stored account and password, which are kept.
 
 .PARAMETER DestinationArchivePath
     Mandatory path specifying the target zip archive destination file (e.g., 'C:\Backups\Servy_Dump.zip').
@@ -777,9 +778,11 @@ NOTE ON SERVICE RESTORATION:
   with a blank password is exported too, and restored only when the target
   machine has LimitBlankPasswordUse = 0 (not recommended). Restoring this
   backup via Servy-Restore.ps1, servy-cli, or Servy Manager sets every other
-  service logon account to 'LocalSystem'.
-- You must manually re-enter Logon Usernames and Passwords for any services that
-  require specific custom service runner accounts with a password.
+  service logon account to 'LocalSystem', except on a service that already
+  exists on the target machine with a stored account and password, which are
+  kept.
+- You must manually re-enter Logon Usernames and Passwords for any reset
+  services that require specific custom service runner accounts with a password.
 ================================================================================
 "@ -ForegroundColor Yellow
 

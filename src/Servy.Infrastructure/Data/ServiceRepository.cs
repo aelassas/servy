@@ -509,6 +509,16 @@ namespace Servy.Infrastructure.Data
                 incoming.RunAsLocalSystem = existing.RunAsLocalSystem;
                 incoming.UserAccount = existing.UserAccount;
                 incoming.Password = existing.Password;
+
+                // Say so here, where it is decided: the import notice only describes the file, which never
+                // carries a password, so it cannot tell the operator that this account was kept.
+                if (existing.RunAsLocalSystem == false
+                    && !string.IsNullOrEmpty(existing.UserAccount)
+                    && !string.IsNullOrEmpty(existing.Password))
+                {
+                    Logger.Info($"Import: Service '{incoming.Name}' already exists with the logon account '{existing.UserAccount}', which has a stored password. " +
+                                "An import file never carries a password, so the stored account and its password are kept.");
+                }
             }
         }
 
