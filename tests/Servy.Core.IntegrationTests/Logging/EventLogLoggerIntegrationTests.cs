@@ -1,5 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -17,7 +18,7 @@ namespace Servy.Core.IntegrationTests.Logging
 
         public EventLogLoggerIntegrationTests()
         {
-            _isElevated = Helper.IsAdministrator();
+            _isElevated = SecurityHelper.IsAdministrator();
         }
 
         #region Initialization & Enable/Disable Tests

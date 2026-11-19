@@ -1,4 +1,5 @@
 using Servy.Core.Native;
+using Servy.Core.Security;
 using Servy.Testing;
 using System.Diagnostics;
 using System.DirectoryServices.AccountManagement;
@@ -31,7 +32,7 @@ namespace Servy.Core.IntegrationTests.Native
         public LogonAsServiceGrantIntegrationTests()
         {
             // 1. Verify administrative execution level
-            bool isAdministrator = Helper.IsAdministrator();
+            bool isAdministrator = SecurityHelper.IsAdministrator();
 
             // 2. CI GUARD: Verify if the current context has actual operational permissions to call LSA APIs.
             // On standard GitHub Actions cloud agents, this prevents cascading Access Denied (0xC0000022) runtime breaks.
