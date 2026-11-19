@@ -1577,9 +1577,10 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalAccountAndPassword_KeepsTheStoredAccount()
+        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalAccountAndPassword_DoesNotApplyIt()
         {
-            // Arrange: a local account with a password is never kept by an import, so it is not applied here either
+            // Arrange: a local account with a password is never kept by an import, so it is not applied here either;
+            // the stored passwordless account was not named by the file, so the service goes back to LocalSystem (#8050)
             var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @".\inc_user", Password = "new_password" };
             var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\Test", Password = null };
 
@@ -1593,16 +1594,42 @@ namespace Servy.Infrastructure.UnitTests.Data
                 true);
 
             // Assert
-            Assert.Equal(@"NT SERVICE\Test", incoming.UserAccount);
+            Assert.True(incoming.RunAsLocalSystem);
+            Assert.Null(incoming.UserAccount);
+            Assert.Null(incoming.Password);
+        }
+
+        [Theory]
+        [InlineData(@"NT SERVICE\Test")]
+        [InlineData(@".\test_svc")] // a local account stored with no password, configured with a blank one (#8050)
+        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalSystemBaselineOverStoredPasswordlessAccount_ResetsToLocalSystem(string account)
+        {
+            // Arrange: an import that named no account comes in as the LocalSystem baseline, over a stored account
+            // that every export writes, so the file it came from had that account removed
+            var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = account, Password = null };
+
+            // Act
+            TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                false,
+                true);
+
+            // Assert
+            Assert.True(incoming.RunAsLocalSystem);
+            Assert.Null(incoming.UserAccount);
             Assert.Null(incoming.Password);
         }
 
         [Fact]
-        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalSystemBaseline_KeepsTheStoredAccount()
+        public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalSystemBaselineOverStoredPasswordAccount_KeepsTheStoredAccount()
         {
-            // Arrange: an import that named no passwordless account comes in as the LocalSystem baseline
+            // Arrange: an account with a password is never exported, so its absence from the file says nothing and it is kept
             var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null };
-            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @"NT SERVICE\Test", Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @".\test_svc", Password = "stored_password" };
 
             // Act
             TestReflection.InvokeNonPublicStatic(
@@ -1615,8 +1642,8 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.False(incoming.RunAsLocalSystem);
-            Assert.Equal(@"NT SERVICE\Test", incoming.UserAccount);
-            Assert.Null(incoming.Password);
+            Assert.Equal(@".\test_svc", incoming.UserAccount);
+            Assert.Equal("stored_password", incoming.Password);
         }
 
         [Fact]

@@ -470,7 +470,8 @@ namespace Servy.Infrastructure.Data
         /// <param name="existing">The row currently stored in the database for the same service name.</param>
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout, RestartAttempts and its timestamp).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password),
-        /// unless <paramref name="incoming"/> names a passwordless account (a local one with no password included), which is then kept.</param>
+        /// unless <paramref name="incoming"/> names a passwordless account (a local one with no password included), which is then kept,
+        /// or the stored account is itself passwordless (one an export writes), which is then reset to the LocalSystem baseline.</param>
         private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
             if (preserveExistingRuntimeState)
@@ -493,6 +494,16 @@ namespace Servy.Infrastructure.Data
                 && ServiceAccounts.CanBePasswordless(incoming.UserAccount);
             if (preserveExistingCredentials && !incomingIsPasswordless)
             {
+                // A stored passwordless account is written to every export, so a file that does not name it had
+                // it removed: the service goes back to the password-less LocalSystem baseline instead.
+                if (existing.ShouldSerializeUserAccount())
+                {
+                    incoming.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
+                    incoming.UserAccount = null;
+                    incoming.Password = null;
+                    return;
+                }
+
                 // Credentials & account - an account that needs a password is excluded from export for
                 // security, so it must be preserved on import so updates do not wipe it.
                 incoming.RunAsLocalSystem = existing.RunAsLocalSystem;
