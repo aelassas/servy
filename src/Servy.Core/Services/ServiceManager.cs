@@ -557,7 +557,8 @@ namespace Servy.Core.Services
                         var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
                         dto.Pid = serviceDto?.Pid;
 
-                        // The record whose account the revocation below compares against. The casing-variance block
+                        // The record whose account the revocation below compares against (for an existing service, only
+                        // when the Service Control Manager's own account cannot be read, see below). The casing-variance block
                         // dropped the legacy row, and the lookup above is case-insensitive (UNICODE_NOCASE), so it
                         // cannot see it and serviceDto is null: without the fallback the legacy account would keep
                         // the vault grants. Revoking straight after the drop is not an option because
@@ -617,6 +618,15 @@ namespace Servy.Core.Services
                             if (isInstalled)
                             {
                                 cancellationToken.ThrowIfCancellationRequested();
+
+                                // The account the Service Control Manager runs the service under is the one it is leaving,
+                                // whatever the row says: an import rewrites the row's account before it installs (#8052).
+                                // It is read before UpdateServiceConfig switches it. The row stays the fallback, and so
+                                // does the dropped legacy-casing row, whose account is the one the revocation must find.
+                                var leavingService = serviceDto == null && legacyDroppedFromDb
+                                    ? formerService
+                                    : ReadRegisteredAccountRecord(scmHandle, options.ServiceName) ?? formerService;
+
                                 UpdateServiceConfig(
                                     scmHandle: scmHandle,
                                     serviceName: options.ServiceName,
@@ -645,7 +655,7 @@ namespace Servy.Core.Services
 
                                     // Take back the previous account's control rights before granting the new one's,
                                     // so a service moved to another account leaves nobody behind who can stop it
-                                    RevokeServiceControlRightsIfAccountChanged(existingServiceHandle, formerService, lpServiceStartName);
+                                    RevokeServiceControlRightsIfAccountChanged(existingServiceHandle, leavingService, lpServiceStartName);
 
                                     // Grant the service account the necessary rights to control the service
                                     _windowsServiceApi.GrantServiceControlRights(existingServiceHandle, lpServiceStartName);
@@ -692,7 +702,7 @@ namespace Servy.Core.Services
                                     cancellationToken);
                                 Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                                 await HardenExePermissionsAsync(options.ServiceName, lpServiceStartName, cancellationToken);
-                                await RevokeExePermissionsIfUnusedAsync(options.ServiceName, formerService, lpServiceStartName, cancellationToken);
+                                await RevokeExePermissionsIfUnusedAsync(options.ServiceName, leavingService, lpServiceStartName, cancellationToken);
                                 await GrantPipeAccessAsync(options.ServiceName, lpServiceStartName, cancellationToken);
                                 return OperationResult.Success();
                             }
@@ -936,6 +946,51 @@ namespace Servy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error($"Revoking the service control rights of '{formerAccount}' (service '{formerService.Name}') failed.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Reads the account an installed service is registered under in the Service Control Manager, as a record the
+        /// revocations of <see cref="InstallServiceAsync"/> can compare against (#8052).
+        /// </summary>
+        /// <param name="scmHandle">An open handle to the Service Control Manager.</param>
+        /// <param name="serviceName">The installed service to read.</param>
+        /// <returns>
+        /// A record that carries only the service's name and the account the Service Control Manager has for it, or
+        /// <see langword="null"/> when the service cannot be opened or queried or reports no account.
+        /// </returns>
+        /// <remarks>
+        /// The row in <c>Servy.db</c> can already name the new account when the install runs, because an import writes
+        /// the row before it installs; the Service Control Manager still has the account the service is leaving. A
+        /// failed read is logged and returns <see langword="null"/>, so the caller falls back to the row and the
+        /// install never fails because of it.
+        /// </remarks>
+        private ServiceDto ReadRegisteredAccountRecord(SafeScmHandle scmHandle, string serviceName)
+        {
+            try
+            {
+                using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG))
+                {
+                    if (svcHandle == null || svcHandle.IsInvalid)
+                    {
+                        Logger.Warn($"Could not open service '{serviceName}' to read its current account (Win32 {_win32ErrorProvider.GetLastWin32Error()}). Comparing against its Servy record instead.");
+                        return null;
+                    }
+
+                    var account = GetServiceUser(svcHandle);
+                    if (string.IsNullOrWhiteSpace(account))
+                    {
+                        Logger.Warn($"The Service Control Manager reported no account for service '{serviceName}'. Comparing against its Servy record instead.");
+                        return null;
+                    }
+
+                    return new ServiceDto { Name = serviceName, RunAsLocalSystem = false, UserAccount = account.Trim() };
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Reading the current account of service '{serviceName}' failed. Comparing against its Servy record instead.", ex);
+                return null;
             }
         }
 
