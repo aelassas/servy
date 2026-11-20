@@ -234,7 +234,9 @@ namespace Servy.Core.UnitTests.Services
         /// <remarks>
         /// Populating these properties ensures that export serialization tests verify explicit attribute-based exclusion
         /// (<see cref="Newtonsoft.Json.JsonIgnoreAttribute"/> and <see cref="System.Xml.Serialization.XmlIgnoreAttribute"/>)
-        /// rather than null-value suppression.
+        /// rather than null-value suppression. <c>UserAccount</c> is the exception: it carries neither attribute, and
+        /// <see cref="ServiceDto.ShouldSerializeUserAccount"/> keeps it out of these exports because the DTO runs as
+        /// LocalSystem and has a password.
         /// </remarks>
         /// <param name="service">The <see cref="ServiceDto"/> instance to populate.</param>
         private static void PopulateIgnoredProperties(ServiceDto service)
