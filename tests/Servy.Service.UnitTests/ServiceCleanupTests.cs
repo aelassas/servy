@@ -341,6 +341,31 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void Teardown_CancellationSourceDisposeThrows_WarnsAndStillClearsTheField()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            _service.StartForTest();
+
+            // CancellationTokenSource.Dispose never throws on its own, so a subclass whose disposal fails stands in.
+            TestReflection.SetField(_service, "_cancellationSource", new DisposeThrowingCancellationSource("source gone"));
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            // 1. The failure is reported once, against the cancellation source
+            scopedLogger.Verify(l => l.Warn("Disposing _cancellationSource failed: source gone", It.IsAny<Exception>()), Times.Once);
+
+            // 2. The finally kept going: the field is cleared
+            Assert.Null(TestReflection.GetField<CancellationTokenSource>(_service, "_cancellationSource"));
+
+            // 3. The teardown still completed
+            Assert.True(TestReflection.GetField<bool>(_service, "_disposed"));
+        }
+
+        [Fact]
         public void Cleanup_WriterDisposeThrows_LogsBothWarningsAndStillDisposesTheChildProcess()
         {
             // Arrange
@@ -783,6 +808,31 @@ namespace Servy.Service.UnitTests
             {
                 return _hookCleanupTimeoutMs ?? base.GetHookCleanupTimeoutMs();
             }
+        }
+
+        /// <summary>
+        /// A <see cref="CancellationTokenSource"/> whose disposal always fails, standing in for the failure
+        /// that <c>CancellationTokenSource.Dispose</c> itself never produces.
+        /// </summary>
+        private sealed class DisposeThrowingCancellationSource : CancellationTokenSource
+        {
+            private readonly string _message;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="DisposeThrowingCancellationSource"/> class.
+            /// </summary>
+            /// <param name="message">The message of the exception thrown from every disposal.</param>
+            public DisposeThrowingCancellationSource(string message)
+            {
+                _message = message;
+            }
+
+            /// <summary>
+            /// Always throws instead of releasing the source.
+            /// </summary>
+            /// <param name="disposing">Ignored.</param>
+            /// <exception cref="InvalidOperationException">Always thrown, carrying the message given to the constructor.</exception>
+            protected override void Dispose(bool disposing) => throw new InvalidOperationException(_message);
         }
 
         /// <summary>
