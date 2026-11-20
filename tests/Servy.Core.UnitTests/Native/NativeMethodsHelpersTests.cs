@@ -42,6 +42,7 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("    ")]
         public void ValidateCredentials_EmptyUsername_ThrowsArgumentException(string invalidUsername)
         {
+            // Arrange, Act & Assert
             var ex = Assert.Throws<ArgumentException>("username",
                 () => NativeMethodsHelpers.ValidateCredentials(invalidUsername, null));
 
@@ -77,6 +78,7 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("IIS APPPOOL\\DefaultAppPool")]
         public void ValidateCredentials_BuiltInAccount_WithPassword_ThrowsArgumentException(string builtInAccount)
         {
+            // Arrange, Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(builtInAccount, "SomePassword"));
             Assert.Contains("password cannot be provided", ex.Message);
         }
@@ -104,6 +106,7 @@ namespace Servy.Core.UnitTests.Native
         [InlineData(".\\   $")]
         public void ValidateCredentials_InvalidFormat_ThrowsArgumentException(string badFormat)
         {
+            // Arrange, Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(badFormat, null));
             Assert.Contains("Username format is invalid", ex.Message);
         }
@@ -163,6 +166,7 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("    ")]
         public void AtomicSecureMove_NullOrEmptySource_ThrowsArgumentException(string source)
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentException>("source", () => NativeMethodsHelpers.AtomicSecureMove(source, "dest.txt"));
         }
 
@@ -172,6 +176,7 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("    ")]
         public void AtomicSecureMove_NullOrEmptyDestination_ThrowsArgumentException(string destination)
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentException>("destination", () => NativeMethodsHelpers.AtomicSecureMove("src.txt", destination));
         }
 
@@ -207,13 +212,16 @@ namespace Servy.Core.UnitTests.Native
         [Fact]
         public void AtomicSecureMove_DestinationExists_ReplacesAtomically()
         {
+            // Arrange
             string src = Path.Combine(_testDir, "src.txt");
             string dest = Path.Combine(_testDir, "dest.txt");
             File.WriteAllText(src, "New Content");
             File.WriteAllText(dest, "Old Content");   // destination already exists
 
+            // Act
             NativeMethodsHelpers.AtomicSecureMove(src, dest);
 
+            // Assert
             Assert.False(File.Exists(src));
             Assert.True(File.Exists(dest));
             Assert.Equal("New Content", File.ReadAllText(dest));
