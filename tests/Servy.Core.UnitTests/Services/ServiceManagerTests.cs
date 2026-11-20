@@ -491,6 +491,28 @@ namespace Servy.Core.UnitTests.Services
         }
 
         /// <summary>
+        /// Replaces the manager's clock and poll delay with a virtual clock whose delay cancels
+        /// <paramref name="cts"/> on the first poll and then honours the token it was handed, the way
+        /// <see cref="Task.Delay(int, CancellationToken)"/> does. A token that never reaches the delay lets the
+        /// virtual clock run the loop to its deadline, so the stand-in cannot hang. Returns the poll count.
+        /// </summary>
+        private static Func<int> UseClockCancelledOnFirstPoll(ServiceManager manager, CancellationTokenSource cts)
+        {
+            var polls = 0;
+            var now = DateTimeOffset.UtcNow;
+            manager.UtcNow = () => now;
+            manager.DelayAsync = (ms, token) =>
+            {
+                polls++;
+                cts.Cancel();
+                token.ThrowIfCancellationRequested();
+                now = now.AddMilliseconds(ms);
+                return Task.CompletedTask;
+            };
+            return () => polls;
+        }
+
+        /// <summary>
         /// Arranges the native and repository mocks for a successful installation of a service that does not yet
         /// exist, and captures the <see cref="ServiceDto"/> handed to <see cref="IServiceRepository.UpsertAsync"/>.
         /// </summary>
@@ -3094,6 +3116,52 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Verify(x => x.DeleteService(It.IsAny<SafeServiceHandle>()), Times.Never);
         }
 
+        [Fact]
+        public async Task UninstallService_CancelledDuringThePoll_RethrowsAndSkipsDelete()
+        {
+            // Arrange
+            var serviceName = "ServiceName";
+            var scmHandle = _handles.Scm(123);
+            var serviceHandle = _handles.Service(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+                .Returns(true);
+
+            // The service never reaches Stopped, so the wait loop reaches its poll delay, where the
+            // cancelling stand-in below ends it.
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.Setup(c => c.Refresh());
+            mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+            );
+
+            using (var cts = new CancellationTokenSource())
+            {
+                var polls = UseClockCancelledOnFirstPoll(_serviceManager, cts);
+
+                // Act
+                var ex = await Record.ExceptionAsync(() =>
+                    _serviceManager.UninstallServiceAsync(serviceName, cts.Token));
+
+                // Assert: the cancellation ends the stop wait on the first poll, before anything is deleted
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.Equal(1, polls());
+                _mockWindowsServiceApi.Verify(x => x.DeleteService(It.IsAny<SafeServiceHandle>()), Times.Never);
+            }
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -3267,6 +3335,29 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task StartService_CancelledDuringThePoll_Rethrows()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StartPending);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
+            using (var cts = new CancellationTokenSource())
+            {
+                var polls = UseClockCancelledOnFirstPoll(_serviceManager, cts);
+
+                // Act
+                var ex = await Record.ExceptionAsync(() =>
+                    _serviceManager.StartServiceAsync("TestService", cancellationToken: cts.Token));
+
+                // Assert: the cancellation ends the wait on the first poll instead of running to the timeout
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.Equal(1, polls());
+                _mockController.Verify(c => c.Start(), Times.Once);
+            }
+        }
+
+        [Fact]
         public async Task StopService_ShouldReturnTrue_WhenAlreadyStopped()
         {
             // Arrange
@@ -3421,6 +3512,29 @@ namespace Servy.Core.UnitTests.Services
                 // cancellation into a Failure result instead.
                 await Assert.ThrowsAsync<OperationCanceledException>(() =>
                     _serviceManager.StopServiceAsync("TestService", cancellationToken: cts.Token));
+            }
+        }
+
+        [Fact]
+        public async Task StopService_CancelledDuringThePoll_Rethrows()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
+            using (var cts = new CancellationTokenSource())
+            {
+                var polls = UseClockCancelledOnFirstPoll(_serviceManager, cts);
+
+                // Act
+                var ex = await Record.ExceptionAsync(() =>
+                    _serviceManager.StopServiceAsync("TestService", cancellationToken: cts.Token));
+
+                // Assert: the cancellation ends the wait on the first poll instead of running to the timeout
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                Assert.Equal(1, polls());
+                _mockController.Verify(c => c.Stop(), Times.Once);
             }
         }
 
