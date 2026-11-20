@@ -2002,6 +2002,25 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        public void Constructor_RefusingReparsePoints_AncestorBecomesReparsePointAfterDirectoryIsCreated_Throws()
+        {
+            // Arrange
+            var newDir = Path.Combine(TempDirectory, "created-then-junctioned");
+            var logPath = Path.Combine(newDir, "service.log");
+            int calls = 0;
+
+            // Act
+            var ex = Record.Exception(() => CreateRefusingWriter(logPath, _ => ++calls > 1, (handle, path) => true));
+
+            // Assert
+            Assert.IsType<IOException>(ex);
+            Assert.Contains("junction", ex.Message, StringComparison.Ordinal);
+            Assert.Equal(2, calls);
+            Assert.True(Directory.Exists(newDir), "The first check passed, so the directory was created before the re-check refused.");
+            Assert.False(File.Exists(logPath), "No log file may be opened on a path refused during construction.");
+        }
+
+        [Fact]
         public void WriteLine_RefusingReparsePoints_AncestorBecomesReparsePointAfterConstruction_DropsWritesForGood()
         {
             // Arrange
