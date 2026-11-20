@@ -1035,6 +1035,38 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(result);
         }
 
+        [Theory]
+        [InlineData(@"\\server\share\payload.exe")]
+        [InlineData(@"//remote/share/payload.exe")]
+        public void IsSafelyContainedWithinAppDirectory_UncPath_IsRefusedByTheUncGuardItself(string uncPath)
+        {
+            // Arrange
+            string baseDir = TempDirectory;
+
+            // Act
+            var (result, log) = LogCapture.Run(() => PathSecurityGuard.IsSafelyContainedWithinAppDirectory(uncPath, baseDir));
+
+            // Assert: refused as a UNC path, not by falling through to the containment check
+            Assert.False(result);
+            Assert.Contains($"Security refusal: Path '{uncPath}' is a UNC path.", log);
+            Assert.DoesNotContain("resolves outside application directory", log);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void IsSafelyContainedWithinAppDirectory_BlankBaseDirectory_IsRefusedByTheEmptyGuardNotByAnException(string baseDir)
+        {
+            // Arrange & Act
+            var (result, log) = LogCapture.Run(() => PathSecurityGuard.IsSafelyContainedWithinAppDirectory("Servy.Manager.exe", baseDir));
+
+            // Assert
+            Assert.False(result);
+            Assert.Contains("Path security validation failed: Target path or base directory is empty.", log);
+            Assert.DoesNotContain("Exception during path containment validation", log);
+        }
+
         [Fact]
         public void IsSafelyContainedWithinAppDirectory_RelativeChildPath_ReturnsTrue()
         {
