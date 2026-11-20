@@ -2136,6 +2136,36 @@ namespace Servy.Core.UnitTests.IO
             Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
         }
 
+        [Fact]
+        public void EnforceMaxRotations_RefusingReparsePoints_RefusalStopsThePass_OlderExpiredFileIsKept()
+        {
+            // Arrange
+            var expiredOld = Path.Combine(TempDirectory, "test.20200101_000000.log");
+            var expiredNewer = Path.Combine(TempDirectory, "test.20200102_000000.log");
+            File.WriteAllText(expiredOld, "old");
+            File.WriteAllText(expiredNewer, "newer");
+            File.SetLastWriteTimeUtc(expiredOld, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            File.SetLastWriteTimeUtc(expiredNewer, new DateTime(2020, 1, 2, 0, 0, 0, DateTimeKind.Utc));
+
+            // Refuses the handle of the newer expired file only; the log file and the older file pass.
+            var refusedFullPath = Path.GetFullPath(expiredNewer);
+            var writer = CreateRefusingWriter(
+                _logFilePath,
+                _ => false,
+                (_, path) => !string.Equals(path, refusedFullPath, StringComparison.OrdinalIgnoreCase),
+                rotationSizeInBytes: 10,
+                maxRotations: 1);
+
+            // Act
+            writer.WriteLine("a line longer than the rotation size");
+            writer.Dispose();
+
+            // Assert
+            Assert.True(File.Exists(expiredNewer), "A delete through an unverified handle must be refused.");
+            Assert.True(File.Exists(expiredOld), "The pass must stop at the first refusal instead of deleting the files after it.");
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+        }
+
         #endregion
     }
 
