@@ -1,3 +1,4 @@
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Testing;
 using System;
@@ -499,6 +500,50 @@ namespace Servy.Core.UnitTests.Security
                                 .ToList();
             Assert.Equal(expectAce, rules.Any(r => r.IdentityReference.Equals(ordinarySid) && r.FileSystemRights == FileSystemRights.FullControl));
             Assert.Equal(expectAce ? 3 : 2, rules.Count);
+        }
+
+        [Theory]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        public void CreateSecureDirectory_ChildFolderCannotBeCreated_RethrowsAndWarnsOnlyWhenNotElevated(bool elevated, bool expectWarning)
+        {
+            // Arrange: a parent that denies everyone the right to create a subfolder
+            var parent = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(parent);
+            var parentInfo = new DirectoryInfo(parent);
+            var deny = new FileSystemAccessRule(
+                new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                FileSystemRights.CreateDirectories,
+                AccessControlType.Deny);
+            var acl = parentInfo.GetAccessControl(AccessControlSections.Access);
+            acl.AddAccessRule(deny);
+            parentInfo.SetAccessControl(acl);
+            var child = Path.Combine(parent, "child");
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => elevated;
+
+            try
+            {
+                // Act
+                Exception exception = null;
+                var log = LogCapture.Run(() =>
+                {
+                    exception = Record.Exception(() => SecurityHelper.CreateSecureDirectory(child, breakInheritance: false));
+                });
+
+                // Assert
+                Assert.IsType<UnauthorizedAccessException>(exception);
+                Assert.False(Directory.Exists(child));
+                Assert.Equal(expectWarning, log.IndexOf("Could not create directory", StringComparison.Ordinal) >= 0);
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+                var restore = parentInfo.GetAccessControl(AccessControlSections.Access);
+                restore.RemoveAccessRuleSpecific(deny);
+                parentInfo.SetAccessControl(restore);
+                Directory.Delete(parent, recursive: true);
+            }
         }
 
         [Fact]
