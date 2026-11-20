@@ -1419,6 +1419,143 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expectedTimeoutMs, capturedTimeoutMs);
         }
 
+        [Theory]
+        [InlineData(120, null, @"C:\Apps\pre-stop.exe", 120, 20)] // configured stop timeout above the 60 s floor
+        [InlineData(19, 200, @"C:\Apps\pre-stop.exe", 200, 20)]   // recorded stop duration outlasts floor and configured value
+        [InlineData(120, null, null, 120, 0)]                      // no pre-stop hook: PreStopTimeout must not count
+        public async Task InstallService_PreShutdownDeadline_UsesStopTimeoutPreviousStopAndPreStopHook(
+            int stopTimeout, int? previousStopTimeout, string preStopExePath, int expectedBaselineSeconds, int expectedPreStopSeconds)
+        {
+            // Arrange
+            const string serviceName = "DeadlineService";
+            ArrangeSuccessfulInstallAndCaptureDto();
+
+            // The stored row carries the stop duration the wrapper recorded for the running service
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = serviceName, RunAsLocalSystem = true, PreviousStopTimeout = previousStopTimeout });
+
+            // The pointer is only valid during the call, so the struct is read inside the callback
+            uint capturedTimeoutMs = 0;
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                    It.IsAny<SafeServiceHandle>(),
+                    SERVICE_CONFIG_PRESHUTDOWN_INFO,
+                    It.IsAny<IntPtr>()))
+                .Callback((SafeServiceHandle handle, uint infoLevel, IntPtr info) =>
+                    capturedTimeoutMs = Marshal.PtrToStructure<SERVICE_PRE_SHUTDOWN_INFO>(info).dwPreshutdownTimeout)
+                .Returns(true);
+
+            var options = CreateFullyPopulatedInstallOptions(serviceName);
+            options.Username = null;
+            options.Password = null;
+            options.StopTimeout = stopTimeout;
+            options.PreStopExePath = preStopExePath;
+            options.PreStopTimeout = 20;
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            var expectedSeconds = expectedBaselineSeconds + AppConfig.ScmTimeoutBufferSeconds + expectedPreStopSeconds;
+            Assert.Equal((uint)expectedSeconds * AppConfig.MillisecondsPerSecond, capturedTimeoutMs);
+        }
+
+        [Fact]
+        public async Task InstallService_UpdatePath_RegistersPreShutdownDeadlineFromRecordedStopDuration()
+        {
+            // Arrange
+            var scmHandle = _handles.Scm(123);
+            var serviceName = "TestService";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            // CreateService returns an invalid handle and the service is listed: the existing-service update path runs
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                HostOnlyDependencies,
+                ServiceAccounts.LocalSystem,
+                null))
+                .Returns(_handles.Service(0));
+
+            _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
+
+            var serviceHandle = _handles.Service(456);
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                HostOnlyDependencies,
+                ServiceAccounts.LocalSystem,
+                null,
+                It.IsAny<string>()))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<uint>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>())).Returns(true);
+
+            // The stored row carries the stop duration the wrapper recorded for the running service
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = serviceName, RunAsLocalSystem = true, PreviousStopTimeout = 200 });
+
+            // The pointer is only valid during the call, so the struct is read inside the callback
+            uint capturedTimeoutMs = 0;
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                    serviceHandle,
+                    SERVICE_CONFIG_PRESHUTDOWN_INFO,
+                    It.IsAny<IntPtr>()))
+                .Callback((SafeServiceHandle handle, uint infoLevel, IntPtr info) =>
+                    capturedTimeoutMs = Marshal.PtrToStructure<SERVICE_PRE_SHUTDOWN_INFO>(info).dwPreshutdownTimeout)
+                .Returns(true);
+
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                DisplayName = serviceName,
+                Description = "Test Description",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                StartupDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                StopTimeout = 19,
+                PreStopExePath = null
+            };
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_PRESHUTDOWN_INFO, It.IsAny<IntPtr>()), Times.Once);
+
+            // 200 s recorded stop duration + 15 s SCM buffer + no pre-stop hook, in milliseconds
+            Assert.Equal(215_000u, capturedTimeoutMs);
+        }
+
         [Fact]
         public async Task InstallService_RequestPreShutdownTimeout_Error()
         {
