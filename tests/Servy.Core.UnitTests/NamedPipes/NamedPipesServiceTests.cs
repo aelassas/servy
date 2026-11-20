@@ -26,6 +26,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Constructor_NullPipeName_Throws()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => new NamedPipesService(null));
             Assert.Throws<ArgumentNullException>(() => new NamedPipesService(null, new Mock<INamedPipeServerVerifier>().Object));
         }
@@ -33,6 +34,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Constructor_NullVerifier_Throws()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => new NamedPipesService("pipe", null));
         }
 
@@ -43,12 +45,14 @@ namespace Servy.Core.UnitTests.NamedPipes
         [InlineData(1, -5)]
         public void Constructor_NonPositiveTimeout_Throws(int connectTimeoutMs, int requestTimeoutMs)
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentOutOfRangeException>(() => new NamedPipesService("pipe", new Mock<INamedPipeServerVerifier>().Object, connectTimeoutMs, requestTimeoutMs));
         }
 
         [Fact]
         public void DefaultConstructor_DoesNotThrow()
         {
+            // Act & Assert
             var ex = Record.Exception(() => new NamedPipesService());
             Assert.Null(ex);
         }
@@ -140,15 +144,18 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Write_ServiceDto_NeverCarriesTheExportIgnoredFields()
         {
+            // Arrange
             // The reason the runtime state has its own contract: ServiceDto's runtime and credential fields are
             // [JsonIgnore] for the export files, so a ServiceDto frame cannot carry them.
             var dto = new ServiceDto { Name = "svc", Pid = 123, ActiveStdoutPath = "out.log", PreviousStopTimeout = 30, Password = "secret", UserAccount = @".\user" };
             using (var stream = new MemoryStream())
             {
+                // Act
                 _sut.Write(stream, dto, CancellationToken.None);
                 stream.Position = 0;
                 var read = _sut.Read<ServiceDto>(stream, CancellationToken.None);
 
+                // Assert
                 Assert.NotNull(read);
                 Assert.Null(read.Pid);
                 Assert.Null(read.ActiveStdoutPath);
@@ -161,6 +168,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Read_EmptyStream_ReturnsNull()
         {
+            // Arrange, Act & Assert
             using (var stream = new MemoryStream())
             {
                 Assert.Null(_sut.Read<IpcRequestDto>(stream, CancellationToken.None));
@@ -170,6 +178,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public async Task ReadAsync_EmptyStream_ReturnsNull()
         {
+            // Arrange, Act & Assert
             using (var stream = new MemoryStream())
             {
                 Assert.Null(await _sut.ReadAsync<IpcRequestDto>(stream, CancellationToken.None));
@@ -179,6 +188,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public async Task Read_TruncatedLengthPrefix_ReturnsNull()
         {
+            // Arrange, Act & Assert
             using (var sync = new MemoryStream(new byte[] { 1, 0 }))
             using (var async = new MemoryStream(new byte[] { 1, 0 }))
             {
@@ -245,11 +255,13 @@ namespace Servy.Core.UnitTests.NamedPipes
         [InlineData("[1,2,3]")]
         public async Task Read_MalformedPayload_ReturnsNull(string payload)
         {
+            // Arrange
             var json = Encoding.UTF8.GetBytes(payload);
             var bytes = BitConverter.GetBytes(json.Length).Concat(json).ToArray();
             using (var sync = new MemoryStream(bytes))
             using (var async = new MemoryStream(bytes))
             {
+                // Act & Assert
                 Assert.Null(_sut.Read<IpcRequestDto>(sync, CancellationToken.None));
                 Assert.Null(await _sut.ReadAsync<IpcRequestDto>(async, CancellationToken.None));
             }
@@ -258,13 +270,16 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Read_PayloadWithATypeName_IsNotHonoured()
         {
+            // Arrange
             // A frame can never choose the type it is read as: a $type hint is ignored, not followed
             var json = Encoding.UTF8.GetBytes("{\"$type\":\"System.IO.FileInfo, System.IO.FileSystem\",\"Action\":\"GetByName\"}");
             var bytes = BitConverter.GetBytes(json.Length).Concat(json).ToArray();
             using (var stream = new MemoryStream(bytes))
             {
+                // Act
                 var read = _sut.Read<IpcRequestDto>(stream, CancellationToken.None);
 
+                // Assert
                 Assert.NotNull(read);
                 Assert.IsType<IpcRequestDto>(read);
                 Assert.Equal("GetByName", read.Action);
@@ -274,6 +289,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public async Task ReadAndWrite_NullStream_Throw()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => _sut.Read<IpcRequestDto>(null));
             Assert.Throws<ArgumentNullException>(() => _sut.Write(null, new IpcRequestDto()));
             await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ReadAsync<IpcRequestDto>(null));
@@ -283,11 +299,13 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public async Task ReadAndWrite_Cancelled_ThrowAndWriteNothing()
         {
+            // Arrange
             using (var cts = new CancellationTokenSource())
             using (var stream = new MemoryStream())
             {
                 cts.Cancel();
 
+                // Act & Assert
                 Assert.Throws<OperationCanceledException>(() => _sut.Write(stream, new IpcRequestDto(), cts.Token));
                 await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.WriteAsync(stream, new IpcRequestDto(), cts.Token));
                 Assert.Equal(0, stream.Length);
@@ -335,13 +353,16 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public async Task ReadAsync_FrameSplitAcrossManySmallReads_IsReassembled()
         {
+            // Arrange
             using (var buffer = new MemoryStream())
             {
                 await _sut.WriteAsync(buffer, new IpcRequestDto { Action = "GetByName", ServiceName = "svc" }, CancellationToken.None);
                 using (var trickle = new TrickleStream(buffer.ToArray(), chunk: 2))
                 {
+                    // Act
                     var read = await _sut.ReadAsync<IpcRequestDto>(trickle, CancellationToken.None);
 
+                    // Assert
                     Assert.Equal("svc", read.ServiceName);
                     Assert.True(trickle.Reads > 3);
                 }
@@ -571,6 +592,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [InlineData("  ")]
         public async Task Requests_BlankServiceName_ThrowBeforeConnecting(string name)
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentException>(() => _sut.GetByName(name, CancellationToken.None));
             Assert.Throws<ArgumentException>(() => _sut.UpdateRuntimeState(name, new ServiceRuntimeStateDto(), CancellationToken.None));
             await Assert.ThrowsAsync<ArgumentException>(() => _sut.GetRestartAttemptsAsync(name, CancellationToken.None));
@@ -580,18 +602,21 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void UpdateRuntimeState_NullState_Throws()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => _sut.UpdateRuntimeState("svc", null, CancellationToken.None));
         }
 
         [Fact]
         public async Task UpdateRestartAttemptsAsync_NegativeCounter_Throws()
         {
+            // Arrange, Act & Assert
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => _sut.UpdateRestartAttemptsAsync("svc", -1, CancellationToken.None));
         }
 
         [Fact]
         public void Constants_AreTheOnesTheHostServes()
         {
+            // Arrange, Act & Assert
             Assert.Equal("Servy", AppConfig.ServyHostServiceName);
             Assert.Equal("SERVY_HOST_IPC_PIPE", AppConfig.ServyHostNamedPipeName);
             var actions = new[]
