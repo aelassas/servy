@@ -128,6 +128,23 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task Pause_HandsTheCallersTokenToTheServiceStopAndTheHostStop()
+        {
+            // Arrange
+            var pause = Create();
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // Act
+                await pause.PauseAsync(cts.Token);
+
+                // Assert: the caller's own token at both stops, so a cancelled update ends both waits
+                _serviceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), cts.Token), Times.Once);
+                _host.Verify(h => h.StopAsync(cts.Token), Times.Once);
+            }
+        }
+
+        [Fact]
         public async Task Pause_StopOfTheServicesIsCancelled_ResumeStillStartsThem()
         {
             // Arrange
