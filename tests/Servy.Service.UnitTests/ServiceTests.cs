@@ -2919,6 +2919,44 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnCustomCommand_PreShutdownWithFaultedTeardownTask_LogsItAndStillSignalsStoppedWithTheServiceSpecificExitCode()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // ExecuteTeardown swallows its own failures. A throwing Dispose sends it into its catch, and the
+            // logger refusing the "Teardown error" line lets that exception escape, which faults the teardown task.
+            _mockProcess.Setup(p => p.Dispose()).Throws(new InvalidOperationException("dispose failed"));
+            scopedLogger
+                .Setup(l => l.Error("Teardown error during PreShutdown.", It.IsAny<Exception>()))
+                .Throws(new InvalidOperationException("log sink failed"));
+
+            using (var service = BuildStatusRecordingService())
+            {
+                service.StartForTest();
+                TestReflection.SetField(service, "_serviceHandle", new IntPtr(1));
+
+                // Act
+                var thrown = Record.Exception(() =>
+                    TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN));
+
+                // Assert
+                // 1. The fault is caught and reported with the inner message, not the AggregateException wrapper text
+                Assert.Null(thrown);
+                scopedLogger.Verify(l => l.Error(
+                    "Teardown task faulted during pre-shutdown wait: log sink failed",
+                    It.IsAny<AggregateException>()), Times.Once);
+
+                // 2. A faulted teardown is a failed one: the failure line, the service-specific exit code and STOPPED
+                scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("teardown reported failure")), It.IsAny<Exception>()), Times.Once);
+                Assert.Equal(AppConfig.ServiceSpecificErrorCode, service.ExitCode);
+                Assert.Equal(NativeMethods.SERVICE_STOPPED, service.StatusStates[service.StatusStates.Count - 1]);
+            }
+        }
+
+        [Fact]
         public void OnStop_WhenStoppingTheHealthCheckTimerThrows_WarnsAndCompletesTheTeardown()
         {
             // Arrange
