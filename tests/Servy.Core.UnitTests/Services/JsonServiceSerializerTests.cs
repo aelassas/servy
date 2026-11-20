@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using Servy.Core.UnitTests.Logging;
 using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Services
@@ -327,5 +328,66 @@ namespace Servy.Core.UnitTests.Services
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Covers the failure entries of <see cref="JsonServiceSerializer"/> that are only observable through the
+    /// static <c>Logger</c>: the <c>JSON</c> format label and the <c>Serialize</c> catch arm.
+    /// </summary>
+    /// <remarks>
+    /// Lives in <see cref="LoggerCollection"/> because <see cref="LogCapture"/> swaps process-wide logger state,
+    /// which parallel capturing classes would otherwise swap under each other.
+    /// </remarks>
+    [Collection(LoggerCollection.Name)] // the failure entries are asserted through the static Logger
+    public class JsonServiceSerializerLogTests
+    {
+        /// <summary>The serializer under test.</summary>
+        private readonly JsonServiceSerializer _serializer = new JsonServiceSerializer();
+
+        /// <summary>
+        /// A <see cref="ServiceDto"/> whose extra property getter throws, which makes Json.NET fail with a
+        /// <see cref="JsonSerializationException"/> while serializing.
+        /// </summary>
+        private sealed class ThrowingServiceDto : ServiceDto
+        {
+            /// <summary>A property whose getter always throws.</summary>
+            public string Boom => throw new InvalidOperationException("boom");
+        }
+
+        /// <summary>
+        /// Malformed JSON carries line coordinates, so the logged entry must start with the <c>JSON</c> label
+        /// followed by the "at line" phrase.
+        /// </summary>
+        [Fact]
+        public void Deserialize_MalformedJson_LogsFailureWithTheJsonLabelAndLineInfo()
+        {
+            // Arrange
+            string malformedJson = "{\n  \"StopTimeout\": 12x\n}";
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Deserialize(malformedJson));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("JSON Deserialization failed at line", textLogOutput);
+        }
+
+        /// <summary>
+        /// A serialization failure returns <c>null</c>, and the logged entry is the only place the format and
+        /// the name of the service that could not be exported are kept.
+        /// </summary>
+        [Fact]
+        public void Serialize_SerializationFailure_LogsTheFormatAndTheServiceName()
+        {
+            // Arrange
+            var throwingDto = new ThrowingServiceDto { Name = "ExportMe" };
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Serialize(throwingDto));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("JSON Serialization failed for service: ExportMe", textLogOutput);
+        }
     }
 }
