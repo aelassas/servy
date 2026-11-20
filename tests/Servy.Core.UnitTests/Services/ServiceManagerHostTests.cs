@@ -443,6 +443,81 @@ namespace Servy.Core.UnitTests.Services
             _pipes.Verify(p => p.RefreshPipeAccessAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
+        [Fact]
+        public async Task InstallService_MovedToAnotherAccount_HandsTheCallersTokenToTheHardenerAndToBothPipeRefreshes()
+        {
+            // Arrange: the update path, with a former account, runs all three post-save hand-overs
+            ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
+            _serviceRepository.Setup(x => x.GetByNameAsync(ServiceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\old-account" });
+
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(@".\new-account"), cts.Token);
+
+                // Assert: a token that neither default nor CancellationToken.None equals
+                Assert.True(result.IsSuccess, result.ErrorMessage);
+                _hardener.Verify(h => h.HardenServiceAsync(ServiceName, @".\new-account", _serviceRepository.Object, cts.Token), Times.Once);
+                _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
+                _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Exactly(2));
+            }
+        }
+
+        [Fact]
+        public async Task InstallService_NewServiceUnderCustomAccount_HandsTheCallersTokenToTheHardenerAndThePipeRefresh()
+        {
+            // Arrange
+            ServiceManagerInstallArrange.ServiceCreated(_windowsServiceApi, _handles);
+
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = await CreateManager(_pipes.Object).InstallServiceAsync(CreateOptions(@".\svc-account"), cts.Token);
+
+                // Assert
+                Assert.True(result.IsSuccess, result.ErrorMessage);
+                _hardener.Verify(h => h.HardenServiceAsync(ServiceName, @".\svc-account", _serviceRepository.Object, cts.Token), Times.Once);
+                _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task UninstallService_CustomAccount_HandsTheCallersTokenToTheRevocationAndThePipeRefresh()
+        {
+            // Arrange
+            ArrangeUninstall(@".\svc-account");
+            _serviceRepository.Setup(r => r.DeleteAsync(ServiceName, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = await CreateManager(_pipes.Object).UninstallServiceAsync(ServiceName, cts.Token);
+
+                // Assert
+                Assert.True(result.IsSuccess, result.ErrorMessage);
+                _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
+                _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task RevokeVaultAccessIfUnusedAsync_RemovedRecord_HandsTheCallersTokenToTheRevocationAndThePipeRefresh()
+        {
+            // Arrange
+            var record = new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
+
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                await CreateManager(_pipes.Object).RevokeVaultAccessIfUnusedAsync(record, cts.Token);
+
+                // Assert
+                _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
+                _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Once);
+            }
+        }
+
         #endregion
     }
 }
