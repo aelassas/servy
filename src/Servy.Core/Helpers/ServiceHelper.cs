@@ -308,6 +308,9 @@ namespace Servy.Core.Helpers
                         {
                             sc.Refresh();
 
+                            if (sc.Status == ServiceControllerStatus.Stopped)
+                                break;
+
                             if (elapsed() > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 

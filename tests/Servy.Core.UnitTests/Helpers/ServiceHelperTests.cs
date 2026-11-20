@@ -1213,6 +1213,42 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public async Task StopServicesAsync_StoppedSeenByThePollAfterTheDeadline_IsNotReportedAsATimeout()
+        {
+            // Arrange: Stopped from the first Refresh() after Stop(), with the deadline already passed
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Running;
+            var stopIssued = false;
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Stop()).Callback(() => stopIssued = true);
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (stopIssued)
+                    currentStatus = ServiceControllerStatus.Stopped;
+            });
+
+            serviceRepoMock.Setup(x => x.GetByNameAsync("StoppedService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(new ServiceDto { Name = "StoppedService", StopTimeout = 30 });
+            controllerProviderMock.Setup(x => x.GetService("StoppedService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object)
+            {
+                ElapsedSourceFactory = () => () => TimeSpan.FromDays(1)
+            };
+
+            // Act
+            var ex = await Record.ExceptionAsync(
+                () => serviceHelper.StopServicesAsync(new[] { "StoppedService" }, CancellationToken.None));
+
+            // Assert - the stop-wait loop leaves on the refreshed Stopped before it looks at the deadline
+            Assert.Null(ex);
+            scMock.Verify(x => x.Stop(), Times.Once);
+        }
+
+        [Fact]
         public async Task StopServicesAsync_PreviousStopTimeoutRecorded_ExtendsStopDeadlineByPreviousStopDuration()
         {
             // Arrange
