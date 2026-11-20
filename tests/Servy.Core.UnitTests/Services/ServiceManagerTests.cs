@@ -4650,14 +4650,18 @@ namespace Servy.Core.UnitTests.Services
                     new WindowsServiceInfo { ServiceName = "TestService", DisplayName = "TestServiceDisplayName" }
                  });
 
-            // Act
-            var result = _serviceManager.GetDependencies("TestService", TestContext.Current.CancellationToken);
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = _serviceManager.GetDependencies("TestService", cts.Token);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(deps, result);
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(deps, result);
 
-            _mockController.Verify(c => c.GetDependencies(It.IsAny<CancellationToken>()), Times.Once);
+                // The caller's token, not a default one, reaches the SCM walk
+                _mockController.Verify(c => c.GetDependencies(cts.Token), Times.Once);
+            }
         }
 
         [Fact]
