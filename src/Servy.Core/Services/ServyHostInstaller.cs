@@ -440,7 +440,7 @@ namespace Servy.Core.Services
         {
             if (serviceHelper == null) throw new ArgumentNullException(nameof(serviceHelper));
 
-            var names = new List<string>(serviceHelper.GetRunningServyServices() ?? new List<string>());
+            var names = new List<string>(serviceHelper.GetRunningServyServices());
             try
             {
                 foreach (var sc in _serviceControllerProvider.GetServices())
