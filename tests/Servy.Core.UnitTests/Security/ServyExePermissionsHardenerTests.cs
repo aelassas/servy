@@ -769,6 +769,51 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void ReportPurgeResult_Revoked_NamesThePurgedItemsAtInfoLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("vault");
+            result.AddRevoked(AppConfig.ServyServiceUIExe);
+            result.AddRevoked(ServiceLogsFolder);
+            result.Complete(ExePermissionsHardeningStatus.Revoked);
+
+            // Act
+            var log = LogCapture.Run(() => ServyExePermissionsHardener.ReportPurgeResult(result), LogLevel.Info);
+
+            // Assert
+            Assert.Contains($"Purged the non-administrative entries of Servy's vault: {AppConfig.ServyServiceUIExe}, {ServiceLogsFolder}.", log);
+        }
+
+        [Fact]
+        public void ReportPurgeResult_RevokedNothing_WritesNothingAtInfoLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("vault").Complete(ExePermissionsHardeningStatus.Revoked);
+
+            // Act
+            var log = LogCapture.Run(() => ServyExePermissionsHardener.ReportPurgeResult(result), LogLevel.Info);
+
+            // Assert: an idle start reports at Debug only
+            Assert.DoesNotContain("Servy's vault", log);
+        }
+
+        [Theory]
+        [InlineData(ExePermissionsHardeningStatus.Skipped, "the vault directory is a reparse point (symlink/junction)")]
+        [InlineData(ExePermissionsHardeningStatus.InvalidAccount, "the account 'ghost' could not be resolved, so its grants could not be written back")]
+        [InlineData(ExePermissionsHardeningStatus.VaultNotFound, "'C:\\absent' does not exist")]
+        public void ReportPurgeResult_NotPurged_GivesTheReasonAtWarnLevel(ExePermissionsHardeningStatus status, string reason)
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("vault").Complete(status, reason);
+
+            // Act
+            var log = LogCapture.Run(() => ServyExePermissionsHardener.ReportPurgeResult(result), LogLevel.Warn);
+
+            // Assert
+            Assert.Contains($"Servy's vault was not purged of its non-administrative entries: {reason}.", log);
+        }
+
+        [Fact]
         public void ReportResult_NotApplied_GivesTheReason()
         {
             // Arrange
