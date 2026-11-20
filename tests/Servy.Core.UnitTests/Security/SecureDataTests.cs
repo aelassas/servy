@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Testing;
 using System.Security.Cryptography;
@@ -612,5 +613,61 @@ namespace Servy.Core.UnitTests.Security
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Pins what <see cref="SecureData.Decrypt"/> writes to the log for a marked payload that is refused or fails its integrity check.
+    /// </summary>
+    [Collection(Logging.LoggerCollection.Name)]
+    public class SecureDataLoggingTests
+    {
+        private static SecureData CreateSut()
+        {
+            var provider = new Mock<IProtectedKeyProvider>();
+            provider.Setup(p => p.GetKey()).Returns(() => Enumerable.Range(0, 32).Select(i => (byte)i).ToArray());
+            provider.Setup(p => p.GetIV()).Returns(() => new byte[16]);
+            return new SecureData(provider.Object);
+        }
+
+        [Fact]
+        public void Decrypt_MarkedV1_WhenLegacyDisabled_LogsThePolicyWarningAndNoIntegrityError()
+        {
+            // Arrange
+            Assert.SkipWhen(AppConfig.AllowLegacyV1Decryption, "Test targets disabled legacy v1 decryption policy.");
+            using (var sp = CreateSut())
+            {
+                // Act
+                var log = LogCapture.Run(() =>
+                {
+                    Assert.Throws<SecureDataLegacyBlockedException>(() => sp.Decrypt("SERVY_ENC:v1:anything"));
+                }, LogLevel.Debug);
+
+                // Assert
+                Assert.Contains("Security block: Attempted to decrypt a v1 payload", log, StringComparison.Ordinal);
+                Assert.DoesNotContain("Integrity failure for marked payload", log, StringComparison.Ordinal);
+            }
+        }
+
+        [Fact]
+        public void Decrypt_TamperedV2_LogsTheIntegrityFailureAtErrorLevel()
+        {
+            // Arrange
+            using (var sp = CreateSut())
+            {
+                var encrypted = sp.Encrypt("MySecret123");
+                var data = Convert.FromBase64String(encrypted.Substring("SERVY_ENC:v2:".Length));
+                data[20] ^= 0x01;
+                var tampered = "SERVY_ENC:v2:" + Convert.ToBase64String(data);
+
+                // Act
+                var log = LogCapture.Run(() =>
+                {
+                    Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
+                }, LogLevel.Error);
+
+                // Assert
+                Assert.Contains("Integrity failure for marked payload.", log, StringComparison.Ordinal);
+            }
+        }
     }
 }
