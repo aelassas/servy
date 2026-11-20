@@ -364,6 +364,22 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Equal("startup directory", violations[1].Attribute.Label);
         }
 
+        [Fact]
+        public void FindAllViolations_WhenTargetIsPassedAsABaseType_StillWalksThePropertiesOfItsRuntimeType()
+        {
+            // Arrange: the static type is object, which declares no [ServicePath] property (#5181)
+            object dto = new TestDto { ExecutablePath = null, StartupDirectory = @"C:\invalid\dir" };
+
+            // Act
+            var violations = ServicePathValidator.FindAllViolations(dto, (path, isFile) => false).ToList();
+            var first = ServicePathValidator.FindFirstViolation(dto, (path, isFile) => false);
+
+            // Assert
+            Assert.Equal(2, violations.Count);
+            Assert.NotNull(first);
+            Assert.Equal(nameof(TestDto.ExecutablePath), first.Property.Name);
+        }
+
         #endregion
 
         #region ResolveErrorMessage Tests
