@@ -366,6 +366,30 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void Cleanup_StdoutAndStderrShareOneWriter_DisposesItExactlyOnce()
+        {
+            // Arrange
+            var options = CreateOptions();
+            options.StderrPath = options.StdoutPath;
+            var scopedLogger = SetupStart(options);
+            _service.StartForTest();
+
+            // Guard the premise: the start path really stored one writer in both fields.
+            Assert.Same(
+                TestReflection.GetField<object>(_service, "_stdoutWriter"),
+                TestReflection.GetField<object>(_service, "_stderrWriter"));
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            _mockStdoutWriter.Verify(w => w.Dispose(), Times.Once);
+            _mockStderrWriter.Verify(w => w.Dispose(), Times.Never);
+            scopedLogger.Verify(l => l.Warn(
+                It.Is<string>(s => s.StartsWith("Failed to dispose")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
         public void Cleanup_WriterDisposeThrows_LogsBothWarningsAndStillDisposesTheChildProcess()
         {
             // Arrange
