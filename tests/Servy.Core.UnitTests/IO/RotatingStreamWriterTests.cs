@@ -2360,5 +2360,44 @@ namespace Servy.Core.UnitTests.IO
                 expectError,
                 log.IndexOf("Persistent failure to enumerate rotated log files", StringComparison.Ordinal) >= 0);
         }
+
+        /// <summary>
+        /// A reparse-point refusal after construction goes through <c>DisableCapture</c>, whose
+        /// <c>Logger.Error</c> is the only place anything outside the writer learns that output capture
+        /// stopped and why. Without this case that line can be deleted, with every test green, and the
+        /// writer would drop the wrapped process's output without a trace (twin of #7092 and #7114).
+        /// </summary>
+        [Fact]
+        public void WriteLine_RefusingReparsePoints_RefusalAfterConstruction_LogsWhyCaptureWasDisabled()
+        {
+            // Arrange
+            string logPath = Path.Combine(TempDirectory, "refused.log");
+            bool ancestorIsReparsePoint = false;
+            var writer = new RotatingStreamWriter(
+                logPath,
+                true,
+                1024,
+                false,
+                DateRotationType.Daily,
+                0,
+                false,
+                null,
+                _ => ancestorIsReparsePoint,
+                (handle, path) => true);
+            ancestorIsReparsePoint = true;
+
+            // Act
+            string log = LogCapture.Run(() =>
+            {
+                writer.WriteLine("refused line");
+            });
+            writer.Dispose();
+
+            // Assert
+            Assert.True(TestReflection.GetField<bool>(writer, "_captureDisabled"));
+            Assert.Contains("Refusing to open log file", log, StringComparison.Ordinal);
+            Assert.Contains("refused.log", log, StringComparison.Ordinal);
+            Assert.Contains("Output capture to this file is disabled", log, StringComparison.Ordinal);
+        }
     }
 }
