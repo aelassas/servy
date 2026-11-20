@@ -1195,6 +1195,42 @@ namespace Servy.Manager.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
+        /// <summary>
+        /// Start, Stop, Restart and Uninstall (plus their shared repository lookup and the disabled pre-check)
+        /// must hand the caller's token to the collaborators, not <c>default</c>.
+        /// </summary>
+        [Fact]
+        public async Task LifecycleCommands_ForwardTheCallersToken()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            using var cts = new CancellationTokenSource();
+            var token = cts.Token;
+
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = service.Name });
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
+
+            // Act
+            await sut.StartServiceAsync(service, showMessageBox: false, cancellationToken: token);
+            await sut.StopServiceAsync(service, showMessageBox: false, cancellationToken: token);
+            await sut.RestartServiceAsync(service, showMessageBox: false, cancellationToken: token);
+            await sut.UninstallServiceAsync(service, token);
+
+            // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(service.Name, It.IsAny<bool>(), token), Times.Once);
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(service.Name, It.IsAny<bool>(), token), Times.Once);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(service.Name, It.IsAny<bool>(), token), Times.Once);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(service.Name, token), Times.Once);
+
+            // The pre-checks: one repository lookup per command, one startup-type read for Start and Restart
+            // (Stop passes checkDisabled: false).
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, token), Times.Exactly(4));
+            _serviceManagerMock.Verify(m => m.GetServiceStartupType(service.Name, token), Times.Exactly(2));
+        }
+
         [Fact]
         public async Task InstallServiceAsync_ShouldCallServiceManager()
         {
@@ -1234,7 +1270,10 @@ namespace Servy.Manager.UnitTests.Services
 
                 // Assert
                 Assert.True(result, "InstallServiceAsync returned false. The Directory.Exists validation likely failed.");
-                _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == service.Name), It.IsAny<CancellationToken>()), Times.Once);
+                // Exact token, not It.IsAny: the install and its pre-check must receive the caller's token.
+                var token = TestContext.Current.CancellationToken;
+                _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == service.Name), token), Times.Once);
+                _serviceManagerMock.Verify(m => m.IsServiceInstalled(service.Name, token), Times.Once);
 
                 // The success tail: the UI model is flipped and the user is told
                 Assert.True(service.IsInstalled);
