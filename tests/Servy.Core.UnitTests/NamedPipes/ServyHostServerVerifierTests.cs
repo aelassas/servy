@@ -24,6 +24,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Constructor_NullArguments_Throw()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ServyHostServerVerifier(null));
             Assert.Throws<ArgumentNullException>(() => new ServyHostServerVerifier(_api.Object, null, _ => 1));
             Assert.Throws<ArgumentNullException>(() => new ServyHostServerVerifier(_api.Object, "Servy", null));
@@ -32,6 +33,7 @@ namespace Servy.Core.UnitTests.NamedPipes
         [Fact]
         public void Verify_NullPipe_Throws()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => Create(1).Verify(null));
         }
 
