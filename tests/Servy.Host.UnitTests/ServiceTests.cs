@@ -5,7 +5,9 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.NamedPipes;
 using Servy.Core.Native;
+using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Pipes;
@@ -837,6 +839,66 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public void GetRunningServiceAccounts_NoServiceList_ReturnsNoAccountsAndAsksNobody()
+        {
+            // Arrange
+            var running = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            _sut.ResolveProcessAccount = _ => running;
+
+            // Act
+            var accounts = (List<SecurityIdentifier>)TestReflection.InvokeNonPublic(_sut, "GetRunningServiceAccounts", new object?[] { null })!;
+
+            // Assert
+            Assert.Empty(accounts);
+            _api.Verify(a => a.GetServiceProcessId(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void GetRunningServiceAccounts_NullAndUnnamedEntries_AreSkippedAndTheNamedOneIsRead()
+        {
+            // Arrange
+            var running = new SecurityIdentifier(WellKnownSidType.NetworkServiceSid, null);
+            _sut.ResolveProcessAccount = pid => pid == ServicePid ? running : null;
+            var services = new ServiceDto?[] { null, new ServiceDto { Name = null }, new ServiceDto { Name = ServiceName } };
+
+            // Act
+            var accounts = (List<SecurityIdentifier>)TestReflection.InvokeNonPublic(_sut, "GetRunningServiceAccounts", new object?[] { services })!;
+
+            // Assert: the null entry and the unnamed one never reach the SCM, the named one's account is returned
+            Assert.Equal(new[] { running }, accounts);
+            _api.Verify(a => a.GetServiceProcessId(It.IsAny<string>()), Times.Once);
+            _api.Verify(a => a.GetServiceProcessId(ServiceName), Times.Once);
+        }
+
+        [Fact]
+        public async Task ListenForPipeConnectionsAsync_NoDaclPublishedYet_CreatesTheInstanceWithTheDefaultDacl()
+        {
+            // Arrange: the listener loop is run directly, so no refresh has published a DACL
+            PipeSecurity? used = null;
+            using (var cts = new CancellationTokenSource())
+            {
+                _sut.ServerStreamFactory = (name, security) =>
+                {
+                    used = security;
+                    cts.Cancel();
+                    throw new IOException("All pipe instances are busy.");
+                };
+                // Any accept failure also ends the loop, so a regression fails the assertions below instead of looping
+                _logger.Setup(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<Exception>())).Callback(() => cts.Cancel());
+                var expected = ServyHostPipeSecurity.Create((IEnumerable<SecurityIdentifier>?)null)
+                    .GetAccessRules(true, true, typeof(SecurityIdentifier)).Count;
+
+                // Act
+                await (Task)TestReflection.InvokeNonPublic(_sut, "ListenForPipeConnectionsAsync", cts.Token)!;
+
+                // Assert: the instance got a copy of the default DACL, and nothing was published
+                Assert.Null(_sut.CurrentPipeSecurity);
+                Assert.NotNull(used);
+                Assert.Equal(expected, used!.GetAccessRules(true, true, typeof(SecurityIdentifier)).Count);
+            }
+        }
+
+        [Fact]
         public async Task RefreshPipeSecurityAsync_AccountRemoved_IsNoLongerGranted()
         {
             // Arrange
@@ -1239,6 +1301,26 @@ namespace Servy.Host.UnitTests
         }
 
         [Fact]
+        public void OnStop_StopListeningThrows_WarnsAndStillFlushesTheLogger()
+        {
+            // Arrange: a handler task that ended Faulted makes StopListening propagate the failure from its wait
+            var logger = new Mock<IServyLogger>();
+            using (var probe = new LifecycleProbe(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object))
+            {
+                var handlers = TestReflection.GetField<System.Collections.Concurrent.ConcurrentDictionary<Task, bool>>(probe, "_activeHandlers");
+                handlers.TryAdd(Task.FromException(new InvalidOperationException("handler failed")), true);
+
+                // Act
+                var ex = Record.Exception(() => probe.RunOnStop());
+
+                // Assert: the failure is reported, not thrown, and the logger is still flushed
+                Assert.Null(ex);
+                logger.Verify(l => l.Warn(It.Is<string>(m => m.StartsWith("Exception stopping pipe listener:") && m.Contains("handler failed")), null), Times.Once);
+                logger.Verify(l => l.Dispose(), Times.Once);
+            }
+        }
+
+        [Fact]
         public void OnStart_PipeDaclCannotBeBuilt_LogsAndSetsTheServiceSpecificExitCode()
         {
             // Arrange
@@ -1576,6 +1658,127 @@ namespace Servy.Host.UnitTests
                     // Same as above: the drain keeps the pending handler from setting an event this test is about to
                     // dispose, and since #7353 it is called plainly, so a throw from it fails the test.
                     host.StopListening();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Connects a client to a host whose request read blocks until its token ends, waits until the read is pending,
+        /// and returns the tracked handler tasks so the test can wait for them to finish.
+        /// </summary>
+        /// <param name="host">The listening host.</param>
+        /// <param name="pipeName">The pipe the host listens on.</param>
+        /// <param name="reading">The event the read sets once it is pending.</param>
+        /// <returns>The tracked handler tasks of the connection.</returns>
+        private static Task[] ConnectUntilTheReadIsPending(Service host, string pipeName, ManualResetEventSlim reading)
+        {
+            using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+            {
+                client.Connect(3000);
+                Assert.True(reading.WaitHandle.WaitOne(TimeSpan.FromSeconds(10)));
+
+                // The handler is tracked right after it starts, which can be just after its read began
+                var handlers = TestReflection.GetField<System.Collections.Concurrent.ConcurrentDictionary<Task, bool>>(host, "_activeHandlers");
+                Assert.True(SpinWait.SpinUntil(() => !handlers.IsEmpty, TimeSpan.FromSeconds(10)));
+                return handlers.Keys.ToArray();
+            }
+        }
+
+        [Fact]
+        public void HandleConnectionAsync_HostStopsWhileTheReadIsPending_EndsWithoutALogEntry()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            using (var reading = new ManualResetEventSlim())
+            {
+                _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                    .Returns<Stream, CancellationToken>(async (stream, token) =>
+                    {
+                        reading.Set();
+                        await Task.Delay(Timeout.Infinite, token);
+                        return null;
+                    });
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 60000))
+                {
+                    var handlers = ConnectUntilTheReadIsPending(host, pipeName, reading);
+
+                    // Act
+                    host.StopListening();
+                    var finished = Task.WaitAll(handlers, TimeSpan.FromSeconds(10));
+
+                    // Assert: a shutdown is not a timeout and not a failure, so nothing is logged
+                    Assert.True(finished);
+                    logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                    logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                }
+            }
+        }
+
+        [Fact]
+        public void HandleConnectionAsync_PipeClosedByTheShutdown_EndsWithoutALogEntry()
+        {
+            // Arrange: the read fails with an IOException, as a read on a pipe closed under it does
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            using (var reading = new ManualResetEventSlim())
+            {
+                _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                    .Returns<Stream, CancellationToken>(async (stream, token) =>
+                    {
+                        reading.Set();
+                        try { await Task.Delay(Timeout.Infinite, token); }
+                        catch (OperationCanceledException) { throw new IOException("The pipe was closed."); }
+                        return null;
+                    });
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 60000))
+                {
+                    var handlers = ConnectUntilTheReadIsPending(host, pipeName, reading);
+
+                    // Act
+                    host.StopListening();
+                    var finished = Task.WaitAll(handlers, TimeSpan.FromSeconds(10));
+
+                    // Assert: the failure was caused by the shutdown, so it is neither a timeout nor an error
+                    Assert.True(finished);
+                    logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                    logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                }
+            }
+        }
+
+        [Fact]
+        public void HandleConnectionAsync_PipeClosedByTheTimeout_WarnsOnceAndLogsNoError()
+        {
+            // Arrange: the read fails with an IOException once the request timeout ended its token
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns<Stream, CancellationToken>(async (stream, token) =>
+                {
+                    try { await Task.Delay(Timeout.Infinite, token); }
+                    catch (OperationCanceledException) { throw new IOException("The pipe was closed."); }
+                    return null;
+                });
+            using (var warned = new ManualResetEventSlim())
+            {
+                logger.Setup(l => l.Warn(It.Is<string>(m => m.Contains("did not complete its request in time")), null)).Callback(() => warned.Set());
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 200))
+                {
+                    // Act
+                    bool observed;
+                    using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                    {
+                        client.Connect(3000);
+                        observed = warned.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                    }
+
+                    host.StopListening();
+
+                    // Assert
+                    Assert.True(observed);
+                    logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("did not complete its request in time")), null), Times.Once);
+                    logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
                 }
             }
         }
