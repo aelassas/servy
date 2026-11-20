@@ -1710,6 +1710,38 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
+        [Fact]
+        public void Dispose_WhenTheWriterFlushThrows_DoesNotThrowAndStillReleasesTheFileHandle()
+        {
+            // Arrange
+            var filePath = Path.Combine(TempDirectory, "flush_fails.log");
+            var writer = CreateWriter(filePath, true, 1024);
+            writer.WriteLine("before the failure"); // opens _baseStream on the real file
+
+            // Swap the StreamWriter for one whose stream fails on Flush; _baseStream keeps the real handle.
+            TestReflection.SetField(writer, "_writer", new StreamWriter(new FlushFailingStream()));
+
+            // Act
+            var ex = Record.Exception(writer.Dispose);
+
+            // Assert
+            Assert.Null(ex);
+            Assert.Null(TestReflection.GetField<StreamWriter>(writer, "_writer"));
+            Assert.Null(TestReflection.GetField<FileStream>(writer, "_baseStream"));
+
+            // The handle is really gone: an exclusive open succeeds.
+            using (new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) { }
+        }
+
+        /// <summary>
+        /// A stream whose <see cref="Flush"/> always throws, used to make the writer's flush fail.
+        /// </summary>
+        private sealed class FlushFailingStream : MemoryStream
+        {
+            /// <inheritdoc />
+            public override void Flush() => throw new IOException("Simulated flush failure");
+        }
+
         #endregion
 
         #region New Logic Coverage (Self-Healing, Weekly Boundary, Hard Failures)
