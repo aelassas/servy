@@ -259,6 +259,91 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task EnsureInstalledAndRunningAsync_HostMove_HandsTheCallersTokenToStopServicesAsync()
+        {
+            // Arrange
+            RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"");
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            _controllers.Setup(c => c.GetServices()).Returns(Array.Empty<IServiceControllerWrapper>());
+            HostStatuses(ServiceControllerStatus.Stopped, ServiceControllerStatus.Stopped, ServiceControllerStatus.Running);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // Act
+                var result = await Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, cts.Token);
+
+                // Assert: the caller's own token, not CancellationToken.None and not a new one
+                Assert.True(result.IsSuccess, result.ErrorMessage);
+                _serviceHelper.Verify(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), cts.Token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_CancelledOnceTheServicesAreStopped_DoesNotStopTheHost()
+        {
+            // Arrange
+            RegisteredAs("\"C:\\ProgramData\\Servy\\Servy.Host.Net48.exe\"");
+            _serviceHelper.Setup(s => s.GetRunningServyServices()).Returns(new List<string> { "UiService" });
+            _controllers.Setup(c => c.GetServices()).Returns(Array.Empty<IServiceControllerWrapper>());
+            HostStatuses(ServiceControllerStatus.Running, ServiceControllerStatus.Running, ServiceControllerStatus.Stopped);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                _serviceHelper.Setup(s => s.StopServicesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                    .Callback(() => cts.Cancel())
+                    .Returns(Task.CompletedTask);
+
+                // Act
+                var ex = await Record.ExceptionAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, cts.Token));
+
+                // Assert: the host is left running, and the services are started again
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                _host.Verify(h => h.Stop(), Times.Never);
+                _serviceHelper.Verify(s => s.StartServicesAsync(It.Is<IEnumerable<string>>(n => n.Single() == "UiService"), CancellationToken.None), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_CancelledWhileTheServiceIsReconfigured_DoesNotStartTheHost()
+        {
+            // Arrange
+            var existing = RegisteredAs($"\"{_hostExe}\"");
+            HostStatuses(ServiceControllerStatus.Stopped);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                _api.Setup(a => a.ChangeServiceConfig(existing, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
+                    It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                    .Callback(() => cts.Cancel())
+                    .Returns(true);
+
+                // Act
+                var ex = await Record.ExceptionAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, cts.Token));
+
+                // Assert
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                _host.Verify(h => h.Start(), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task EnsureInstalledAndRunningAsync_AlreadyCancelled_ThrowsWithoutOpeningTheScm()
+        {
+            using (var cts = new CancellationTokenSource())
+            {
+                // Arrange
+                cts.Cancel();
+
+                // Act
+                var ex = await Record.ExceptionAsync(() => Create().EnsureInstalledAndRunningAsync(_hostExe, _serviceHelper.Object, cts.Token));
+
+                // Assert
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
+                _api.Verify(a => a.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()), Times.Never);
+            }
+        }
+
+        [Fact]
         public async Task EnsureInstalledAndRunningAsync_RestartingTheStoppedServicesThrows_DoesNotEscapeAndTheResultStands()
         {
             // Arrange
@@ -859,6 +944,29 @@ namespace Servy.Core.UnitTests.Services
                 // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Create().StartAsync(cts.Token));
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Create().StopAsync(cts.Token));
+            }
+        }
+
+
+        [Theory]
+        [InlineData(false, ServiceControllerStatus.Running)]      // StopAsync, waiting for Stopped
+        [InlineData(true, ServiceControllerStatus.StopPending)]   // StartAsync, waiting out a pending stop
+        [InlineData(true, ServiceControllerStatus.Stopped)]       // StartAsync, waiting for Running
+        public async Task StartAndStop_CancelledAfterTheEntryCheck_EndTheWaitInsteadOfRunningIntoTheTimeout(bool start, ServiceControllerStatus status)
+        {
+            // Arrange: the token is cancelled when the controller is opened, which is after the entry check, and the
+            // service never leaves its status
+            HostStatuses(status);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                _controllers.Setup(c => c.GetService(AppConfig.ServyHostServiceName)).Returns(() => { cts.Cancel(); return _host.Object; });
+
+                // Act
+                var ex = await Record.ExceptionAsync(() => start ? Create().StartAsync(cts.Token) : Create().StopAsync(cts.Token));
+
+                // Assert: a cancellation, not the InvalidOperationException of the two-second timeout
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
             }
         }
 
