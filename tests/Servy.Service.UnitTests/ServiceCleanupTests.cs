@@ -315,6 +315,32 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void Cleanup_WriterDisposeFailureCannotBeLogged_FallsBackToTheOutputWritersWarning()
+        {
+            // Arrange
+            var options = CreateOptions();
+            var scopedLogger = SetupStart(options);
+            _mockStdoutWriter.Setup(w => w.Dispose()).Throws(new IOException("stdout handle is gone"));
+
+            // The per-writer catch logs through the same logger a failing sink would also refuse, and
+            // that second failure is what the dispose block's own catch exists for.
+            scopedLogger
+                .Setup(l => l.Warn("Failed to dispose stdout writer: stdout handle is gone", It.IsAny<Exception>()))
+                .Throws(new InvalidOperationException("log sink failed"));
+            _service.StartForTest();
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            // 1. The escaped logging failure is reported once, by the dispose block's catch
+            scopedLogger.Verify(l => l.Warn("Failed to dispose output writers: log sink failed", It.IsAny<Exception>()), Times.Once);
+
+            // 2. ... so it never reaches the outer catch that reports a failed kill sequence
+            scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.StartsWith("Failed to kill child process")), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
         public void Cleanup_WriterDisposeThrows_LogsBothWarningsAndStillDisposesTheChildProcess()
         {
             // Arrange

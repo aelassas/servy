@@ -52,6 +52,51 @@ namespace Servy.Service.UnitTests
                 Times.Once);
         }
 
+        [Theory]
+        [InlineData("https://127.0.0.1:1/ab")]
+        [InlineData("https://127.0.0.1:1/ab/")]
+        public async Task EmitHeartbeatPing_FlagSuffix_JoinsItToTheBasePathWithExactlyOneSlash(string baseUrl)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions(baseUrl));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "EmitHeartbeatPing", baseUrl, "fail", 1);
+
+            // Assert
+            // The logged URL keeps five characters of the path, which is enough to see the join:
+            // "ab/fa" is one slash, "abfai" is none and "ab//f" is two.
+            var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, CancellationToken.None));
+            Assert.Same(pingLogged.Task, completedTask);
+            Assert.Contains("https://127.0.0.1/ab/fa... [MASKED]", await pingLogged.Task);
+        }
+
+        [Fact]
+        public async Task CheckHealth_ChildProcessMissing_CountsAFailedCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            // No wrapper at all, as after a restart that has not produced one yet
+            service.SetChildProcess(null);
+            service.SetMaxFailedChecks(3);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(1, service.GetFailedChecks());
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("Health check failed") && s.Contains("(1/3)")), It.IsAny<Exception>()),
+                Times.Once);
+        }
+
         [Fact]
         public async Task CheckHealth_ExceedMaxFailedChecks_TriggersRecoveryAction()
         {

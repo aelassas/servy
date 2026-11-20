@@ -414,6 +414,70 @@ namespace Servy.Service.UnitTests
             cancellation.Cancel();
         }
 
+        [Theory]
+        [InlineData("_isTearingDown")]
+        [InlineData("_disposed")]
+        [InlineData("_isRebooting")]
+        [InlineData(null)]
+        public void OnProcessExited_ServiceNotInAStateToReact_ReturnsBeforeLoggingTheExit(string stateFlag)
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            // A null flag is the "options not initialized yet" row: nothing is configured, so there is
+            // no recovery policy to evaluate. Every other row has options and one blocking flag.
+            if (stateFlag != null)
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+                TestReflection.SetField(service, stateFlag, true);
+            }
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.ExitCode).Returns(1);
+            service.SetChildProcess(mockProcess.Object);
+
+            // Act
+            // The guard runs before the handler's first await, so it is done when the call returns
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Put the flag back so the context's Dispose still runs a real teardown.
+            if (stateFlag != null)
+            {
+                TestReflection.SetField(service, stateFlag, false);
+            }
+
+            // Assert
+            _ctx.Logger.Verify(l => l.Info("Child process exit detected via event.", It.IsAny<Exception>()), Times.Never);
+            mockProcess.Verify(p => p.ExitCode, Times.Never);
+        }
+
+        [Fact]
+        public void OnProcessExited_ChildProcessAlreadyCleared_TreatsTheExitCodeAsMinusOne()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+            service.SetRecoveryActionEnabled(false);
+            service.SetMaxFailedChecks(1);
+            service.SetFailedChecks(0);
+
+            // The exit event can outlive the wrapper field, which a stop or a restart clears; there is
+            // then no exit code to read.
+            service.SetChildProcess(null);
+
+            // Act
+            service.InvokeOnProcessExited(null, EventArgs.Empty);
+
+            // Assert
+            // The fallback code -1 is a failure, so recovery being disabled stops the service with an error
+            _ctx.Logger.Verify(l => l.Error(
+                "[OnProcessExited] Process exited with code -1 (0xFFFFFFFF) and recovery is disabled.",
+                It.IsAny<Exception>()), Times.Once);
+
+            _ctx.Logger.Verify(l => l.Info(
+                It.Is<string>(s => s.Contains("exited successfully")), It.IsAny<Exception>()), Times.Never);
+        }
+
         [Fact]
         public void OnProcessExited_ScheduledRecoveryThrows_LogsTheUnexpectedError()
         {
