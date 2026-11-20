@@ -907,6 +907,41 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
+        /// Verifies that the downward walk leaves a listed child alone when that child is an ancestor of the
+        /// current process (the #1639 fix), while an ordinary sibling is still killed.
+        /// </summary>
+        [Fact]
+        public void KillChildren_ChildIsAnAncestorOfTheCurrentProcess_IsNotKilled()
+        {
+            // Arrange
+            // 100 -> [400, 401], and 400 is also the parent of the current process (9999).
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+            accessor.CurrentStartTime = now;
+
+            var parent = new FakeSystemProcess { Id = 100, ProcessName = "launcher", StartTime = now.AddMinutes(-10) };
+            var host = new FakeSystemProcess { Id = 400, ProcessName = "host", ExecutablePath = @"C:\Apps\host.exe", StartTime = now.AddMinutes(-5) };
+            var sibling = new FakeSystemProcess { Id = 401, ProcessName = "sibling", ExecutablePath = @"C:\Apps\sibling.exe", StartTime = now.AddMinutes(-5) };
+
+            accessor.Processes[100] = parent;
+            accessor.Processes[400] = host;
+            accessor.Processes[401] = sibling;
+
+            accessor.Snapshot[accessor.CurrentPid] = new ProcessInfoNode { ParentId = 400, Name = "TestSelf.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 100, Name = "host.exe" };
+            accessor.ByParent[100] = new List<int> { 400, 401 };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            killer.KillChildren(100);
+
+            // Assert
+            Assert.False(host.Killed, "A descendant that is an ancestor of the current process must stay protected.");
+            Assert.True(sibling.Killed, "The walk still kills the unprotected sibling.");
+        }
+
+        /// <summary>
         /// Verifies that a listed child which started before its parent is treated as a recycled PID and
         /// left alone, while the root is still killed.
         /// </summary>
@@ -1159,6 +1194,77 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(expectKilled, supervisor.Killed);
+        }
+
+        /// <summary>
+        /// Verifies that an ancestor whose start time cannot be read stays in the protected set, so the
+        /// ancestor walk fails closed.
+        /// </summary>
+        [Fact]
+        public void KillProcessTreeAndParents_ByPid_AncestorWithUnreadableStartTime_StaysProtected()
+        {
+            // Arrange
+            var accessor = new FakeSystemProcessAccessor();
+            accessor.CurrentStartTime = DateTime.UtcNow;
+
+            var host = new FakeSystemProcess
+            {
+                Id = 400,
+                ProcessName = "host",
+                ExecutablePath = @"C:\Apps\host.exe",
+                StartTimeThunk = () => throw new Win32Exception(5, "Access Denied")
+            };
+
+            accessor.Processes[400] = host;
+            accessor.Snapshot[accessor.CurrentPid] = new ProcessInfoNode { ParentId = 400, Name = "TestSelf.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 1, Name = "host.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(400, killParents: false);
+
+            // Assert
+            Assert.False(result, "An ancestor that cannot be dated is still an ancestor: the kill is refused.");
+            Assert.False(host.Killed);
+        }
+
+        /// <summary>
+        /// Verifies that the ancestor walk keeps comparing against the last start time it could read, so a
+        /// recycled PID above an undatable ancestor is still recognised and stays killable.
+        /// </summary>
+        [Fact]
+        public void KillProcessTreeAndParents_ByPid_RecycledPidAboveAnUndatableAncestor_IsNotProtected()
+        {
+            // Arrange
+            // 9999 -> 400 (start time unreadable) -> 500 (started ten minutes after the current process).
+            var accessor = new FakeSystemProcessAccessor();
+            var now = DateTime.UtcNow;
+            accessor.CurrentStartTime = now.AddMinutes(-10);
+
+            var host = new FakeSystemProcess
+            {
+                Id = 400,
+                ProcessName = "host",
+                ExecutablePath = @"C:\Apps\host.exe",
+                StartTimeThunk = () => throw new Win32Exception(5, "Access Denied")
+            };
+            var recycled = new FakeSystemProcess { Id = 500, ProcessName = "recycled", ExecutablePath = @"C:\Apps\recycled.exe", StartTime = now };
+
+            accessor.Processes[400] = host;
+            accessor.Processes[500] = recycled;
+            accessor.Snapshot[accessor.CurrentPid] = new ProcessInfoNode { ParentId = 400, Name = "TestSelf.exe" };
+            accessor.Snapshot[400] = new ProcessInfoNode { ParentId = 500, Name = "host.exe" };
+            accessor.Snapshot[500] = new ProcessInfoNode { ParentId = 1, Name = "recycled.exe" };
+
+            var killer = new ProcessKiller(accessor);
+
+            // Act
+            bool result = killer.KillProcessTreeAndParents(500, killParents: false);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(recycled.Killed, "A PID that started after the current process is not one of its ancestors.");
         }
 
         /// <summary>
