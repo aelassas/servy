@@ -1693,6 +1693,32 @@ namespace Servy.Service.UnitTests
             }
         }
 
+        [Theory]
+        [InlineData(true, null)]
+        [InlineData(true, "")]
+        [InlineData(true, "   ")]
+        [InlineData(false, "hook.exe")]
+        public void RunFireAndForgetHook_NoOptionsOrBlankExecutable_LaunchesNothing(bool optionsSet, string? executablePath)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            if (optionsSet)
+            {
+                TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+            }
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "RunFireAndForgetHook", "Post-Launch", executablePath, null, null, true);
+
+            // Assert
+            // 1. No process was built, and nothing was logged as launched
+            _ctx.ProcessFactory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()), Times.Never);
+            _ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.StartsWith("Running Post-Launch program")), It.IsAny<Exception>()), Times.Never);
+
+            // 2. The guard is a quiet no-op, not a failure the launch catch reports
+            _ctx.Logger.Verify(l => l.Error(It.Is<string>(s => s.StartsWith("Failed to run Post-Launch program")), It.IsAny<Exception>()), Times.Never);
+        }
+
         [Fact]
         public void OnStart_PreLaunchTornDownAfterTheLastBackOffSlice_AbortsBeforeTheNextAttempt()
         {
@@ -2731,6 +2757,92 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void OnCustomCommand_PreShutdownWithoutServiceHandleAndFailingFallbackTeardown_LogsItAndStillTerminates()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // ExecuteTeardown swallows its own failures, so the only way an exception reaches the
+            // fallback's catch is a failure inside ExecuteTeardown's own catch: a throwing Dispose
+            // sends the teardown there, and the logger refusing the "Teardown error" line lets that
+            // exception escape to the caller.
+            _mockProcess.Setup(p => p.Dispose()).Throws(new InvalidOperationException("dispose failed"));
+            scopedLogger
+                .Setup(l => l.Error("Teardown error during PreShutdown.", It.IsAny<Exception>()))
+                .Throws(new InvalidOperationException("log sink failed"));
+
+            // Environment.ExitCode is process-global, so it is restored however this test ends.
+            var originalExitCode = Environment.ExitCode;
+
+            try
+            {
+                using (var service = BuildStatusRecordingService())
+                {
+                    service.StartForTest();
+
+                    // _serviceHandle is left at IntPtr.Zero to route OnCustomCommand into the fallback.
+                    Environment.ExitCode = 0;
+
+                    // Act
+                    var thrown = Record.Exception(() =>
+                        TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN));
+
+                    // Assert
+                    // 1. The escaped teardown failure is reported by the fallback's catch
+                    scopedLogger.Verify(l => l.Error("Fallback teardown failed: log sink failed", It.IsAny<Exception>()), Times.Once);
+
+                    // 2. ... and does not stop the process from being terminated, with the default code 1
+                    Assert.Equal(new[] { 1 }, service.TerminatedWith.ToArray());
+                    Assert.IsType<ProcessTerminatedException>(thrown);
+                }
+            }
+            finally
+            {
+                Environment.ExitCode = originalExitCode;
+            }
+        }
+
+        [Fact]
+        public void OnCustomCommand_PreShutdownWithoutServiceHandleWhenTerminationReturns_DoesNotFallThroughToTheScmPath()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Environment.ExitCode is process-global, so it is restored however this test ends.
+            var originalExitCode = Environment.ExitCode;
+
+            try
+            {
+                using (var service = BuildStatusRecordingService())
+                {
+                    // The production TerminateProcess never returns. If a host ever returned from it, the
+                    // statement after the fallback block is the only thing keeping OnCustomCommand from
+                    // signalling STOP_PENDING and STOPPED through a service handle that does not exist.
+                    service.TerminationReturns = true;
+                    service.StartForTest();
+                    Environment.ExitCode = 0;
+
+                    // Act
+                    var thrown = Record.Exception(() =>
+                        TestReflection.InvokeNonPublic(service, "OnCustomCommand", NativeMethods.SERVICE_CONTROL_PRESHUTDOWN));
+
+                    // Assert
+                    Assert.Null(thrown);
+                    Assert.Equal(new[] { 1 }, service.TerminatedWith.ToArray());
+                    Assert.Empty(service.StatusStates);
+                }
+            }
+            finally
+            {
+                Environment.ExitCode = originalExitCode;
+            }
+        }
+
+        [Fact]
         public void OnCustomCommand_PreShutdownWithSlowTeardown_KeepsPulsingStopPendingUntilItCompletes()
         {
             // Arrange
@@ -3074,6 +3186,13 @@ namespace Servy.Service.UnitTests
             /// <summary>Gets the exit codes passed to TerminateProcess, in call order.</summary>
             public List<int> TerminatedWith { get; } = new List<int>();
 
+            /// <summary>
+            /// Gets or sets a value indicating whether <see cref="TerminateProcess(int)"/> returns to its caller
+            /// instead of throwing <see cref="ProcessTerminatedException"/>. It is <see langword="false"/> by default,
+            /// which models the production call that never returns.
+            /// </summary>
+            public bool TerminationReturns { get; set; }
+
             protected override void UpdateServiceStatus(int state, int waitHint)
             {
                 StatusStates.Add(state);
@@ -3083,6 +3202,11 @@ namespace Servy.Service.UnitTests
             protected override void TerminateProcess(int exitCode)
             {
                 TerminatedWith.Add(exitCode);
+
+                if (TerminationReturns)
+                {
+                    return;
+                }
 
                 // The production TerminateProcess forwards to Environment.Exit, which does not return.
                 // Throwing keeps everything after the call unreachable here too, so a test cannot

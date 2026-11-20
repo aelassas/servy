@@ -238,6 +238,38 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public void SafeKillProcess_NoProcess_ReturnsWithoutStartingAStopSequence()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            // Act
+            service.InvokeSafeKillProcess(null!, TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+            // Assert
+            // The guard is silent: a missing process is not an error the outer catch should report
+            _ctx.Logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            _ctx.Logger.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void CleanupFailedProcess_NoChildProcess_DoesNothing()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            service.SetChildProcess(null!);
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "CleanupFailedProcess");
+
+            // Assert
+            // Reached when the process factory itself failed, so there is no wrapper to detach or dispose,
+            // and dereferencing one would be reported as a secondary cleanup error.
+            _ctx.Logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            Assert.Null(service.GetChildProcess());
+        }
+
+        [Fact]
         public void SafeKillProcess_LogsErrorOnException()
         {
             // Arrange

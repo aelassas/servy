@@ -47,6 +47,85 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task CheckHealth_HealthyChild_PassesTheServiceCancellationTokenToTheStabilityCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            service.SetChildProcess(mockProcess.Object);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            service.SetFailedChecks(0);
+
+            // A live source, as OnStart installs one: the stability check must run under its token so that
+            // a stop cancels it. A counter of 0 ends the check right after the read.
+            using var cancellation = new CancellationTokenSource();
+            TestReflection.SetField(service, "_cancellationSource", cancellation);
+
+            var tokensSeen = new List<CancellationToken>();
+            _ctx.NamedPipesService
+                .Setup(p => p.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>()))
+                .Returns<string, CancellationToken>((name, ct) =>
+                {
+                    tokensSeen.Add(ct);
+                    return Task.FromResult(new Servy.Core.DTOs.RestartAttemptsDto { Attempts = 0 });
+                });
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(cancellation.Token, Assert.Single(tokensSeen));
+        }
+
+        [Theory]
+        [InlineData("https://127.0.0.1:1/ab")]
+        [InlineData("https://127.0.0.1:1/ab/")]
+        public async Task EmitHeartbeatPing_FlagSuffix_JoinsItToTheBasePathWithExactlyOneSlash(string baseUrl)
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var pingLogged = _ctx.CaptureHeartbeatPings();
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions(baseUrl));
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "EmitHeartbeatPing", baseUrl, "fail", 1);
+
+            // Assert
+            // The logged URL keeps five characters of the path, which is enough to see the join:
+            // "ab/fa" is one slash, "abfai" is none and "ab//f" is two.
+            var completedTask = await Task.WhenAny(pingLogged.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
+            Assert.Same(pingLogged.Task, completedTask);
+            Assert.Contains("https://127.0.0.1/ab/fa... [MASKED]", await pingLogged.Task);
+        }
+
+        [Fact]
+        public async Task CheckHealth_ChildProcessMissing_CountsAFailedCheck()
+        {
+            // Arrange
+            var service = _ctx.Build();
+
+            TestReflection.SetField(service, "_options", ServiceTestContext.CreateDefaultStartOptions());
+
+            // No wrapper at all, as after a restart that has not produced one yet
+            service.SetChildProcess(null!);
+            service.SetMaxFailedChecks(3);
+            service.SetRecoveryAction(RecoveryAction.None);
+            service.SetFailedChecks(0);
+
+            // Act
+            await service.InvokeCheckHealthAsync(null, null);
+
+            // Assert
+            Assert.Equal(1, service.GetFailedChecks());
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("Health check failed") && s.Contains("(1/3)")), It.IsAny<Exception>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task CheckHealth_ExceedMaxFailedChecks_TriggersRecoveryAction()
         {
             // Arrange
