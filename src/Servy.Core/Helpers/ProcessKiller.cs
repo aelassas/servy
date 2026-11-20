@@ -623,7 +623,7 @@ namespace Servy.Core.Helpers
                 parentProcess = _processAccessor.GetProcessById(parentId);
                 parentPath = parentProcess.ExecutablePath;
             }
-            catch (ArgumentException)
+            catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
             {
                 // parent already dead - abort walk
                 return;

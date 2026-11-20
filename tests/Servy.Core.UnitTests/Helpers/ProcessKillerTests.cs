@@ -596,11 +596,15 @@ namespace Servy.Core.UnitTests.Helpers
         /// Verifies that a parent still listed in the snapshot but no longer openable ends the upward
         /// walk, rather than skipping over the dead link and killing the grandparent.
         /// </summary>
-        [Fact]
-        public void KillParentProcesses_ParentVanishedAfterSnapshot_AbortsWalkBeforeGrandparent()
+        /// <param name="invalidOperation">True to make the parent's handle open fail with InvalidOperationException, false for ArgumentException.</param>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void KillParentProcesses_ParentVanishedAfterSnapshot_AbortsWalkBeforeGrandparent(bool invalidOperation)
         {
             // Arrange
-            // PID 200 is registered in the snapshot only, so GetProcessById throws ArgumentException for it.
+            // PID 200 is registered in the snapshot only, so GetProcessById throws ArgumentException for it
+            // unless the InvalidOperationException form of the race is registered below.
             var accessor = new FakeSystemProcessAccessor();
             var now = DateTime.UtcNow;
 
@@ -613,6 +617,11 @@ namespace Servy.Core.UnitTests.Helpers
             accessor.Snapshot[100] = new ProcessInfoNode { ParentId = 200, Name = "child" };
             accessor.Snapshot[200] = new ProcessInfoNode { ParentId = 300, Name = "parent" };
             accessor.Snapshot[300] = new ProcessInfoNode { ParentId = 1, Name = "gp" };
+
+            if (invalidOperation)
+            {
+                accessor.GetProcessByIdErrors[200] = new InvalidOperationException("exited");
+            }
 
             var killer = new ProcessKiller(accessor);
 
