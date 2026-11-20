@@ -461,6 +461,9 @@ namespace Servy.Core.UnitTests.Services
                 _hardener.Verify(h => h.HardenServiceAsync(ServiceName, @".\new-account", _serviceRepository.Object, cts.Token), Times.Once);
                 _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\old-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
                 _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Exactly(2));
+                _serviceRepository.Verify(r => r.GetByNameAsync(ServiceName, true, cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.GetByNameAsync(ServiceName, false, cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, false, cts.Token), Times.Once);
             }
         }
 
@@ -479,6 +482,7 @@ namespace Servy.Core.UnitTests.Services
                 Assert.True(result.IsSuccess, result.ErrorMessage);
                 _hardener.Verify(h => h.HardenServiceAsync(ServiceName, @".\svc-account", _serviceRepository.Object, cts.Token), Times.Once);
                 _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), false, false, cts.Token), Times.Once);
             }
         }
 
@@ -498,6 +502,8 @@ namespace Servy.Core.UnitTests.Services
                 Assert.True(result.IsSuccess, result.ErrorMessage);
                 _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
                 _pipes.Verify(p => p.RefreshPipeAccessAsync(cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.GetByNameAsync(ServiceName, false, cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.DeleteAsync(ServiceName, cts.Token), Times.Once);
             }
         }
 

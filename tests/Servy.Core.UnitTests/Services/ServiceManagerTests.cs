@@ -1820,47 +1820,50 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()))
                 .Returns(true);
 
-            // Act
-            var result = await _serviceManager.InstallServiceAsync(options, TestContext.Current.CancellationToken);
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = await _serviceManager.InstallServiceAsync(options, cts.Token);
 
-            // Assert
-            Assert.True(result.IsSuccess);
+                // Assert
+                Assert.True(result.IsSuccess);
 
-            // Verify the target branch execution: _serviceRepository.DeleteAsync was called for the stale DB record name ("serviceä")
-            _mockServiceRepository.Verify(
-                x => x.DeleteAsync("serviceä", It.IsAny<CancellationToken>()),
-                Times.Once);
+                // Verify the target branch execution: _serviceRepository.DeleteAsync was called for the stale DB record name ("serviceä")
+                _mockServiceRepository.Verify(
+                    x => x.DeleteAsync("serviceä", cts.Token),
+                    Times.Once);
 
-            // Verify UninstallServiceAsync was NOT invoked via SCM OpenService calls
-            _mockWindowsServiceApi.Verify(
-                x => x.OpenService(It.IsAny<SafeScmHandle>(), "serviceä", It.IsAny<uint>()),
-                Times.Never);
+                // Verify UninstallServiceAsync was NOT invoked via SCM OpenService calls
+                _mockWindowsServiceApi.Verify(
+                    x => x.OpenService(It.IsAny<SafeScmHandle>(), "serviceä", It.IsAny<uint>()),
+                    Times.Never);
 
-            // Verify CreateService and UpsertAsync were executed for the new cased name ("serviceÄ")
-            _mockWindowsServiceApi.Verify(
-                x => x.CreateService(
-                    scmHandle,
-                    "serviceÄ",
-                    "serviceÄ",
-                    It.IsAny<uint>(),
-                    It.IsAny<uint>(),
-                    It.IsAny<uint>(),
-                    It.IsAny<uint>(),
-                    It.IsAny<string>(),
-                    null,
-                    IntPtr.Zero,
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    null),
-                Times.Once);
+                // Verify CreateService and UpsertAsync were executed for the new cased name ("serviceÄ")
+                _mockWindowsServiceApi.Verify(
+                    x => x.CreateService(
+                        scmHandle,
+                        "serviceÄ",
+                        "serviceÄ",
+                        It.IsAny<uint>(),
+                        It.IsAny<uint>(),
+                        It.IsAny<uint>(),
+                        It.IsAny<uint>(),
+                        It.IsAny<string>(),
+                        null,
+                        IntPtr.Zero,
+                        It.IsAny<string>(),
+                        It.IsAny<string>(),
+                        null),
+                    Times.Once);
 
-            _mockServiceRepository.Verify(
-                x => x.UpsertAsync(
-                    It.Is<ServiceDto>(d => d.Name == "serviceÄ"),
-                    false,
-                    false,
-                    It.IsAny<CancellationToken>()),
-                Times.Once);
+                _mockServiceRepository.Verify(
+                    x => x.UpsertAsync(
+                        It.Is<ServiceDto>(d => d.Name == "serviceÄ"),
+                        false,
+                        false,
+                        cts.Token),
+                    Times.Once);
+            }
         }
 
         [Fact]
@@ -2975,6 +2978,25 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Verify(c => c.Start(), Times.Never);
         }
 
+        [Fact]
+        public async Task StartService_HandsTheCallersTokenToTheRepositoryLookup()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = await _serviceManager.StartServiceAsync("TestService", cancellationToken: cts.Token);
+
+                // Assert: a token that neither default nor CancellationToken.None equals
+                Assert.True(result.IsSuccess);
+                _mockServiceRepository.Verify(r => r.GetByNameAsync("TestService", false, cts.Token), Times.Once);
+            }
+        }
+
         [Theory]
         [InlineData(null, 5)]                          // no pre-launch hook configured
         [InlineData(@"C:\Apps\pre-launch.exe", null)]  // pre-launch hook configured
@@ -3115,6 +3137,25 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.True(result.IsSuccess);
             _mockController.Verify(c => c.Stop(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StopService_HandsTheCallersTokenToTheRepositoryLookup()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
+            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken))
+            {
+                // Act
+                var result = await _serviceManager.StopServiceAsync("TestService", cancellationToken: cts.Token);
+
+                // Assert: a token that neither default nor CancellationToken.None equals
+                Assert.True(result.IsSuccess);
+                _mockServiceRepository.Verify(r => r.GetByNameAsync("TestService", false, cts.Token), Times.Once);
+            }
         }
 
         [Fact]
