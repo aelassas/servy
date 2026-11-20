@@ -895,10 +895,15 @@ namespace Servy.Host.UnitTests
                 await Task.Delay(10, CancellationToken.None);
             _sut.StopListening();
 
-            // Assert: one warning per retry actually scheduled, then a single line saying no further retry is scheduled
+            // Assert: one numbered warning per retry actually scheduled, then a single line saying no further retry is
+            // scheduled, both naming the unresolved account and never the failed read (#8090)
+            var count = AppConfig.ServyHostUnresolvedAccountRetryCount;
             Assert.True(Volatile.Read(ref lookups) >= pastTheBound);
-            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("Retrying in")), It.IsAny<Exception>()), Times.Exactly(AppConfig.ServyHostUnresolvedAccountRetryCount));
-            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("No further retry")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("1 service account(s) could not be resolved") && m.Contains("Retrying in")), It.IsAny<Exception>()), Times.Exactly(count));
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("1 service account(s) could not be resolved") && m.Contains($"(attempt 1 of {count})")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("1 service account(s) could not be resolved") && m.Contains($"(attempt {count} of {count})")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("1 service account(s) still could not be resolved") && m.Contains("No further retry")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("could not be read")), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]
@@ -1124,6 +1129,15 @@ namespace Servy.Host.UnitTests
             // saying no further retry is scheduled (#7563)
             Assert.Equal(1 + AppConfig.ServyHostUnresolvedAccountRetryCount, Volatile.Read(ref reads));
             _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("No further retry")), It.IsAny<Exception>()), Times.Once);
+
+            // Assert: one numbered retry line per retry, then the line that says the read is given up, and never the
+            // wording of the unresolved-account case (#8090)
+            var count = AppConfig.ServyHostUnresolvedAccountRetryCount;
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("could not be read") && m.Contains("Retrying in 1 ms")), It.IsAny<Exception>()), Times.Exactly(count));
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains($"(attempt 1 of {count})")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains($"(attempt {count} of {count})")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("still could not be read") && m.Contains("No further retry")), It.IsAny<Exception>()), Times.Once);
+            _logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("could not be resolved")), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]
@@ -1350,6 +1364,29 @@ namespace Servy.Host.UnitTests
                 Assert.Equal(0, probe.ExitCode);
                 logger.Verify(l => l.Dispose(), Times.Once);
                 logger.Verify(l => l.Error("Exception in OnStart.", It.IsAny<Exception>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public void OnStart_ScopesTheLoggerToTheHostServiceName()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(() => logger.Object);
+            using (var accepted = new ManualResetEventSlim())
+            using (var probe = new LifecycleProbe(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object))
+            {
+                logger.Setup(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<IOException>())).Callback(() => accepted.Set());
+                probe.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
+
+                // Act
+                probe.RunOnStart();
+                var logged = accepted.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                probe.RunOnStop();
+
+                // Assert: every line the host writes afterwards carries this scope (#8090)
+                Assert.True(logged);
+                logger.Verify(l => l.CreateScoped(AppConfig.ServyHostServiceName), Times.Once);
             }
         }
 
