@@ -630,6 +630,10 @@ namespace Servy.Service.UnitTests
 
             _ctx.Logger.Verify(l => l.Info(
                 It.Is<string>(s => s.Contains("exited successfully")), It.IsAny<Exception>()), Times.Never);
+
+            // ... and the -1 comes from the null arm, not from a read that threw
+            _ctx.Logger.Verify(l => l.Warn(
+                It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Never);
         }
 
         [Theory]

@@ -123,6 +123,11 @@ namespace Servy.Service.UnitTests
             _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
                 s.Contains("Health check failed") && s.Contains("(1/3)")), It.IsAny<Exception>()),
                 Times.Once);
+
+            // A missing wrapper is not an unreadable exit code: nothing was read, so nothing failed to be read
+            _ctx.Logger.Verify(l => l.Warn(It.Is<string>(s =>
+                s.Contains("Health check could not read ExitCode")), It.IsAny<Exception>()),
+                Times.Never);
         }
 
         [Fact]
