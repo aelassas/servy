@@ -463,6 +463,25 @@ namespace Servy.Core.UnitTests.Services
             Assert.Null(result);
             Assert.Contains("XML Deserialization failed.", textLogOutput);
         }
+
+        /// <summary>
+        /// A serialization failure returns <c>null</c>, and the logged entry is the only place the format and
+        /// the name of the service that could not be exported are kept.
+        /// </summary>
+        [Fact]
+        public void Serialize_SerializationFailure_LogsTheFormatAndTheServiceName()
+        {
+            // Arrange
+            // An undeclared derived type makes XmlSerializer throw an InvalidOperationException.
+            var invalidDto = new InvalidServiceDtoMock { Name = "ExportMe" };
+
+            // Act
+            var (result, textLogOutput) = LogCapture.Run(() => _serializer.Serialize(invalidDto));
+
+            // Assert
+            Assert.Null(result);
+            Assert.Contains("XML Serialization failed for service: ExportMe", textLogOutput);
+        }
     }
 
     /// <summary>
