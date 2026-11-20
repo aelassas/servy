@@ -3621,6 +3621,31 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task RestartService_HandsTheCallersTokenToTheStopAndTheStartPhase()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)  // Stop entry check (proceed to stop)
+                .Returns(ServiceControllerStatus.Stopped)  // Stop wait: already stopped, no poll
+                .Returns(ServiceControllerStatus.Stopped)  // Start entry check (proceed to start)
+                .Returns(ServiceControllerStatus.Running); // Start wait: already running, no poll
+
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // Act
+                var result = await _serviceManager.RestartServiceAsync("TestService", cancellationToken: cts.Token);
+
+                // Assert: a token that neither default nor CancellationToken.None equals reaches both phases,
+                // each of which looks the service up once with the token it was given
+                Assert.True(result.IsSuccess);
+                _mockServiceRepository.Verify(r => r.GetByNameAsync("TestService", false, cts.Token), Times.Exactly(2));
+            }
+        }
+
+        [Fact]
         public void GetServiceStatus_ShouldReturnRunning()
         {
             // Arrange
