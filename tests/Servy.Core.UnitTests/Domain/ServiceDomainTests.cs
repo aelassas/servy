@@ -617,5 +617,76 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         #endregion
+
+        #region Cancellation token forwarding
+
+        [Fact]
+        public async Task StartStopRestartUninstall_ForwardTheCallersToken()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                var service = CreateService();
+                _serviceManagerMock.Setup(s => s.StartServiceAsync("TestService", true, token)).ReturnsAsync(OperationResult.Success());
+                _serviceManagerMock.Setup(s => s.StopServiceAsync("TestService", true, token)).ReturnsAsync(OperationResult.Success());
+                _serviceManagerMock.Setup(s => s.RestartServiceAsync("TestService", true, token)).ReturnsAsync(OperationResult.Success());
+                _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService", token)).ReturnsAsync(OperationResult.Success());
+
+                // Act
+                await service.StartAsync(token);
+                await service.StopAsync(token);
+                await service.RestartAsync(token);
+                await service.UninstallAsync(token);
+
+                // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+                _serviceManagerMock.Verify(s => s.StartServiceAsync("TestService", true, token), Times.Once);
+                _serviceManagerMock.Verify(s => s.StopServiceAsync("TestService", true, token), Times.Once);
+                _serviceManagerMock.Verify(s => s.RestartServiceAsync("TestService", true, token), Times.Once);
+                _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService", token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task Install_ForwardsTheCallersToken()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                var service = CreateService();
+                _serviceManagerMock
+                    .Setup(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), token))
+                    .ReturnsAsync(OperationResult.Success());
+
+                // Act
+                var result = await service.InstallAsync(cancellationToken: token);
+
+                // Assert
+                Assert.True(result.IsSuccess);
+                _serviceManagerMock.Verify(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public void GetStatusAndIsInstalled_ForwardTheCallersToken()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                var service = CreateService();
+
+                // Act
+                service.GetStatus(token);
+                service.IsInstalled(token);
+
+                // Assert
+                _serviceManagerMock.Verify(s => s.GetServiceStatus("TestService", token), Times.Once);
+                _serviceManagerMock.Verify(s => s.IsServiceInstalled("TestService", token), Times.Once);
+            }
+        }
+
+        #endregion
     }
 }
