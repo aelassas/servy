@@ -770,10 +770,10 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Ensures the configured timeout respects the system-wide minimum safety floor.
+        /// Ensures a kill wait never drops below the system-wide minimum safety floor.
         /// </summary>
-        /// <param name="configuredMs">The timeout value from the user configuration.</param>
-        /// <returns>The larger of the configured value or <see cref="AppConfig.MinKillWaitMs"/>.</returns>
+        /// <param name="configuredMs">The wait in milliseconds, one of the <see cref="AppConfig"/> kill-wait constants (<see cref="AppConfig.KillChildWaitMs"/>, <see cref="AppConfig.KillTreeWaitMs"/>, <see cref="AppConfig.KillParentWaitMs"/>); it is not a user setting.</param>
+        /// <returns>The larger of <paramref name="configuredMs"/> and <see cref="AppConfig.MinKillWaitMs"/>.</returns>
         private static int SafeWait(int configuredMs) => Math.Max(configuredMs, AppConfig.MinKillWaitMs);
 
         #endregion
