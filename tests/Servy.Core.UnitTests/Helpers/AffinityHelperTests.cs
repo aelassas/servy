@@ -67,6 +67,24 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
+        [InlineData("7", 0x80L, 8)]                                        // single index: the last core of an 8-core host
+        [InlineData("6-7", 0xC0L, 8)]                                      // range ending on the last core
+        [InlineData("0xFF", 0xFFL, 8)]                                     // hex mask using every core below the 64-core arm
+        [InlineData("63", long.MinValue, 64)]                              // bit 63: the sign bit of the mask
+        [InlineData("62-63", unchecked((long)0xC000000000000000UL), 64)]   // range ending on bit 63
+        public void ParseAffinity_HighestValidCoreIndex_IsAccepted(string input, long expectedMask, int maxAllowedCores)
+        {
+            // Arrange
+
+            // Act
+            IntPtr result = AffinityHelper.ParseAffinity(input, maxAllowedCores);
+
+            // Assert - the bound is exclusive: maxAllowedCores - 1 is the last index a host has, so a
+            // bound tightened by one would reject an affinity that names it.
+            Assert.Equal(new IntPtr(expectedMask), result);
+        }
+
+        [Theory]
         [InlineData("0xG12")]
         [InlineData("0xXYZ")]
         [InlineData("0x123456789ABCDEF0123")] // Exceeds long limits
