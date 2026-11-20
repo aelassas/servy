@@ -1108,6 +1108,49 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public async Task StopServicesAsync_StopPendingPastTheGracePeriod_KeepsWaitingUntilStopped()
+        {
+            // Arrange
+            var serviceRepoMock = new Mock<IServiceRepository>();
+            var controllerProviderMock = new Mock<IServiceControllerProvider>();
+            var scMock = new Mock<IServiceControllerWrapper>();
+
+            var currentStatus = ServiceControllerStatus.Running;
+            var stopIssued = false;
+            int refreshesAfterStop = 0;
+
+            // Three polls after Stop() still report StopPending, so at least one of them is evaluated
+            // after the fast-fail grace period (one ScmPollIntervalMs) has passed; the fourth reports Stopped.
+            const int pendingPolls = 3;
+
+            scMock.Setup(x => x.Status).Returns(() => currentStatus);
+            scMock.Setup(x => x.Stop()).Callback(() =>
+            {
+                stopIssued = true;
+                currentStatus = ServiceControllerStatus.StopPending;
+            });
+            scMock.Setup(x => x.Refresh()).Callback(() =>
+            {
+                if (stopIssued && ++refreshesAfterStop > pendingPolls)
+                    currentStatus = ServiceControllerStatus.Stopped;
+            });
+
+            var serviceDto = new ServiceDto { Name = "SlowStopService", StopTimeout = 30 };
+            serviceRepoMock.Setup(x => x.GetByNameAsync("SlowStopService", false, It.IsAny<CancellationToken>()))
+                           .ReturnsAsync(serviceDto);
+            controllerProviderMock.Setup(x => x.GetService("SlowStopService")).Returns(scMock.Object);
+
+            var serviceHelper = new ServiceHelper(serviceRepoMock.Object, controllerProviderMock.Object);
+
+            // Act - no AggregateException: StopPending past the grace period is a slow stop, not a restart
+            await serviceHelper.StopServicesAsync(new[] { "SlowStopService" }, CancellationToken.None);
+
+            // Assert
+            scMock.Verify(x => x.Stop(), Times.Once);
+            Assert.Equal(pendingPolls + 1, refreshesAfterStop);
+        }
+
+        [Fact]
         public async Task StopServicesAsync_CancelledInsideSettleLoop_RethrowsOperationCanceledException()
         {
             // Arrange
