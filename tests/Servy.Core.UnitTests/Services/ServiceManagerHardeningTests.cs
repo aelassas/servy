@@ -699,6 +699,8 @@ namespace Servy.Core.UnitTests.Services
                 // Assert: the caller's token, which neither default nor CancellationToken.None equals, reaches the revocation
                 Assert.True(result.IsSuccess);
                 _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.GetByNameAsync(ServiceName, false, cts.Token), Times.Once);
+                _serviceRepository.Verify(r => r.DeleteAsync(ServiceName, cts.Token), Times.Once);
             }
 
             // The real RevokeIfUnusedAsync reads the remaining records, so it must run after the orphan row is gone
