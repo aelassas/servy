@@ -691,12 +691,15 @@ namespace Servy.Core.UnitTests.Services
             _hardener.Setup(h => h.RevokeIfUnusedAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IServiceRepository>(), It.IsAny<CancellationToken>()))
                 .Callback(() => order.Add("revoke")).ReturnsAsync(true);
 
-            // Act
-            var result = await CreateUninstallManager().UninstallServiceAsync(ServiceName, CancellationToken.None);
+            using (var cts = new CancellationTokenSource())
+            {
+                // Act
+                var result = await CreateUninstallManager().UninstallServiceAsync(ServiceName, cts.Token);
 
-            // Assert
-            Assert.True(result.IsSuccess);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+                // Assert: the caller's token, which neither default nor CancellationToken.None equals, reaches the revocation
+                Assert.True(result.IsSuccess);
+                _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\svc-account", ServiceName, _serviceRepository.Object, cts.Token), Times.Once);
+            }
 
             // The real RevokeIfUnusedAsync reads the remaining records, so it must run after the orphan row is gone
             Assert.Equal(new[] { "delete", "revoke" }, order);
