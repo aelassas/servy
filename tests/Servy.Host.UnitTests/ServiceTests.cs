@@ -596,6 +596,110 @@ namespace Servy.Host.UnitTests
             await Assert.ThrowsAsync<OperationCanceledException>(() => _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, CancellationToken.None));
         }
 
+        [Fact]
+        public async Task GetByName_HandsTheTokenOfTheRequestToTheRepository()
+        {
+            // Arrange: a token of the test's own, so a call that drops it for default or None is told apart (#8089)
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                _repository.Setup(r => r.GetByNameAsync(ServiceName, true, token)).ReturnsAsync(new ServiceDto { Name = ServiceName });
+
+                // Act
+                await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetByNameAction), TheServiceProcess, token);
+
+                // Assert
+                _repository.Verify(r => r.GetByNameAsync(ServiceName, true, token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_ReadsTheStoredRowWithTheTokenOfTheRequest()
+        {
+            // Arrange: the reported path is checked against the stored row, and that read must end with the request (#8089)
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                _repository.Setup(r => r.GetByNameAsync(ServiceName, false, token)).ReturnsAsync(new ServiceDto { Name = ServiceName, StdoutPath = @"C:\Logs\out.log" });
+                var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+                request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77, ActiveStdoutPath = @"C:\Logs\out.log" };
+
+                // Act
+                await _sut.ProcessRequestAsync(request, TheServiceProcess, token);
+
+                // Assert
+                _repository.Verify(r => r.GetByNameAsync(ServiceName, false, token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task UpdateRuntimeState_WritesWithTheTokenOfTheRequest()
+        {
+            // Arrange: no active path is reported, so only the write itself is made (#8089)
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                var request = Request(AppConfig.ServyHostUpdateRuntimeStateAction);
+                request.RuntimeState = new ServiceRuntimeStateDto { Pid = 77 };
+
+                // Act
+                await _sut.ProcessRequestAsync(request, TheServiceProcess, token);
+
+                // Assert
+                _repository.Verify(r => r.UpdateRuntimeStateAsync(ServiceName, It.IsAny<ServiceRuntimeStateDto>(), token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task GetRestartAttempts_ReadsWithTheTokenOfTheRequest()
+        {
+            // Arrange (#8089)
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+
+                // Act
+                await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction), TheServiceProcess, token);
+
+                // Assert
+                _repository.Verify(r => r.GetRestartAttemptsAsync(ServiceName, token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task UpdateRestartAttempts_WritesWithTheTokenOfTheRequest()
+        {
+            // Arrange (#8089)
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+                var request = Request(AppConfig.ServyHostUpdateRestartAttemptsAction);
+                request.RestartAttempts = 1;
+
+                // Act
+                await _sut.ProcessRequestAsync(request, TheServiceProcess, token);
+
+                // Assert
+                _repository.Verify(r => r.UpdateRestartAttemptsAsync(ServiceName, 1, It.IsAny<DateTime>(), token), Times.Once);
+            }
+        }
+
+        [Fact]
+        public async Task RefreshPipeAccess_ReadsTheServicesWithTheTokenOfTheRequest()
+        {
+            // Arrange (#8089)
+            using (var cts = new CancellationTokenSource())
+            {
+                var token = cts.Token;
+
+                // Act
+                await _sut.ProcessRequestAsync(Request(AppConfig.ServyHostRefreshPipeAccessAction, null), Administrator, token);
+
+                // Assert
+                _repository.Verify(r => r.GetAllAsync(false, token), Times.Once);
+            }
+        }
+
         #endregion
 
         #region Pipe DACL
@@ -1778,6 +1882,44 @@ namespace Servy.Host.UnitTests
                     // Assert
                     Assert.True(observed);
                     logger.Verify(l => l.Warn(It.Is<string>(m => m.Contains("did not complete its request in time")), null), Times.Once);
+                    logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                }
+            }
+        }
+
+        [Fact]
+        public void HandleConnectionAsync_RepositoryNeverAnswers_WarnsAfterTheRequestTimeout()
+        {
+            // Arrange: the request arrives at once, and the repository call ends only when its token does (#8089)
+            var logger = new Mock<IServyLogger>();
+            var pipeName = "ServyHostUnit_" + Guid.NewGuid().ToString("N");
+            _pipes.Setup(p => p.ReadAsync<IpcRequestDto>(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Request(AppConfig.ServyHostGetRestartAttemptsAction));
+            _identifier.Setup(i => i.Identify(It.IsAny<NamedPipeServerStream>(), It.IsAny<PipeClientPin>())).Returns(Administrator);
+            _repository.Setup(r => r.GetRestartAttemptsAsync(ServiceName, It.IsAny<CancellationToken>()))
+                .Returns<string, CancellationToken>(async (name, token) =>
+                {
+                    await Task.Delay(Timeout.Infinite, token);
+                    return (RestartAttemptsDto?)null;
+                });
+            using (var warned = new ManualResetEventSlim())
+            {
+                logger.Setup(l => l.Warn(It.Is<string>(m => m.Contains("did not complete its request in time")), null)).Callback(() => warned.Set());
+                using (var host = ListeningHost(logger, pipeName, requestTimeoutMs: 200))
+                {
+                    // Act
+                    bool observed;
+                    using (var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
+                    {
+                        client.Connect(3000);
+                        observed = warned.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
+                    }
+
+                    // The drain ends a handler that is still waiting on the host's own token
+                    host.StopListening();
+
+                    // Assert: the timeout ended the repository call, not only the read
+                    Assert.True(observed);
                     logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
                 }
             }
