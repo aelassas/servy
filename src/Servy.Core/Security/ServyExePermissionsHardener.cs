@@ -443,7 +443,7 @@ namespace Servy.Core.Security
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var remaining = (await serviceRepository.GetAllAsync(decrypt: false, cancellationToken))?.ToList() ?? new List<ServiceDto>();
+                var remaining = (await serviceRepository.GetAllAsync(decrypt: false, cancellationToken)).ToList();
                 result = await Task.Run(() => RevokeIfUnused(account, serviceName, remaining, cancellationToken), cancellationToken);
             }
             catch (OperationCanceledException)
