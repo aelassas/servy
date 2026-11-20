@@ -263,8 +263,9 @@ namespace Servy.Service.UnitTests
             TestReflection.InvokeNonPublic(service, "CleanupFailedProcess");
 
             // Assert
-            // Reached when the process factory itself failed, so there is no wrapper to detach or dispose,
-            // and dereferencing one would be reported as a secondary cleanup error.
+            // The only caller, StartProcess's start-failure catch, runs after the factory returned a wrapper, so
+            // the field is null here only when another path cleared it first. There is then nothing to detach or
+            // dispose, and dereferencing it would be reported as a secondary cleanup error.
             _ctx.Logger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             Assert.Null(service.GetChildProcess());
         }
