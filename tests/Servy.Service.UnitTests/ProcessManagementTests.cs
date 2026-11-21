@@ -69,6 +69,26 @@ namespace Servy.Service.UnitTests
             mockProcess.Verify(p => p.BeginErrorReadLine(), Times.Once);
         }
 
+        [Fact]
+        public void StartProcess_HandsTheServiceLoggerToTheChildWrapper()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Start()).Returns(true);
+            IServyLogger seenLogger = null;
+            _ctx.ProcessFactory
+                .Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
+                .Callback<ProcessStartInfo, IServyLogger>((_, logger) => seenLogger = logger)
+                .Returns(mockProcess.Object);
+
+            // Act
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), false, CancellationToken.None);
+
+            // Assert
+            Assert.Same(_ctx.Logger.Object, seenLogger);
+        }
+
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
