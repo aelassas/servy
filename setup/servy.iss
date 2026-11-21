@@ -513,8 +513,9 @@ end;
 
 // -----------------------------------------------------
 // Post-Install actions:
-//  - Add Servy to PATH if related task selected
 //  - Refresh icon cache after install
+//  - Clean up the remembered setup state (selected tasks, components, setup type)
+//  - Add Servy to PATH if related task selected
 //  - Replace XML Placeholders for Task Scheduler paths
 // -----------------------------------------------------
 // Declare Windows API function for refreshing icon cache
