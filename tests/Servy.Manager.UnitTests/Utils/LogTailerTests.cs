@@ -1512,13 +1512,14 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             var tailer = new LogTailer();
 
-            // Act - Verify initial state before disposal
+            // Arrange - Verify initial state before disposal
             bool isDisposedBefore = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
             Assert.False(isDisposedBefore, "A new LogTailer instance should not initialize in a pre-disposed state.");
 
             // Act - First disposal
             tailer.Dispose();
 
+            // Assert - Guard must be active after primary disposal loop pass
             bool isDisposedAfterFirst = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
             Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
 

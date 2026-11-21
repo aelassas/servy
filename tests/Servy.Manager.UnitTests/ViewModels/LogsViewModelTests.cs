@@ -867,7 +867,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var vm = CreateViewModel();
 
-                // Act - Verify initial state before disposal context
+                // Arrange - Verify initial state before disposal context
                 int isDisposedBefore = TestReflection.GetField<int>(vm, "_isDisposed");
                 Assert.Equal(0, isDisposedBefore);
 
