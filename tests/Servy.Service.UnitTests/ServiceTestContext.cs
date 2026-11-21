@@ -100,6 +100,24 @@ namespace Servy.Service.UnitTests
         };
 
         /// <summary>
+        /// Arranges the helper and logger mocks so that <c>OnStart</c> parses <paramref name="options"/>,
+        /// promotes the root logger to a scoped one and passes validation.
+        /// </summary>
+        /// <param name="options">The options <see cref="IServiceHelper.ParseOptions"/> returns.</param>
+        /// <returns>The scoped logger <c>OnStart</c> installs, which every later line of the service writes to.</returns>
+        public Mock<IServyLogger> ArrangeStart(StartOptions options)
+        {
+            var scopedLogger = new Mock<IServyLogger>();
+
+            Helper.Setup(h => h.GetArgs()).Returns(new[] { "servy.exe" });
+            Helper.Setup(h => h.ParseOptions(It.IsAny<INamedPipesService>(), It.IsAny<string[]>())).Returns(options);
+            Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(scopedLogger.Object);
+            Helper.Setup(h => h.ValidateAndLog(options, scopedLogger.Object)).Returns(true);
+
+            return scopedLogger;
+        }
+
+        /// <summary>
         /// Performs best-effort disposal of all SUT instances created via <see cref="Build"/> or <see cref="BuildService"/>.
         /// </summary>
         public void Dispose()
