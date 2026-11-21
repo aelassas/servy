@@ -807,10 +807,16 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Act 1: Force a NullReferenceException inside Task.Run by nulling the _serviceManager dependency field
                 TestReflection.SetField(vm, "_serviceManager", null);
-                var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
-                await task1;
+                var log1 = await LogCapture.RunAsync(async () =>
+                {
+                    var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
+                    await task1;
+                });
 
-                // Assert 1: The NullReferenceException is caught by the generic exception handler. Downstream repository calls are never reached.
+                // Assert 1: The NullReferenceException is caught by the generic exception handler and logged with its cause.
+                // Downstream repository calls are never reached.
+                Assert.Contains("Failed to refresh all services.", log1);
+                Assert.Contains(nameof(NullReferenceException), log1);
                 _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Never);
 
@@ -822,11 +828,16 @@ namespace Servy.Manager.UnitTests.ViewModels
                 TestReflection.SetField(vm, "_serviceManager", _serviceManagerMock.Object);
                 TestReflection.SetField(vm, "_serviceRepository", null);
 
-                var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
-                await task2;
+                var log2 = await LogCapture.RunAsync(async () =>
+                {
+                    var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
+                    await task2;
+                });
 
                 // Assert 2: The manager is queried for OS info, but the resulting NullReferenceException on the repository call
-                // is caught by the generic exception handler, preventing DTO snapshot loading.
+                // is caught by the generic exception handler (and logged with its cause), preventing DTO snapshot loading.
+                Assert.Contains("Failed to refresh all services.", log2);
+                Assert.Contains(nameof(NullReferenceException), log2);
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
                 _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
@@ -1490,8 +1501,15 @@ namespace Servy.Manager.UnitTests.ViewModels
                         .Returns(new ProcessMetrics(10.0, 1024));
 
                     // Act
-                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
-                    await task;
+                    var log = await LogCapture.RunAsync(async () =>
+                    {
+                        var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", TestContext.Current.CancellationToken)!;
+                        await task;
+                    });
+
+                    // Assert: the blank name and the case-insensitive duplicate are each logged
+                    Assert.Contains("Service with no name ignored during refresh.", log);
+                    Assert.Contains("Duplicate service name under OrdinalIgnoreCase ignored during refresh: 'TESTSERVICE'.", log);
 
                     // Assert: the refresh completed - the unnamed entries were skipped instead of
                     // being used as dictionary keys - and the first "TestService" occurrence won,
@@ -1521,7 +1539,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
 
                     // Act
-                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, TestContext.Current.CancellationToken);
+                    var (result, log) = LogCapture.Run(() =>
+                        TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, TestContext.Current.CancellationToken));
 
                     // Assert
                     Assert.NotNull(result);
@@ -1532,6 +1551,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     Assert.Null(updateInfo);
                     Assert.Null(updatedDto);
+
+                    // The swallowed failure is logged with its cause
+                    Assert.Contains("Failed to prepare refresh for CrashService.", log);
+                    Assert.Contains("Process performance counter corrupt", log);
                 }
             }, createApp: true);
         }
@@ -2125,11 +2148,12 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Act - the locked lookup matches nothing, so the method logs a warning and returns
                 // without unsubscribing, removing or disposing anything.
-                vm.RemoveService("DoesNotExist");
+                var log = LogCapture.Run(() => vm.RemoveService("DoesNotExist"));
 
                 // Assert - the collection still holds the one unrelated row, untouched
                 Assert.Single(collection);
                 Assert.Equal("Present", collection[0].Service?.Name);
+                Assert.Contains("RemoveService(DoesNotExist) called, but no matching service found in the collection.", log);
 
                 await Task.CompletedTask;
 
