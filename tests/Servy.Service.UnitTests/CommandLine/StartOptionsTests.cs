@@ -16,8 +16,8 @@ namespace Servy.Service.UnitTests.CommandLine
                 .ToList();
 
             // Act & Assert
-            // 1. Verify the reflective validation surface is not empty. The exact count is pinned
-            //    once, against the ServiceDto side, by the parity test below.
+            // 1. Verify the reflective validation surface is not empty. No count is written out: the
+            //    parity test below pins it against the ServiceDto side (equal counts, membership both ways).
             Assert.NotEmpty(startOptionsPaths);
 
             foreach (var x in startOptionsPaths)
