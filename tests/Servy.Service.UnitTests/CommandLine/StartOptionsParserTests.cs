@@ -5,11 +5,14 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.NamedPipes;
 using Servy.Service.CommandLine;
+using Servy.Service.UnitTests.Helpers;
+using Servy.Testing;
 using System.Diagnostics;
 using System.Security;
 
 namespace Servy.Service.UnitTests.CommandLine
 {
+    [Collection(ServiceHelperTestsCollection.Name)]
     public class StartOptionsParserTests
     {
         private readonly Mock<INamedPipesService> _mockNamedPipesService;
@@ -487,15 +490,15 @@ namespace Servy.Service.UnitTests.CommandLine
                 EnvironmentVariables = "MALFORMED_VARIABLE_WITHOUT_EQUALS_SIGN_OR_VALUE_TOKEN_CONTEXT"
             };
             _mockNamedPipesService.Setup(r => r.GetByName(serviceName, It.IsAny<CancellationToken>())).Returns(serviceDto);
-
             // Act
-            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
+            var (result, log) = LogCapture.Run(() => StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args));
 
             // Assert
             // The catch (FormatException) block intercepts the parsing failure, outputs an error trace,
             // and returns an empty list, preventing the wrapper orchestration layout from crashing.
             Assert.NotNull(result.EnvironmentVariables);
             Assert.Empty(result.EnvironmentVariables);
+            Assert.Contains($"Service '{serviceName}': stored EnvironmentVariables value is malformed and could not be parsed", log);
         }
 
         [Theory]
@@ -527,11 +530,12 @@ namespace Servy.Service.UnitTests.CommandLine
                 .Throws((Exception)Activator.CreateInstance(exceptionType)!);
 
             // Act
-            var result = StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args);
+            var (result, log) = LogCapture.Run(() => StartOptionsParser.Parse(_mockNamedPipesService.Object, _mockProcessHelper.Object, args));
 
             // Assert
             // The catch filters handle the problem, log an error diagnostic, and return the raw configuration text string token intact.
             Assert.Equal(brokenPathInput, result.ExecutablePath);
+            Assert.Contains($"Service '{serviceName}': stored ExecutablePath location resolution failed or is invalid", log);
         }
 
         #endregion
