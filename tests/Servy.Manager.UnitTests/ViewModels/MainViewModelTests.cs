@@ -556,6 +556,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(timer);
                 Assert.True(timer.IsEnabled);
 
+                // Act & Assert - each step below acts on the timer, then asserts the field it leaves behind
                 // Stop -> field nulled
                 vm.StopRefreshTimer();
                 Assert.Null(TestReflection.GetField<DispatcherTimer?>(vm, "_refreshTimer"));
