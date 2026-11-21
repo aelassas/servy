@@ -82,7 +82,7 @@ namespace Servy.UI
         /// <remarks>
         /// <see cref="ObservableCollection{T}"/> always copies into a <see cref="List{T}"/> - it has no
         /// constructor that wraps a caller-supplied <see cref="IList{T}"/> - so the internal
-        /// <see cref="ObservableCollection{T}.Items"/> collection is a <see cref="List{T}"/> on any target
+        /// <see cref="Collection{T}.Items"/> collection is a <see cref="List{T}"/> on any target
         /// framework. This method uses <see cref="List{T}.RemoveRange"/> for O(n) performance instead of
         /// O(n²) for repeated <see cref="Collection{T}.RemoveAt"/> calls.
         /// </remarks>
