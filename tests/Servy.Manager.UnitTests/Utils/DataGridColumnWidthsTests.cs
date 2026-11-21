@@ -228,6 +228,29 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
+        public void Methods_ResizableColumnWithoutAHeaderText_AreLeftOut()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange: resizable pixel columns whose header is a control or an empty text
+                var grid = CreateGrid();
+                grid.Columns.Add(new DataGridTextColumn { Header = new CheckBox(), Width = new DataGridLength(40) });
+                grid.Columns.Add(new DataGridTextColumn { Header = string.Empty, Width = new DataGridLength(50) });
+                var calls = 0;
+                DataGridColumnWidths.AddWidthChangedHandler(grid, (s, e) => calls++);
+
+                // Act
+                grid.Columns[5].Width = new DataGridLength(60);
+                grid.Columns[6].Width = new DataGridLength(70);
+                var text = DataGridColumnWidths.Capture(grid, null);
+
+                // Assert: nothing was reported, nothing was captured, and Capture did not throw
+                Assert.Equal(0, calls);
+                Assert.Equal("Name=120,Status=90", text);
+            });
+        }
+
+        [Fact]
         public void RemoveWidthChangedHandler_ColumnResizedAfterwards_DoesNotCallTheHandler()
         {
             Helper.RunOnSTA(() =>
