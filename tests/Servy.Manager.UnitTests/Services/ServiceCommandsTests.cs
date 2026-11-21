@@ -1240,6 +1240,150 @@ namespace Servy.Manager.UnitTests.Services
             cts.Dispose();
         }
 
+        /// <summary>
+        /// Search must hand the caller's token to the repository, not <c>default</c> (the non-lifecycle half of #8076).
+        /// </summary>
+        [Fact]
+        public async Task SearchServicesAsync_ForwardsTheCallersTokenToTheRepository()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _serviceRepositoryMock.Setup(r => r.SearchAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ServiceDto>());
+
+            // Act
+            await sut.SearchServicesAsync("x", calculatePerf: false, token);
+
+            // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+            _serviceRepositoryMock.Verify(r => r.SearchAsync("x", false, token), Times.Once);
+
+            cts.Dispose();
+        }
+
+        /// <summary>
+        /// Configure must hand the caller's token to the repository lookup, not <c>default</c> (the non-lifecycle half of #8076).
+        /// </summary>
+        [Fact]
+        public async Task ConfigureServiceAsync_ForwardsTheCallersTokenToTheRepository()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write("dummy"))
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = service.Name });
+                _processHelperMock.Setup(h => h.Start(It.IsAny<ProcessStartInfo>())).Returns(() => Process.GetCurrentProcess());
+
+                // Act
+                await sut.ConfigureServiceAsync(service, token);
+
+                // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+                _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, false, token), Times.Once);
+            }
+
+            cts.Dispose();
+        }
+
+        /// <summary>
+        /// Remove must hand the caller's token to the existence lookup, the delete and the vault revocation,
+        /// not <c>default</c> (the non-lifecycle half of #8076).
+        /// </summary>
+        [Fact]
+        public async Task RemoveServiceAsync_ForwardsTheCallersTokenToTheCollaborators()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            var record = new ServiceDto { Name = service.Name, RunAsLocalSystem = false, UserAccount = @".\svc-account" };
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(record);
+            _serviceRepositoryMock.Setup(r => r.DeleteAsync(service.Name, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            // Act
+            await sut.RemoveServiceAsync(service, token);
+
+            // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, false, token), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.DeleteAsync(service.Name, token), Times.Once);
+            _serviceManagerMock.Verify(m => m.RevokeVaultAccessIfUnusedAsync(record, token), Times.Once);
+
+            cts.Dispose();
+        }
+
+        /// <summary>
+        /// Export must hand the caller's token to the decrypting repository lookup, not <c>default</c>
+        /// (the non-lifecycle half of #8076).
+        /// </summary>
+        [Fact]
+        public async Task ExportServiceToXmlAsync_ForwardsTheCallersTokenToTheRepository()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            var record = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe" };
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(record);
+
+            using (var targetPath = new TempFile("_export_test.xml"))
+            {
+                _fileDialogServiceMock.Setup(f => f.SaveXml(It.IsAny<string>())).Returns(targetPath.Path);
+
+                // Act
+                await sut.ExportServiceToXmlAsync(service, token);
+            }
+
+            // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, token), Times.Once);
+
+            cts.Dispose();
+        }
+
+        /// <summary>
+        /// Import must hand the caller's token to the validator, the existence lookup and the upsert,
+        /// not <c>default</c> (the non-lifecycle half of #8076).
+        /// </summary>
+        [Fact]
+        public async Task ImportJsonConfigAsync_ForwardsTheCallersTokenToTheCollaborators()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ServiceDto jsonParsedDto = dto;
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out jsonParsedDto)).Returns(true);
+
+            using (var tempFile = new TempFile(".json").Write(JsonConvert.SerializeObject(dto)))
+            {
+                _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(tempFile.Path);
+
+                // Act
+                await sut.ImportJsonConfigAsync(token);
+            }
+
+            // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, token), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, token), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, token), Times.Once);
+
+            cts.Dispose();
+        }
+
         [Fact]
         public async Task InstallServiceAsync_ShouldCallServiceManager()
         {
