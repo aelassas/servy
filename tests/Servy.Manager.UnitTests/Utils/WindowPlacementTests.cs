@@ -97,8 +97,11 @@ namespace Servy.Manager.UnitTests.Utils
             // "10,5" is two fields, never the number 10.5: a decimal comma adds a field, so the value is
             // rejected by its field count before any number is parsed (the culture itself is pinned by
             // SerializeAndTryParse_UnderADecimalCommaCulture_KeepTheInvariantForm).
+
+            // Act
             var parsed = WindowPlacement.TryParse("10,5,20,1000,600,Normal", out var placement);
 
+            // Assert
             Assert.False(parsed);
             Assert.Null(placement);
         }
@@ -174,11 +177,12 @@ namespace Servy.Manager.UnitTests.Utils
             // Act
             var fitted = placement.FitTo(0, 0, 1920, 1080, 1000, 500);
 
-            // Assert: right and bottom edges are aligned with the screen
+            // Assert: right and bottom edges are aligned with the screen, and the window is still not maximized
             Assert.Equal(720, fitted.Left);
             Assert.Equal(380, fitted.Top);
             Assert.Equal(1200, fitted.Width);
             Assert.Equal(700, fitted.Height);
+            Assert.False(fitted.IsMaximized);
         }
 
         [Fact]
