@@ -214,6 +214,23 @@ namespace Servy.Host.UnitTests.Bootstrap
             _logger.Verify(l => l.Dispose(), Times.Once);
         }
 
+        [Fact]
+        public void Dispose_DisposesTheKeyProviderAndSecureDataTheConstructorKept()
+        {
+            // Arrange
+            var env = new FakeBootstrapEnvironment();
+            var service = Build(env);
+            var stack = env.Stack;
+            Assert.NotNull(stack.SecureData.Encrypt("before"));
+
+            // Act
+            service.Dispose();
+
+            // Assert: both members were kept by the constructor and purged by Dispose
+            Assert.Throws<ObjectDisposedException>(() => stack.ProtectedKeyProvider.GetKey());
+            Assert.Throws<ObjectDisposedException>(() => stack.SecureData.Encrypt("after"));
+        }
+
         private Service Build(IServiceBootstrapEnvironment env)
         {
             var service = new TerminationRecordingService(_logger.Object, _pipes.Object, env);
