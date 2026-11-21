@@ -121,7 +121,7 @@ namespace Servy.Testing
                 // An early exit is typically a transient DLL-init failure; wait it out before the next attempt.
                 if (completed && attempt < maxAttempts)
                 {
-                    System.Threading.Thread.Sleep(500 * attempt);
+                    Thread.Sleep(500 * attempt);
                 }
             }
 

@@ -1,6 +1,4 @@
 using Servy.Core.Config;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Servy.Testing
 {

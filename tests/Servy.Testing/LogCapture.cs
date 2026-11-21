@@ -1,7 +1,6 @@
 using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace Servy.Testing
 {

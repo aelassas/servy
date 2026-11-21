@@ -1,5 +1,4 @@
 using Servy.Testing;
-using System.IO;
 
 namespace Servy.Core.UnitTests.TestInfrastructure
 {
