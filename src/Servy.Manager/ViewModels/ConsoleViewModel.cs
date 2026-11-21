@@ -239,7 +239,7 @@ namespace Servy.Manager.ViewModels
         protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
         {
             var currentSelection = (ConsoleService)selection;
-            var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
+            var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, CancellationToken.None);
             var stateSnapshot = serviceDto?.Clone();
 
             // Drop this tick if the user switched services while we were awaiting the DB call.

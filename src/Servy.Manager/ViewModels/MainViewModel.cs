@@ -431,7 +431,7 @@ namespace Servy.Manager.ViewModels
                     // fetchAndApplyAsync 1 of 4 (runs inside the pipeline's step 5 & 6):
                     // fetch data off UI thread
                     var stopwatch = Stopwatch.StartNew();
-                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, calculatePerf: true, token), token);
+                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, calculatePerf: true, CancellationToken.None), token);
                     stopwatch.Stop();
                     Logger.Debug($"Fetched {results.Count} services in {stopwatch.ElapsedMilliseconds} ms");
 
@@ -574,7 +574,7 @@ namespace Servy.Manager.ViewModels
             ExecuteBulkOperationAsync(
                 (s, token) =>
                 {
-                    return ServiceCommands.StartServiceAsync(s, showMessageBox: false, cancellationToken: token);
+                    return ServiceCommands.StartServiceAsync(s, showMessageBox: false, cancellationToken: CancellationToken.None);
                 },
                 Strings.Confirm_StartSelectedServices,
                 "Failed to start selected services",
@@ -825,7 +825,7 @@ namespace Servy.Manager.ViewModels
 #if DEBUG
                 var stopwatch = Stopwatch.StartNew();
 #endif
-                var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
+                var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(CancellationToken.None), token);
 #if DEBUG
                 stopwatch.Stop();
                 Logger.Debug($"GetAllServices finished in {stopwatch.ElapsedMilliseconds} ms");

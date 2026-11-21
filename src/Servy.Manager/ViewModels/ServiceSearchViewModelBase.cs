@@ -122,7 +122,7 @@ namespace Servy.Manager.ViewModels
             await ExecuteSearchPipelineAsync(
                 async token =>
                 {
-                    var results = await ServiceCommands.SearchServicesAsync(SearchText, calculatePerf: false, token);
+                    var results = await ServiceCommands.SearchServicesAsync(SearchText, calculatePerf: false, CancellationToken.None);
 
                     if (token.IsCancellationRequested) return 0;
 
