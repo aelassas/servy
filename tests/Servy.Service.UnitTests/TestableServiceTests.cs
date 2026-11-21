@@ -242,14 +242,7 @@ namespace Servy.Service.UnitTests
         /// promotes the logger and passes validation.
         /// </summary>
         /// <param name="options">The options <c>ParseOptions</c> returns.</param>
-        private void ArrangeStart(StartOptions options)
-        {
-            _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "TestService" });
-            _ctx.Helper.Setup(h => h.ParseOptions(_ctx.NamedPipesService.Object, It.IsAny<string[]>())).Returns(options);
-            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(new Mock<IServyLogger>().Object);
-            _ctx.Helper.Setup(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>())).Returns(true);
-            _ctx.Helper.Setup(h => h.EnsureValidStartupDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()));
-        }
+        private void ArrangeStart(StartOptions options) => _ctx.ArrangeStart(options);
 
         public void Dispose() => _ctx.Dispose();
     }

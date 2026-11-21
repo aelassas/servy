@@ -87,16 +87,7 @@ namespace Servy.Service.UnitTests
         /// one every <c>Cleanup</c> line writes to.
         /// </summary>
         private Mock<IServyLogger> SetupStart(StartOptions options)
-        {
-            var scopedLogger = new Mock<IServyLogger>();
-
-            _ctx.Helper.Setup(h => h.GetArgs()).Returns(new[] { "servy.exe" });
-            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<INamedPipesService>(), It.IsAny<string[]>())).Returns(options);
-            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(scopedLogger.Object);
-            _ctx.Helper.Setup(h => h.ValidateAndLog(options, scopedLogger.Object)).Returns(true);
-
-            return scopedLogger;
-        }
+            => _ctx.ArrangeStart(options);
 
         /// <summary>
         /// Replaces the service's tracked-hook list content, which teardown's cleanup loop walks.

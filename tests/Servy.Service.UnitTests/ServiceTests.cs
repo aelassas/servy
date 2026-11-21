@@ -583,13 +583,7 @@ namespace Servy.Service.UnitTests
         /// </summary>
         private Mock<IServyLogger> SetupStandardServiceStart(StartOptions options)
         {
-            var fullArgs = new[] { "servy.exe" };
-            var mockScopedLogger = new Mock<IServyLogger>();
-
-            _ctx.Helper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _ctx.Helper.Setup(h => h.ParseOptions(It.IsAny<INamedPipesService>(), It.IsAny<string[]>())).Returns(options);
-            _ctx.Logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
-            _ctx.Helper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object)).Returns(true);
+            var mockScopedLogger = _ctx.ArrangeStart(options);
             _ctx.PathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
