@@ -44,7 +44,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 $"SELECT RestartAttempts, RestartAttemptsUpdatedAtTicks FROM {SqlConstants.ServicesTableName} WHERE Name = @name;", new { name });
 
         /// <summary>
-        /// Takes a database <see cref="SQLiteDbInitializer.Initialize(DbConnection, string)"/> created back to version 9,
+        /// Takes a database <see cref="SQLiteDbInitializer.Initialize(DbConnection, string, Servy.Core.Security.ISecureData)"/> created back to version 9,
         /// before the restart attempts columns, so the next initialization runs the version 10 migration and its import.
         /// </summary>
         /// <param name="conn">The open connection.</param>
