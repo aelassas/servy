@@ -315,7 +315,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Cancels any in-flight search and restores UI state (cursor, busy flag, button text).
-        /// Does not dispose the view model - see <see cref="Dispose()"/> for full teardown.
+        /// Does not dispose the view model - see <see cref="SearchableViewModelBase.Dispose()"/> for full teardown.
         /// </summary>
         public void CancelSearch()
         {
