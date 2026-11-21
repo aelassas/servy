@@ -436,6 +436,24 @@ namespace Servy.Service.UnitTests.ProcessManagement
             };
 
         [Fact]
+        public void Start_HandsItsLoggerToTheProcessFactory()
+        {
+            // Arrange
+            var logger = new Mock<IServyLogger>();
+            var process = new Mock<IProcessWrapper>();
+            process.Setup(p => p.Start()).Returns(true);
+            var factory = new Mock<IProcessFactory>();
+            factory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>())).Returns(process.Object);
+            var options = new ProcessLaunchOptions { ExecutablePath = @"C:\tools\hook.exe", FireAndForget = true };
+
+            // Act
+            using (ProcessLauncher.Start(options, factory.Object, logger.Object)) { }
+
+            // Assert
+            factory.Verify(f => f.Create(It.IsAny<ProcessStartInfo>(), logger.Object), Times.Once);
+        }
+
+        [Fact]
         public void Start_SamePath_StderrOpensSharedWriterFirst_WritesBothLinesToOneFile()
         {
             // Arrange
