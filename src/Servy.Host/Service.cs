@@ -765,10 +765,9 @@ namespace Servy.Host
         }
 
         /// <summary>
-        /// Resolves an account name to its SID.
+        /// Gets or sets the function that resolves an account name to its SID, returning <see langword="null"/> when it
+        /// cannot be resolved; tests replace it.
         /// </summary>
-        /// <param name="account">The account name.</param>
-        /// <returns>The SID, or <see langword="null"/> when it cannot be resolved.</returns>
         internal Func<string, System.Security.Principal.SecurityIdentifier?> ResolveAccount { get; set; } = AccountSidResolver.Resolve;
 
         /// <summary>
