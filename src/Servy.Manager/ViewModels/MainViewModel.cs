@@ -600,7 +600,7 @@ namespace Servy.Manager.ViewModels
             ExecuteBulkOperationAsync(
                 (s, token) =>
                 {
-                    return ServiceCommands.RestartServiceAsync(s, showMessageBox: false, cancellationToken: token);
+                    return ServiceCommands.RestartServiceAsync(s, showMessageBox: false, cancellationToken: CancellationToken.None);
                 },
                 Strings.Confirm_RestartSelectedServices,
                 "Failed to restart selected services",
@@ -901,7 +901,7 @@ namespace Servy.Manager.ViewModels
                 // then never overwrite its own stored secrets, whatever state the in-memory copy is in (#7328).
                 foreach (var dto in changedDtos)
                 {
-                    await _serviceRepository.UpdateDescriptionAndStartupTypeAsync(dto.Name, dto.Description, dto.StartupType, token);
+                    await _serviceRepository.UpdateDescriptionAndStartupTypeAsync(dto.Name, dto.Description, dto.StartupType, CancellationToken.None);
                 }
             }
             catch (OperationCanceledException)
@@ -910,7 +910,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to refresh all services.", ex);
+                Logger.Error("Failed to refresh all services.");
             }
         }
 
@@ -1082,7 +1082,6 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to prepare refresh for {service.Name}.", ex);
                 return (null, null);
             }
         }
