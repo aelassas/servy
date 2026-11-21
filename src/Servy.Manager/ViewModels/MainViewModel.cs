@@ -431,7 +431,7 @@ namespace Servy.Manager.ViewModels
                     // fetchAndApplyAsync 1 of 4 (runs inside the pipeline's step 5 & 6):
                     // fetch data off UI thread
                     var stopwatch = Stopwatch.StartNew();
-                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, calculatePerf: true, token), token);
+                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(string.Empty, calculatePerf: true, token), token);
                     stopwatch.Stop();
                     Logger.Debug($"Fetched {results.Count} services in {stopwatch.ElapsedMilliseconds} ms");
 
@@ -587,7 +587,7 @@ namespace Servy.Manager.ViewModels
             ExecuteBulkOperationAsync(
                 (s, token) =>
                 {
-                    return ServiceCommands.StopServiceAsync(s, showMessageBox: false, cancellationToken: token);
+                    return ServiceCommands.StopServiceAsync(s, showMessageBox: false, cancellationToken: CancellationToken.None);
                 },
                 Strings.Confirm_StopSelectedServices,
                 "Failed to stop selected services",
@@ -835,7 +835,7 @@ namespace Servy.Manager.ViewModels
                 // 3. Fetch all Repository DTOs in bulk. The tick reads only Pid, StartupType, Description, DisplayName,
                 // RunAsLocalSystem and UserAccount, none of them encrypted, so it does not decrypt: a record whose sensitive fields cannot be decrypted is then returned
                 // as stored rather than degraded, and no password is decrypted for nothing (#7328, #6486).
-                var allDtosList = await _serviceRepository.GetAllAsync(decrypt: false, token);
+                var allDtosList = await _serviceRepository.GetAllAsync(decrypt: false, CancellationToken.None);
                 var allDtosDict = BuildUniqueNameDictionary(allDtosList, d => d.Name);
 
                 // 4. Process data collection in parallel
@@ -939,7 +939,6 @@ namespace Servy.Manager.ViewModels
 
                 if (string.IsNullOrWhiteSpace(name))
                 {
-                    Logger.Warn("Service with no name ignored during refresh.");
                     continue;
                 }
 
