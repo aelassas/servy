@@ -1038,6 +1038,42 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void BaseMonitoring_OnTickAsync_ValidService_PassesTheMonitoringSessionTokenToThePidLookup()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    DependenciesViewModel viewModel = null;
+                    try
+                    {
+                        viewModel = CreateViewModel();
+                        var mockService = new DependencyService { Name = "ActiveService", Pid = 999 };
+                        viewModel.SelectedService = mockService;
+                        TestReflection.GetField<DispatcherTimer>(viewModel, "_timer")?.Stop();
+                        var sessionToken = TestReflection.GetField<CancellationTokenSource>(viewModel, "_monitoringCts").Token;
+
+                        _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                              .ReturnsAsync((int?)null);
+
+                        // Act
+                        var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
+                        task.GetAwaiter().GetResult();
+
+                        // Assert - the live session token, not CancellationToken.None
+                        Assert.True(sessionToken.CanBeCanceled);
+                        _mockServiceRepository.Verify(r => r.GetServicePidAsync("ActiveService", sessionToken), Times.Once);
+                    }
+                    finally
+                    {
+                        viewModel?.Dispose();
+                    }
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void BaseMonitoring_OnTickAsync_SelectionChangesDuringPidLookup_DropsTheTick()
         {
             Helper.RunOnSTA(() =>
