@@ -299,6 +299,25 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
+        public void Run_RealRestarter_LogsThroughTheScopedLogger()
+        {
+            // Arrange
+            // The SCM has no such service, so the real restarter's first status read reports it gone
+            // and ServiceRestarter logs the settle-phase warning through the logger Program.Run gave it.
+            string serviceName = "ManagedServiceForRestarterLoggerHandOff";
+            var environment = ManagedService(serviceName);
+
+            // Act
+            Program.Run(new string[] { serviceName, TempDirectory }, restarter: null, environment: environment);
+
+            // Assert
+            // The "[name] " prefix is added only by the scoped logger, so this fails both when the
+            // restarter gets no logger and when it gets the unscoped root logger.
+            Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage($"[{serviceName}] Settle-phase status read failed for '{serviceName}'; treating as uninstalled.");
+        }
+
+        [Fact]
         public void Main_ServiceRestarted_SetsExitCodeTo0AndLogsSuccess()
         {
             // Arrange
