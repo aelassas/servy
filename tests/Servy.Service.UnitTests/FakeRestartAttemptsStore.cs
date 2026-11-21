@@ -28,6 +28,9 @@ namespace Servy.Service.UnitTests
         /// <summary>Gets the values written, in order.</summary>
         public List<int> Writes { get; } = new List<int>();
 
+        /// <summary>Gets the cancellation tokens the counter was read or written with, in order.</summary>
+        public List<CancellationToken> Tokens { get; } = new List<CancellationToken>();
+
         /// <summary>Gets the service names the counter was read or written for.</summary>
         public List<string> ServiceNames { get; } = new List<string>();
 
@@ -44,20 +47,21 @@ namespace Servy.Service.UnitTests
 
             namedPipesService
                 .Setup(p => p.GetRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns<string, CancellationToken>((name, ct) => store.Read(name));
+                .Returns<string, CancellationToken>((name, ct) => store.Read(name, ct));
 
             namedPipesService
                 .Setup(p => p.UpdateRestartAttemptsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns<string, int, CancellationToken>((name, value, ct) => store.Write(name, value));
+                .Returns<string, int, CancellationToken>((name, value, ct) => store.Write(name, value, ct));
 
             return store;
         }
 
-        private Task<RestartAttemptsDto> Read(string name)
+        private Task<RestartAttemptsDto> Read(string name, CancellationToken ct)
         {
             lock (_gate)
             {
                 ServiceNames.Add(name);
+                Tokens.Add(ct);
                 if (ReadFailure != null)
                     return Task.FromException<RestartAttemptsDto>(ReadFailure);
 
@@ -65,11 +69,12 @@ namespace Servy.Service.UnitTests
             }
         }
 
-        private Task<int> Write(string name, int value)
+        private Task<int> Write(string name, int value, CancellationToken ct)
         {
             lock (_gate)
             {
                 ServiceNames.Add(name);
+                Tokens.Add(ct);
                 if (WriteFailure != null)
                     return Task.FromException<int>(WriteFailure);
 

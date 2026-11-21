@@ -836,6 +836,40 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
+        public async Task GetRestartAttemptsAsync_HandsTheCallersTokenToTheHostRead()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 2);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            using var cts = new CancellationTokenSource();
+
+            // Act
+            var attempts = await (Task<int?>)TestReflection.InvokeNonPublic(service, "GetRestartAttemptsAsync", cts.Token)!;
+
+            // Assert
+            Assert.Equal(2, attempts);
+            Assert.Equal(new[] { cts.Token }, store.Tokens);
+        }
+
+        [Fact]
+        public async Task SaveRestartAttemptsAsync_HandsTheCallersTokenToTheHostWrite()
+        {
+            // Arrange
+            var service = _ctx.Build();
+            var store = FakeRestartAttemptsStore.Attach(_ctx.NamedPipesService, attempts: 0);
+            service.SetRestartAttemptsServiceName(ServiceName);
+            using var cts = new CancellationTokenSource();
+
+            // Act
+            await (Task)TestReflection.InvokeNonPublic(service, "SaveRestartAttemptsAsync", 4, cts.Token)!;
+
+            // Assert
+            Assert.Equal(new[] { 4 }, store.Writes);
+            Assert.Equal(new[] { cts.Token }, store.Tokens);
+        }
+
+        [Fact]
         public async Task GetRestartAttemptsAsync_SemaphoreAlreadyDisposed_ReturnsZeroWithoutAnErrorLine()
         {
             // Arrange: teardown disposed the semaphore before the wait (#7613)
