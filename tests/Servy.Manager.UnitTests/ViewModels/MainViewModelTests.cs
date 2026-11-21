@@ -297,7 +297,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     new Service { Name = "S2", IsInstalled = true }
                 };
 
-                _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                // The query is pinned: the loose mock returns no rows for any other text, so a search that
+                // drops what the user typed fails the row count below
+                vm.SearchText = "Servy";
+                _serviceCommandsMock.Setup(c => c.SearchServicesAsync("Servy", true, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(services);
 
                 // Act
@@ -334,6 +337,42 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await Task.CompletedTask;
             }, createApp: true);
         }
+        [Fact]
+        public async Task SearchCommand_HandsThePipelineTokenToTheFetch()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                // Capture, during the fetch, both the token the search received and the token of the
+                // source the pipeline swapped in. A search that passes CancellationToken.None gets a token
+                // that cannot be canceled and is not equal to the source's token.
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                CancellationToken received = default;
+                CancellationToken expected = default;
+
+                _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                    .Callback<string, bool, CancellationToken>((query, calculatePerf, token) =>
+                    {
+                        received = token;
+                        expected = TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts").Token;
+                    })
+                    .ReturnsAsync(new List<Service>());
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                Assert.True(received.CanBeCanceled);
+                Assert.Equal(expected, received);
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
         [Fact]
         public async Task SearchCommand_SecondSearch_DisposesAndUnhooksPreviousRows()
         {
@@ -959,16 +998,23 @@ namespace Servy.Manager.UnitTests.ViewModels
                         });
 
                     // Act
-                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
+                    // A live token, so a hand-over that falls back to CancellationToken.None is visible
+                    var cts = new CancellationTokenSource();
+                    var token = cts.Token;
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", token);
                     await task;
 
-                    // Assert: the read does not decrypt, the drift is written through the two-column update, and
+                    // Assert: the tick's token reaches the SCM read, the DB read and the write-back
+                    _serviceManagerMock.Verify(m => m.GetAllServices(token), Times.Once);
+
+                    // the read does not decrypt, the drift is written through the two-column update, and
                     // the whole-row upsert that re-encrypted and nulled the sensitive columns is never reached
-                    _serviceRepositoryMock.Verify(r => r.GetAllAsync(false, It.IsAny<CancellationToken>()), Times.Once);
+                    _serviceRepositoryMock.Verify(r => r.GetAllAsync(false, token), Times.Once);
                     _serviceRepositoryMock.Verify(r => r.GetAllAsync(true, It.IsAny<CancellationToken>()), Times.Never);
                     _serviceRepositoryMock.Verify(r => r.UpdateDescriptionAndStartupTypeAsync(
-                        "TestService", "from the SCM", (int)ServiceStartType.Manual, It.IsAny<CancellationToken>()), Times.Once);
+                        "TestService", "from the SCM", (int)ServiceStartType.Manual, token), Times.Once);
                     _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                    cts.Dispose();
                 }
             }, createApp: true);
         }
@@ -1702,6 +1748,45 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // The Start command asks the Start question, not the Stop or Restart one
                 _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(Strings.Confirm_StartSelectedServices, UiAppConfig.Caption), Times.Once);
+            }, createApp: true);
+        }
+
+        [Theory]
+        [InlineData("Start")]
+        [InlineData("Stop")]
+        [InlineData("Restart")]
+        public async Task BulkOperations_EachVerb_HandsTheSessionTokenToTheServiceCommand(string verb)
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+                CancellationToken sessionToken = default;
+
+                // Act
+                var exception = await SetupAndRunBulkOperation(vm =>
+                {
+                    sessionToken = TestReflection.GetField<CancellationTokenSource>(vm, "_cts").Token;
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+                    _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                    _serviceCommandsMock.Setup(c => c.StopServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                    _serviceCommandsMock.Setup(c => c.RestartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                }, async vm =>
+                {
+                    if (verb == "Start") await vm.StartSelectedCommand.ExecuteAsync(null);
+                    else if (verb == "Stop") await vm.StopSelectedCommand.ExecuteAsync(null);
+                    else await vm.RestartSelectedCommand.ExecuteAsync(null);
+                });
+
+                // Assert - the live session token, not CancellationToken.None, reaches every row's command
+                Assert.Null(exception);
+                Assert.True(sessionToken.CanBeCanceled);
+                if (verb == "Start")
+                    _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, sessionToken), Times.Exactly(2));
+                else if (verb == "Stop")
+                    _serviceCommandsMock.Verify(c => c.StopServiceAsync(It.IsAny<Service>(), false, sessionToken), Times.Exactly(2));
+                else
+                    _serviceCommandsMock.Verify(c => c.RestartServiceAsync(It.IsAny<Service>(), false, sessionToken), Times.Exactly(2));
             }, createApp: true);
         }
 
