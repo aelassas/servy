@@ -256,6 +256,31 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_RunAsCustomAccount_ForwardsUserAccountAndPassword()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var dto = new ServiceDto { Name = "CustomAccountService", UserAccount = @"DOMAIN\svc", Password = "s3cret" };
+
+            InstallServiceOptions captured = null;
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.InstallServiceAsync(dto, runAsLocalSystem: false, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(captured);
+            Assert.Equal(@"DOMAIN\svc", captured.Username);
+            Assert.Equal("s3cret", captured.Password);
+            Assert.Equal(@"DOMAIN\svc", dto.UserAccount);
+            Assert.Equal("s3cret", dto.Password);
+        }
+
+        [Fact]
         public async Task InstallService_ValidationError_ReturnsFalseWithoutInstalling()
         {
             // Arrange
