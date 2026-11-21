@@ -337,6 +337,25 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Validate_Credentials_PasswordsDifferOnlyByCase_ReturnsOnlyTheMismatchError()
+        {
+            // Arrange
+            // An account shape that makes ValidateCredentials throw, so a logon check that runs
+            // after the mismatch would add a second error.
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
+            dto.Password = "Secret123";
+
+            // Act
+            var result = _sut.Validate(dto, confirmPassword: "SECRET123");
+
+            // Assert
+            // The ordinal comparison reports the mismatch, and the else arm skips the logon check.
+            Assert.Equal(new[] { Strings.Msg_PasswordsDontMatch }, result.Errors);
+        }
+
+        [Fact]
         public void Validate_Credentials_RunAsLocalSystemNotSet_StillValidatesTheAccount()
         {
             // Arrange: null is not LocalSystem, so the account is checked
