@@ -169,6 +169,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
+                    // Arrange
                     var mockService = new PerformanceService { Name = "SameService" };
                     vm.SelectedService = mockService;
 
@@ -737,6 +738,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
+                    // Arrange
                     var mockService = new PerformanceService { Name = "ActiveService", Pid = 8888 };
                     vm.SelectedService = mockService;
 
