@@ -135,8 +135,8 @@ function Send-NotificationEmail {
     )
 
     # Body and Subject arrive already masked. Masking must run before HTML encoding so the
-    # masker's regex tail (?:"[^"]*"|'[^']*'|\S+) still sees the raw quotes it anchors on
-    # rather than &quot; or &#39;.
+    # masker's quoted-value branches ("..." and '...', see Protect-SensitiveString in ServySecurity.ps1)
+    # still see the raw quotes they anchor on rather than &quot; or &#39;.
 
     # --- HARDENED CONFIGURATION ACCESS ---
 
