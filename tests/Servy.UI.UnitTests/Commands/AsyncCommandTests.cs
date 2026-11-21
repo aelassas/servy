@@ -158,9 +158,10 @@ namespace Servy.UI.UnitTests.Commands
         [Fact]
         public async Task Execute_InnerTaskFailsOnNamedCommand_LogsTheCommandName()
         {
-            // Branch: the catch arm's _name ?? "<unnamed>" interpolation. Every other test in this
-            // file builds the command with one or two arguments, so _name is always null and the
-            // name the thirty production call sites pass is never observed.
+            // Branch: the catch arm's _name ?? "<unnamed>" interpolation. The only other named
+            // command in this file, in Execute_InnerTaskCancelled_DoesNotLogAFailure, is cancelled
+            // and so never logs; without this test the name every production call site passes is
+            // never observed.
             const string commandName = "StartSelectedCommand";
 
             // Arrange
