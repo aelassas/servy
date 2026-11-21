@@ -1,10 +1,13 @@
 using Servy.Manager.Helpers;
+using Servy.Testing;
 using System;
 using System.Threading;
 using Xunit;
+using Helper = Servy.Manager.Helpers.Helper;
 
 namespace Servy.Manager.UnitTests.Helpers
 {
+    [Collection(AmbientTestCollection.Name)]
     public class HelperTests
     {
         [Fact]
@@ -55,16 +58,21 @@ namespace Servy.Manager.UnitTests.Helpers
             // When cts.Cancel() is triggered, this callback fires synchronously on the calling thread
             // causing Cancel() to wrap the internal error inside an AggregateException.
             cts.Token.Register(() => throw new InvalidOperationException("Malicious callback failure."));
+            Exception exception = null;
 
             // Act
             // The method should catch the AggregateException, log the warning, and force execution through the finally block
-            var exception = Record.Exception(() => Helper.CancelAndDisposeSafely(cts));
+            var log = LogCapture.Run(() => { exception = Record.Exception(() => Helper.CancelAndDisposeSafely(cts)); });
 
             // Assert
             Assert.Null(exception); // Proves the exception was caught cleanly
 
             // Proves the finally block executed and disposed the token despite the broadcast error cascade
             Assert.Throws<ObjectDisposedException>(() => _ = cts.Token);
+
+            // Proves the warning, the one signal an operator gets, was written with the callback's own failure
+            Assert.Contains("CancellationTokenSource.Cancel callback threw; continuing with Dispose.", log);
+            Assert.Contains("Malicious callback failure.", log);
         }
     }
 }
