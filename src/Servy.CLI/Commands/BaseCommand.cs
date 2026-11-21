@@ -111,7 +111,7 @@ namespace Servy.CLI.Commands
         /// <summary>
         /// Centralizes shared service management pre-flight validation, installation assertions, and operation logging.
         /// </summary>
-        /// <param name="commandName">The name of the command executing, used for logging scopes.</param>
+        /// <param name="commandName">The name of the command executing (e.g., "start", "uninstall"), used in the cancellation message, the administrator-privileges-required message, and as the prefix of the post-success-sync warning and the failure log line.</param>
         /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
         /// <param name="suggestion">Remediation suggestion provided to the user on failure.</param>
         /// <param name="serviceName">The name of the target Windows service.</param>
