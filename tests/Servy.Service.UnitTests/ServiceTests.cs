@@ -2580,6 +2580,9 @@ namespace Servy.Service.UnitTests
             // 4. Verify stdout and stderr writers were disposed
             _mockStdoutWriter.Verify(w => w.Dispose(), Times.Once);
             _mockStderrWriter.Verify(w => w.Dispose(), Times.Once);
+
+            // 5. The logger was flushed and released before control went back to the SCM
+            Assert.Null(TestReflection.GetField<IServyLogger>(_service, "_logger"));
         }
 
         [Fact]
@@ -2666,6 +2669,9 @@ namespace Servy.Service.UnitTests
 
                 // and the teardown sequence never runs
                 _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
+
+                // but the logger is still flushed, because the OS terminates the process seconds later (#1741)
+                Assert.Null(TestReflection.GetField<IServyLogger>(service, "_logger"));
             }
         }
 
@@ -2700,6 +2706,9 @@ namespace Servy.Service.UnitTests
                 // 3. A successful teardown reports success and leaves the exit code untouched
                 scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Pre-Shutdown handling complete")), It.IsAny<Exception>()), Times.Once);
                 Assert.Equal(0, service.ExitCode);
+
+                // 4. The logger is flushed and released after SERVICE_STOPPED
+                Assert.Null(TestReflection.GetField<IServyLogger>(service, "_logger"));
             }
         }
 
@@ -2766,6 +2775,9 @@ namespace Servy.Service.UnitTests
 
                     // 4. The real TerminateProcess never returns; the recording override models that by throwing
                     Assert.IsType<ProcessTerminatedException>(thrown);
+
+                    // 5. ... so the logger has to be flushed before it, or the lines above are lost (#2052)
+                    Assert.Null(TestReflection.GetField<IServyLogger>(service, "_logger"));
                 }
             }
             finally
@@ -3016,6 +3028,9 @@ namespace Servy.Service.UnitTests
             // Assert
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Executing teardown for reason: Shutdown")), It.IsAny<Exception>()), Times.Once);
             _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+
+            // The final log lines are saved before the OS kills the process
+            Assert.Null(TestReflection.GetField<IServyLogger>(_service, "_logger"));
         }
 
         [Fact]
@@ -3036,6 +3051,9 @@ namespace Servy.Service.UnitTests
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Shutdown bypassed")), It.IsAny<Exception>()), Times.Once);
             _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Never);
             Assert.False(TestReflection.GetField<bool>(_service, "_isTearingDown"));
+
+            // ... but the bypass line is still flushed before the reboot terminates the process (#1741)
+            Assert.Null(TestReflection.GetField<IServyLogger>(_service, "_logger"));
         }
 
         [Fact]
@@ -3100,6 +3118,23 @@ namespace Servy.Service.UnitTests
             // so the rest of the start sequence still runs
             scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Exception(s) raised during CTS cancellation")), It.IsAny<Exception>()), Times.Once);
             _mockProcess.Verify(p => p.Start(), Times.Exactly(2));
+        }
+
+        [Fact]
+        public void Dispose_FlushesAndReleasesTheLogger()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            SetupStandardServiceStart(options);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+            _service.StartForTest();
+
+            // Act
+            _service.Dispose();
+
+            // Assert
+            // Dispose is the catch-all for manual disposal, so it releases the logger too
+            Assert.Null(TestReflection.GetField<IServyLogger>(_service, "_logger"));
         }
 
         [Fact]
