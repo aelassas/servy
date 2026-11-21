@@ -896,6 +896,24 @@ namespace Servy.Manager.UnitTests.ViewModels
             }
         }
 
+        [Fact]
+        public void Dispose_DetachesScrollLogsToTopRequestedSubscribers()
+        {
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            {
+                // Arrange - a subscriber like the one LogsView attaches on DataContext change
+                var vm = CreateViewModel();
+                vm.ScrollLogsToTopRequested += () => { };
+                Assert.NotNull(TestReflection.GetField<Action?>(vm, "ScrollLogsToTopRequested"));
+
+                // Act
+                vm.Dispose();
+
+                // Assert - Dispose(bool) drops every subscriber (#3315), as ConsoleViewModel does for RequestScroll
+                Assert.Null(TestReflection.GetField<Action?>(vm, "ScrollLogsToTopRequested"));
+            }
+        }
+
         #endregion
     }
 }
