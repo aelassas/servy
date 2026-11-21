@@ -114,7 +114,7 @@ $availableModule = Get-Module -ListAvailable -Name SignPath |
 
 if (-not $availableModule) {
     Write-Host "SignPath module (v$RequiredSignPathVersion) not found. Installing..."
-        # Explicitly pin PSGallery as repository to prevent supply-chain attacks from higher-priority internal feeds.
+    # Explicitly pin PSGallery as repository to prevent supply-chain attacks from higher-priority internal feeds.
     # -SkipPublisherCheck bypasses Authenticode publisher verification in CI runner environments where
     # pre-installed or side-loaded module versions may have mismatched catalog signatures.
     Install-Module -Name SignPath -RequiredVersion $RequiredSignPathVersion -Repository PSGallery -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck
