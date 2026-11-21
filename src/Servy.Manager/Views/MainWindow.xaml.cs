@@ -320,7 +320,7 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="Window.Loaded"/> event.
+        /// Handles the <see cref="FrameworkElement.Loaded"/> event.
         /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous window initialization.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
@@ -500,7 +500,7 @@ namespace Servy.Manager.Views
         /// <remarks>
         /// This method ensures that high-resource operations (like real-time performance monitoring or
         /// log tailing) are throttled or stopped when the user navigates away from the respective tab.
-        /// It uses the <see cref="SelectionChangedEventArgs.OriginalSource"/> check to ensure it only
+        /// It uses the <see cref="RoutedEventArgs.OriginalSource"/> check to ensure it only
         /// reacts to the main TabControl and not nested elements.
         /// </remarks>
         private async Task MainTabControl_SelectionChangedAsync(object sender, SelectionChangedEventArgs e)
@@ -679,7 +679,7 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="DataGridRow.MouseDoubleClick"/> event.
+        /// Handles the <see cref="Control.MouseDoubleClick"/> event.
         /// Executes the <see cref="ServiceRowViewModel.ConfigureCommand"/> when a row is double-clicked to open the service configuration.
         /// </summary>
         /// <param name="sender">The source of the event, expected to be a <see cref="DataGridRow"/>.</param>
