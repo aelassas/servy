@@ -949,7 +949,6 @@ namespace Servy.Manager.ViewModels
                 }
                 else
                 {
-                    Logger.Warn($"Duplicate service name under OrdinalIgnoreCase ignored during refresh: '{name}'.");
                 }
             }
 
@@ -1186,7 +1185,6 @@ namespace Servy.Manager.ViewModels
                         string.Equals(s.Service?.Name, serviceName, StringComparison.OrdinalIgnoreCase));
                     if (itemToRemove == null)
                     {
-                        Logger.Warn($"RemoveService({serviceName}) called, but no matching service found in the collection.");
                         return;
                     }
 
