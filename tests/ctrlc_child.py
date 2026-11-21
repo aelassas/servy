@@ -27,9 +27,11 @@ SCRIPT_DIR = setup_logging(__file__)
 def main():
     logging.info("Service started")
 
-    python_exe = os.environ.get("PYTHON_EXE") or sys.executable
+    configured = os.environ.get("PYTHON_EXE")
+    python_exe = configured or sys.executable
     if not python_exe or not os.path.exists(python_exe):
-        logging.error("PYTHON_EXE is not set and sys.executable is unusable; cannot spawn the child tree")
+        source = "PYTHON_EXE" if configured else "sys.executable"
+        logging.error("%s points at %r, which does not exist; cannot spawn the child tree", source, python_exe)
         sys.exit(1)
 
     notepad_exe = os.environ.get("NOTEPAD_EXE") or os.path.join(
