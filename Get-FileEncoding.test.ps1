@@ -210,6 +210,43 @@ try {
     [System.IO.File]::WriteAllBytes($fileTruncUtf32Le, [byte[]]@(0xFF, 0xFE, 0x00))
     Assert-Encoding -TestName "3-byte truncated UTF-32 LE BOM falls back to UTF-16 LE" -FilePath $fileTruncUtf32Le -ExpectedType ([System.Text.UnicodeEncoding]) -ExpectedEmitBom $true -ExpectedBigEndian $false
 
+    # -----------------------------------------------------
+    # Near-miss prefixes: one byte away from a BOM
+    # -----------------------------------------------------
+    # Arrange: each prefix differs from one BOM by exactly one byte, so it must fall through to the
+    # branch named in Expect. Every byte comparison in Get-FileEncoding.ps1 is the only thing that
+    # keeps one of these files off the wrong branch.
+    $nearMisses = @(
+        @{ Name = 'FF FE 00 4E (UTF-16 LE text starting with U+4E00)'; Bytes = [byte[]]@(0xFF, 0xFE, 0x00, 0x4E); Expect = 'Utf16Le' },
+        @{ Name = '00 FE 00 00'; Bytes = [byte[]]@(0x00, 0xFE, 0x00, 0x00); Expect = 'Utf8' },
+        @{ Name = 'FF 00 00 00'; Bytes = [byte[]]@(0xFF, 0x00, 0x00, 0x00); Expect = 'Utf8' },
+        @{ Name = '01 00 FE FF'; Bytes = [byte[]]@(0x01, 0x00, 0xFE, 0xFF); Expect = 'Utf8' },
+        @{ Name = '00 01 FE FF'; Bytes = [byte[]]@(0x00, 0x01, 0xFE, 0xFF); Expect = 'Utf8' },
+        @{ Name = '00 00 00 FF'; Bytes = [byte[]]@(0x00, 0x00, 0x00, 0xFF); Expect = 'Utf8' },
+        @{ Name = '00 00 FE 00'; Bytes = [byte[]]@(0x00, 0x00, 0xFE, 0x00); Expect = 'Utf8' },
+        @{ Name = '00 BB BF';    Bytes = [byte[]]@(0x00, 0xBB, 0xBF);       Expect = 'Utf8' },
+        @{ Name = 'EF 00 BF';    Bytes = [byte[]]@(0xEF, 0x00, 0xBF);       Expect = 'Utf8' },
+        @{ Name = 'EF BB 00';    Bytes = [byte[]]@(0xEF, 0xBB, 0x00);       Expect = 'Utf8' },
+        @{ Name = '00 FE';       Bytes = [byte[]]@(0x00, 0xFE);             Expect = 'Utf8' },
+        @{ Name = 'FF 00';       Bytes = [byte[]]@(0xFF, 0x00);             Expect = 'Utf8' },
+        @{ Name = '00 FF';       Bytes = [byte[]]@(0x00, 0xFF);             Expect = 'Utf8' },
+        @{ Name = 'FE 00';       Bytes = [byte[]]@(0xFE, 0x00);             Expect = 'Utf8' }
+    )
+
+    $i = 0
+    foreach ($case in $nearMisses) {
+        $i++
+        $path = Join-Path $TestDir "near_miss_$i.bin"
+        [System.IO.File]::WriteAllBytes($path, $case.Bytes)
+
+        # Act & Assert: Assert-Encoding reads the file through Get-FileEncoding and checks type, BOM and endianness
+        if ($case.Expect -eq 'Utf16Le') {
+            Assert-Encoding -TestName "Near miss $($case.Name) stays UTF-16 LE" -FilePath $path -ExpectedType ([System.Text.UnicodeEncoding]) -ExpectedEmitBom $true -ExpectedBigEndian $false
+        } else {
+            Assert-Encoding -TestName "Near miss $($case.Name) falls back to UTF-8 without BOM" -FilePath $path -ExpectedType ([System.Text.UTF8Encoding]) -ExpectedEmitBom $false
+        }
+    }
+
 }
 finally {
     # Cleanup workspace
