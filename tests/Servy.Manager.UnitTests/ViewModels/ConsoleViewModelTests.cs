@@ -1436,7 +1436,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     var vm = CreateViewModel();
 
-                    // Act - Verify initial state before disposal context
+                    // Arrange - Verify initial state before disposal context
                     bool isDisposedBefore = TestReflection.GetField<int>(vm, "_isDisposed") == 1;
                     Assert.False(isDisposedBefore, "A new ConsoleViewModel wrapper should not initialize in a pre-disposed state.");
 
