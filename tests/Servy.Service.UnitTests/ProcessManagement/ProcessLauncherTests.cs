@@ -454,6 +454,48 @@ namespace Servy.Service.UnitTests.ProcessManagement
         }
 
         [Fact]
+        public void Start_ProcessStartThrows_LogsFailedToStartAndKillsNothing()
+        {
+            // Arrange
+            var startFailure = new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified");
+            var wrapper = ScriptedWrapper((o, e) => { });
+            wrapper.Setup(p => p.Start()).Throws(startFailure);
+
+            // Act
+            var ex = Assert.Throws<System.ComponentModel.Win32Exception>(
+                () => ProcessLauncher.Start(SyncOptions(null, null), FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            Assert.Same(startFailure, ex);
+            _logger.Verify(l => l.Error(@"Failed to start 'C:\tools\hook.exe'.", startFailure), Times.Once);
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Failed while monitoring")), It.IsAny<Exception?>()),
+                Times.Never);
+            wrapper.Verify(p => p.Kill(It.IsAny<bool>()), Times.Never);
+            wrapper.Verify(p => p.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void Start_WaitThrowsAfterStart_LogsFailedWhileMonitoringWithTheException()
+        {
+            // Arrange
+            var waitFailure = new InvalidOperationException("wait failed");
+            var wrapper = ScriptedWrapper((o, e) => throw waitFailure);
+
+            // Act
+            Assert.Throws<InvalidOperationException>(
+                () => ProcessLauncher.Start(SyncOptions(null, null), FactoryFor(wrapper), _logger.Object));
+
+            // Assert
+            _logger.Verify(
+                l => l.Error(@"Failed while monitoring or flushing the output of 'C:\tools\hook.exe'.", waitFailure),
+                Times.Once);
+            _logger.Verify(
+                l => l.Error(It.Is<string>(m => m.StartsWith("Failed to start")), It.IsAny<Exception?>()),
+                Times.Never);
+        }
+
+        [Fact]
         public void Start_SamePath_StderrOpensSharedWriterFirst_WritesBothLinesToOneFile()
         {
             // Arrange
