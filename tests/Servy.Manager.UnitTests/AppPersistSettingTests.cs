@@ -6,7 +6,9 @@ namespace Servy.Manager.UnitTests
 {
     /// <summary>
     /// Tests for <see cref="App.PersistSetting(string, string, string)"/>, the path-taking overload that writes a
-    /// setting into the Manager's JSON configuration file through <c>Helper.WriteFileAtomic</c>.
+    /// setting into the Manager's JSON configuration file through <c>Helper.WriteFileAtomic</c>, for its batch
+    /// counterpart <see cref="App.PersistSettings(string, IReadOnlyList{KeyValuePair{string, string}})"/>, and for
+    /// <see cref="App.GetLayoutChanges"/>, which picks the window-layout settings <see cref="App.SaveWindowLayout"/> writes in that batch.
     /// </summary>
     [Collection(AmbientTestCollection.Name)]
     public class AppPersistSettingTests : IDisposable
