@@ -2402,7 +2402,7 @@ namespace Servy.Service.UnitTests
         public void OnErrorDataReceived_ValidData_WritesToStderrWriter()
         {
             // Arrange
-            // StdErrPath must contain "stderr": the class-level IStreamWriterFactory mock
+            // StderrPath must contain "stderr": the class-level IStreamWriterFactory mock
             // routes on that substring and returns null for anything else.
             var options = new StartOptions
             {
