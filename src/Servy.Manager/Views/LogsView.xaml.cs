@@ -207,7 +207,7 @@ namespace Servy.Manager.Views
         /// <see cref="LogsViewModel.ScrollLogsToTopRequested"/>.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">Event data that contains old and new <see cref="DataContext"/> values.</param>
+        /// <param name="e">Event data that contains old and new <see cref="FrameworkElement.DataContext"/> values.</param>
         private void LogsView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (e.OldValue is LogsViewModel oldVm)
