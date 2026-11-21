@@ -260,6 +260,44 @@ try {
     Write-Host "  [OK] Get-ServyLastErrors returns only events strictly newer than the watermark." -ForegroundColor Gray
 
     # ----------------------------------------------------
+    # Test 7c: Get-ServyLastErrors asks the event log for Servy's Level 2 events only
+    # ----------------------------------------------------
+    # Arrange: a Get-WinEvent stub that records the query it receives instead of ignoring it
+    $global:WatermarkTestWinEvents = @()
+    $global:WatermarkTestQueries = New-Object System.Collections.ArrayList
+    function Get-WinEvent {
+        [CmdletBinding()]
+        param([hashtable]$FilterHashtable, [int]$MaxEvents)
+        [void]$global:WatermarkTestQueries.Add([PSCustomObject]@{ Filter = $FilterHashtable.Clone(); MaxEvents = $MaxEvents })
+        return $global:WatermarkTestWinEvents
+    }
+    $queryWatermark = $base.AddMinutes(-10)
+
+    # Act: a normal run (watermark set), then a first run (no watermark)
+    $null = Get-ServyLastErrors -LastProcessed $queryWatermark
+    $null = Get-ServyLastErrors -LastProcessed $null
+
+    # Assert: both queries target the Application log, the 'Servy' provider and Level 2 (Error);
+    # the normal run starts at the watermark and is unbounded, the first run is bounded to 20 events
+    $normalQuery = $global:WatermarkTestQueries[0]
+    $firstQuery  = $global:WatermarkTestQueries[1]
+    foreach ($q in @($normalQuery, $firstQuery)) {
+        if ($q.Filter.LogName -ne 'Application' -or $q.Filter.ProviderName -ne 'Servy' -or $q.Filter.Level -ne 2) {
+            Write-Host "FAIL: Get-ServyLastErrors queried LogName='$($q.Filter.LogName)' ProviderName='$($q.Filter.ProviderName)' Level='$($q.Filter.Level)'; expected Application / Servy / 2." -ForegroundColor Red
+            exit 1
+        }
+    }
+    if ($normalQuery.Filter.StartTime -ne $queryWatermark.ToLocalTime() -or $normalQuery.MaxEvents -ne 0) {
+        Write-Host "FAIL: the normal-run query used StartTime '$($normalQuery.Filter.StartTime)' and MaxEvents $($normalQuery.MaxEvents); expected the watermark as local time and no event bound." -ForegroundColor Red
+        exit 1
+    }
+    if ($firstQuery.Filter.ContainsKey('StartTime') -or $firstQuery.MaxEvents -ne 20) {
+        Write-Host "FAIL: the first-run query used StartTime '$($firstQuery.Filter.StartTime)' and MaxEvents $($firstQuery.MaxEvents); expected no StartTime and 20 events." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Get-ServyLastErrors queries only the Application log's Level 2 'Servy' events, bounded on a first run." -ForegroundColor Gray
+
+    # ----------------------------------------------------
     # Test 8: Get-EventsToProcess per-run cap (#7539)
     # ----------------------------------------------------
     # Arrange: thirteen genuine events, three over the default cap of 10, served newest first by the
@@ -324,6 +362,7 @@ catch {
 finally {
     Remove-Variable -Name WatermarkTestEvents -Scope Global -ErrorAction SilentlyContinue
     Remove-Variable -Name WatermarkTestWinEvents -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name WatermarkTestQueries -Scope Global -ErrorAction SilentlyContinue
     if (Test-Path $tempDir) {
         Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
