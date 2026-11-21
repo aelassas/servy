@@ -124,7 +124,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void StatusMappings_CoverEveryDeclaredServiceStatus()
         {
-            // Arrange & Act: Extract the distinct mapped enum values directly from the theory data source using Param1
+            // Arrange & Act: Extract the distinct mapped enum values from the theory data source via the ITheoryDataRow interface explicit implementation
             var covered = StatusMappings.Select(row => (ServiceStatus)((ITheoryDataRow)row).GetData()[0]!).ToHashSet();
             var declared = Enum.GetValues(typeof(ServiceStatus)).Cast<ServiceStatus>().ToHashSet();
 
