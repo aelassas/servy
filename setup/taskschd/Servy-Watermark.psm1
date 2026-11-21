@@ -63,7 +63,9 @@ function Write-WatermarkLocalLog {
 function Write-FallbackError {
     <#
     .SYNOPSIS
-        Logs an error to the Windows Application Event Log, with a local file fallback.
+        Reports a notification-script error three ways: a console warning, the local fallback log file
+        (always written, and written first, as the primary record), then a best-effort Warning-level
+        entry in the Windows Application Event Log.
     #>
     param(
         [string]$Message,
