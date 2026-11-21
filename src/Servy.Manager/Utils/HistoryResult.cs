@@ -26,7 +26,7 @@ namespace Servy.Manager.Utils
 
         /// <summary>
         /// Gets the UTC creation time of the log file at the time of reading
-        /// (<see cref="FileInfo.CreationTimeUtc"/>, not <see cref="FileInfo.CreationTime"/>).
+        /// (<see cref="FileSystemInfo.CreationTimeUtc"/>, not <see cref="FileSystemInfo.CreationTime"/>).
         /// Used to detect file rotations or resets during live monitoring; compared with
         /// <c>!=</c>, which ignores <see cref="DateTime.Kind"/>, so a local-time value here
         /// reports a rotation on every poll.
