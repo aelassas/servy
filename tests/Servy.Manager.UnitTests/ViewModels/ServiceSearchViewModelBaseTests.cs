@@ -186,6 +186,33 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SearchServicesAsync_HandsThePipelineTokenToTheFetch()
+        {
+            // Arrange
+            // Capture, during the fetch, both the token the search received and the token of the
+            // source the pipeline swapped in. A delegate that passes CancellationToken.None or
+            // default gets a token that cannot be canceled and is not equal to the source's token.
+            CancellationToken received = default;
+            CancellationToken expected = default;
+            _serviceCommandsMock
+                .Setup(s => s.SearchServicesAsync("Servy", false, It.IsAny<CancellationToken>()))
+                .Callback<string, bool, CancellationToken>((query, calculatePerf, token) =>
+                {
+                    received = token;
+                    expected = _sut.GetCancellationTokenSource().Token;
+                })
+                .ReturnsAsync(new List<Service>());
+            _sut.SearchText = "Servy";
+
+            // Act
+            await _sut.SearchCommand.ExecuteAsync(null);
+
+            // Assert
+            Assert.True(received.CanBeCanceled);
+            Assert.Equal(expected, received);
+        }
+
+        [Fact]
         public async Task SearchServicesAsync_NullServiceCommands_AbortsGracefully()
         {
             // Arrange
