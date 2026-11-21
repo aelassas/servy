@@ -7,7 +7,7 @@
 # ==========================================================================================
 
 name: 'Setup Git Helpers'
-description: 'Writes shared git helper functions (Invoke-Git, Invoke-PushWithRetry) to a script in RUNNER_TEMP for later steps to dot-source.'
+description: 'Writes shared git helper functions (Invoke-Git, Invoke-PushWithRetry, Set-BotGitIdentity) to a script in RUNNER_TEMP for later steps to dot-source.'
 
 runs:
   using: 'composite'
