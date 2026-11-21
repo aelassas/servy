@@ -23,7 +23,10 @@ namespace Servy.Service.UnitTests.ProcessManagement
     /// <see cref="ProcessLauncher.Start(ProcessLaunchOptions, IProcessFactory, IServyLogger)"/>'s final exit poll once its
     /// synchronous wait budget has run out, its redirect-handler open and write failures, its best-effort output
     /// drain, its orphaned-child kill and the whole-tree kill of its synchronous timeout, with the error it logs when
-    /// that kill fails and the redirect-handler detach that runs before the writers are disposed on that path.
+    /// that kill fails and the redirect-handler detach that runs before the writers are disposed on that path; and for
+    /// the window, redirection and stream-encoding flags <see cref="ProcessLauncher.CreateStartInfo"/> derives from the
+    /// console UI setting, and the hook log's case-insensitive same-file match, BOM-less UTF-8 encoding and line
+    /// visibility while the writer is still open.
     /// </summary>
     /// <remarks>
     /// The two detection patterns are anchored, compiled and private, so no input can make them time out.
