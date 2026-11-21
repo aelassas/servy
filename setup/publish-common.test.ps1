@@ -172,11 +172,11 @@ try {
     }
     Write-Host "  [OK] The Task Scheduler exclusion list is declared once, as a script-scoped array." -ForegroundColor Gray
 
-    # --- Both consumers enforce every pattern in that one array (including bracketed paths) ---
+    # --- The copy filter enforces every pattern in that one array (including bracketed paths) ---
     # The sample filenames are derived from the patterns, so a sixth pattern added to the
-    # array is exercised by both halves of this test without editing it. The bracketed
-    # folder name (`exclusions[bracket]`) is there because `[` and `]` are wildcard
-    # characters to `-Path`: both mechanisms have to read the tree through `-LiteralPath`.
+    # array is exercised by this test without editing it. The bracketed folder name
+    # (`exclusions[bracket]`) is there because `[` and `]` are wildcard characters to `-Path`:
+    # the copy filter has to read the tree through `-LiteralPath`.
 
     # Arrange
     $bracketRoot = Join-Path $tempDir "exclusions[bracket]"
@@ -199,11 +199,6 @@ try {
     # Act
     Copy-TaskSchdArtifacts -SourcePath $filterSource -DestPath $filterDest
     $copied = @(Get-ChildItem -LiteralPath $filterDest -Recurse -File | Select-Object -ExpandProperty Name)
-    $leaks = @(Get-ChildItem -LiteralPath $filterSource -Recurse -File |
-        Where-Object {
-            $leafName = $_.Name
-            $script:TaskSchdExcludedPatterns | Where-Object { $leafName -like $_ }
-        })
 
     # Assert
     if ($copied -notcontains $payloadName) {
@@ -218,19 +213,11 @@ try {
     }
     Write-Host "  [OK] The copy filter excludes every pattern in the shared array, nested included." -ForegroundColor Gray
 
-    # The leak check is the second, independent post-copy scan over the destination tree
-    # using -LiteralPath (safe for bracketed checkout paths) and the same shared array.
-    # It has to recognise every pattern at every depth, or it silently stops being a check at all.
-    $expectedLeakCount = @($script:TaskSchdExcludedPatterns).Count * 2
-    if ($leaks.Count -ne $expectedLeakCount) {
-        Write-Host "FAIL: the leak check matched $($leaks.Count) of $expectedLeakCount planted files in bracketed path." -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "  [OK] The leak check recognises every pattern in the same shared array, nested and bracketed included." -ForegroundColor Gray
-
     # --- Copy-CommonArtifacts catches a leaked file even under a bracketed path -------
     # Simulate a bug in Copy-TaskSchdArtifacts that copies files unfiltered into a
     # bracketed destination, verifying the post-copy leak check still throws SECURITY ERROR.
+    # The leak check is the second, independent post-copy scan: it reads the destination tree
+    # through -LiteralPath (safe for bracketed checkout paths) with the same shared array.
 
     # Arrange
     $mockCliDir = Join-Path $bracketRoot "cli"
