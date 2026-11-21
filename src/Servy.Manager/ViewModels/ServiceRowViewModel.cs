@@ -344,7 +344,7 @@ namespace Servy.Manager.ViewModels
         /// </param>
         /// <remarks>
         /// This method is critical for breaking the strong reference held by the <see cref="Service"/> model
-        /// through the <see cref="Service.PropertyChanged"/> event. Without this unsubscription,
+        /// through the <see cref="ViewModelBase.PropertyChanged"/> event. Without this unsubscription,
         /// the ViewModel would remain rooted in memory, leading to a memory leak.
         /// </remarks>
         protected virtual void Dispose(bool disposing)
