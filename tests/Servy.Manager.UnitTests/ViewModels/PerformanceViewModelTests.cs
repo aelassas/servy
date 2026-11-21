@@ -588,6 +588,70 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void OnTickAsync_ValidService_PassesTheMonitoringSessionTokenToThePidLookup()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    var mockService = new PerformanceService { Name = "ServyDaemon", Pid = null };
+                    vm.SelectedService = mockService;
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+                    var sessionToken = TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts").Token;
+
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
+                                           .ReturnsAsync((int?)null);
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    task.GetAwaiter().GetResult();
+
+                    // Assert - the live session token, not CancellationToken.None
+                    Assert.True(sessionToken.CanBeCanceled);
+                    _mockServiceRepository.Verify(r => r.GetServicePidAsync("ServyDaemon", sessionToken), Times.Once);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void OnTickAsync_MonitoringCancelledBeforeMetricWalk_NeverRunsTheProcessTreeWalk()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                using (new AmbientAppServicesScope(services => services.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    // Arrange
+                    SynchronizationContext.SetSynchronizationContext(
+                        new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+
+                    var mockService = new PerformanceService { Name = "ServyDaemon", Pid = 2050 };
+                    vm.SelectedService = mockService;
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+
+                    // Seed CpuUsage so the PID-changed reset raises PropertyChanged for it; that reset runs
+                    // after the post-lookup drop guard and before Task.Run, which is the window to cancel in.
+                    vm.CpuUsage = "50%";
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
+                                           .ReturnsAsync(9999);
+                    vm.PropertyChanged += (sender, e) =>
+                    {
+                        if (e.PropertyName == nameof(vm.CpuUsage))
+                            TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts").Cancel();
+                    };
+
+                    // Act & Assert - Task.Run sees the cancelled session token and never starts the metric walk
+                    Assert.ThrowsAny<OperationCanceledException>(
+                        () => PumpUntilCompleted((Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!));
+                    _mockProcessHelper.Verify(p => p.GetProcessTreeMetrics(It.IsAny<int>()), Times.Never);
+                    _mockProcessHelper.Verify(p => p.MaintainCache(), Times.Never);
+                }
+            }, createApp: true);
+        }
+
+        [Fact]
         public void OnTickAsync_MonitoringCancelledDuringPidLookup_DropsTheTick()
         {
             Helper.RunOnSTA(() =>

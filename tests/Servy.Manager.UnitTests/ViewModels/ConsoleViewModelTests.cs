@@ -393,6 +393,35 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task OnTickAsync_ValidService_PassesTheMonitoringSessionTokenToTheStateLookup()
+        {
+            // Arrange, Act & Assert
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
+                {
+                    var service = new ConsoleService { Name = "ActiveService", Pid = 1234, StdoutPath = "log.txt", StderrPath = "err.log" };
+                    vm.SelectedService = service;
+                    TestReflection.GetField<DispatcherTimer>(vm, "_timer")?.Stop();
+                    var sessionToken = TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts").Token;
+
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = null });
+
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
+                    await task;
+
+                    // Assert - the live session token, not CancellationToken.None
+                    Assert.True(sessionToken.CanBeCanceled);
+                    _serviceRepoMock.Verify(r => r.GetServiceConsoleStateAsync("ActiveService", sessionToken), Times.Once);
+                }
+            });
+        }
+
+        [Fact]
         public async Task OnTickAsync_PathsChanged_UpdatesPathsAndTriggersSwitch()
         {
             // Arrange, Act & Assert (Kept Async Task - genuinely awaits internal file parsing tick loops)
