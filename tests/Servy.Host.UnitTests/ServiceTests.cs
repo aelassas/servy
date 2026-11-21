@@ -1370,13 +1370,14 @@ namespace Servy.Host.UnitTests
         [Fact]
         public void OnStart_ScopesTheLoggerToTheHostServiceName()
         {
-            // Arrange
+            // Arrange: the scoped logger is a different object from the root one, so the test can tell them apart
             var logger = new Mock<IServyLogger>();
-            logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(() => logger.Object);
+            var scoped = new Mock<IServyLogger>();
+            logger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(scoped.Object);
             using (var accepted = new ManualResetEventSlim())
             using (var probe = new LifecycleProbe(logger.Object, _pipes.Object, _repository.Object, _api.Object, _identifier.Object))
             {
-                logger.Setup(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<IOException>())).Callback(() => accepted.Set());
+                scoped.Setup(l => l.Error("Error accepting Named Pipe connection.", It.IsAny<IOException>())).Callback(() => accepted.Set());
                 probe.ServerStreamFactory = (name, security) => throw new IOException("All pipe instances are busy.");
 
                 // Act
@@ -1384,9 +1385,11 @@ namespace Servy.Host.UnitTests
                 var logged = accepted.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
                 probe.RunOnStop();
 
-                // Assert: every line the host writes afterwards carries this scope (#8090)
+                // Assert: the scope carries the host's name, and the lines written after OnStart go to it, not to the root logger (#8090, #8109)
                 Assert.True(logged);
                 logger.Verify(l => l.CreateScoped(AppConfig.ServyHostServiceName), Times.Once);
+                logger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                scoped.Verify(l => l.Dispose(), Times.Once);
             }
         }
 
