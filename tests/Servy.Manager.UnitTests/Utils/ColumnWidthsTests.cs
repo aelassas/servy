@@ -224,7 +224,6 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
-
         [Fact]
         public void TryGetWidth_NullList_ReturnsFalse()
         {
