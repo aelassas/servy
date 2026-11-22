@@ -373,9 +373,21 @@ namespace Servy.Core.IntegrationTests.NamedPipes
             _api.Setup(a => a.GetServiceProcessId(AppConfig.ServyHostServiceName)).Returns(0);
             var served = ServeOnceAsync(_ => new IpcResponseDto { Success = true }, ct);
 
-            // Act & Assert
+            // Act
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => Task.Run(() => CreateClient().GetByName("svc", ct), ct));
-            Assert.Null(await served);
+
+            // Assert: no request reached the server
+            IpcRequestDto? received = null;
+            try
+            {
+                received = await served;
+            }
+            catch (IOException)
+            {
+                // The client refused and closed the pipe before the server's accept completed ("The pipe is being closed"), so there was no request to read
+            }
+
+            Assert.Null(received);
         }
 
         #endregion
