@@ -157,7 +157,7 @@ function Resolve-ServyRestoreDumpPath {
     Mandatory sidecar file text content string.
 
 .OUTPUTS
-    System.String - The extracted expected SHA-256 hash string.
+    System.String - The extracted expected SHA-256 hash string, or $null when the sidecar text is empty or whitespace only.
 #>
 function Get-ServySidecarExpectedHash {
     [CmdletBinding()]
