@@ -2193,6 +2193,41 @@ namespace Servy.UnitTests.Services
             }
         }
 
+        [Fact]
+        public async Task OpenManager_TokenAlreadyCancelled_ThrowsBeforeStartingTheProcess()
+        {
+            // Arrange
+            // A real file under the app directory, so the File.Exists gate and the Release containment guard both pass
+            // and the token check is the only thing left that can stop the launch.
+            string tempTrackingFile = Path.Combine(AppFoldersHelper.GetAppDirectory(), $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+
+            var sut = CreateSut();
+
+            try
+            {
+                using (var cts = new CancellationTokenSource())
+                {
+                    cts.Cancel();
+
+                    // Act & Assert
+                    await Assert.ThrowsAsync<OperationCanceledException>(
+                        () => sut.OpenManagerAsync(cancellationToken: cts.Token));
+
+                    _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Never);
+                    _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                }
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
 #if !DEBUG
         [Fact]
         public async Task OpenManager_TargetOutsideAppDirectory_RefusesToLaunch()
@@ -2234,6 +2269,25 @@ namespace Servy.UnitTests.Services
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExportConfig_TokenAlreadyCancelled_ThrowsBeforeOpeningTheSaveDialog()
+        {
+            // Arrange
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+                var sut = CreateSut();
+
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(
+                    () => sut.ExportXmlConfigAsync("password", cancellationToken: cts.Token));
+
+                _dialogServiceMock.Verify(d => d.SaveXml(It.IsAny<string>()), Times.Never);
+                _modelToServiceDtoMock.Verify(m => m(), Times.Never);
+                _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+            }
         }
 
         [Fact]
