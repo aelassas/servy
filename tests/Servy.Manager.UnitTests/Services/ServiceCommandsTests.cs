@@ -1333,6 +1333,33 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         /// <summary>
+        /// The JSON twin of the export token test: <c>ExportServiceToJsonAsync</c> is its own hand-over
+        /// to the shared helper, so the XML pin does not cover it.
+        /// </summary>
+        [Fact]
+        public async Task ExportServiceToJsonAsync_ForwardsTheCallersTokenToTheRepository()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+            var record = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe" };
+            using var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync(record);
+
+            using (var targetPath = new TempFile("_export_test.json"))
+            {
+                _fileDialogServiceMock.Setup(f => f.SaveJson(It.IsAny<string>())).Returns(targetPath.Path);
+
+                // Act
+                await sut.ExportServiceToJsonAsync(service, token);
+            }
+
+            // Assert - an exact token, not It.IsAny: ExportServiceToJsonAsync hands it to ExportServiceConfigAsync (ServiceCommands.cs:518).
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, token), Times.Once);
+        }
+
+        /// <summary>
         /// Import must hand the caller's token to the validator, the existence lookup and the upsert,
         /// not <c>default</c> (the non-lifecycle half of #8076).
         /// </summary>
@@ -1360,6 +1387,39 @@ namespace Servy.Manager.UnitTests.Services
             }
 
             // Assert - an exact token, not It.IsAny: a hand-over that passes default matches none of these.
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, token), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, token), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, token), Times.Once);
+        }
+
+        /// <summary>
+        /// The XML twin of the import token test: <c>ImportXmlConfigAsync</c> is its own hand-over
+        /// to the shared helper, so the JSON pin does not cover it.
+        /// </summary>
+        [Fact]
+        public async Task ImportXmlConfigAsync_ForwardsTheCallersTokenToTheCollaborators()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+            using var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(dto.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            ServiceDto? xmlParsedDto = dto;
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny, out xmlParsedDto)).Returns(true);
+
+            using (var tempFile = new TempFile(".xml").Write("<ServiceDto />"))
+            {
+                _fileDialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(tempFile.Path);
+
+                // Act
+                await sut.ImportXmlConfigAsync(token);
+            }
+
+            // Assert - an exact token, not It.IsAny: ImportXmlConfigAsync hands it to ImportConfigAsync (ServiceCommands.cs:529).
             _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, token), Times.Once);
             _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, token), Times.Once);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, token), Times.Once);
