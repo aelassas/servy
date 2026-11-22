@@ -393,6 +393,44 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
+        public void Validate_Credentials_PasswordSetWithEmptyConfirmation_ReturnsOnlyTheMismatchError()
+        {
+            // Arrange
+            // A typed password and a blank Confirm box (the desktop app passes "" for an untouched field).
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
+            dto.Password = "Secret123";
+
+            // Act
+            var result = _sut.Validate(dto, confirmPassword: string.Empty);
+
+            // Assert
+            // "" is compared, not skipped (#4400), so the mismatch is the only error and the logon check does not run.
+            Assert.Equal(new[] { Strings.Msg_PasswordsDontMatch }, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_Credentials_NoConfirmationField_SkipsTheCompareAndValidatesTheAccount()
+        {
+            // Arrange
+            // The CLI install path: a user account and password, and no confirmation field (confirmPassword left null).
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "InvalidAccountFormatWithoutPrefix";
+            dto.Password = "Secret123";
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            // null means "no confirmation field": no mismatch is reported and the account check is what runs.
+            Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Contains("Username format is invalid", result.Errors[0]);
+        }
+
+        [Fact]
         public void Validate_Credentials_NativeValidationFailure_SurfacesExceptionMessageInResult()
         {
             // Arrange: Configure non-LocalSystem credentials with an invalid account string format
