@@ -1,3 +1,4 @@
+using Servy.Testing;
 using Servy.UI.Helpers;
 using System;
 using System.Collections.Generic;
@@ -6,8 +7,25 @@ using Xunit;
 
 namespace Servy.UI.UnitTests.Helpers
 {
+    // LogCapture re-initializes the process-wide static Logger, so every class that uses it runs in one collection
+    [Collection("StaticLogger")]
     public class AppRestarterTests
     {
+        private sealed class DisposalCountingProcess : Process
+        {
+            public int Disposals { get; private set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    Disposals++;
+                }
+
+                base.Dispose(disposing);
+            }
+        }
+
         private const string ExePath = @"C:\Program Files\Servy\Servy.exe";
 
         [Fact]
@@ -101,6 +119,43 @@ namespace Servy.UI.UnitTests.Helpers
 
             // Assert
             Assert.False(result);
+        }
+
+        [Fact]
+        public void StartNewInstance_StartReturnsAProcess_DisposesIt()
+        {
+            // Arrange
+            var process = new DisposalCountingProcess();
+
+            // Act
+            var result = AppRestarter.StartNewInstance(ExePath, null, psi => process);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(1, process.Disposals);
+        }
+
+        [Fact]
+        public void StartNewInstance_StartThrows_LogsTheReason()
+        {
+            // Act
+            var captured = LogCapture.Run(() => AppRestarter.StartNewInstance(
+                ExePath, null, psi => throw new InvalidOperationException("The executable could not be started.")));
+
+            // Assert
+            Assert.False(captured.Result);
+            Assert.Contains("Restart failed: The executable could not be started.", captured.Log);
+        }
+
+        [Fact]
+        public void StartNewInstance_ExecutablePathUnknown_LogsThatThePathIsUnknown()
+        {
+            // Act
+            var captured = LogCapture.Run(() => AppRestarter.StartNewInstance(null, null, psi => null));
+
+            // Assert
+            Assert.False(captured.Result);
+            Assert.Contains("Restart failed: the path of the running executable is unknown.", captured.Log);
         }
 
         [Fact]
