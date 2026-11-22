@@ -320,6 +320,8 @@ namespace Servy.UnitTests.Services
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
             _serviceManagerMock.Verify(m => m.IsServiceInstalled(dto.Name, cts.Token), Times.Once);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), cts.Token), Times.Once);
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, _wrapperPath, null, false, cts.Token), Times.Once);
 
             cts.Dispose();
         }
@@ -1205,6 +1207,8 @@ namespace Servy.UnitTests.Services
         public async Task ExportXmlConfig_ValidModel_WritesXmlAndDisplaysXmlSuccess()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var sut = CreateSut();
             var dto = new ServiceDto { Name = "XmlExportService", ExecutablePath = @"C:\Windows\System32\cmd.exe" };
             using (var target = new TempFile(".xml"))
@@ -1216,7 +1220,7 @@ namespace Servy.UnitTests.Services
                     .ReturnsAsync(true);
 
                 // Act
-                await sut.ExportXmlConfigAsync("password", cancellationToken: CancellationToken.None);
+                await sut.ExportXmlConfigAsync("password", cancellationToken: cts.Token);
 
                 // Assert
                 var written = File.ReadAllText(target.Path);
@@ -1224,7 +1228,11 @@ namespace Servy.UnitTests.Services
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportXml_Success, UiAppConfig.Caption), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportJson_Success, It.IsAny<string>()), Times.Never);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                // Exact token, not It.IsAny: ExportConfigAsync must hand the caller's token to the validator.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, null, "password", false, cts.Token), Times.Once);
             }
+
+            cts.Dispose();
         }
 
         [Fact]
@@ -1763,6 +1771,8 @@ namespace Servy.UnitTests.Services
         public async Task ImportXmlConfig_AllGatesPassed_InvokesBindServiceDtoToModel()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var expectedDto = new ServiceDto { Name = "XmlBindService", ExecutablePath = @"C:\Windows\System32\cmd.exe" };
 
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
@@ -1790,15 +1800,18 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportXmlConfigAsync(cancellationToken: CancellationToken.None);
+                await sut.ImportXmlConfigAsync(cancellationToken: cts.Token);
 
                 // Assert
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
                 Assert.NotNull(boundDtoResult);
                 Assert.Equal("XmlBindService", boundDtoResult.Name);
+                // Exact token, not It.IsAny: ImportConfigAsync must hand the caller's token to the validator.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(expectedDto, null, null, true, cts.Token), Times.Once);
             }
             finally
             {
+                cts.Dispose();
                 if (File.Exists(path)) File.Delete(path);
             }
         }
