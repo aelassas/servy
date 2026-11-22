@@ -1419,23 +1419,10 @@ namespace Servy.Service.UnitTests
         public void OnStart_PreLaunchSynchronous_RetriesAfterBackoff_ThenSucceeds()
         {
             // Arrange
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = "test.exe",
-                PreLaunchExecutablePath = "prelaunch.exe",
-                PreLaunchTimeoutInSeconds = 10,
-                PreLaunchIgnoreFailure = false,
-                PreLaunchRetryAttempts = 1 // maxAttempts = 2, so attempt 1 < maxAttempts reaches the back-off branch
-            };
+            var options = CreatePreLaunchRetryOptions();
             var scopedLogger = SetupStandardServiceStart(options);
 
-            // WaitForExit must be stubbed: ProcessLauncher polls it, and an unstubbed mock returns
-            // false forever, which turns every attempt into a timeout instead of an exit-code check.
-            var mockFailedPreLaunch = new Mock<IProcessWrapper>();
-            mockFailedPreLaunch.Setup(p => p.Start()).Returns(true);
-            mockFailedPreLaunch.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
-            mockFailedPreLaunch.Setup(p => p.ExitCode).Returns(1); // first attempt fails
+            var mockFailedPreLaunch = CreateFailingPreLaunch(); // first attempt fails
 
             var mockSucceededPreLaunch = new Mock<IProcessWrapper>();
             mockSucceededPreLaunch.Setup(p => p.Start()).Returns(true);
@@ -1551,21 +1538,10 @@ namespace Servy.Service.UnitTests
         public void OnStart_PreLaunchSynchronousTornDownDuringBackOff_AbortsWithoutASecondAttempt()
         {
             // Arrange
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = "test.exe",
-                PreLaunchExecutablePath = "prelaunch.exe",
-                PreLaunchTimeoutInSeconds = 10,
-                PreLaunchIgnoreFailure = false,
-                PreLaunchRetryAttempts = 1 // maxAttempts = 2, so a failed attempt 1 reaches the back-off wait
-            };
+            var options = CreatePreLaunchRetryOptions();
             var scopedLogger = SetupStandardServiceStart(options);
 
-            var mockFailedPreLaunch = new Mock<IProcessWrapper>();
-            mockFailedPreLaunch.Setup(p => p.Start()).Returns(true);
-            mockFailedPreLaunch.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
-            mockFailedPreLaunch.Setup(p => p.ExitCode).Returns(1); // the attempt fails, so the back-off runs
+            var mockFailedPreLaunch = CreateFailingPreLaunch(); // the attempt fails, so the back-off runs
 
             // Teardown is signalled while attempt 1 is in flight: the loop's top-of-attempt check has
             // already passed, so the abort can only be observed by the check inside the back-off wait.
@@ -1577,12 +1553,12 @@ namespace Servy.Service.UnitTests
             _service.StartForTest();
 
             // Assert
-            scopedLogger.Verify(l => l.Error("Pre-launch process aborted during back-off wait due to service teardown.", null), Times.Once);
+            scopedLogger.Verify(l => l.Error(BackOffTeardownAbort, null), Times.Once);
 
             // ... and the abort returned instead of sleeping out the back-off and retrying
             _ctx.ProcessFactory.Verify(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()), Times.Once);
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Never);
-            scopedLogger.Verify(l => l.Error("Pre-launch process failed after all retry attempts.", null), Times.Never);
+            scopedLogger.Verify(l => l.Error(PreLaunchRetriesExhausted, null), Times.Never);
             _mockProcess.Verify(p => p.Start(), Times.Never);
         }
 
@@ -1596,6 +1572,11 @@ namespace Servy.Service.UnitTests
         /// to pin one of them has to tell them apart by something other than this string.
         /// </summary>
         private const string BackOffTeardownAbort = "Pre-launch process aborted during back-off wait due to service teardown.";
+
+        /// <summary>
+        /// The text logged when every synchronous pre-launch attempt has failed.
+        /// </summary>
+        private const string PreLaunchRetriesExhausted = "Pre-launch process failed after all retry attempts.";
 
         /// <summary>
         /// How long after the back-off wait starts the token is cancelled in
@@ -1750,7 +1731,7 @@ namespace Servy.Service.UnitTests
             // ... and attempt 2 never got as far as starting a process
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("attempt 2/2")), It.IsAny<Exception>()), Times.Never);
             _ctx.ProcessFactory.Verify(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()), Times.Once);
-            scopedLogger.Verify(l => l.Error("Pre-launch process failed after all retry attempts.", null), Times.Never);
+            scopedLogger.Verify(l => l.Error(PreLaunchRetriesExhausted, null), Times.Never);
             _mockProcess.Verify(p => p.Start(), Times.Never);
         }
 
