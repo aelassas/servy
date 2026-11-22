@@ -9,6 +9,8 @@ using Xunit;
 
 namespace Servy.UI.UnitTests.Commands
 {
+    // LogCapture re-initializes the process-wide static Logger, so every class that uses it runs in one collection
+    [Collection("StaticLogger")]
     public class AsyncCommandTests
     {
         #region Constructor Tests

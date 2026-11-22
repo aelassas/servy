@@ -1,5 +1,6 @@
 using Moq;
 using Servy.Core.Logging;
+using Servy.Testing;
 using Servy.UI.Localization;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,8 @@ using Xunit;
 
 namespace Servy.UI.UnitTests.Localization
 {
+    // LogCapture re-initializes the process-wide static Logger, so every class that uses it runs in one collection
+    [Collection("StaticLogger")]
     public class StartupCultureTests : IDisposable
     {
         private readonly string _directory;
@@ -566,6 +569,58 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal("applyCulture", ex.ParamName);
         }
 
+        [Fact]
+        public void Apply_OptionWithoutAValue_IsReportedAsAnEmptyRejectedValueAndLeavesTheSettingsAlone()
+        {
+            // Arrange
+            var content = Config("Language", "zh-CN");
+            File.WriteAllText(_configPath, content);
+            var applied = new List<CultureInfo>();
+
+            // Act
+            var result = StartupCulture.Apply(_configPath, new[] { "MyService", "--lang" }, Culture("en-US"), applied.Add);
+
+            // Assert
+            Assert.Equal(string.Empty, result.RejectedArgument);
+            Assert.Equal(AppLanguage.ChineseSimplified, result.Language);
+            Assert.Equal("zh-CN", Assert.Single(applied).Name);
+            Assert.Equal(content, File.ReadAllText(_configPath));
+        }
+
+        [Fact]
+        public void ApplyUiCulture_Culture_SetsTheCurrentAndTheDefaultThreadUiCulture()
+        {
+            // Arrange
+            var previousCurrent = CultureInfo.CurrentUICulture;
+            var previousDefault = CultureInfo.DefaultThreadCurrentUICulture;
+            var english = Culture("en");
+
+            try
+            {
+                // Act
+                StartupCulture.ApplyUiCulture(english);
+
+                // Assert
+                Assert.Same(english, CultureInfo.CurrentUICulture);
+                Assert.Same(english, CultureInfo.DefaultThreadCurrentUICulture);
+            }
+            finally
+            {
+                CultureInfo.CurrentUICulture = previousCurrent;
+                CultureInfo.DefaultThreadCurrentUICulture = previousDefault;
+            }
+        }
+
+        [Fact]
+        public void ApplyUiCulture_NullCulture_ThrowsArgumentNullException()
+        {
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => StartupCulture.ApplyUiCulture(null));
+
+            // Assert
+            Assert.Equal("culture", ex.ParamName);
+        }
+
         #endregion
 
         #region LogOutcome
@@ -611,6 +666,20 @@ namespace Servy.UI.UnitTests.Localization
 
             // Assert
             logger.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void LogOutcome_NoLoggerGiven_WritesBothWarningsToTheStaticLogger()
+        {
+            // Arrange
+            var result = new StartupCultureResult(AppLanguage.System, null, "klingon", "Access to the path is denied.");
+
+            // Act
+            var log = LogCapture.Run(() => StartupCulture.LogOutcome(result));
+
+            // Assert
+            Assert.Contains("Ignored --lang 'klingon'", log);
+            Assert.Contains("Access to the path is denied.", log);
         }
 
         #endregion
