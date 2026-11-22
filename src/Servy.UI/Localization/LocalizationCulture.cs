@@ -38,7 +38,7 @@ namespace Servy.UI.Localization
 
             var name = value.Trim();
 
-            if (Is(name, SystemCode) || Is(name, "auto") || Is(name, nameof(AppLanguage.System)))
+            if (Is(name, SystemCode) || Is(name, "auto"))
             {
                 return true;
             }
@@ -114,7 +114,7 @@ namespace Servy.UI.Localization
 
         /// <summary>
         /// Tells whether a culture name is a Simplified Chinese one. Traditional Chinese (<c>zh-Hant</c>,
-        /// <c>zh-CHT</c> and the Taiwan, Hong Kong and Macao regions) is not.
+        /// <c>zh-CHT</c>, and the Taiwan, Hong Kong and Macao regions when no script is given) is not.
         /// </summary>
         /// <param name="cultureName">A culture name such as <c>zh-CN</c>, <c>zh-Hans-SG</c> or <c>zh-TW</c>.</param>
         /// <returns><see langword="true"/> for a Simplified Chinese culture name.</returns>
@@ -131,9 +131,24 @@ namespace Servy.UI.Localization
                 return false;
             }
 
+            // An explicit script decides: zh-Hans-HK is Simplified, zh-Hant-CN is Traditional
             for (var i = 1; i < parts.Length; i++)
             {
-                if (Is(parts[i], "Hant") || Is(parts[i], "CHT") || Is(parts[i], "TW") || Is(parts[i], "HK") || Is(parts[i], "MO"))
+                if (Is(parts[i], "Hans") || Is(parts[i], "CHS"))
+                {
+                    return true;
+                }
+
+                if (Is(parts[i], "Hant") || Is(parts[i], "CHT"))
+                {
+                    return false;
+                }
+            }
+
+            // No script: the region decides
+            for (var i = 1; i < parts.Length; i++)
+            {
+                if (Is(parts[i], "TW") || Is(parts[i], "HK") || Is(parts[i], "MO"))
                 {
                     return false;
                 }
