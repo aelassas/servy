@@ -24,7 +24,10 @@ namespace Servy.Host.UnitTests
 {
     /// <summary>
     /// Unit tests for the request handling of the Servy host service: who may ask for what, what each action reads and
-    /// writes, and how the named pipe's DACL is rebuilt from the accounts of the installed services.
+    /// writes, and how the named pipe's DACL is rebuilt from the accounts of the installed services; and for its
+    /// lifecycle callbacks (the scoped logger, the exit code and the bounded logger flush), the first pipe instance's
+    /// FILE_FLAG_FIRST_PIPE_INSTANCE fallback, and the connection handler's client pinning, request timeout and
+    /// shutdown paths.
     /// </summary>
     public class ServiceTests : IDisposable
     {
