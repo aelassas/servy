@@ -1,5 +1,6 @@
 using Moq;
 using Newtonsoft.Json.Linq;
+using Servy.Testing;
 using Servy.UI.Localization;
 using Servy.UI.Resources;
 using Servy.UI.Services;
@@ -8,6 +9,8 @@ using Xunit;
 
 namespace Servy.UI.UnitTests.Localization
 {
+    // LogCapture re-initializes the process-wide static Logger, so every class that uses it runs in one collection
+    [Collection("StaticLogger")]
     public class LanguageSwitcherTests : IDisposable
     {
         private const string Caption = "Servy";
@@ -161,6 +164,45 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal("{ this is not json", File.ReadAllText(managerPath));
             Assert.Equal(1, _restarts);
             _messageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ChangeAsync_UserConfirms_RestartsOnlyAfterBothFilesHoldTheLanguage()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(_configPath, "{\"Language\": \"en\"}");
+            File.WriteAllText(managerPath, "{\"Language\": \"en\"}");
+            _messageBox.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption)).ReturnsAsync(true);
+            var storedAtRestart = new List<AppLanguage>();
+
+            // Act
+            await LanguageSwitcher.ChangeAsync(_configPath, AppLanguage.English, AppLanguage.ChineseSimplified, _messageBox.Object, Caption, () =>
+            {
+                storedAtRestart.Add(StartupCulture.ReadLanguage(_configPath));
+                storedAtRestart.Add(StartupCulture.ReadLanguage(managerPath));
+            });
+
+            // Assert
+            Assert.Equal(new[] { AppLanguage.ChineseSimplified, AppLanguage.ChineseSimplified }, storedAtRestart);
+        }
+
+        [Fact]
+        public async Task ChangeAsync_OtherApplicationsFileCannotBeWritten_LogsTheFileThatWasNotUpdated()
+        {
+            // Arrange: the Manager settings file is not valid JSON, the Desktop one is fine
+            File.WriteAllText(Path.Combine(_directory, "appsettings.manager.json"), "{ this is not json");
+            _messageBox.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), Caption)).ReturnsAsync(true);
+
+            // Act
+            var log = await LogCapture.RunAsync(async () =>
+            {
+                await LanguageSwitcher.ChangeAsync(_configPath, AppLanguage.System, AppLanguage.English, _messageBox.Object, Caption, Restart);
+            });
+
+            // Assert
+            Assert.Contains("Failed to save the Language setting to appsettings.manager.json: ", log);
+            Assert.Equal(1, _restarts);
         }
 
         [Fact]
