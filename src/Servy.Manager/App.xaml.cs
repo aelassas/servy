@@ -26,6 +26,7 @@ using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Manager
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -43,7 +44,7 @@ namespace Servy.Manager
         /// <summary>
         /// The name of the JSON configuration file specific to the Servy Manager application.
         /// </summary>
-        private const string AppSettingsFileName = "appsettings.manager.json";
+        internal const string AppSettingsFileName = "appsettings.manager.json";
 
         /// <summary>
         /// The configuration key that holds the persisted position, size and state of the main window.
@@ -222,6 +223,11 @@ namespace Servy.Manager
         /// </remarks>
         public App()
         {
+            // Select the display language before the first resource string is read
+            StartupCulture.Apply(
+                Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName),
+                Environment.GetCommandLineArgs().Skip(1));
+
             var services = new ServiceCollection();
 
             // Register dependencies

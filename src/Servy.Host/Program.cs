@@ -15,6 +15,9 @@ namespace Servy.Host
         [ExcludeFromCodeCoverage]
         internal static void Main(string[] args)
         {
+            // Console output, logs and event log entries stay in English whatever the display language is
+            Servy.Core.Resources.ResourceLanguage.UseEnglish();
+
             ServiceBase[] servicesToRun =
             {
                 new Service()

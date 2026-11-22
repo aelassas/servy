@@ -12,7 +12,8 @@ namespace Servy.Manager.Utils
     /// Applies, captures and resets the persisted column widths of a <see cref="DataGrid"/>.
     /// </summary>
     /// <remarks>
-    /// Only the columns the user can resize and that carry a header text are handled. A star-sized column
+    /// Only the columns the user can resize and that carry a header text are handled, and each is identified
+    /// by <see cref="ColumnIds.For(DataGridColumn)"/>, which does not change with the display language. A star-sized column
     /// is left alone on purpose: it keeps absorbing the space the other columns leave, exactly as it does
     /// with the default layout, so the grid still fills the window after a restore. An auto-sized column is
     /// captured only once its width is absolute (the user dragged it, or a persisted width was applied), so a
@@ -80,7 +81,7 @@ namespace Servy.Manager.Utils
 
             foreach (var column in grid.Columns)
             {
-                if (IsHandled(column) && ColumnWidths.TryGetWidth(widths, column.Header as string, out var width))
+                if (IsHandled(column) && ColumnWidths.TryGetWidth(widths, ColumnIds.For(column), out var width))
                 {
                     column.Width = new DataGridLength(Math.Max(column.MinWidth, Math.Min(width, column.MaxWidth)));
                 }
@@ -103,7 +104,7 @@ namespace Servy.Manager.Utils
             {
                 if (IsHandled(column) && column.Width.IsAbsolute && column.Visibility == System.Windows.Visibility.Visible)
                 {
-                    measured.Add(new KeyValuePair<string, double>((string)column.Header, column.ActualWidth));
+                    measured.Add(new KeyValuePair<string, double>(ColumnIds.For(column)!, column.ActualWidth));
                 }
             }
 

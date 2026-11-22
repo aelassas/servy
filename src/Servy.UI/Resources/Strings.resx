@@ -55,4 +55,19 @@
     <value>The Servy host service could not be installed or started: {0}
 Servy services cannot start until it runs. See the file log for details.</value>
   </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>Follow system language</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>简体中文 (Chinese, Simplified)</value>
+  </data>
+  <data name="Msg_LanguageRestartRequired" xml:space="preserve">
+    <value>The language is set to {0}. It applies the next time {1} starts.</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>Failed to save the language setting: {0}</value>
+  </data>
 </root>

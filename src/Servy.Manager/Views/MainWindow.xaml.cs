@@ -356,7 +356,7 @@ namespace Servy.Manager.Views
         /// </summary>
         private void RestoreColumnVisibilities()
         {
-            string displayNameHeader = Strings.Column_DisplayName;
+            string displayNameHeader = ColumnIds.FromHeader(Strings.Column_DisplayName)!;
             string rawHidden = _appConfig.ServicesHiddenColumns ?? string.Empty;
 
             var hiddenSet = new HashSet<string>(
@@ -376,7 +376,7 @@ namespace Servy.Manager.Views
             // 2. Apply visibility across all columns in the DataGrid using the updated hiddenSet
             foreach (var column in ServicesDataGrid.Columns)
             {
-                string? id = column.Header as string;
+                string? id = ColumnIds.For(column);
 
                 if (!string.IsNullOrEmpty(id))
                 {
@@ -769,7 +769,7 @@ namespace Servy.Manager.Views
         {
             var hiddenColumns = ServicesDataGrid.Columns
                 .Where(c => c.Visibility == Visibility.Collapsed)
-                .Select(c => c.Header as string)
+                .Select(c => ColumnIds.For(c))
                 .Where(id => !string.IsNullOrEmpty(id));
 
             string csv = string.Join(",", hiddenColumns);

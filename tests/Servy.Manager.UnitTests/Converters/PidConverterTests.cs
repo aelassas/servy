@@ -1,5 +1,5 @@
 using Servy.Manager.Converters;
-using Servy.UI.Constants;
+using Servy.Manager.Resources;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -16,7 +16,7 @@ namespace Servy.Manager.UnitTests.Converters
             var result = _converter.Convert(null!, typeof(string), null!, CultureInfo.InvariantCulture);
 
             // Assert
-            Assert.Equal(UiConstants.NotAvailable, result);
+            Assert.Equal(Strings.Text_NotAvailable, result);
         }
 
         [Theory]

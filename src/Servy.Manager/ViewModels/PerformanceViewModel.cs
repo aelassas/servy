@@ -5,7 +5,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Design;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
-using Servy.UI.Constants;
+using Servy.Manager.Resources;
 using Servy.UI.Services;
 using System.Windows;
 using System.Windows.Media;
@@ -150,7 +150,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public double GraphHeight { get; } = 200;
 
-        private string _cpuUsage = UiConstants.NotAvailable;
+        private string _cpuUsage = Strings.Text_NotAvailable;
 
         /// <summary>
         /// Gets or sets the formatted, localized CPU usage percentage string displayed in the view template.
@@ -161,7 +161,7 @@ namespace Servy.Manager.ViewModels
             set => Set(ref _cpuUsage, value);
         }
 
-        private string _ramUsage = UiConstants.NotAvailable;
+        private string _ramUsage = Strings.Text_NotAvailable;
 
         /// <summary>
         /// Gets or sets the formatted, localized RAM usage metrics string (e.g., "45.2 MB") displayed in the view template.
@@ -296,8 +296,8 @@ namespace Servy.Manager.ViewModels
         private void ResetGraphsAndResynchronizePid()
         {
             // 1. Reset display values
-            CpuUsage = UiConstants.NotAvailable;
-            RamUsage = UiConstants.NotAvailable;
+            CpuUsage = Strings.Text_NotAvailable;
+            RamUsage = Strings.Text_NotAvailable;
 
             // Set PID text to match current selection
             if (_selectedService != null)
@@ -306,7 +306,7 @@ namespace Servy.Manager.ViewModels
             }
             else
             {
-                Pid = UiConstants.NotAvailable;
+                Pid = Strings.Text_NotAvailable;
             }
 
             // 2. Clear and SEED the data history with PerformanceHistoryCapacity zeros

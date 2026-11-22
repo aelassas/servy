@@ -4,7 +4,7 @@ using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
-using Servy.UI.Constants;
+using Servy.Manager.Resources;
 using Servy.UI.Services;
 using System.Windows.Threading;
 
@@ -48,9 +48,9 @@ namespace Servy.Manager.ViewModels
         private long _tickErrorCount = 0;
 
         /// <summary>
-        /// Backing field for <see cref="Pid"/>; holds <see cref="UiConstants.NotAvailable"/> while no process is known.
+        /// Backing field for <see cref="Pid"/>; holds <see cref="Strings.Text_NotAvailable"/> while no process is known.
         /// </summary>
-        private string _pid = UiConstants.NotAvailable;
+        private string _pid = Strings.Text_NotAvailable;
 
         /// <summary>
         /// Whether the previous tick had a service selected, used to detect the selection-lost transition.
@@ -272,7 +272,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="service">Service model.</param>
         protected void SetPidText(ServiceItemBase? service)
         {
-            Pid = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
+            Pid = service?.Pid?.ToString() ?? Strings.Text_NotAvailable;
         }
 
         /// <summary>
@@ -280,7 +280,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected void ResetPid()
         {
-            Pid = UiConstants.NotAvailable;
+            Pid = Strings.Text_NotAvailable;
         }
 
         /// <summary>

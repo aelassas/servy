@@ -131,11 +131,7 @@ namespace Servy.Manager.Views
 
             foreach (var column in LogsDataGrid.Columns)
             {
-                string? id = null;
-                if (column.Header is string headerText)
-                {
-                    id = headerText;
-                }
+                string? id = ColumnIds.For(column);
 
                 if (!string.IsNullOrEmpty(id) && hiddenSet.Contains(id))
                 {
@@ -185,7 +181,7 @@ namespace Servy.Manager.Views
         {
             var hiddenColumns = LogsDataGrid.Columns
                 .Where(c => c.Visibility == Visibility.Collapsed)
-                .Select(c => c.Header as string)
+                .Select(c => ColumnIds.For(c))
                 .Where(id => !string.IsNullOrEmpty(id));
 
             string csv = string.Join(",", hiddenColumns);

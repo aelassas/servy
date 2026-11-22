@@ -13,6 +13,7 @@ using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
 using Servy.UI;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -2157,6 +2158,55 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 await Task.CompletedTask;
 
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_DifferentLanguage_StoresItChecksItsMenuItemAndAnnouncesTheNextStart()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var directory = Path.Combine(Path.GetTempPath(), "ServyManagerLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(directory);
+                try
+                {
+                    var settingsPath = Path.Combine(directory, "appsettings.manager.json");
+                    File.WriteAllText(settingsPath, "{\"Language\": \"en\", \"RefreshIntervalInSeconds\": 7}");
+                    Assert.Equal("appsettings.manager.json", Path.GetFileName(vm.LanguageSettingsPath));
+                    vm.LanguageSettingsPath = settingsPath;
+                    var raised = new List<string?>();
+                    vm.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+
+                    // Act
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.SetLanguageCommand.ExecuteAsync(AppLanguage.ChineseSimplified);
+                    });
+
+                    // Assert
+                    Assert.Equal(AppLanguage.ChineseSimplified, vm.Language);
+                    Assert.True(vm.IsChineseSimplifiedSelected);
+                    Assert.False(vm.IsEnglishSelected);
+                    Assert.False(vm.IsSystemLanguageSelected);
+                    Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(settingsPath));
+                    Assert.Contains("\"RefreshIntervalInSeconds\": 7", File.ReadAllText(settingsPath));
+                    Assert.Contains(nameof(MainViewModel.Language), raised);
+                    Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
+                    Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
+                    Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
+                    _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(
+                        It.Is<string>(text => text.Contains(LanguageDisplayNames.For(AppLanguage.ChineseSimplified)) && text.Contains(UiAppConfig.Caption)),
+                        UiAppConfig.Caption), Times.Once);
+                }
+                finally
+                {
+                    Directory.Delete(directory, true);
+                }
+
+                await Task.CompletedTask;
             }, createApp: true);
         }
 

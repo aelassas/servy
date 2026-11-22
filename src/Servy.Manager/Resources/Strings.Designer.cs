@@ -547,6 +547,42 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Display Servy Manager in Simplified Chinese..
+        /// </summary>
+        public static string Automation_LanguageChineseSimplifiedMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageChineseSimplifiedMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy Manager in English..
+        /// </summary>
+        public static string Automation_LanguageEnglishMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageEnglishMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose the display language of Servy Manager..
+        /// </summary>
+        public static string Automation_LanguageMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Follow the Windows display language..
+        /// </summary>
+        public static string Automation_LanguageSystemMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageSystemMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to View full message text and details for the selected log entry..
         /// </summary>
         public static string Automation_LogDetailsTextBox_HelpText {
@@ -2131,6 +2167,33 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 简体中文 (Chinese, Simplified).
+        /// </summary>
+        public static string Language_ChineseSimplified {
+            get {
+                return ResourceManager.GetString("Language_ChineseSimplified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to English.
+        /// </summary>
+        public static string Language_English {
+            get {
+                return ResourceManager.GetString("Language_English", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Follow system language.
+        /// </summary>
+        public static string Language_System {
+            get {
+                return ResourceManager.GetString("Language_System", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to All.
         /// </summary>
         public static string LogLevel_All {
@@ -2235,6 +2298,15 @@ namespace Servy.Manager.Resources {
         public static string Menu_ImportXml {
             get {
                 return ResourceManager.GetString("Menu_ImportXml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language.
+        /// </summary>
+        public static string Menu_Language {
+            get {
+                return ResourceManager.GetString("Menu_Language", resourceCulture);
             }
         }
         
@@ -2631,6 +2703,15 @@ namespace Servy.Manager.Resources {
         public static string Text_About {
             get {
                 return ResourceManager.GetString("Text_About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to N/A.
+        /// </summary>
+        public static string Text_NotAvailable {
+            get {
+                return ResourceManager.GetString("Text_NotAvailable", resourceCulture);
             }
         }
         

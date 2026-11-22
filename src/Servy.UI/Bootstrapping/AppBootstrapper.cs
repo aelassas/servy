@@ -8,6 +8,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using Servy.UI.Localization;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -124,6 +125,9 @@ namespace Servy.UI.Bootstrapping
             // 2. Initialize Logger with the correct settings before any logging occurs
             Logger.Initialize(_options.LogFileName);
             ApplyLoggerSettings();
+
+            // The language was selected before the logger existed; report what that found now
+            StartupCulture.LogOutcome(StartupCulture.Last);
 
             // 3. Global AppDomain exceptions (Fatal)
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
@@ -319,7 +323,9 @@ namespace Servy.UI.Bootstrapping
 
             string? serviceName = null;
             var showSplash = true;
-            var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
+            // --lang and its value are not positional: drop them before reading the splash flag and the service name
+            var positionalArgs = StartupCulture.StripLanguageArg(e.Args)
+                .Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (positionalArgs.Count > 0)
             {

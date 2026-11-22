@@ -5,6 +5,7 @@
         xmlns:resx="clr-namespace:Servy.Resources"
         xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
         xmlns:helpers="clr-namespace:Servy.Helpers"
+        xmlns:loc="clr-namespace:Servy.UI.Localization;assembly=Servy.UI"
         Title="Servy"
         MinWidth="740"
         MaxWidth="740"
@@ -132,6 +133,36 @@
                 AutomationProperties.Name="{x:Static resx:Strings.Menu_ClearAll}"
                 AutomationProperties.AutomationId="MenuClearAll"
                 AutomationProperties.HelpText="{x:Static resx:Strings.Automation_MenuClearAll_HelpText}" />
+
+      <MenuItem Header="{x:Static resx:Strings.Menu_Language}"
+                AutomationProperties.Name="{x:Static resx:Strings.Menu_Language}"
+                AutomationProperties.AutomationId="LanguageMenu"
+                AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageMenu_HelpText}">
+        <MenuItem Header="{x:Static resx:Strings.Language_System}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsSystemLanguageSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.System}"
+                  AutomationProperties.Name="{x:Static resx:Strings.Language_System}"
+                  AutomationProperties.AutomationId="LanguageSystemMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageSystemMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static resx:Strings.Language_English}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsEnglishSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.English}"
+                  AutomationProperties.Name="{x:Static resx:Strings.Language_English}"
+                  AutomationProperties.AutomationId="LanguageEnglishMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageEnglishMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static resx:Strings.Language_ChineseSimplified}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsChineseSimplifiedSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.ChineseSimplified}"
+                  AutomationProperties.Name="{x:Static resx:Strings.Language_ChineseSimplified}"
+                  AutomationProperties.AutomationId="LanguageChineseSimplifiedMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageChineseSimplifiedMenuItem_HelpText}" />
+      </MenuItem>
 
       <MenuItem Header="{x:Static resx:Strings.Menu_Help}"
                 AutomationProperties.Name="{x:Static resx:Strings.Menu_Help}"

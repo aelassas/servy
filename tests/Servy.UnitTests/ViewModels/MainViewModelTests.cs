@@ -6,9 +6,11 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Resources;
 using Servy.Services;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.ViewModels;
 using System.ComponentModel;
+using System.IO;
 using System.Windows.Input;
 using static Servy.Core.Config.AppConfig;
 
@@ -1396,6 +1398,86 @@ namespace Servy.UnitTests.ViewModels
 
             // Assert - The property shouldn't be updated anymore since the handler is safely detached
             Assert.True(_viewModel.IsManagerAppAvailable);
+        }
+
+        #endregion
+        #region Language Menu Tests
+
+        [Fact]
+        public void Constructor_LanguageSettingsPath_PointsAtTheDesktopSettingsFile()
+        {
+            // Act
+            var path = _viewModel.LanguageSettingsPath;
+
+            // Assert
+            Assert.Equal("appsettings.desktop.json", Path.GetFileName(path));
+            Assert.True(Path.IsPathRooted(path));
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_DifferentLanguage_StoresItChecksItsMenuItemAndAnnouncesTheNextStart()
+        {
+            // Arrange
+            var directory = Path.Combine(Path.GetTempPath(), "ServyLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var settingsPath = Path.Combine(directory, "appsettings.desktop.json");
+                File.WriteAllText(settingsPath, "{\"Language\": \"en\"}");
+                _viewModel.LanguageSettingsPath = settingsPath;
+                var raised = new List<string?>();
+                _viewModel.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+
+                // Act
+                await _viewModel.SetLanguageCommand.ExecuteAsync(AppLanguage.ChineseSimplified);
+
+                // Assert
+                Assert.Equal(AppLanguage.ChineseSimplified, _viewModel.Language);
+                Assert.True(_viewModel.IsChineseSimplifiedSelected);
+                Assert.False(_viewModel.IsEnglishSelected);
+                Assert.False(_viewModel.IsSystemLanguageSelected);
+                Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(settingsPath));
+                Assert.Contains(nameof(MainViewModel.Language), raised);
+                Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
+                Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
+                Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
+                _messageBoxService.Verify(m => m.ShowInfoAsync(
+                    It.Is<string>(text => text.Contains(LanguageDisplayNames.For(AppLanguage.ChineseSimplified)) && text.Contains(UiAppConfig.Caption)),
+                    UiAppConfig.Caption), Times.Once);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_SettingsFileCannotBeWritten_KeepsTheLanguageAndShowsTheError()
+        {
+            // Arrange: a settings file that is not valid JSON is refused, not overwritten
+            var directory = Path.Combine(Path.GetTempPath(), "ServyLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var settingsPath = Path.Combine(directory, "appsettings.desktop.json");
+                File.WriteAllText(settingsPath, "{ this is not json");
+                _viewModel.LanguageSettingsPath = settingsPath;
+                var before = _viewModel.Language;
+                var target = before == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+
+                // Act
+                await _viewModel.SetLanguageCommand.ExecuteAsync(target);
+
+                // Assert
+                Assert.Equal(before, _viewModel.Language);
+                Assert.Equal("{ this is not json", File.ReadAllText(settingsPath));
+                _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
+                _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
         }
 
         #endregion

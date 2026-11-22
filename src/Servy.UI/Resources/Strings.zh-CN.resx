@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DocumentationOpenFailed" xml:space="preserve">
+    <value>无法打开文档。请确认已安装 Web 浏览器。详情：{0}</value>
+  </data>
+  <data name="Msg_NoUpdatesAvailable" xml:space="preserve">
+    <value>当前没有可用的更新。</value>
+  </data>
+  <data name="Msg_UpdateCheckInvalidTag" xml:space="preserve">
+    <value>更新检查已完成，但无法安全处理最新版本标识的格式：'{0}'。请手动查看项目发布页面。</value>
+    <comment>Displayed when the remote tag_name cannot be parsed into a deterministic .NET Version sequence.</comment>
+  </data>
+  <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
+    <value>Servy 有新版本可用。是否下载？</value>
+  </data>
+  <data name="Msg_UpdateCheckCanceled" xml:space="preserve">
+    <value>更新检查已取消。</value>
+    <comment>Displayed when the update check is canceled by application shutdown or by the caller, as opposed to the fixed update-check timeout.</comment>
+  </data>
+  <data name="Msg_UpdateCheckTimeout" xml:space="preserve">
+    <value>更新检查超时。请稍后重试。</value>
+  </data>
+  <data name="Msg_UpdateCheckFailed" xml:space="preserve">
+    <value>检查更新失败：{0}</value>
+  </data>
+  <data name="Msg_ReleaseLinkOpenFailed" xml:space="preserve">
+    <value>无法打开发布链接：{0}</value>
+  </data>
+  <data name="Msg_FailedCopyingEmbeddedResource" xml:space="preserve">
+    <value>复制嵌入资源失败：{0}</value>
+  </data>
+  <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
+    <value>资源提取警告</value>
+  </data>
+  <data name="Msg_ServyHostUnavailableTitle" xml:space="preserve">
+    <value>Servy 主机不可用</value>
+  </data>
+  <data name="Msg_StartupWarningsTitle" xml:space="preserve">
+    <value>Servy 启动警告</value>
+  </data>  
+  <data name="Msg_ServyHostUnavailable" xml:space="preserve">
+    <value>无法安装或启动 Servy 主机服务：{0}
+在它运行之前，Servy 服务无法启动。详情请查看文件日志。</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>跟随系统语言</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>简体中文</value>
+  </data>
+  <data name="Msg_LanguageRestartRequired" xml:space="preserve">
+    <value>语言已设置为 {0}。下次启动 {1} 时生效。</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>保存语言设置失败：{0}</value>
+  </data>
+</root>

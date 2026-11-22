@@ -1,4 +1,4 @@
-using Servy.UI.Constants;
+using Servy.Manager.Resources;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -13,7 +13,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// The sentinel value used when a process ID cannot be resolved or is currently null.
         /// </summary>
-        private const string UnknownPid = UiConstants.NotAvailable;
+        private static string UnknownPid => Strings.Text_NotAvailable;
 
         /// <summary>
         /// Converts the provided PID object into its string representation.
@@ -22,7 +22,7 @@ namespace Servy.Manager.Converters
         /// <param name="targetType">The type expected by the binding target property.</param>
         /// <param name="parameter">An optional converter parameter, currently unused.</param>
         /// <param name="culture">The culture information used for localization, currently unused.</param>
-        /// <returns>The string representation of the PID, or <see cref="UiConstants.NotAvailable"/> if the input is null.</returns>
+        /// <returns>The string representation of the PID, or <see cref="Strings.Text_NotAvailable"/> if the input is null.</returns>
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             return value?.ToString() ?? UnknownPid;
