@@ -240,14 +240,17 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var dto = new ServiceDto { Name = "LocalSysService", UserAccount = "OldUser", Password = "OldPassword" };
 
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), "abc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(dto, _wrapperPath, "abc", false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
-            await sut.InstallServiceAsync(dto, confirmPassword: "abc", runAsLocalSystem: true, cancellationToken: TestContext.Current.CancellationToken);
+            var result = await sut.InstallServiceAsync(dto, confirmPassword: "abc", runAsLocalSystem: true, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
+            // True only when the validator received the confirmation: an unmatched setup returns false.
+            Assert.True(result);
             Assert.Null(dto.UserAccount);
             Assert.Null(dto.Password);
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, _wrapperPath, "abc", false, TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]
