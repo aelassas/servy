@@ -368,6 +368,8 @@ namespace Servy.Core.UnitTests.Config
         {
             // A local account is passwordless only when a blank-password logon proves it
             // (ServiceAccounts.IsBlankPasswordLocalAccount, covered by BlankPasswordLocalAccountTests).
+
+            // Act & Assert
             Assert.False(ServiceAccounts.IsPasswordlessAccount(@".\test_svc_account"));
         }
 
