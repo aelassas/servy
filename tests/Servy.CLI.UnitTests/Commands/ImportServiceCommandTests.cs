@@ -487,6 +487,37 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task ExecuteAsync_JsonImportWithInstall_HandsTheCallerTokenToTheInstall()
+        {
+            // Arrange
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            File.WriteAllText(_legalJsonPath, "{}");
+            var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath, InstallService = true };
+
+            var dto = new ServiceDto { Name = "JsonInstallService", ExecutablePath = realPath };
+            MockJsonValidator(true, dto: dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("JsonInstallService", true, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+            _serviceManager
+                .Setup(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+            var token = TestContext.Current.CancellationToken;
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, token);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal(string.Format(Strings.Msg_ImportInstallSuccess, "JSON", "JsonInstallService"), result.Message);
+
+            // Exact token, not It.IsAny: ProcessJsonAsync hands the token to the install step at line 169,
+            // separately from its upsert lambda, and a hand-over that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.GetByNameAsync("JsonInstallService", true, token), Times.Once);
+            _serviceManager.Verify(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), token), Times.Once);
+        }
+
+        [Fact]
         public async Task ExecuteAsync_InstallationDomainFails_ReturnsDomainErrorMessage()
         {
             // Arrange
