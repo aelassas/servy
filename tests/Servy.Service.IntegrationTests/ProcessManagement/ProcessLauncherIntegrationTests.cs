@@ -86,7 +86,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_SynchronousWithZeroTimeout_ThrowsArgumentException()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: 0);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: 0);
 
             // Act
             var ex = Assert.Throws<ArgumentException>(() => ProcessLauncher.Start(options, _realFactory, _logger));
@@ -99,7 +99,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_SynchronousWithZeroWaitChunk_ThrowsArgumentException()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
 
             // Act
@@ -117,7 +117,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_FireAndForget_ReturnsImmediately()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}\"", fireAndForget: true, timeoutMs: 0);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}\"", fireAndForget: true, timeoutMs: 0);
 
             // Act
             var stopwatch = Stopwatch.StartNew();
@@ -148,7 +148,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Inject a short sleep inside the command loop string to guarantee the process outlasts
             // the 10ms chunk window, forcing the heartbeat callback to fire reliably.
             var options = CreateOptions(
-                "powershell.exe",
+                TestProcessStarter.PowerShellPath,
                 "-NoProfile -Command \"Start-Sleep -m 150; Write-Output 'OK'\"",
                 fireAndForget: false,
                 timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
@@ -173,7 +173,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             // Child outlives the budget by design: 15s of work against a 2s budget.
             var options = CreateOptions(
-                "powershell.exe",
+                TestProcessStarter.PowerShellPath,
                 $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"",
                 fireAndForget: false,
                 timeoutMs: TestTimeouts.ProcessLauncherTimeoutTripBudgetMs);
@@ -202,7 +202,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_NullWorkingDirectory_ResolvesToDefaultSafely()
         {
             // Arrange
-            string exe = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+            string exe = TestProcessStarter.PowerShellPath;
             var options = CreateOptions(exe, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.StartupDirectory = null; // Triggers Path.GetDirectoryName fallback branch
 
@@ -219,7 +219,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_EnvironmentVariablesMapping_PadsNullValuesToEmptyString()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
 
             var envVarInstance = new EnvironmentVariable
             {
@@ -245,7 +245,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_ProcessStartThrowsWin32Exception_PropagatesException_AndCleansUp()
         {
             // Arrange
-            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             var mockFactory = new MockThrowingProcessFactory(new Win32Exception(2, "The system cannot find the file specified"));
 
             // Act
@@ -265,7 +265,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             string structuralFailurePath = @"\\?\C:\illegal|char.log";
 
             // powershell.exe needs headroom for startup hooks on cold CI hosts.
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdoutPath = structuralFailurePath;
@@ -550,7 +550,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Arrange
             string logPath = CreateTempFilePath();
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, TestTimeouts.ProcessLauncherTimeoutMs);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, TestTimeouts.ProcessLauncherTimeoutMs);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdoutPath = logPath;
@@ -589,7 +589,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // test above cannot reach because it points both streams at a single file.
             string stdoutPath = CreateTempFilePath();
             string stderrPath = CreateTempFilePath();
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, TestTimeouts.ProcessLauncherTimeoutMs);
+            var options = CreateOptions(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, TestTimeouts.ProcessLauncherTimeoutMs);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdoutPath = stdoutPath;
