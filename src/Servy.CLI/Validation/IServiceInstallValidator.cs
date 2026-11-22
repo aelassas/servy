@@ -28,8 +28,8 @@ namespace Servy.CLI.Validation
         /// </param>
         /// <returns>
         /// A <see cref="CommandResult"/> representing the outcome of the validation.
-        /// Returns <c>Success</c> if all paths and configurations are valid;
-        /// otherwise, returns <c>Fail</c> with a specific error message.
+        /// Returns an <c>Ok</c> result if all paths and configurations are valid;
+        /// otherwise, returns a <c>Fail</c> result with a specific error message.
         /// </returns>
         CommandResult Validate(InstallServiceOptions opts);
     }
