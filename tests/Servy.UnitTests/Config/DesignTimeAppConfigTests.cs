@@ -17,6 +17,9 @@ namespace Servy.UnitTests.Config
             Assert.True(config.IsManagerAppAvailable);
             Assert.Equal(AppConfig.DefaultManagerAppPublishPath, config.ManagerAppPublishPath);
             Assert.False(config.ForceSoftwareRendering);
+
+            // Assert - Language: not known at design time, so no --lang is passed on
+            Assert.Null(config.LanguageCode);
         }
 
         [Fact]
