@@ -503,7 +503,7 @@ namespace Servy.Service.UnitTests
                             candidate.Dispose();
                         }
 
-                        if (childPid == 0) System.Threading.Thread.Sleep(50);
+                        if (childPid == 0) Thread.Sleep(50);
                     }
 
                     Assert.NotEqual(0, childPid);
