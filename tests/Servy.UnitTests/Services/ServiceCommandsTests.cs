@@ -313,6 +313,8 @@ namespace Servy.UnitTests.Services
             // The constructor defaults every verb to Success, so only a Verify can tell which token the SUT forwarded.
             _serviceManagerMock.Verify(m => m.IsServiceInstalled(dto.Name, TestContext.Current.CancellationToken), Times.Once);
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), TestContext.Current.CancellationToken), Times.Once);
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, _wrapperPath, null, false, TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]
@@ -1217,6 +1219,8 @@ namespace Servy.UnitTests.Services
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportXml_Success, UiAppConfig.Caption), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportJson_Success, It.IsAny<string>()), Times.Never);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                // Exact token, not It.IsAny: ExportConfigAsync must hand the caller's token to the validator.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, null, "password", false, TestContext.Current.CancellationToken), Times.Once);
             }
         }
 
@@ -1784,6 +1788,8 @@ namespace Servy.UnitTests.Services
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
                 Assert.NotNull(boundDtoResult);
                 Assert.Equal("XmlBindService", boundDtoResult.Name);
+                // Exact token, not It.IsAny: ImportConfigAsync must hand the caller's token to the validator.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(expectedDto, null, null, true, TestContext.Current.CancellationToken), Times.Once);
             }
             finally
             {
