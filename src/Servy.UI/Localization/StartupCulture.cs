@@ -24,6 +24,12 @@ namespace Servy.UI.Localization
         public const string LanguageArg = "--lang";
 
         /// <summary>
+        /// The settings files of the applications that share the display language. They sit in the same directory,
+        /// and a language change is written to all of them.
+        /// </summary>
+        public static readonly IReadOnlyList<string> SettingsFileNames = new[] { "appsettings.desktop.json", "appsettings.manager.json" };
+
+        /// <summary>
         /// Gets the outcome of the last <see cref="Apply(string, IEnumerable{string}, CultureInfo)"/> call, or <see langword="null"/> before the first one.
         /// </summary>
         public static StartupCultureResult? Last { get; private set; }
@@ -36,8 +42,9 @@ namespace Servy.UI.Localization
         /// <param name="systemUiCulture">The Windows display language; defaults to <see cref="CultureInfo.CurrentUICulture"/>.</param>
         /// <returns>What was selected. The method never throws: a problem is reported in the result.</returns>
         /// <remarks>
-        /// A valid <c>--lang</c> wins over the settings file and is written to it, so the next start without the
-        /// option uses the same language. An unsupported <c>--lang</c> value is ignored.
+        /// A valid <c>--lang</c> wins over the settings file and is written to the settings files of both
+        /// applications (see <see cref="SettingsFileNames"/>), so the next start of either one without the option
+        /// uses the same language. An unsupported <c>--lang</c> value is ignored.
         /// </remarks>
         public static StartupCultureResult Apply(string configPath, IEnumerable<string>? args, CultureInfo? systemUiCulture = null)
         {
@@ -65,11 +72,15 @@ namespace Servy.UI.Localization
             {
                 if (LocalizationCulture.TryParse(value, out var requested))
                 {
-                    if (requested != language)
+                    if (GetSettingsFiles(configPath).Any(path => ReadLanguage(path) != requested))
                     {
                         try
                         {
-                            WriteLanguage(configPath, requested);
+                            var failures = WriteLanguageToAll(configPath, requested);
+                            if (failures.Count > 0)
+                            {
+                                syncError = string.Join("; ", failures);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -131,7 +142,7 @@ namespace Servy.UI.Localization
 
             if (result.SyncError != null)
             {
-                Warn(logger, $"Failed to save the {LanguageSettingKey} setting given with {LanguageArg}: {result.SyncError}");
+                Warn(logger, $"Failed to save the {LanguageSettingKey} setting given with {LanguageArg} to every settings file: {result.SyncError}");
             }
         }
 
@@ -193,6 +204,70 @@ namespace Servy.UI.Localization
 
             var bytes = new UTF8Encoding(false).GetBytes(root.ToString(Newtonsoft.Json.Formatting.Indented));
             Helper.WriteFileAtomic(configPath, stream => stream.Write(bytes, 0, bytes.Length));
+        }
+
+        /// <summary>
+        /// Lists the settings files a language change is written to: <paramref name="configPath"/> first, then
+        /// the settings file of the other application in the same directory.
+        /// </summary>
+        /// <param name="configPath">The full path of the settings file of the running application.</param>
+        /// <returns>
+        /// The files to keep in sync. Only <paramref name="configPath"/> when its name is not one of
+        /// <see cref="SettingsFileNames"/>; empty when it is null or blank.
+        /// </returns>
+        public static IReadOnlyList<string> GetSettingsFiles(string configPath)
+        {
+            var files = new List<string>();
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                return files;
+            }
+
+            files.Add(configPath);
+
+            var name = Path.GetFileName(configPath);
+            if (SettingsFileNames.Any(known => known.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                var directory = Path.GetDirectoryName(configPath) ?? string.Empty;
+                files.AddRange(SettingsFileNames
+                    .Where(known => !known.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    .Select(known => Path.Combine(directory, known)));
+            }
+
+            return files;
+        }
+
+        /// <summary>
+        /// Stores the language in the settings file of the running application and in the settings file of the
+        /// other application, so both display the same language.
+        /// </summary>
+        /// <param name="configPath">The full path of the settings file of the running application.</param>
+        /// <param name="language">The language to store.</param>
+        /// <returns>
+        /// One message per other settings file that could not be written; empty when every file was written.
+        /// </returns>
+        /// <remarks>
+        /// The file of the running application is written first and its failure is thrown, exactly as
+        /// <see cref="WriteLanguage"/> throws it: nothing else is written then.
+        /// </remarks>
+        public static IReadOnlyList<string> WriteLanguageToAll(string configPath, AppLanguage language)
+        {
+            WriteLanguage(configPath, language);
+
+            var failures = new List<string>();
+            foreach (var other in GetSettingsFiles(configPath).Skip(1))
+            {
+                try
+                {
+                    WriteLanguage(other, language);
+                }
+                catch (Exception ex)
+                {
+                    failures.Add($"{Path.GetFileName(other)}: {ex.Message}");
+                }
+            }
+
+            return failures;
         }
 
         /// <summary>

@@ -106,11 +106,11 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The language is set to {0}. It applies the next time {1} starts..
+        ///   Looks up a localized string similar to {1} will restart to switch the language to {0}. Any input that is not saved will be lost. Restart now?.
         /// </summary>
-        public static string Msg_LanguageRestartRequired {
+        public static string Msg_LanguageRestartConfirm {
             get {
-                return ResourceManager.GetString("Msg_LanguageRestartRequired", resourceCulture);
+                return ResourceManager.GetString("Msg_LanguageRestartConfirm", resourceCulture);
             }
         }
         

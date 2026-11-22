@@ -1415,7 +1415,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SetLanguageCommand_DifferentLanguage_StoresItChecksItsMenuItemAndAnnouncesTheNextStart()
+        public async Task SetLanguageCommand_UserConfirmsTheRestart_StoresTheLanguageChecksItsMenuItemAndRestarts()
         {
             // Arrange
             var directory = Path.Combine(Path.GetTempPath(), "ServyLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
@@ -1425,6 +1425,9 @@ namespace Servy.UnitTests.ViewModels
                 var settingsPath = Path.Combine(directory, "appsettings.desktop.json");
                 File.WriteAllText(settingsPath, "{\"Language\": \"en\"}");
                 _viewModel.LanguageSettingsPath = settingsPath;
+                var restarts = 0;
+                _viewModel.RestartApplication = () => restarts++;
+                _messageBoxService.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(true);
                 var raised = new List<string?>();
                 _viewModel.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
 
@@ -1441,7 +1444,9 @@ namespace Servy.UnitTests.ViewModels
                 Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
                 Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
                 Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
-                _messageBoxService.Verify(m => m.ShowInfoAsync(
+                Assert.Equal(1, restarts);
+                Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(Path.Combine(directory, "appsettings.manager.json")));
+                _messageBoxService.Verify(m => m.ShowConfirmAsync(
                     It.Is<string>(text => text.Contains(LanguageDisplayNames.For(AppLanguage.ChineseSimplified)) && text.Contains(UiAppConfig.Caption)),
                     UiAppConfig.Caption), Times.Once);
             }
@@ -1452,7 +1457,38 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SetLanguageCommand_SettingsFileCannotBeWritten_KeepsTheLanguageAndShowsTheError()
+        public async Task SetLanguageCommand_UserDeclinesTheRestart_StoresNothingAndDoesNotRestart()
+        {
+            // Arrange
+            var directory = Path.Combine(Path.GetTempPath(), "ServyLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var settingsPath = Path.Combine(directory, "appsettings.desktop.json");
+                _viewModel.LanguageSettingsPath = settingsPath;
+                var restarts = 0;
+                _viewModel.RestartApplication = () => restarts++;
+                var before = _viewModel.Language;
+                var target = before == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+                _messageBoxService.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(false);
+
+                // Act
+                await _viewModel.SetLanguageCommand.ExecuteAsync(target);
+
+                // Assert
+                Assert.Equal(before, _viewModel.Language);
+                Assert.Empty(Directory.GetFiles(directory));
+                Assert.Equal(0, restarts);
+                _messageBoxService.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_SettingsFileCannotBeWritten_KeepsTheLanguageShowsTheErrorAndDoesNotRestart()
         {
             // Arrange: a settings file that is not valid JSON is refused, not overwritten
             var directory = Path.Combine(Path.GetTempPath(), "ServyLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
@@ -1462,6 +1498,9 @@ namespace Servy.UnitTests.ViewModels
                 var settingsPath = Path.Combine(directory, "appsettings.desktop.json");
                 File.WriteAllText(settingsPath, "{ this is not json");
                 _viewModel.LanguageSettingsPath = settingsPath;
+                var restarts = 0;
+                _viewModel.RestartApplication = () => restarts++;
+                _messageBoxService.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(true);
                 var before = _viewModel.Language;
                 var target = before == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
 
@@ -1471,8 +1510,8 @@ namespace Servy.UnitTests.ViewModels
                 // Assert
                 Assert.Equal(before, _viewModel.Language);
                 Assert.Equal("{ this is not json", File.ReadAllText(settingsPath));
+                Assert.Equal(0, restarts);
                 _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
-                _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             }
             finally
             {

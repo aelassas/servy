@@ -169,6 +169,118 @@ namespace Servy.UI.UnitTests.Localization
 
         #endregion
 
+        #region Settings files of both applications
+
+        [Theory]
+        [InlineData("appsettings.desktop.json", "appsettings.manager.json")]
+        [InlineData("appsettings.manager.json", "appsettings.desktop.json")]
+        [InlineData("APPSETTINGS.DESKTOP.JSON", "appsettings.manager.json")]
+        public void GetSettingsFiles_KnownSettingsFile_ReturnsItFirstThenTheOtherApplicationsFile(string own, string other)
+        {
+            // Arrange
+            var ownPath = Path.Combine(_directory, own);
+
+            // Act
+            var files = StartupCulture.GetSettingsFiles(ownPath);
+
+            // Assert
+            Assert.Equal(new[] { ownPath, Path.Combine(_directory, other) }, files);
+        }
+
+        [Fact]
+        public void GetSettingsFiles_UnknownFileName_ReturnsOnlyThatFile()
+        {
+            // Arrange
+            var path = Path.Combine(_directory, "custom.json");
+
+            // Act
+            var files = StartupCulture.GetSettingsFiles(path);
+
+            // Assert
+            Assert.Equal(new[] { path }, files);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetSettingsFiles_NullOrBlankPath_ReturnsNoFile(string? path)
+        {
+            // Act
+            var files = StartupCulture.GetSettingsFiles(path!);
+
+            // Assert
+            Assert.Empty(files);
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_BothFilesWritable_StoresTheLanguageInBothAndKeepsTheirOtherKeys()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(_configPath, "{\"LogLevel\": \"DEBUG\"}");
+            File.WriteAllText(managerPath, "{\"Language\": \"en\", \"RefreshIntervalInSeconds\": 7}");
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.ChineseSimplified);
+
+            // Assert
+            Assert.Empty(failures);
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(managerPath));
+            Assert.Equal("DEBUG", JObject.Parse(File.ReadAllText(_configPath)).Value<string>("LogLevel"));
+            Assert.Equal(7, JObject.Parse(File.ReadAllText(managerPath)).Value<int>("RefreshIntervalInSeconds"));
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_OtherFileMissing_CreatesItSoBothApplicationsAgree()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.English);
+
+            // Assert
+            Assert.Empty(failures);
+            Assert.Equal(AppLanguage.English, StartupCulture.ReadLanguage(_configPath));
+            Assert.Equal(AppLanguage.English, StartupCulture.ReadLanguage(managerPath));
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_OtherFileUnwritable_WritesTheOwnFileAndReportsTheOtherByName()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(managerPath, "{ this is not json");
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.ChineseSimplified);
+
+            // Assert
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+            Assert.StartsWith("appsettings.manager.json: ", Assert.Single(failures));
+            Assert.Equal("{ this is not json", File.ReadAllText(managerPath));
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_OwnFileUnwritable_ThrowsAndLeavesTheOtherFileAlone()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(_configPath, "{ this is not json");
+            File.WriteAllText(managerPath, "{\"Language\": \"en\"}");
+
+            // Act
+            var ex = Record.Exception(() => StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.ChineseSimplified));
+
+            // Assert
+            Assert.NotNull(ex);
+            Assert.Equal(AppLanguage.English, StartupCulture.ReadLanguage(managerPath));
+        }
+
+        #endregion
+
         #region Command line
 
         [Theory]
@@ -297,11 +409,46 @@ namespace Servy.UI.UnitTests.Localization
         }
 
         [Fact]
+        public void Apply_Option_IsWrittenToTheSettingsFileOfTheOtherApplicationToo()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(_configPath, "{\"Language\": \"zh-CN\"}");
+            File.WriteAllText(managerPath, "{\"Language\": \"en\"}");
+
+            // Act: the option equals the own setting, but the other application disagrees
+            var result = StartupCulture.Apply(_configPath, new[] { "--lang", "zh-CN" }, Culture("en-US"), _ => { });
+
+            // Assert
+            Assert.Equal(AppLanguage.ChineseSimplified, result.Language);
+            Assert.Null(result.SyncError);
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(managerPath));
+        }
+
+        [Fact]
+        public void Apply_OptionCannotBeWrittenForTheOtherApplication_ReportsThatFileAndStillApplies()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(managerPath, "{ this is not json");
+            var applied = new List<CultureInfo>();
+
+            // Act
+            var result = StartupCulture.Apply(_configPath, new[] { "--lang=zh-CN" }, Culture("en-US"), applied.Add);
+
+            // Assert
+            Assert.Equal("zh-CN", Assert.Single(applied).Name);
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+            Assert.Contains("appsettings.manager.json", result.SyncError);
+        }
+
+        [Fact]
         public void Apply_OptionEqualsSettings_DoesNotRewriteTheFile()
         {
             // Arrange
             const string content = "{\"Language\":\"en\"}";
             File.WriteAllText(_configPath, content);
+            File.WriteAllText(Path.Combine(_directory, "appsettings.manager.json"), content);
 
             // Act
             var result = StartupCulture.Apply(_configPath, new[] { "--lang", "EN" }, Culture("en-US"), _ => { });
