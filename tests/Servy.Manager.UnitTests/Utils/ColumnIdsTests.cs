@@ -87,5 +87,18 @@ namespace Servy.Manager.UnitTests.Utils
             // Assert
             Assert.Null(id);
         }
+
+        [Fact]
+        public void FromHeader_ResourcesWithoutAManifest_ReturnsTheHeaderUnchanged()
+        {
+            // Arrange: no resources are embedded under this base name
+            var missing = new System.Resources.ResourceManager("Servy.Manager.Resources.NoSuchResources", typeof(Strings).Assembly);
+
+            // Act
+            var id = ColumnIds.FromHeader("Display Name", missing, Chinese);
+
+            // Assert
+            Assert.Equal("Display Name", id);
+        }
     }
 }
