@@ -15,6 +15,8 @@ Starting from v10.2, Servy provides enterprise-grade per-service isolation betwe
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for monitoring and managing all installed services in real time.
 
+Starting from v11.0, the Servy Desktop App and Servy Manager are available in Simplified Chinese (简体中文) as well as English. The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
+
 ## License
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt). It ships no third-party binaries, external tools, or non-permissive code.
