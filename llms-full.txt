@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-22T20:23:05Z
+> Generated on: 2026-11-22T20:40:53Z
 
 ---
 
@@ -844,7 +844,7 @@ Choose the language in one of two ways:
 - **Language menu:** pick **Follow system language**, **English** or **简体中文 (Chinese, Simplified)**. The Servy Desktop App asks for confirmation first, because it restarts to apply the language and any input that is not saved is lost. Choose **Yes** to save the language and restart, or **No** to keep the current language; nothing is saved then.
 - **`--lang` option:** start the app with `Servy.exe --lang zh-CN`, `Servy.exe --lang en` or `Servy.exe --lang system`. The form `--lang=zh-CN` works too. The option takes precedence over the saved choice and replaces it, so later starts without the option use the same language. It does not restart anything: the app simply starts in that language. An unsupported value is ignored and reported as a warning in `Servy.log`.
 
-The language is shared with Servy Manager: a change made here, from the menu or with `--lang`, is saved for both apps, so they display the same language. If the setting cannot be saved for the other app, a warning is written to the log and only this app changes. The other app picks it up the next time it starts. When Servy Manager opens this app to create or edit a service, it passes its own language with `--lang`, and **Open Manager** here does the same for Servy Manager, so the app that opens shows the same language even when the two apps are not in the same folder.
+The language is shared with Servy Manager: a change made here, from the menu or with `--lang`, is saved for both apps, so they display the same language. If the setting cannot be saved for the other app, a warning is written to the log and only this app changes. The other app picks it up the next time it starts. When Servy Manager opens this app to create or edit a service, it passes the language saved in its own settings with `--lang`, and **Open Manager** here does the same for Servy Manager, so the app that opens shows the same language even when the two apps are not in the same folder.
 
 **Follow system language** uses the Windows display language of the signed-in user: a Simplified Chinese display language gives Simplified Chinese, any other display language gives English.
 
@@ -965,7 +965,7 @@ Choose the language in one of two ways:
 - **Language menu:** pick **Follow system language**, **English** or **简体中文 (Chinese, Simplified)**. Servy Manager asks for confirmation first, because it restarts to apply the language and any input that is not saved is lost. Choose **Yes** to save the language and restart, or **No** to keep the current language; nothing is saved then.
 - **`--lang` option:** start the app with `Servy.Manager.exe --lang zh-CN`, `Servy.Manager.exe --lang en` or `Servy.Manager.exe --lang system`. The form `--lang=zh-CN` works too. The option takes precedence over the saved choice and replaces it, so later starts without the option use the same language. It does not restart anything: the app simply starts in that language. An unsupported value is ignored and reported as a warning in `Servy.Manager.log`.
 
-The language is shared with the Servy Desktop App: a change made here, from the menu or with `--lang`, is saved for both apps, so they display the same language. If the setting cannot be saved for the other app, a warning is written to the log and only this app changes. The other app picks it up the next time it starts. When this app opens the Servy Desktop App to create or edit a service, it passes its own language with `--lang`, and **Open Manager** in the Desktop App does the same for this app, so the app that opens shows the same language even when the two apps are not in the same folder.
+The language is shared with the Servy Desktop App: a change made here, from the menu or with `--lang`, is saved for both apps, so they display the same language. If the setting cannot be saved for the other app, a warning is written to the log and only this app changes. The other app picks it up the next time it starts. When this app opens the Servy Desktop App to create or edit a service, it passes the language saved in its own settings with `--lang`, and **Open Manager** in the Desktop App does the same for this app, so the app that opens shows the same language even when the two apps are not in the same folder.
 
 **Follow system language** uses the Windows display language of the signed-in user: a Simplified Chinese display language gives Simplified Chinese, any other display language gives English.
 
