@@ -109,6 +109,9 @@ namespace Servy
         /// <inheritdoc />
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
+        /// <inheritdoc />
+        public string? LanguageCode => StartupCulture.Last == null ? null : LocalizationCulture.Serialize(StartupCulture.Last.Language);
+
         #endregion
 
         #region Constructors

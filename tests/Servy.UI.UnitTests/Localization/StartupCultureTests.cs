@@ -251,6 +251,23 @@ namespace Servy.UI.UnitTests.Localization
         }
 
         [Fact]
+        public void WriteLanguageToAll_FromTheManagerWithTheDesktopFileMissing_CreatesTheDesktopFile()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "appsettings.manager.json");
+            Assert.False(File.Exists(_configPath));
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(managerPath, AppLanguage.ChineseSimplified);
+
+            // Assert
+            Assert.Empty(failures);
+            Assert.True(File.Exists(_configPath));
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(managerPath));
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+        }
+
+        [Fact]
         public void WriteLanguageToAll_OtherFileUnwritable_WritesTheOwnFileAndReportsTheOtherByName()
         {
             // Arrange

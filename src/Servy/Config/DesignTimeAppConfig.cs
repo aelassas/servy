@@ -14,6 +14,9 @@ namespace Servy.Config
 
         public bool ForceSoftwareRendering => false;
 
+        /// <inheritdoc />
+        public string? LanguageCode => null;
+
         public event PropertyChangedEventHandler? PropertyChanged
         {
             add { }

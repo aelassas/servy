@@ -14,6 +14,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Testing;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.UI.Validation;
 using System.Diagnostics;
@@ -568,6 +569,70 @@ namespace Servy.Manager.UnitTests.Services
 
                 // The launch succeeded, so no failure dialog was shown
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_LanguageCodeKnown_PassesItToTheDesktopAppAfterTheServiceName()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "TestService" };
+
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write("dummy"))
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(true);
+                _appConfigMock.Setup(c => c.LanguageCode).Returns("zh-CN");
+
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = service.Name });
+
+                ProcessStartInfo? capturedPsi = null;
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
+                    .Returns(() => Process.GetCurrentProcess());
+
+                // Act
+                await sut.ConfigureServiceAsync(service, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.NotNull(capturedPsi);
+                Assert.Equal(
+                    $"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)} {AppConfig.ForceSoftwareRenderingArg} {StartupCulture.LanguageArg} zh-CN",
+                    capturedPsi.Arguments.Trim());
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureServiceAsync_NullServiceParameterAndLanguageCodeKnown_PassesTheLanguageToTheDesktopApp()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write(string.Empty))
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+                _appConfigMock.Setup(c => c.LanguageCode).Returns("en");
+
+                ProcessStartInfo? capturedPsi = null;
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
+                    .Returns(() => Process.GetCurrentProcess());
+
+                var sut = CreateServiceCommands();
+
+                // Act
+                await sut.ConfigureServiceAsync(null, TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.NotNull(capturedPsi);
+                Assert.Equal($"\"{AppConfig.SkipSplashArgument}\" {StartupCulture.LanguageArg} en", capturedPsi.Arguments.Trim());
             }
         }
 

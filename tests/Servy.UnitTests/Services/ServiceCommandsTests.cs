@@ -9,6 +9,7 @@ using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Services;
 using Servy.Testing;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.UI.Validation;
 using System.Diagnostics;
@@ -855,6 +856,46 @@ namespace Servy.UnitTests.Services
                 // Assert
                 _processHelperMock.Verify(h => h.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+            finally
+            {
+                if (File.Exists(tempTrackingFile))
+                {
+                    try { File.Delete(tempTrackingFile); } catch { /* fail-silent */ }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task OpenManager_LanguageCodeKnown_PassesItToTheManager()
+        {
+            // Arrange
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+            string tempTrackingFile = Path.Combine(baseDir, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            ProcessStartInfo? captured = null;
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(true);
+            _appConfigMock.Setup(c => c.LanguageCode).Returns("zh-CN");
+
+            var sut = CreateSut();
+
+            try
+            {
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => captured = psi)
+                    .Returns(() => Process.GetCurrentProcess());
+
+                // Act
+                await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
+                Assert.NotNull(captured);
+                Assert.Equal(
+                    $"\"{Core.Config.AppConfig.SkipSplashArgument}\" {Core.Config.AppConfig.ForceSoftwareRenderingArg} {StartupCulture.LanguageArg} zh-CN",
+                    captured.Arguments);
             }
             finally
             {

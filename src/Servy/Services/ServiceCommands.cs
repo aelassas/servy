@@ -7,6 +7,7 @@ using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Core.Validation;
 using Servy.Resources;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using System.Diagnostics;
 using System.IO;
@@ -358,6 +359,8 @@ namespace Servy.Services
 #endif
 
             var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+            // Hand Servy.Manager.exe this application's language, so it opens in the same one even when its settings file is elsewhere
+            var langFlag = string.IsNullOrWhiteSpace(_appConfig.LanguageCode) ? string.Empty : $" {StartupCulture.LanguageArg} {_appConfig.LanguageCode}";
 
             try
             {
@@ -367,7 +370,7 @@ namespace Servy.Services
                 {
                     FileName = managerPath,
                     UseShellExecute = true,
-                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass argument to skip splash screen
+                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}{langFlag}", // Pass argument to skip splash screen
                     WorkingDirectory = baseDir
                 };
 
