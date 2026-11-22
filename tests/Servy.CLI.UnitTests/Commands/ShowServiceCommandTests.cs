@@ -840,6 +840,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             // The default masks every encrypted column, so the plaintext is never produced at all.
             _repository.Verify(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()), Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _repository.Verify(r => r.GetByNameAsync(ServiceName, false, TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]
@@ -1329,6 +1332,9 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             _repository.Verify(r => r.SearchAsync("alph", false, It.IsAny<CancellationToken>()), Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _repository.Verify(r => r.SearchAsync("alph", false, TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]

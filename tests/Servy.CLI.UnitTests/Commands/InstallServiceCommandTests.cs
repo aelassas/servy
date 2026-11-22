@@ -111,6 +111,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_InstallSuccess, options.ServiceName), result.Message);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _mockServiceManager.Verify(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]

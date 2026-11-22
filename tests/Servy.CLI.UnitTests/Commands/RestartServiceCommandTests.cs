@@ -64,6 +64,11 @@ namespace Servy.CLI.UnitTests.Commands
             MockServiceManager.Verify(
                 sm => sm.RestartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()),
                 Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(
+                sm => sm.RestartServiceAsync(serviceName, true, TestContext.Current.CancellationToken),
+                Times.Once);
         }
     }
 }

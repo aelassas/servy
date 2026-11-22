@@ -104,6 +104,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(expectedMessage, result.Message);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(sm => sm.IsServiceInstalled(serviceName, TestContext.Current.CancellationToken), Times.Once);
         }
 
         /// <summary>
@@ -133,6 +136,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(expectedMessage, result.Message);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(sm => sm.GetServiceStatus(serviceName, TestContext.Current.CancellationToken), Times.Once);
         }
 
         /// <summary>

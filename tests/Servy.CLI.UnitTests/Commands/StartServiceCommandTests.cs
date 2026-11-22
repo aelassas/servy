@@ -65,6 +65,13 @@ namespace Servy.CLI.UnitTests.Commands
             MockServiceManager.Verify(
                 sm => sm.StartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()),
                 Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing. The installed check
+            // and the disabled pre-check are BaseCommand's, shared by every lifecycle verb, so they are pinned here once.
+            var token = TestContext.Current.CancellationToken;
+            MockServiceManager.Verify(sm => sm.IsServiceInstalled(serviceName, token), Times.Once);
+            MockServiceManager.Verify(sm => sm.GetServiceStartupType(serviceName, token), Times.Once);
+            MockServiceManager.Verify(sm => sm.StartServiceAsync(serviceName, true, token), Times.Once);
         }
     }
 }

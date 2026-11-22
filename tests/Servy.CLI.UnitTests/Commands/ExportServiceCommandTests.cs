@@ -133,6 +133,11 @@ namespace Servy.CLI.UnitTests.Commands
             // The existence check must not decrypt secrets it never reads (#5267)
             _serviceRepoMock.Verify(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>()), Times.Once);
             _serviceRepoMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Never);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            var token = TestContext.Current.CancellationToken;
+            _serviceRepoMock.Verify(r => r.GetByNameAsync("svc", false, token), Times.Once);
+            _serviceRepoMock.Verify(r => r.ExportXmlAsync("svc", token), Times.Once);
         }
 
         [Fact]
@@ -153,6 +158,9 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "JSON", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("{\"name\":\"svc\"}", File.ReadAllText(filePath));
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.ExportJsonAsync("svc", TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Theory]

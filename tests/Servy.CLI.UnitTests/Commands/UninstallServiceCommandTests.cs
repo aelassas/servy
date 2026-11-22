@@ -92,6 +92,9 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.True(result.IsSuccess);
             Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
             MockServiceManager.Verify(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(sm => sm.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken), Times.Once);
         }
 
         /// <summary>
