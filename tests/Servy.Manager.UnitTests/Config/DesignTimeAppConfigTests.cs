@@ -18,6 +18,9 @@ namespace Servy.Manager.UnitTests.Config
             Assert.True(config.IsDesktopAppAvailable);
             Assert.False(config.ForceSoftwareRendering);
 
+            // Assert - Language: not known at design time, so no --lang is passed on
+            Assert.Null(config.LanguageCode);
+
             // Assert - Refresh Intervals
             Assert.Equal(AppConfig.DefaultRefreshIntervalInSeconds, config.RefreshIntervalInSeconds);
             Assert.Equal(AppConfig.DefaultMonitoringRefreshIntervalMs, config.PerformanceRefreshIntervalMs);
