@@ -984,16 +984,49 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_StatusUnreadableForInstalledService_ReportsUnknown()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             GivenService(MinimalDto());
             _serviceManager.Setup(sm => sm.GetServiceStatus(ServiceName, It.IsAny<CancellationToken>())).Returns((ServiceControllerStatus?)null);
             _serviceManager.Setup(sm => sm.IsServiceInstalled(ServiceName, It.IsAny<CancellationToken>())).Returns(true);
             var opts = new ShowServiceOptions { ServiceName = ServiceName };
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             Assert.Equal(nameof(ServiceStatus.Unknown), RowValue(result.Message, CliStrings.Msg_Show_Label_Status));
+
+            // Exact token, not It.IsAny: the detail report hands the caller's token to the status ladder
+            // (ShowServiceCommand.cs 132 -> 178), and a hand-over that passes default matches nothing.
+            _serviceManager.Verify(sm => sm.GetServiceStatus(ServiceName, cts.Token), Times.Once);
+            _serviceManager.Verify(sm => sm.IsServiceInstalled(ServiceName, cts.Token), Times.Once);
+
+            cts.Dispose();
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_StatusUnreadable_HandsTheCallerTokenToTheStatusLadder()
+        {
+            // Arrange
+            GivenServices(MinimalDto("alpha"));
+            _serviceManager.Setup(sm => sm.GetServiceStatus("alpha", It.IsAny<CancellationToken>())).Returns((ServiceControllerStatus?)null);
+            _serviceManager.Setup(sm => sm.IsServiceInstalled("alpha", It.IsAny<CancellationToken>())).Returns(true);
+            var opts = new ShowServiceOptions();
+            var cts = new CancellationTokenSource();
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, cts.Token);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Contains(nameof(ServiceStatus.Unknown), result.Message);
+
+            // Exact token, not It.IsAny: the list hands the caller's token to the status ladder per row
+            // (ShowServiceCommand.cs 152 -> 371), and a hand-over that passes default matches nothing.
+            _serviceManager.Verify(sm => sm.GetServiceStatus("alpha", cts.Token), Times.Once);
+            _serviceManager.Verify(sm => sm.IsServiceInstalled("alpha", cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
