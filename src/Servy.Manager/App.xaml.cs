@@ -143,7 +143,8 @@ namespace Servy.Manager
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
         /// <inheritdoc />
-        public string LanguageCode => StartupCulture.Last == null ? null : LocalizationCulture.Serialize(StartupCulture.Last.Language);
+        public string LanguageCode => LocalizationCulture.Serialize(
+            StartupCulture.ReadLanguage(AppDomain.CurrentDomain.SetupInformation.ConfigurationFile));
 
         /// <summary>
         /// Gets the configured logging verbosity level loaded from <c>Servy.Manager.exe.config</c>.
