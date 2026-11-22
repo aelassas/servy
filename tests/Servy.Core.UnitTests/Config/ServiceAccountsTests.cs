@@ -373,7 +373,7 @@ namespace Servy.Core.UnitTests.Config
         {
             // A local account is passwordless only when a blank-password logon proves it
             // (ServiceAccounts.IsBlankPasswordLocalAccount, covered by BlankPasswordLocalAccountTests).
-            Assert.False(ServiceAccounts.IsPasswordlessAccount(@".\test_svc"));
+            Assert.False(ServiceAccounts.IsPasswordlessAccount(@".\test_svc_account"));
         }
 
         #endregion
@@ -381,17 +381,17 @@ namespace Servy.Core.UnitTests.Config
         #region IsLocalAccount / CanBePasswordless Tests
 
         [Theory]
-        [InlineData(@".\test_svc", true)]
-        [InlineData(@"  .\test_svc  ", true)]
+        [InlineData(@".\test_svc_account", true)]
+        [InlineData(@"  .\test_svc_account  ", true)]
         // Not local user accounts
-        [InlineData(@"DOMAIN\test_svc", false)]
+        [InlineData(@"DOMAIN\test_svc_account", false)]
         [InlineData("test_svc", false)]
         [InlineData(@".\svc_gmsa$", false)]
         [InlineData(@".\LocalSystem", false)]
         [InlineData(@".\NetworkService", false)]
-        [InlineData(@"NT SERVICE\test_svc", false)]
+        [InlineData(@"NT SERVICE\test_svc_account", false)]
         [InlineData(@".\", false)]
-        [InlineData(@"\test_svc", false)]
+        [InlineData(@"\test_svc_account", false)]
         [InlineData(@".\a\b", false)]
         [InlineData(null, false)]
         [InlineData("", false)]
@@ -409,15 +409,15 @@ namespace Servy.Core.UnitTests.Config
         public void IsLocalAccount_MachineNameForm_ReturnsTrue()
         {
             // Act & Assert
-            Assert.True(ServiceAccounts.IsLocalAccount(Environment.MachineName + @"\test_svc"));
-            Assert.True(ServiceAccounts.IsLocalAccount(Environment.MachineName.ToLowerInvariant() + @"\test_svc"));
+            Assert.True(ServiceAccounts.IsLocalAccount(Environment.MachineName + @"\test_svc_account"));
+            Assert.True(ServiceAccounts.IsLocalAccount(Environment.MachineName.ToLowerInvariant() + @"\test_svc_account"));
         }
 
         [Theory]
         [InlineData(@"NT SERVICE\MyService", true)]
         [InlineData(@"NT AUTHORITY\NetworkService", true)]
         [InlineData(@"DOMAIN\svc_gmsa$", true)]
-        [InlineData(@".\test_svc", true)]
+        [InlineData(@".\test_svc_account", true)]
         [InlineData(@"DOMAIN\User", false)]
         [InlineData("LocalSystem", false)]
         [InlineData(null, false)]
