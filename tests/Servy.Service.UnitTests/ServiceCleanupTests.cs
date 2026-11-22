@@ -15,9 +15,11 @@ using ITimer = Servy.Service.Timers.ITimer;
 namespace Servy.Service.UnitTests
 {
     /// <summary>
-    /// Covers the teardown arms of <c>Service.Cleanup()</c> that the lifecycle tests never reach:
-    /// the redirected-stream unhook, the pre-stop failure policy log, the tracked-hook cleanup loop
-    /// and the output-writer dispose failures.
+    /// Covers the teardown arms that the lifecycle tests never reach. In <c>Service.Cleanup()</c>: the
+    /// cleared runtime state, the redirected-stream unhook, the <c>Exited</c> detach before the child is
+    /// stopped, the pre-stop failure policy log, the tracked-hook cleanup loop, the output-writer dispose
+    /// failures (including one writer shared by stdout and stderr) and the catch-all. In the
+    /// <c>finally</c> of <c>Service.ExecuteTeardown</c>: the cancellation-source and semaphore dispose failures.
     /// </summary>
     public class ServiceCleanupTests : IDisposable
     {
