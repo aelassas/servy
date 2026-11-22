@@ -25,6 +25,7 @@ using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -38,6 +39,16 @@ namespace Servy
         /// Used for locating and extracting files such as the service executable.
         /// </summary>
         public const string ResourcesNamespace = "Servy.Resources";
+
+        /// <summary>
+        /// The name of the JSON configuration file specific to the Servy Desktop application.
+        /// </summary>
+        internal const string AppSettingsFileName = "appsettings.desktop.json";
+
+        /// <summary>
+        /// The settings file name, reachable from the view models that persist user settings.
+        /// </summary>
+        internal static string SettingsFileName => AppSettingsFileName;
 
         #endregion
 
@@ -117,6 +128,8 @@ namespace Servy
         /// </remarks>
         public App()
         {
+            StartupCulture.ApplyFromSettings(Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName));
+
             var services = new ServiceCollection();
 
             // Register dependencies
@@ -129,7 +142,7 @@ namespace Servy
             var options = new BootstrapperOptions
             {
                 LogFileName = "Servy.log",
-                AppSettingsFileName = "appsettings.desktop.json",
+                AppSettingsFileName = AppSettingsFileName,
                 ResourcesNamespace = ResourcesNamespace,
                 SecurityWarningTitle = Strings.Msg_SecurityWarningTitle,
                 SecurityWarningMessage = Strings.Msg_SecurityWarningMessage,

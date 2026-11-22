@@ -177,5 +177,41 @@ namespace Servy.UI.Resources {
                 return ResourceManager.GetString("Msg_UpdateCheckTimeout", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Follow system language.
+        /// </summary>
+        public static string Language_System {
+            get {
+                return ResourceManager.GetString("Language_System", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to English.
+        /// </summary>
+        public static string Language_English {
+            get {
+                return ResourceManager.GetString("Language_English", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chinese (Simplified).
+        /// </summary>
+        public static string Language_ChineseSimplified {
+            get {
+                return ResourceManager.GetString("Language_ChineseSimplified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The language changed to {0}. Restart Servy to apply it..
+        /// </summary>
+        public static string Msg_LanguageRestartRequired {
+            get {
+                return ResourceManager.GetString("Msg_LanguageRestartRequired", resourceCulture);
+            }
+        }
     }
 }

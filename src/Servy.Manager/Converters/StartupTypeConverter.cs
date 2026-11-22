@@ -9,7 +9,7 @@ namespace Servy.Manager.Converters
     /// </summary>
     public class StartupTypeConverter : EnumLocalizedConverter<ServiceStartType>
     {
-        private static readonly Dictionary<ServiceStartType, Func<string>> StartupMap = new Dictionary<ServiceStartType, Func<string>>()
+        private static Dictionary<ServiceStartType, Func<string>> CreateStartupMap() => new Dictionary<ServiceStartType, Func<string>>()
         {
             [ServiceStartType.Automatic] = () => Strings.StartupType_Automatic,
             [ServiceStartType.AutomaticDelayedStart] = () => Strings.StartupType_AutomaticDelayedStart,
@@ -21,7 +21,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// Initializes a new instance of the <see cref="StartupTypeConverter"/> class.
         /// </summary>
-        public StartupTypeConverter() : base(StartupMap)
+        public StartupTypeConverter() : base(CreateStartupMap())
         {
         }
 

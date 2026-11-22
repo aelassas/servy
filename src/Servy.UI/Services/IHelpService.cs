@@ -1,5 +1,6 @@
 namespace Servy.UI.Services
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// Provides methods to show help-related UI elements and perform update checks.
     /// </summary>

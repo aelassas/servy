@@ -9,7 +9,7 @@ namespace Servy.Manager.Converters
     /// </summary>
     public class StatusConverter : EnumLocalizedConverter<ServiceStatus>
     {
-        private static readonly Dictionary<ServiceStatus, Func<string>> StatusMap = new Dictionary<ServiceStatus, Func<string>>()
+        private static Dictionary<ServiceStatus, Func<string>> CreateStatusMap() => new Dictionary<ServiceStatus, Func<string>>()
         {
             [ServiceStatus.None] = () => Strings.Label_Fetching,
             [ServiceStatus.NotInstalled] = () => Strings.Status_NotInstalled,
@@ -26,7 +26,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// Initializes a new instance of the <see cref="StatusConverter"/> class.
         /// </summary>
-        public StatusConverter() : base(StatusMap)
+        public StatusConverter() : base(CreateStatusMap())
         {
         }
 

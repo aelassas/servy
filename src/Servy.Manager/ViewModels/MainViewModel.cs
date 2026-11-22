@@ -23,6 +23,7 @@ using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// ViewModel for the main window of Servy Manager.
     /// Holds the list of services and exposes commands for managing them.
@@ -231,6 +232,37 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public IAsyncCommand OpenAboutDialogCommand { get; }
 
+        /// <summary>
+        /// Command to switch the language; the parameter is the <see cref="AppLanguage"/> value.
+        /// </summary>
+        public IAsyncCommand SetLanguageCommand { get; }
+
+        /// <summary>
+        /// Gets whether the language menu follows the system language.
+        /// </summary>
+        public bool IsSystemLanguageSelected => Language == AppLanguage.System;
+
+        /// <summary>
+        /// Gets whether the language menu selects English.
+        /// </summary>
+        public bool IsEnglishSelected => Language == AppLanguage.English;
+
+        /// <summary>
+        /// Gets whether the language menu selects Simplified Chinese.
+        /// </summary>
+        public bool IsChineseSimplifiedSelected => Language == AppLanguage.ChineseSimplified;
+
+        /// <summary>
+        /// The language configured for Servy Manager in its settings file.
+        /// </summary>
+        public AppLanguage Language => StartupCulture.ReadLanguage(SettingsPath);
+
+        /// <summary>
+        /// The full path of the Servy Manager settings file.
+        /// </summary>
+        internal static string SettingsPath
+            => System.IO.Path.Combine(AppFoldersHelper.GetAppDirectory(), App.SettingsFileName);
+
         #endregion
 
         #region Constructors
@@ -284,6 +316,7 @@ namespace Servy.Manager.ViewModels
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
+            SetLanguageCommand = new AsyncCommand(SetLanguageAsync, name: nameof(SetLanguageCommand));
 
             IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
@@ -637,6 +670,69 @@ namespace Servy.Manager.ViewModels
                Helper.GetBuiltWithFramework(),
                DateTime.Now.Year),
                UiAppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Persists the language chosen in the menu, offers a restart, and restarts the application when accepted.
+        /// </summary>
+        private async Task SetLanguageAsync(object? parameter)
+        {
+            if (parameter is not AppLanguage language || language == Language)
+            {
+                return;
+            }
+
+            try
+            {
+                App.PersistLanguageSettings(SettingsPath, language);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save the language setting: {ex.Message}");
+                await _messageBoxService.ShowErrorAsync(
+                    string.Format(Strings.Msg_LanguageSaveFailed, ex.Message),
+                    UiAppConfig.Caption);
+                return;
+            }
+
+            OnPropertyChanged(nameof(Language));
+            OnPropertyChanged(nameof(IsSystemLanguageSelected));
+            OnPropertyChanged(nameof(IsEnglishSelected));
+            OnPropertyChanged(nameof(IsChineseSimplifiedSelected));
+
+            var restart = await _messageBoxService.ShowConfirmAsync(
+                string.Format(Strings.Msg_LanguageRestartRequired, LanguageDisplayNames.For(language)),
+                UiAppConfig.Caption);
+
+            if (restart)
+            {
+                RestartApplication();
+            }
+        }
+
+        /// <summary>
+        /// Starts a fresh instance of the running executable and closes the current one.
+        /// </summary>
+        private void RestartApplication()
+        {
+            try
+            {
+                var exePath = Environment.ProcessPath;
+                if (string.IsNullOrEmpty(exePath))
+                {
+                    return;
+                }
+
+                using (Process.Start(new ProcessStartInfo { FileName = exePath, UseShellExecute = true }))
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to restart {UiAppConfig.Caption}: {ex.Message}");
+            }
+
+            Application.Current?.Shutdown();
         }
 
         #endregion

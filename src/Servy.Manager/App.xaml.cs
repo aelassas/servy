@@ -26,6 +26,7 @@ using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Manager
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -43,7 +44,12 @@ namespace Servy.Manager
         /// <summary>
         /// The name of the JSON configuration file specific to the Servy Manager application.
         /// </summary>
-        private const string AppSettingsFileName = "appsettings.manager.json";
+        internal const string AppSettingsFileName = "appsettings.manager.json";
+
+        /// <summary>
+        /// The settings file name, reachable from the view models that persist user settings.
+        /// </summary>
+        internal static string SettingsFileName => AppSettingsFileName;
 
         /// <summary>
         /// The configuration key that holds the persisted position, size and state of the main window.
@@ -222,6 +228,8 @@ namespace Servy.Manager
         /// </remarks>
         public App()
         {
+            StartupCulture.ApplyFromSettings(Path.Combine(AppFoldersHelper.GetAppDirectory(), AppSettingsFileName));
+
             var services = new ServiceCollection();
 
             // Register dependencies
@@ -495,6 +503,25 @@ namespace Servy.Manager
         internal static void PersistSetting(string configPath, string key, string value)
         {
             PersistSettings(configPath, new[] { new KeyValuePair<string, string>(key, value) });
+        }
+
+        /// <summary>
+        /// Persists the selected language and the restart flag in one atomic replacement.
+        /// </summary>
+        /// <param name="configPath">The full path of the JSON configuration file to update.</param>
+        /// <param name="language">The language to store.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="configPath"/> is null or blank.</exception>
+        internal static void PersistLanguageSettings(string configPath, AppLanguage language)
+        {
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                throw new ArgumentException("The configuration path cannot be null or empty.", nameof(configPath));
+            }
+
+            PersistSettings(configPath, new[]
+            {
+                new KeyValuePair<string, string>(StartupCulture.LanguageSettingKey, LocalizationCulture.Serialize(language)),
+            });
         }
 
         /// <summary>

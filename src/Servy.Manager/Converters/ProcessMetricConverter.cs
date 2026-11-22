@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.UI.Constants;
+using Servy.Manager.Resources;
 using Servy.UI.Design;
 using System.ComponentModel;
 using System.Globalization;
@@ -30,7 +31,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// Metric fallback indicator string when data is not available.
         /// </summary>
-        protected static readonly string UnknownMetricUsage = UiConstants.NotAvailable;
+        protected static string UnknownMetricUsage => Strings.Text_NotAvailable;
 
         /// <summary>
         /// Initializes a new instance of the ProcessMetricConverter base class.

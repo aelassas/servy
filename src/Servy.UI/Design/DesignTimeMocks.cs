@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using System.ServiceProcess;
 using System.Windows.Threading;

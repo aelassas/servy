@@ -2705,5 +2705,104 @@ namespace Servy.Manager.Resources {
                 return ResourceManager.GetString("Tooltip_ServiceStopped", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chinese (Simplified).
+        /// </summary>
+        public static string Language_ChineseSimplified {
+            get {
+                return ResourceManager.GetString("Language_ChineseSimplified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to English.
+        /// </summary>
+        public static string Language_English {
+            get {
+                return ResourceManager.GetString("Language_English", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Follow system language.
+        /// </summary>
+        public static string Language_System {
+            get {
+                return ResourceManager.GetString("Language_System", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language.
+        /// </summary>
+        public static string Menu_Language {
+            get {
+                return ResourceManager.GetString("Menu_Language", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The language will change the next time Servy Manager starts. Restart now?.
+        /// </summary>
+        public static string Msg_LanguageRestartRequired {
+            get {
+                return ResourceManager.GetString("Msg_LanguageRestartRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to N/A.
+        /// </summary>
+        public static string Text_NotAvailable {
+            get {
+                return ResourceManager.GetString("Text_NotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to save the language setting: {0}.
+        /// </summary>
+        public static string Msg_LanguageSaveFailed {
+            get {
+                return ResourceManager.GetString("Msg_LanguageSaveFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose the display language of Servy Manager..
+        /// </summary>
+        public static string Automation_LanguageMenu_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Follow the Windows display language..
+        /// </summary>
+        public static string Automation_LanguageSystemMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageSystemMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy Manager in English..
+        /// </summary>
+        public static string Automation_LanguageEnglishMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageEnglishMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy Manager in Simplified Chinese..
+        /// </summary>
+        public static string Automation_LanguageChineseSimplifiedMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageChineseSimplifiedMenuItem_HelpText", resourceCulture);
+            }
+        }
     }
 }

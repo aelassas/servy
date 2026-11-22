@@ -10,6 +10,7 @@ using System.Net.Http;
 
 namespace Servy.UI.Services
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// Provides help-related functionality such as opening documentation,
     /// checking for updates, and displaying the About dialog.

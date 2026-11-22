@@ -11,12 +11,16 @@ using Servy.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using static Servy.Core.Config.AppConfig;
 
 namespace Servy.ViewModels
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// ViewModel for the main service management UI.
     /// Implements properties, commands, and logic for configuring and managing Windows services
@@ -33,6 +37,7 @@ namespace Servy.ViewModels
         private readonly IHelpService _helpService;
         private bool _isManagerAppAvailable;
         private readonly IAppConfiguration _appConfig;
+        private AppLanguage _language;
         private bool _isBusy;
         private bool _disposed;
 
@@ -817,6 +822,37 @@ namespace Servy.ViewModels
         public IAsyncCommand OpenAboutDialogCommand { get; }
 
         /// <summary>
+        /// Command to switch the language; the parameter is the <see cref="AppLanguage"/> value.
+        /// </summary>
+        public IAsyncCommand SetLanguageCommand { get; }
+
+        /// <summary>
+        /// Gets whether the language menu follows the system language.
+        /// </summary>
+        public bool IsSystemLanguageSelected => _language == AppLanguage.System;
+
+        /// <summary>
+        /// Gets whether the language menu selects English.
+        /// </summary>
+        public bool IsEnglishSelected => _language == AppLanguage.English;
+
+        /// <summary>
+        /// Gets whether the language menu selects Simplified Chinese.
+        /// </summary>
+        public bool IsChineseSimplifiedSelected => _language == AppLanguage.ChineseSimplified;
+
+        /// <summary>
+        /// The language configured for Servy in its settings file, read once when the view model is created.
+        /// </summary>
+        public AppLanguage Language => _language;
+
+        /// <summary>
+        /// The full path of the Servy settings file.
+        /// </summary>
+        internal static string SettingsPath
+            => Path.Combine(AppFoldersHelper.GetAppDirectory(), App.SettingsFileName);
+
+        /// <summary>
         /// Command to clear the form fields.
         /// </summary>
         public IAsyncCommand ClearFormCommand { get; }
@@ -928,10 +964,13 @@ namespace Servy.ViewModels
             OpenRuntimeVariablesLinkCommand = new AsyncCommand(OpenRuntimeVariablesLinkAsync, name: nameof(OpenRuntimeVariablesLinkCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
+            SetLanguageCommand = new AsyncCommand(SetLanguageAsync, name: nameof(SetLanguageCommand));
 
             ShowRecoveryActionHelpCommand = new AsyncCommand(ShowRecoveryActionHelpAsync, name: nameof(ShowRecoveryActionHelpCommand));
 
             ClearFormCommand = new AsyncCommand(ClearFormAsync, _ => !IsBusy, name: nameof(ClearFormCommand));
+
+            _language = ReadLanguage(SettingsPath);
 
             IsManagerAppAvailable = _appConfig.IsManagerAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
@@ -1320,6 +1359,86 @@ namespace Servy.ViewModels
                     Helper.GetBuiltWithFramework(),
                     DateTime.Now.Year),
                 UiAppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Persists the language chosen in the menu, offers a restart, and restarts the application when accepted.
+        /// </summary>
+        private async Task SetLanguageAsync(object? parameter)
+        {
+            if (parameter is not AppLanguage language || language == _language)
+            {
+                return;
+            }
+
+            try
+            {
+                StartupCulture.WriteLanguage(SettingsPath, StartupCulture.LanguageSettingKey, language);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save the language setting: {ex.Message}");
+                await _messageBoxService.ShowErrorAsync(
+                    string.Format(Strings.Msg_LanguageSaveFailed, ex.Message),
+                    UiAppConfig.Caption);
+                return;
+            }
+
+            _language = language;
+            OnPropertyChanged(nameof(Language));
+            OnPropertyChanged(nameof(IsSystemLanguageSelected));
+            OnPropertyChanged(nameof(IsEnglishSelected));
+            OnPropertyChanged(nameof(IsChineseSimplifiedSelected));
+
+            var restart = await _messageBoxService.ShowConfirmAsync(
+                string.Format(UI.Resources.Strings.Msg_LanguageRestartRequired, LanguageDisplayNames.For(language)),
+                UiAppConfig.Caption);
+
+            if (restart)
+            {
+                RestartApplication();
+            }
+        }
+
+        /// <summary>
+        /// Starts a fresh instance of the running executable and closes the current one.
+        /// </summary>
+        private void RestartApplication()
+        {
+            try
+            {
+                var exePath = Environment.ProcessPath;
+                if (string.IsNullOrEmpty(exePath))
+                {
+                    return;
+                }
+
+                using (Process.Start(new ProcessStartInfo { FileName = exePath, UseShellExecute = true }))
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to restart {UiAppConfig.Caption}: {ex.Message}");
+            }
+
+            Application.Current?.Shutdown();
+        }
+
+        /// <summary>
+        /// Reads the configured language, falling back to following the system language when the setting is unreadable.
+        /// </summary>
+        private static AppLanguage ReadLanguage(string settingsPath)
+        {
+            try
+            {
+                return StartupCulture.ReadLanguage(settingsPath);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to read the language setting: {ex.Message}");
+                return AppLanguage.System;
+            }
         }
 
         /// <summary>

@@ -6,6 +6,7 @@ using Servy.Core.Logging;
 using Servy.Core.Resources;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.UI.Localization;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System.Diagnostics;
@@ -260,7 +261,10 @@ namespace Servy.UI.Bootstrapping
         private void ApplyLoggerSettings()
         {
             LoggerConfigurator.ConfigureFromAppSettings(_configuration!);
-            CoreSettingsLoader.WarnAboutIgnoredSettings(_configuration, Path.GetFileName(_options.AppSettingsFileName!));
+            CoreSettingsLoader.WarnAboutIgnoredSettings(
+                _configuration,
+                Path.GetFileName(_options.AppSettingsFileName!),
+                silentKeys: StartupCulture.IgnoredSettingKeys);
             _options.CustomConfigAction?.Invoke(_configuration!);
         }
 

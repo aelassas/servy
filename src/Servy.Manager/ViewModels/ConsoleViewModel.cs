@@ -571,7 +571,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void ResetConsole()
         {
-            Pid = UiConstants.NotAvailable;
+            Pid = Strings.Text_NotAvailable;
             _stdoutPath = null; // Clear these so Resume doesn't re-trigger
             _stderrPath = null;
 

@@ -1033,4 +1033,31 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_ButtonRestart_HelpText" xml:space="preserve">
     <value>Restart the configured service.</value>
   </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>Follow system language</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>Chinese (Simplified)</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>Failed to save the language setting: {0}</value>
+  </data>
+  <data name="Automation_LanguageMenu_HelpText" xml:space="preserve">
+    <value>Choose the display language of Servy.</value>
+  </data>
+  <data name="Automation_LanguageSystemMenuItem_HelpText" xml:space="preserve">
+    <value>Follow the Windows display language.</value>
+  </data>
+  <data name="Automation_LanguageEnglishMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in English.</value>
+  </data>
+  <data name="Automation_LanguageChineseSimplifiedMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in Simplified Chinese.</value>
+  </data>
 </root>

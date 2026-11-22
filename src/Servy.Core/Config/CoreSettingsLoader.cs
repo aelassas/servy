@@ -60,10 +60,15 @@ namespace Servy.Core.Config
         /// <param name="config">The application settings the process loaded.</param>
         /// <param name="settingsFileName">The settings file name to name in the warning.</param>
         /// <param name="logger">The logger to warn through; <see langword="null"/> uses the static <see cref="Logger"/>.</param>
-        /// <returns>The ignored keys that are set to a non-blank value, in <see cref="IgnoredKeys"/> order.</returns>
-        public static IReadOnlyList<string> WarnAboutIgnoredSettings(IConfiguration? config, string settingsFileName, IServyLogger? logger = null)
+        /// <param name="ignoredKeys">The keys to report; <see langword="null"/> uses <see cref="IgnoredKeys"/>.</param>
+        /// <param name="silentKeys">Keys that are set but must not be reported.</param>
+        /// <returns>The ignored keys that are set to a non-blank value.</returns>
+        public static IReadOnlyList<string> WarnAboutIgnoredSettings(IConfiguration? config, string settingsFileName, IServyLogger? logger = null, IEnumerable<string>? ignoredKeys = null, IEnumerable<string>? silentKeys = null)
         {
-            var found = IgnoredKeys.Where(key => !string.IsNullOrWhiteSpace(config?[key])).ToList();
+            var silent = new HashSet<string>(silentKeys ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            var found = (ignoredKeys ?? IgnoredKeys)
+                .Where(key => !silent.Contains(key) && !string.IsNullOrWhiteSpace(config?[key]))
+                .ToList();
             if (found.Count == 0)
                 return found;
 
