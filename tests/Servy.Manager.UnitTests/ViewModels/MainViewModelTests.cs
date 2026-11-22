@@ -2169,6 +2169,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
                 var dummyService = new Service();
+                var sessionToken = TestReflection.GetField<CancellationTokenSource>(vm, "_cts").Token;
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -2176,8 +2177,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await vm.ConfigureCommand.ExecuteAsync(dummyService);
                 });
 
-                // Assert
-                _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, It.IsAny<CancellationToken>()), Times.Once);
+                // Assert - the live session token, not CancellationToken.None, reaches the service command
+                Assert.True(sessionToken.CanBeCanceled);
+                _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, sessionToken), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -2190,6 +2192,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
+                var sessionToken = TestReflection.GetField<CancellationTokenSource>(vm, "_cts").Token;
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -2197,8 +2200,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await vm.ImportXmlCommand.ExecuteAsync(null);
                 });
 
-                // Assert
-                _serviceCommandsMock.Verify(c => c.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
+                // Assert - the live session token, not CancellationToken.None, reaches the service command
+                Assert.True(sessionToken.CanBeCanceled);
+                _serviceCommandsMock.Verify(c => c.ImportXmlConfigAsync(sessionToken), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
@@ -2211,6 +2215,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
+                var sessionToken = TestReflection.GetField<CancellationTokenSource>(vm, "_cts").Token;
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -2218,8 +2223,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await vm.ImportJsonCommand.ExecuteAsync(null);
                 });
 
-                // Assert
-                _serviceCommandsMock.Verify(c => c.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
+                // Assert - the live session token, not CancellationToken.None, reaches the service command
+                Assert.True(sessionToken.CanBeCanceled);
+                _serviceCommandsMock.Verify(c => c.ImportJsonConfigAsync(sessionToken), Times.Once);
                 await Task.CompletedTask;
             }, createApp: true);
         }
