@@ -61,7 +61,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public async Task ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
         {
             // Arrange
-            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
+            var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\"");
             wrapper.Dispose();
 
             // Act & Assert
@@ -115,7 +115,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Dispose_CalledMultipleTimes_ExecutesIdempotentlyAndIdlesSafe()
         {
             // Arrange
-            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
+            var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\"");
 
             // Act 1: Initial Disposal execution window path
             wrapper.Dispose();
@@ -137,7 +137,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_And_WaitForExit_PopulatesPropertiesCorrectly()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 42\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 42\""))
             {
                 // Act
                 bool started = wrapper.Start();
@@ -165,7 +165,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void PropertySetters_UpdateUnderlyingProcess()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
 
@@ -191,7 +191,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void PriorityClass_Get_ReturnsPriorityAssignedToUnderlyingProcess()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
 
@@ -207,7 +207,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void ProcessorAffinity_Get_ReturnsAffinityAssignedToUnderlyingProcess()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
 
@@ -228,7 +228,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void DataAndExitEvents_AddThenRemoveHandlers_DoesNotThrowOnStart()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"", redirectOutput: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\"", redirectOutput: true))
             {
                 DataReceivedEventHandler outputHandler = (s, e) => { };
                 DataReceivedEventHandler errorHandler = (s, e) => { };
@@ -257,7 +257,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public async Task WaitAndCheckStillRunningAsync_StaysAlive_ReturnsTrue()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
 
@@ -293,7 +293,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public async Task WaitAndCheckStillRunningAsync_Cancellation_ThrowsOperationCanceledException()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             using (var cts = new CancellationTokenSource(TestTimeouts.ProcessWrapperCancellationDelay))
             {
                 wrapper.Start();
@@ -337,7 +337,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // StopTree_DescendantStopsGracefully_LogsCanceledWithExitCode; no test asserts true from Stop itself.
 
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -354,7 +354,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Stop_AlreadyExited_ReturnsNull()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 WaitUntilExited(wrapper);
@@ -371,7 +371,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Stop_ForceKillFallback_ReturnsFalse_AndLogs()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -391,7 +391,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             string commandArgs = "-NoProfile -WindowStyle Hidden -Command \"$p = Start-Process cmd.exe -ArgumentList '/c timeout /t 100 /nobreak' -WindowStyle Hidden -PassThru; while ($true) { Start-Sleep 1 }\"";
 
-            using (var wrapper = CreateWrapper("powershell.exe", commandArgs, createNoWindow: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, commandArgs, createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -424,7 +424,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopDescendants_NoActiveDescendantsFound_LogsAndExitsEarly()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
 
@@ -443,7 +443,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             string commandArgs = "-NoProfile -Command \"$p = Start-Process cmd.exe -ArgumentList '/c timeout /t 100 /nobreak' -WindowStyle Hidden -PassThru; while ($true) { Start-Sleep 1 }\"";
 
-            using (var wrapper = CreateWrapper("powershell.exe", commandArgs, createNoWindow: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, commandArgs, createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -482,7 +482,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             string commandArgs = "-NoProfile -Command \"$p = Start-Process cmd.exe -ArgumentList '/c timeout /t 100 /nobreak' -WindowStyle Hidden -PassThru; while ($true) { Start-Sleep 1 }\"";
             var psi = new ProcessStartInfo
             {
-                FileName = "powershell.exe",
+                FileName = TestProcessStarter.PowerShellPath,
                 Arguments = commandArgs,
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -527,7 +527,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_PIDReadException_LogsWarningAndContinues()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 var psi = new ProcessStartInfo
                 {
@@ -555,7 +555,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_ProcessAlreadyExited_LogsAlreadyExitedInfo()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 WaitUntilExited(wrapper);
@@ -572,7 +572,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void TryStopGracefullyOrKill_HeadlessProcess_ForceKillsAndLogsFallback()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\"", createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -595,7 +595,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_ProcessForceKilled_LogsTerminatedInfo()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -630,7 +630,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 {
                     var compilePsi = new ProcessStartInfo
                     {
-                        FileName = "powershell.exe",
+                        FileName = TestProcessStarter.PowerShellPath,
                         Arguments = $"-NoProfile -Command \"Add-Type -TypeDefinition 'using System; using System.Windows.Forms; class Program {{ [STAThread] static void Main() {{ var f = new Form {{ ShowInTaskbar = true }}; var h = f.Handle; f.Show(); Application.Run(f); }} }}' -OutputAssembly '{tempExe}' -OutputType WindowsApplication -ReferencedAssemblies System.Windows.Forms\"",
                         UseShellExecute = false,
                         CreateNoWindow = true,
@@ -712,7 +712,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             const int parentPid = 424241;
             var child = new DisposeCountingProcess();
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 // The child is deliberately never started: the nested StopTree call then reads no PID, so it
                 // asks for the children of PID 0 and the cascade takes its already-exited path without
@@ -737,7 +737,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var child = new DisposeCountingProcess();
             var handedOut = false;
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 // Neither process is started, so both levels of the cascade ask for the children of PID 0.
                 // Handing the set out once is what terminates the recursion.
@@ -767,7 +767,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+                using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
                 {
                     wrapper.ChildEnumerator = (pid, startTime) =>
                         pid == parentPid ? new List<Process> { child } : new List<Process>();
@@ -801,7 +801,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // so the sweep must warn and return BEFORE enumerating rather than scan on a partial identity.
             var enumeratorCalls = 0;
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.ChildEnumerator = (pid, startTime) => { enumeratorCalls++; return new List<Process>(); };
                 var parentStartTime = startTimeMissing ? DateTime.MinValue : DateTime.Now;
@@ -826,7 +826,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // reports it rather than letting the failure reach the caller that is stopping the service.
             const int parentPid = 424246;
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.ChildEnumerator = (pid, startTime) => throw new InvalidOperationException("snapshot failed");
 
@@ -849,7 +849,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // to an empty child set and carries on, so the node itself is still terminated.
             var parent = new DisposeCountingProcess();
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.ChildEnumerator = (pid, startTime) => throw new InvalidOperationException("snapshot failed");
 
@@ -878,7 +878,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+                using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
                 {
                     // Neither process is started, so both levels of the cascade ask for the children of PID 0.
                     // Handing the set out once is what terminates the recursion.
@@ -956,7 +956,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Stop_CloseMainWindowThrowsOnLiveProcess_FallsThroughToKill()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(wrapper.Start());
 
@@ -979,7 +979,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Stop_CloseMainWindowThrowsAfterProcessExited_ReturnsNullAndLogsDebug()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(wrapper.Start());
 
@@ -1010,7 +1010,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+                using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
                 {
                     Assert.True(wrapper.Start());
                     pid = wrapper.Id;
@@ -1046,7 +1046,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             var waits = new List<int>();
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(wrapper.Start());
 
@@ -1073,8 +1073,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_DescendantStopsGracefully_LogsCanceledWithExitCode()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
-            using (var childWrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
+            using (var childWrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(childWrapper.Start());
                 var child = childWrapper.UnderlyingProcess;
@@ -1104,8 +1104,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void StopTree_DescendantObtainedByPidStopsGracefully_LogsCanceledGracefully()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
-            using (var childWrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
+            using (var childWrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(childWrapper.Start());
 
@@ -1142,7 +1142,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // ProcessWrapperGracefulStopMs is 1000 and AppConfig.DefaultPostKillWaitMs is 3000.
             Assert.NotEqual(TestTimeouts.ProcessWrapperGracefulStopMs, AppConfig.DefaultPostKillWaitMs);
 
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 Assert.True(wrapper.Start());
 
@@ -1340,7 +1340,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Kill_AlreadyExited_DoesNotThrow()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 WaitUntilExited(wrapper);
@@ -1359,7 +1359,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange
             // Closing the handle detaches the Process object while the OS process keeps running, so Kill's
             // HasExited read throws InvalidOperationException into the catch before _process.Kill() is reached.
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
 
@@ -1397,7 +1397,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Kill_WhenProcessHasExited_ReturnsTrueWithoutAttemptingKill()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 WaitUntilExited(wrapper);
@@ -1415,7 +1415,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Kill_WhenDisposed_ThrowsObjectDisposedException()
         {
             // Arrange
-            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"");
+            var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 10\"");
             wrapper.Dispose();
 
             // Act & Assert
@@ -1426,7 +1426,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Kill_ActiveProcess_SuccessfullyKillsAndReturnsTrue()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 30\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds 30\""))
             {
                 wrapper.Start();
                 Assert.False(wrapper.UnderlyingProcess.HasExited);
@@ -1460,7 +1460,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             try
             {
-                using (var wrapper = CreateWrapper("powershell.exe", commandArgs, createNoWindow: true))
+                using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, commandArgs, createNoWindow: true))
                 {
                     Assert.True(wrapper.Start());
 
@@ -1501,7 +1501,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void TryStopGracefullyOrKill_ExitedOrInvalidProcess_HandlesStateWithoutCrashing()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 WaitUntilExited(wrapper);
@@ -1519,7 +1519,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void SendCtrlC_LiveWindowlessChild_ReturnsFalseToFallbackChain()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}\""))
             {
                 wrapper.Start();
 
@@ -1538,7 +1538,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void SendCtrlC_ProcessHasExited_ReturnsNull()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 WaitUntilExited(wrapper);
@@ -1681,7 +1681,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         /// <returns>The started wrapper; the suite's cleanup list disposes its process.</returns>
         private ProcessWrapper StartWrapperWithConsoleSeam(RecordingConsoleNative native)
         {
-            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds " + TestTimeouts.ChildSleepSeconds + "\"");
+            var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"Start-Sleep -Seconds " + TestTimeouts.ChildSleepSeconds + "\"");
             wrapper.ConsoleNative = native;
             Assert.True(wrapper.Start());
             return wrapper;

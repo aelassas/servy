@@ -475,7 +475,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             var psi = new ProcessStartInfo
             {
-                FileName = "powershell.exe",
+                FileName = TestProcessStarter.PowerShellPath,
                 Arguments = $"-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand {encodedRoot}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
