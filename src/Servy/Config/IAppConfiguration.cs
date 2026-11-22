@@ -23,7 +23,7 @@ namespace Servy.Config
         bool ForceSoftwareRendering { get; }
 
         /// <summary>
-        /// Gets the display language this application started in, as a <c>--lang</c> value
+        /// Gets the display language saved for this application, as a <c>--lang</c> value
         /// (<c>system</c>, <c>en</c> or <c>zh-CN</c>), or <see langword="null"/> when it is not known.
         /// </summary>
         /// <remarks>
