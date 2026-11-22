@@ -14,6 +14,9 @@ namespace Servy.Manager.Config
         public bool IsDesktopAppAvailable => true;
         public bool ForceSoftwareRendering => false;
 
+        /// <inheritdoc />
+        public string LanguageCode => null;
+
         public int RefreshIntervalInSeconds => Core.Config.AppConfig.DefaultRefreshIntervalInSeconds;
         public int PerformanceRefreshIntervalMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalMs;
         public int ConsoleRefreshIntervalMs => Core.Config.AppConfig.DefaultMonitoringRefreshIntervalMs;

@@ -48,6 +48,16 @@ namespace Servy.Manager.Config
         bool ForceSoftwareRendering { get; }
 
         /// <summary>
+        /// Gets the display language this application started in, as a <c>--lang</c> value
+        /// (<c>system</c>, <c>en</c> or <c>zh-CN</c>), or <see langword="null"/> when it is not known.
+        /// </summary>
+        /// <remarks>
+        /// Passed to Servy.exe when this application launches it, so both applications show the same language
+        /// even when their settings files are not in the same folder.
+        /// </remarks>
+        string LanguageCode { get; }
+
+        /// <summary>
         /// Gets the window period in days for the logs tab search, loaded from configuration.
         /// This determines the default date range applied when retrieving service log entries.
         /// </summary>

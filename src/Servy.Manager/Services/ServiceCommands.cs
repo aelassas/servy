@@ -12,6 +12,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.UI.Validation;
 using System;
@@ -264,11 +265,13 @@ namespace Servy.Manager.Services
                 }
 #endif
                 var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+                // Hand Servy.exe this application's language, so it opens in the same one even when its settings file is elsewhere
+                var langFlag = string.IsNullOrWhiteSpace(_appConfig.LanguageCode) ? string.Empty : $" {StartupCulture.LanguageArg} {_appConfig.LanguageCode}";
 
                 var psi = new ProcessStartInfo
                 {
                     FileName = desktopPath,
-                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass argument to skip splash screen
+                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}{langFlag}", // Pass argument to skip splash screen
                     UseShellExecute = true,
                     WorkingDirectory = baseDir
                 };
@@ -303,7 +306,7 @@ namespace Servy.Manager.Services
                 }
 
                 // Pass argument to skip splash screen
-                psi.Arguments = $"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)}{forceFlag}";
+                psi.Arguments = $"\"{AppConfig.SkipSplashArgument}\" {Helper.Quote(service.Name)}{forceFlag}{langFlag}";
 
                 using (var process = StartProcess(psi))
                 {

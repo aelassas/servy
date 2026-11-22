@@ -21,5 +21,15 @@ namespace Servy.Config
         /// Gets a value indicating whether WPF software rendering is forced for the current session.
         /// </summary>
         bool ForceSoftwareRendering { get; }
+
+        /// <summary>
+        /// Gets the display language this application started in, as a <c>--lang</c> value
+        /// (<c>system</c>, <c>en</c> or <c>zh-CN</c>), or <see langword="null"/> when it is not known.
+        /// </summary>
+        /// <remarks>
+        /// Passed to Servy.Manager.exe when this application launches it, so both applications show the same language
+        /// even when their settings files are not in the same folder.
+        /// </remarks>
+        string LanguageCode { get; }
     }
 }
