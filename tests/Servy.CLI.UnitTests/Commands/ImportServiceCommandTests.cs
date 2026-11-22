@@ -154,6 +154,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "XML"), result.Message);
+
+            // Exact token, not It.IsAny: an upsert that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.UpsertAsync(dto, true, true, TestContext.Current.CancellationToken), Times.Once);
         }
 
         [Fact]
@@ -177,6 +180,9 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "JSON"), result.Message);
+
+            // Exact token, not It.IsAny: an upsert that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.UpsertAsync(dto, true, true, TestContext.Current.CancellationToken), Times.Once);
         }
 
         #endregion
@@ -472,6 +478,12 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal("OperationalService", captured!.ServiceName);
             Assert.Equal(realPath, captured.RealExePath);
             Assert.Equal(AppConfig.ServyServiceCLIExe, Path.GetFileName(captured.WrapperExePath));
+
+            // Exact token, not It.IsAny: each hand-over that passes default matches nothing.
+            var token = TestContext.Current.CancellationToken;
+            _serviceRepoMock.Verify(r => r.UpsertAsync(dto, true, true, token), Times.Once);
+            _serviceRepoMock.Verify(r => r.GetByNameAsync("OperationalService", true, token), Times.Once);
+            _serviceManager.Verify(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), token), Times.Once);
         }
 
         [Fact]
