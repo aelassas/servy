@@ -149,6 +149,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_XmlFormatTrack_ValidPayload_ReturnsOk()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             var realPath = @"C:\Windows\System32\notepad.exe";
             var xmlContent = "<ServiceDto><Name>XmlService</Name></ServiceDto>";
             File.WriteAllText(_legalXmlPath, xmlContent);
@@ -161,17 +162,23 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "XML"), result.Message);
+
+            // Exact token, not It.IsAny: an upsert that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.UpsertAsync(dto, true, true, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
         public async Task ExecuteAsync_JsonFormatTrack_ValidPayload_ReturnsOk()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             var realPath = @"C:\Windows\System32\cmd.exe";
             var jsonContent = "{\"Name\":\"JsonService\"}";
             File.WriteAllText(_legalJsonPath, jsonContent);
@@ -184,11 +191,16 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "JSON"), result.Message);
+
+            // Exact token, not It.IsAny: an upsert that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.UpsertAsync(dto, true, true, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         #endregion
@@ -437,6 +449,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_InstallationDomainSucceeds_ReturnsSuccessMessage()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             var realPath = @"C:\Windows\System32\notepad.exe";
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
@@ -454,7 +467,7 @@ namespace Servy.CLI.UnitTests.Commands
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -465,6 +478,14 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal("OperationalService", captured.ServiceName);
             Assert.Equal(realPath, captured.RealExePath);
             Assert.Equal(AppConfig.ServyServiceCLIExe, Path.GetFileName(captured.WrapperExePath));
+
+            // Exact token, not It.IsAny: each hand-over that passes default matches nothing.
+            var token = cts.Token;
+            _serviceRepoMock.Verify(r => r.UpsertAsync(dto, true, true, token), Times.Once);
+            _serviceRepoMock.Verify(r => r.GetByNameAsync("OperationalService", true, token), Times.Once);
+            _serviceManager.Verify(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
