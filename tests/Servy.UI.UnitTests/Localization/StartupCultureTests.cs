@@ -394,6 +394,32 @@ namespace Servy.UI.UnitTests.Localization
         }
 
         [Fact]
+        public void Apply_WithoutADelegateOrASystemCulture_SwitchesTheUiCultureToTheStoredLanguage()
+        {
+            // Arrange
+            File.WriteAllText(_configPath, "{\"Language\": \"en\"}");
+            var previousCurrent = CultureInfo.CurrentUICulture;
+            var previousDefault = CultureInfo.DefaultThreadCurrentUICulture;
+
+            try
+            {
+                // Act
+                var result = StartupCulture.Apply(_configPath, new[] { "MyService" });
+
+                // Assert
+                Assert.Equal(AppLanguage.English, result.Language);
+                Assert.Equal("en", result.Culture?.Name);
+                Assert.Same(result.Culture, CultureInfo.CurrentUICulture);
+                Assert.Same(result.Culture, CultureInfo.DefaultThreadCurrentUICulture);
+            }
+            finally
+            {
+                CultureInfo.CurrentUICulture = previousCurrent;
+                CultureInfo.DefaultThreadCurrentUICulture = previousDefault;
+            }
+        }
+
+        [Fact]
         public void Apply_OptionDiffersFromSettings_OptionWinsAndIsWrittenToTheSettingsFile()
         {
             // Arrange
