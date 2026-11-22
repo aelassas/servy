@@ -86,17 +86,23 @@ namespace Servy.CLI.UnitTests.Commands
         public override async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             const string serviceName = "TestService";
             var options = CreateValidOptions(serviceName);
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
-            var result = await ExecuteCommandAsync(Command, options);
+            var result = await ExecuteCommandAsync(Command, options, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
             MockServiceManager.Verify(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(sm => sm.UninstallServiceAsync(serviceName, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         /// <summary>

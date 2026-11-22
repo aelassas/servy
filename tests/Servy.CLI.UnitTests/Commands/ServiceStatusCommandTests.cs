@@ -33,11 +33,11 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override string ExpectedCommandName => "status";
 
-        protected override async Task<CommandResult> ExecuteCommandAsync(ServiceStatusCommand command, ServiceStatusOptions options)
+        protected override async Task<CommandResult> ExecuteCommandAsync(ServiceStatusCommand command, ServiceStatusOptions options, CancellationToken cancellationToken = default(CancellationToken))
         {
             // ServiceStatusCommand exposes a synchronous Execute, so call it directly rather than
             // the ExecuteAsync the base class reaches through dynamic dispatch.
-            return await Task.FromResult(command.Execute(options, CancellationToken.None));
+            return await Task.FromResult(command.Execute(options, cancellationToken));
         }
 
         protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
@@ -90,6 +90,7 @@ namespace Servy.CLI.UnitTests.Commands
         public override async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             const string serviceName = "MissingService";
             var options = CreateValidOptions(serviceName);
 
@@ -104,11 +105,16 @@ namespace Servy.CLI.UnitTests.Commands
             var expectedMessage = string.Format(Strings.Msg_ServiceStatusResult, serviceName, nameof(ServiceStatus.NotInstalled));
 
             // Act
-            var result = await ExecuteCommandAsync(Command, options);
+            var result = await ExecuteCommandAsync(Command, options, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(expectedMessage, result.Message);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(sm => sm.IsServiceInstalled(serviceName, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         /// <summary>
@@ -120,6 +126,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_StatusUnavailableForInstalledService_ReturnsUnknownToken()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             const string serviceName = "ProtectedService";
             var options = CreateValidOptions(serviceName);
 
@@ -133,11 +140,16 @@ namespace Servy.CLI.UnitTests.Commands
             var expectedMessage = string.Format(Strings.Msg_ServiceStatusResult, serviceName, nameof(ServiceStatus.Unknown));
 
             // Act
-            var result = await ExecuteCommandAsync(Command, options);
+            var result = await ExecuteCommandAsync(Command, options, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(expectedMessage, result.Message);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(sm => sm.GetServiceStatus(serviceName, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         /// <summary>

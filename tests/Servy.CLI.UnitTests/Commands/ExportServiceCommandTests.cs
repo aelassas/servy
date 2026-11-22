@@ -120,6 +120,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldExportXml_WhenConfigTypeIsXml()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             var filePath = Path.Combine(TempDirectory, "out.xml");
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("<xml>data</xml>");
@@ -127,7 +128,7 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = filePath };
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -138,12 +139,20 @@ namespace Servy.CLI.UnitTests.Commands
             // The existence check must not decrypt secrets it never reads (#5267)
             _serviceRepoMock.Verify(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>()), Times.Once);
             _serviceRepoMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Never);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            var token = cts.Token;
+            _serviceRepoMock.Verify(r => r.GetByNameAsync("svc", false, token), Times.Once);
+            _serviceRepoMock.Verify(r => r.ExportXmlAsync("svc", token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
         public async Task Execute_ShouldExportJson_WhenConfigTypeIsJson()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             var filePath = Path.Combine(TempDirectory, "out.json");
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", false, It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("{\"name\":\"svc\"}");
@@ -151,13 +160,18 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "json", Path = filePath };
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "JSON", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("{\"name\":\"svc\"}", File.ReadAllText(filePath));
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _serviceRepoMock.Verify(r => r.ExportJsonAsync("svc", cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Theory]

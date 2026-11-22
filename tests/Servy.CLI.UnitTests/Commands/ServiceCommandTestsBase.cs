@@ -149,12 +149,13 @@ namespace Servy.CLI.UnitTests.Commands
         /// </summary>
         /// <param name="command">The command instance to execute.</param>
         /// <param name="options">The options instance to pass to the command.</param>
+        /// <param name="cancellationToken">The token handed to the command; defaults to <see cref="CancellationToken.None"/>.</param>
         /// <returns>The resulting <see cref="CommandResult"/>.</returns>
-        protected virtual async Task<CommandResult> ExecuteCommandAsync(TCommand command, TOptions options)
+        protected virtual async Task<CommandResult> ExecuteCommandAsync(TCommand command, TOptions options, CancellationToken cancellationToken = default(CancellationToken))
         {
             dynamic cmd = command;
 
-            return await cmd.ExecuteAsync(options, CancellationToken.None);
+            return await cmd.ExecuteAsync(options, cancellationToken);
         }
 
         #endregion

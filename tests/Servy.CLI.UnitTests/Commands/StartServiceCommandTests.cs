@@ -57,17 +57,27 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ValidOptions_AsksTheManagerToLogTheSuccessfulStart()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             const string serviceName = "TestService";
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
-            var result = await ExecuteCommandAsync(Command, CreateValidOptions(serviceName));
+            var result = await ExecuteCommandAsync(Command, CreateValidOptions(serviceName), cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             MockServiceManager.Verify(
                 sm => sm.StartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()),
                 Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing. The installed check
+            // and the disabled pre-check are BaseCommand's, shared by every lifecycle verb, so they are pinned here once.
+            var token = cts.Token;
+            MockServiceManager.Verify(sm => sm.IsServiceInstalled(serviceName, token), Times.Once);
+            MockServiceManager.Verify(sm => sm.GetServiceStartupType(serviceName, token), Times.Once);
+            MockServiceManager.Verify(sm => sm.StartServiceAsync(serviceName, true, token), Times.Once);
+
+            cts.Dispose();
         }
     }
 }

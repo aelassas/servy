@@ -835,16 +835,22 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_WithoutDecryptFlag_ReadsTheRecordWithoutDecrypting()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             GivenService(MinimalDto());
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { ServiceName = ServiceName };
 
             // Act
-            await _command.ExecuteAsync(opts, CancellationToken.None);
+            await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             // The default masks every encrypted column, so the plaintext is never produced at all.
             _repository.Verify(r => r.GetByNameAsync(ServiceName, false, It.IsAny<CancellationToken>()), Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _repository.Verify(r => r.GetByNameAsync(ServiceName, false, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
@@ -1325,15 +1331,21 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task ExecuteAsync_SearchKeyword_IsPassedToTheRepository()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             GivenServices(MinimalDto("alpha"));
             GivenStatus(ServiceControllerStatus.Running);
             var opts = new ShowServiceOptions { SearchKeyword = "alph" };
 
             // Act
-            await _command.ExecuteAsync(opts, CancellationToken.None);
+            await _command.ExecuteAsync(opts, cts.Token);
 
             // Assert
             _repository.Verify(r => r.SearchAsync("alph", false, It.IsAny<CancellationToken>()), Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _repository.Verify(r => r.SearchAsync("alph", false, cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]

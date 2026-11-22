@@ -51,17 +51,25 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ValidOptions_AsksTheManagerToLogTheSuccessfulStop()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             const string serviceName = "TestService";
             SetupServiceManagerSuccess(MockServiceManager, serviceName);
 
             // Act
-            var result = await ExecuteCommandAsync(Command, CreateValidOptions(serviceName));
+            var result = await ExecuteCommandAsync(Command, CreateValidOptions(serviceName), cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             MockServiceManager.Verify(
                 sm => sm.StopServiceAsync(serviceName, true, It.IsAny<CancellationToken>()),
                 Times.Once);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            MockServiceManager.Verify(
+                sm => sm.StopServiceAsync(serviceName, true, cts.Token),
+                Times.Once);
+
+            cts.Dispose();
         }
     }
 }

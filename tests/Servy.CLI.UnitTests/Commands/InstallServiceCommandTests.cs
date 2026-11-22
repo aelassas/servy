@@ -71,6 +71,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
+            var cts = new CancellationTokenSource();
             var options = new CLI.Options.InstallServiceOptions
             {
                 ServiceName = "TestService",
@@ -83,11 +84,16 @@ namespace Servy.CLI.UnitTests.Commands
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await _command.ExecuteAsync(options, CancellationToken.None);
+            var result = await _command.ExecuteAsync(options, cts.Token);
 
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_InstallSuccess, options.ServiceName), result.Message);
+
+            // Exact token, not It.IsAny: a hand-over that passes default matches nothing.
+            _mockServiceManager.Verify(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), cts.Token), Times.Once);
+
+            cts.Dispose();
         }
 
         [Fact]
