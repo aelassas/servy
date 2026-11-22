@@ -986,6 +986,35 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(nameof(ServiceStatus.Unknown), RowValue(result.Message, CliStrings.Msg_Show_Label_Status));
+
+            // Exact token, not It.IsAny: the detail report hands the caller's token to the status ladder
+            // (ShowServiceCommand.cs 127 -> 173), and a hand-over that passes default matches nothing.
+            var token = TestContext.Current.CancellationToken;
+            _serviceManager.Verify(sm => sm.GetServiceStatus(ServiceName, token), Times.Once);
+            _serviceManager.Verify(sm => sm.IsServiceInstalled(ServiceName, token), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_NoName_StatusUnreadable_HandsTheCallerTokenToTheStatusLadder()
+        {
+            // Arrange
+            GivenServices(MinimalDto("alpha"));
+            _serviceManager.Setup(sm => sm.GetServiceStatus("alpha", It.IsAny<CancellationToken>())).Returns((ServiceControllerStatus?)null);
+            _serviceManager.Setup(sm => sm.IsServiceInstalled("alpha", It.IsAny<CancellationToken>())).Returns(true);
+            var opts = new ShowServiceOptions();
+            var token = TestContext.Current.CancellationToken;
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, token);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Contains(nameof(ServiceStatus.Unknown), result.Message);
+
+            // Exact token, not It.IsAny: the list hands the caller's token to the status ladder per row
+            // (ShowServiceCommand.cs 147 -> 366), and a hand-over that passes default matches nothing.
+            _serviceManager.Verify(sm => sm.GetServiceStatus("alpha", token), Times.Once);
+            _serviceManager.Verify(sm => sm.IsServiceInstalled("alpha", token), Times.Once);
         }
 
         [Fact]
