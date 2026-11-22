@@ -64,10 +64,10 @@
   <data name="Language_ChineseSimplified" xml:space="preserve">
     <value>简体中文</value>
   </data>
-  <data name="Msg_LanguageRestartRequired" xml:space="preserve">
-    <value>语言已设置为 {0}。下次启动 {1} 时生效。</value>
-  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>保存语言设置失败：{0}</value>
+  </data>
+  <data name="Msg_LanguageRestartConfirm" xml:space="preserve">
+    <value>{1} 将重新启动以将语言切换为 {0}。所有未保存的输入都将丢失。是否立即重新启动？</value>
   </data>
 </root>

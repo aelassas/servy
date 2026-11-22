@@ -80,6 +80,7 @@
     <Compile Include="Commands\RelayCommand.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Design\DesignTimeMocks.cs" />
+    <Compile Include="Helpers\AppRestarter.cs" />
     <Compile Include="Helpers\ClipboardHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Localization\AppLanguage.cs" />

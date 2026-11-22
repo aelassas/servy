@@ -198,6 +198,118 @@ namespace Servy.UI.UnitTests.Localization
 
         #endregion
 
+        #region Settings files of both applications
+
+        [Theory]
+        [InlineData("Servy.exe.config", "Servy.Manager.exe.config")]
+        [InlineData("Servy.Manager.exe.config", "Servy.exe.config")]
+        [InlineData("SERVY.EXE.CONFIG", "Servy.Manager.exe.config")]
+        public void GetSettingsFiles_KnownSettingsFile_ReturnsItFirstThenTheOtherApplicationsFile(string own, string other)
+        {
+            // Arrange
+            var ownPath = Path.Combine(_directory, own);
+
+            // Act
+            var files = StartupCulture.GetSettingsFiles(ownPath);
+
+            // Assert
+            Assert.Equal(new[] { ownPath, Path.Combine(_directory, other) }, files);
+        }
+
+        [Fact]
+        public void GetSettingsFiles_UnknownFileName_ReturnsOnlyThatFile()
+        {
+            // Arrange
+            var path = Path.Combine(_directory, "custom.config");
+
+            // Act
+            var files = StartupCulture.GetSettingsFiles(path);
+
+            // Assert
+            Assert.Equal(new[] { path }, files);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetSettingsFiles_NullOrBlankPath_ReturnsNoFile(string path)
+        {
+            // Act
+            var files = StartupCulture.GetSettingsFiles(path);
+
+            // Assert
+            Assert.Empty(files);
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_BothFilesWritable_StoresTheLanguageInBothAndKeepsTheirOtherKeys()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "Servy.Manager.exe.config");
+            File.WriteAllText(_configPath, Config("LogLevel", "DEBUG"));
+            File.WriteAllText(managerPath, Config("Language", "en", "RefreshIntervalInSeconds", "7"));
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.ChineseSimplified);
+
+            // Assert
+            Assert.Empty(failures);
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(managerPath));
+            Assert.Equal("DEBUG", ReadSettings(_configPath)["LogLevel"]);
+            Assert.Equal("7", ReadSettings(managerPath)["RefreshIntervalInSeconds"]);
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_OtherFileMissing_CreatesItSoBothApplicationsAgree()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "Servy.Manager.exe.config");
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.English);
+
+            // Assert
+            Assert.Empty(failures);
+            Assert.Equal(AppLanguage.English, StartupCulture.ReadLanguage(_configPath));
+            Assert.Equal(AppLanguage.English, StartupCulture.ReadLanguage(managerPath));
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_OtherFileUnwritable_WritesTheOwnFileAndReportsTheOtherByName()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "Servy.Manager.exe.config");
+            File.WriteAllText(managerPath, "<configuration><appSettings><add key=");
+
+            // Act
+            var failures = StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.ChineseSimplified);
+
+            // Assert
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+            Assert.StartsWith("Servy.Manager.exe.config: ", Assert.Single(failures));
+            Assert.Equal("<configuration><appSettings><add key=", File.ReadAllText(managerPath));
+        }
+
+        [Fact]
+        public void WriteLanguageToAll_OwnFileUnwritable_ThrowsAndLeavesTheOtherFileAlone()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "Servy.Manager.exe.config");
+            File.WriteAllText(_configPath, "<configuration><appSettings><add key=");
+            File.WriteAllText(managerPath, Config("Language", "en"));
+
+            // Act
+            var ex = Record.Exception(() => StartupCulture.WriteLanguageToAll(_configPath, AppLanguage.ChineseSimplified));
+
+            // Assert
+            Assert.NotNull(ex);
+            Assert.Equal(AppLanguage.English, StartupCulture.ReadLanguage(managerPath));
+        }
+
+        #endregion
+
         #region Command line
 
         [Theory]
@@ -326,11 +438,46 @@ namespace Servy.UI.UnitTests.Localization
         }
 
         [Fact]
+        public void Apply_Option_IsWrittenToTheSettingsFileOfTheOtherApplicationToo()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "Servy.Manager.exe.config");
+            File.WriteAllText(_configPath, Config("Language", "zh-CN"));
+            File.WriteAllText(managerPath, Config("Language", "en"));
+
+            // Act: the option equals the own setting, but the other application disagrees
+            var result = StartupCulture.Apply(_configPath, new[] { "--lang", "zh-CN" }, Culture("en-US"), _ => { });
+
+            // Assert
+            Assert.Equal(AppLanguage.ChineseSimplified, result.Language);
+            Assert.Null(result.SyncError);
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(managerPath));
+        }
+
+        [Fact]
+        public void Apply_OptionCannotBeWrittenForTheOtherApplication_ReportsThatFileAndStillApplies()
+        {
+            // Arrange
+            var managerPath = Path.Combine(_directory, "Servy.Manager.exe.config");
+            File.WriteAllText(managerPath, "<configuration><appSettings><add key=");
+            var applied = new List<CultureInfo>();
+
+            // Act
+            var result = StartupCulture.Apply(_configPath, new[] { "--lang=zh-CN" }, Culture("en-US"), applied.Add);
+
+            // Assert
+            Assert.Equal("zh-CN", Assert.Single(applied).Name);
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(_configPath));
+            Assert.Contains("Servy.Manager.exe.config", result.SyncError);
+        }
+
+        [Fact]
         public void Apply_OptionEqualsSettings_DoesNotRewriteTheFile()
         {
             // Arrange
             var content = Config("Language", "en");
             File.WriteAllText(_configPath, content);
+            File.WriteAllText(Path.Combine(_directory, "Servy.Manager.exe.config"), content);
 
             // Act
             var result = StartupCulture.Apply(_configPath, new[] { "--lang", "EN" }, Culture("en-US"), _ => { });

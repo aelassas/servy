@@ -2173,7 +2173,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SetLanguageCommand_DifferentLanguage_StoresItChecksItsMenuItemAndAnnouncesTheNextStart()
+        public async Task SetLanguageCommand_UserConfirmsTheRestart_StoresTheLanguageChecksItsMenuItemAndRestarts()
         {
             await Helper.RunOnSTA(async () =>
             {
@@ -2187,6 +2187,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var settingsPath = Path.Combine(directory, "Servy.Manager.exe.config");
                     File.WriteAllText(settingsPath, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<configuration>\r\n  <appSettings>\r\n    <add key=\"Language\" value=\"en\" />\r\n    <add key=\"RefreshIntervalInSeconds\" value=\"7\" />\r\n  </appSettings>\r\n</configuration>\r\n");
                     vm.LanguageSettingsPath = settingsPath;
+                    var restarts = 0;
+                    vm.RestartApplication = () => restarts++;
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(true);
                     var raised = new List<string>();
                     vm.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
 
@@ -2207,7 +2210,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
                     Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
                     Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
-                    _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(
+                    Assert.Equal(1, restarts);
+                    Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(Path.Combine(directory, "Servy.exe.config")));
+                    _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(
                         It.Is<string>(text => text.Contains(LanguageDisplayNames.For(AppLanguage.ChineseSimplified)) && text.Contains(UiAppConfig.Caption)),
                         UiAppConfig.Caption), Times.Once);
                 }

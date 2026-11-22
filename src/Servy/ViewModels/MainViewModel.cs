@@ -844,7 +844,7 @@ namespace Servy.ViewModels
 
         /// <summary>
         /// Gets the language stored in the settings file, read when the view model is created and updated by
-        /// <see cref="SetLanguageCommand"/>. It takes effect at the next start.
+        /// <see cref="SetLanguageCommand"/>, which restarts the application to apply it.
         /// </summary>
         public AppLanguage Language => _language;
 
@@ -852,6 +852,11 @@ namespace Servy.ViewModels
         /// Gets or sets the full path of the configuration file the language is stored in.
         /// </summary>
         public string LanguageSettingsPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the action that restarts the application after the language was changed.
+        /// </summary>
+        public Action RestartApplication { get; set; } = Servy.UI.Helpers.AppRestarter.Restart;
 
         /// <summary>
         /// Command to clear the form fields.
@@ -1364,12 +1369,12 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Stores the language chosen in the menu and tells the user it applies at the next start.
+        /// Asks the user to confirm the restart, then stores the language chosen in the menu and restarts.
         /// </summary>
         /// <param name="parameter">The <see cref="AppLanguage"/> value of the menu item.</param>
         private async Task SetLanguageAsync(object parameter)
         {
-            var selected = await LanguageSwitcher.ChangeAsync(LanguageSettingsPath, _language, parameter, _messageBoxService, UiAppConfig.Caption);
+            var selected = await LanguageSwitcher.ChangeAsync(LanguageSettingsPath, _language, parameter, _messageBoxService, UiAppConfig.Caption, RestartApplication);
 
             // Raised even when nothing changed: the clicked item is checkable and must fall back to the stored state
             _language = selected;

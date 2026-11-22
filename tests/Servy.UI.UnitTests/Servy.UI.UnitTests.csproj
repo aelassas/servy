@@ -127,6 +127,7 @@
     <Compile Include="Commands\RelayCommandTests.cs" />
     <Compile Include="Converters\InverseBooleanConverterTests.cs" />
     <Compile Include="Design\DesignTimeMocksTests.cs" />
+    <Compile Include="Helpers\AppRestarterTests.cs" />
     <Compile Include="Helpers\ClipboardHelperTests.cs" />
     <Compile Include="Localization\LanguageDisplayNamesTests.cs" />
     <Compile Include="Localization\LanguageSwitcherTests.cs" />
