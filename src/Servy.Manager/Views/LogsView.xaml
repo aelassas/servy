@@ -216,9 +216,9 @@
                        Height="16"
                        Margin="0,0,5,0"
                        AutomationProperties.Name="{x:Static resx:Strings.Automation_LogsLevelIcon_Name}" />
-                <TextBlock Text="{Binding Level}"
+                <TextBlock Text="{Binding Level, Converter={StaticResource LogLevelConverter}}"
                            VerticalAlignment="Center"
-                           AutomationProperties.Name="{Binding Level}" />
+                           AutomationProperties.Name="{Binding Level, Converter={StaticResource LogLevelConverter}}" />
               </StackPanel>
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
