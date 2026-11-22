@@ -1108,6 +1108,27 @@ namespace Servy.UnitTests.Services
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Strings.Msg_ServiceStopped, serviceName), UiAppConfig.Caption), Times.Once);
         }
 
+        [Fact]
+        public async Task UninstallService_ServiceDisabled_StillUninstallsWithoutDisabledError()
+        {
+            // Arrange
+            // A Disabled service can still be removed - Disabled governs starting, not removal - which is
+            // why UninstallService passes checkDisabled: false.
+            var sut = CreateSut();
+            var serviceName = "DisabledInstalledService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
+
+            // Act
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceDisabledError, UiAppConfig.Caption), Times.Never);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(serviceName, CancellationToken.None), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(string.Format(Resources.Strings.Msg_ServiceRemoved, serviceName), UiAppConfig.Caption), Times.Once);
+        }
+
         #endregion
 
         #region IsServiceNameValid Conditional Branch Tests
