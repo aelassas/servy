@@ -1487,7 +1487,7 @@ namespace Servy.Restarter.UnitTests
                 }
 
                 // Burn the whole recovery budget inside the poll, so the pre-wait check fails.
-                System.Threading.Thread.Sleep(TestTimeouts.ServiceRestarterMidLoopExpiryBurn);
+                Thread.Sleep(TestTimeouts.ServiceRestarterMidLoopExpiryBurn);
             });
 
             // Act
