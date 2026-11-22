@@ -342,7 +342,17 @@ namespace Servy.Core.IntegrationTests.NamedPipes
 
             // Assert: the client closed the connection without writing a request
             Assert.Contains($"process {Process.GetCurrentProcess().Id}", ex.Message);
-            Assert.Null(await served);
+            IpcRequestDto received = null;
+            try
+            {
+                received = await served;
+            }
+            catch (IOException)
+            {
+                // The client closed the pipe before the server's accept completed, so there was no request to read
+            }
+
+            Assert.Null(received);
         }
 
         [Fact(Timeout = IntegrationTestTimeoutMs)]
