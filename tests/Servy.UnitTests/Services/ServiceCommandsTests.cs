@@ -1239,6 +1239,8 @@ namespace Servy.UnitTests.Services
         public async Task ExportJsonConfig_ValidModel_WritesJsonAndDisplaysJsonSuccess()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var sut = CreateSut();
             var dto = new ServiceDto { Name = "JsonExportService", ExecutablePath = @"C:\Windows\System32\cmd.exe" };
             using (var target = new TempFile(".json"))
@@ -1250,7 +1252,7 @@ namespace Servy.UnitTests.Services
                     .ReturnsAsync(true);
 
                 // Act
-                await sut.ExportJsonConfigAsync("password", cancellationToken: CancellationToken.None);
+                await sut.ExportJsonConfigAsync("password", cancellationToken: cts.Token);
 
                 // Assert
                 var written = File.ReadAllText(target.Path);
@@ -1258,7 +1260,12 @@ namespace Servy.UnitTests.Services
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportJson_Success, UiAppConfig.Caption), Times.Once);
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportXml_Success, It.IsAny<string>()), Times.Never);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                // Exact token, not It.IsAny: ExportJsonConfigAsync hands the caller's token to ExportConfigAsync
+                // (ServiceCommands.cs:316) separately from its XML twin, and a hand-over that passes default matches nothing.
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, null, "password", false, cts.Token), Times.Once);
             }
+
+            cts.Dispose();
         }
 
         #endregion
@@ -1820,6 +1827,8 @@ namespace Servy.UnitTests.Services
         public async Task ImportJsonConfig_AllGatesPassed_InvokesBindServiceDtoToModel()
         {
             // Arrange
+            // A live source gives a token that differs from CancellationToken.None, so a dropped token is observable.
+            var cts = new CancellationTokenSource();
             var expectedDto = new ServiceDto { Name = "JsonBindService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
 
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
@@ -1846,16 +1855,19 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfigAsync(cancellationToken: CancellationToken.None);
+                await sut.ImportJsonConfigAsync(cancellationToken: cts.Token);
 
                 // Assert
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
                 Assert.NotNull(boundDtoResult);
                 Assert.Equal("JsonBindService", boundDtoResult.Name);
+                // Exact token, not It.IsAny: ImportJsonConfigAsync hands the caller's token to ImportConfigAsync (ServiceCommands.cs:334).
+                _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(expectedDto, null, null, true, cts.Token), Times.Once);
             }
             finally
             {
                 if (File.Exists(path)) File.Delete(path);
+                cts.Dispose();
             }
         }
 
