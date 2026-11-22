@@ -55,6 +55,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>("appConfig", () => new LogsViewModel(
                 null, _eventLogServiceMock.Object, _cursorServiceMock.Object, _mockMessageBoxService.Object));
         }
@@ -62,6 +63,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullEventLogService_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>("eventLogService", () => new LogsViewModel(
                 _appConfigurationMock.Object, null, _cursorServiceMock.Object, _mockMessageBoxService.Object));
         }
@@ -69,6 +71,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullCursorService_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>("cursorService", () => new LogsViewModel(
                 _appConfigurationMock.Object, _eventLogServiceMock.Object, null, _mockMessageBoxService.Object));
         }
@@ -76,6 +79,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>("messageBoxService", () => new LogsViewModel(
                 _appConfigurationMock.Object, _eventLogServiceMock.Object, _cursorServiceMock.Object, null));
         }

@@ -465,6 +465,7 @@ namespace Servy.Restarter.UnitTests
         [InlineData("C:\\Servy\\Servy.Service.Net48.exe")]
         public void IsServyWrapperImagePath_ServyWrapper_ReturnsTrue(string imagePath)
         {
+            // Act & Assert
             Assert.True(Program.IsServyWrapperImagePath(imagePath));
         }
 
@@ -482,6 +483,7 @@ namespace Servy.Restarter.UnitTests
         [InlineData("\"C:\\ProgramData\\Servy\\Servy.Service.exe\" \"svc\"")]
         public void IsServyWrapperImagePath_OtherExecutable_ReturnsFalse(string imagePath)
         {
+            // Act & Assert
             Assert.False(Program.IsServyWrapperImagePath(imagePath));
         }
 
