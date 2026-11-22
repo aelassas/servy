@@ -7,7 +7,6 @@ using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
-using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
 using System.Diagnostics;
@@ -17,6 +16,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Xunit;
 using Helper = Servy.Testing.Helper;
+using Servy.Manager.Resources;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
@@ -105,7 +105,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     // Verify basic structural state and clean empty graph collection initialization
-                    Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, dtViewModel.Pid);
                     Assert.NotNull(dtViewModel.CpuPointCollection);
                     Assert.NotNull(dtViewModel.RamPointCollection);
                     Assert.Empty(dtViewModel.CpuPointCollection);
@@ -216,9 +216,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     task.GetAwaiter().GetResult();
 
                     // Assert
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                    Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
-                    Assert.Equal(UiConstants.NotAvailable, vm.RamUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.CpuUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.RamUsage);
                     Assert.Empty(vm.CpuPointCollection);
                     Assert.Empty(vm.RamPointCollection);
                     Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));

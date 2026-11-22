@@ -145,6 +145,7 @@
     <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Helpers\RegexWrapperTests.cs" />
     <Compile Include="Helpers\ReservedNamesTests.cs" />
+    <Compile Include="Localization\ResourceLanguageTests.cs" />
     <Compile Include="Logging\ServiceLogPathsTests.cs" />
     <Compile Include="NamedPipes\NamedPipesServiceTests.cs" />
     <Compile Include="NamedPipes\ServyHostServerVerifierTests.cs" />

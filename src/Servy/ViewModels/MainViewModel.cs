@@ -9,6 +9,7 @@ using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Commands;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,7 @@ namespace Servy.ViewModels
         private readonly IHelpService _helpService;
         private bool _isManagerAppAvailable;
         private readonly IAppConfiguration _appConfig;
+        private AppLanguage _language;
         private bool _isBusy;
         private bool _disposed;
 
@@ -821,6 +823,37 @@ namespace Servy.ViewModels
         public IAsyncCommand OpenAboutDialogCommand { get; }
 
         /// <summary>
+        /// Command to switch the display language; the parameter is the <see cref="AppLanguage"/> value.
+        /// </summary>
+        public IAsyncCommand SetLanguageCommand { get; }
+
+        /// <summary>
+        /// Gets whether the language menu follows the Windows display language.
+        /// </summary>
+        public bool IsSystemLanguageSelected => _language == AppLanguage.System;
+
+        /// <summary>
+        /// Gets whether the language menu selects English.
+        /// </summary>
+        public bool IsEnglishSelected => _language == AppLanguage.English;
+
+        /// <summary>
+        /// Gets whether the language menu selects Simplified Chinese.
+        /// </summary>
+        public bool IsChineseSimplifiedSelected => _language == AppLanguage.ChineseSimplified;
+
+        /// <summary>
+        /// Gets the language stored in the settings file, read when the view model is created and updated by
+        /// <see cref="SetLanguageCommand"/>. It takes effect at the next start.
+        /// </summary>
+        public AppLanguage Language => _language;
+
+        /// <summary>
+        /// Gets or sets the full path of the configuration file the language is stored in.
+        /// </summary>
+        public string LanguageSettingsPath { get; set; } = string.Empty;
+
+        /// <summary>
         /// Command to clear the form fields.
         /// </summary>
         public IAsyncCommand ClearFormCommand { get; }
@@ -932,10 +965,14 @@ namespace Servy.ViewModels
             OpenRuntimeVariablesLinkCommand = new AsyncCommand(OpenRuntimeVariablesLinkAsync, name: nameof(OpenRuntimeVariablesLinkCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
+            SetLanguageCommand = new AsyncCommand(SetLanguageAsync, name: nameof(SetLanguageCommand));
 
             ShowRecoveryActionHelpCommand = new AsyncCommand(ShowRecoveryActionHelpAsync, name: nameof(ShowRecoveryActionHelpCommand));
 
             ClearFormCommand = new AsyncCommand(ClearFormAsync, _ => !IsBusy, name: nameof(ClearFormCommand));
+
+            LanguageSettingsPath = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile ?? string.Empty;
+            _language = StartupCulture.ReadLanguage(LanguageSettingsPath);
 
             IsManagerAppAvailable = _appConfig.IsManagerAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
@@ -1324,6 +1361,22 @@ namespace Servy.ViewModels
                     Helper.GetBuiltWithFramework(),
                     DateTime.Now.Year),
                 UiAppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Stores the language chosen in the menu and tells the user it applies at the next start.
+        /// </summary>
+        /// <param name="parameter">The <see cref="AppLanguage"/> value of the menu item.</param>
+        private async Task SetLanguageAsync(object parameter)
+        {
+            var selected = await LanguageSwitcher.ChangeAsync(LanguageSettingsPath, _language, parameter, _messageBoxService, UiAppConfig.Caption);
+
+            // Raised even when nothing changed: the clicked item is checkable and must fall back to the stored state
+            _language = selected;
+            OnPropertyChanged(nameof(Language));
+            OnPropertyChanged(nameof(IsSystemLanguageSelected));
+            OnPropertyChanged(nameof(IsEnglishSelected));
+            OnPropertyChanged(nameof(IsChineseSimplifiedSelected));
         }
 
         /// <summary>

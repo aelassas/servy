@@ -61,6 +61,33 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 简体中文 (Chinese, Simplified).
+        /// </summary>
+        public static string Language_ChineseSimplified {
+            get {
+                return ResourceManager.GetString("Language_ChineseSimplified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to English.
+        /// </summary>
+        public static string Language_English {
+            get {
+                return ResourceManager.GetString("Language_English", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Follow system language.
+        /// </summary>
+        public static string Language_System {
+            get {
+                return ResourceManager.GetString("Language_System", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to open the documentation. Please ensure a web browser is installed. Details: {0}.
         /// </summary>
         public static string Msg_DocumentationOpenFailed {
@@ -75,6 +102,24 @@ namespace Servy.UI.Resources {
         public static string Msg_FailedCopyingEmbeddedResource {
             get {
                 return ResourceManager.GetString("Msg_FailedCopyingEmbeddedResource", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The language is set to {0}. It applies the next time {1} starts..
+        /// </summary>
+        public static string Msg_LanguageRestartRequired {
+            get {
+                return ResourceManager.GetString("Msg_LanguageRestartRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to save the language setting: {0}.
+        /// </summary>
+        public static string Msg_LanguageSaveFailed {
+            get {
+                return ResourceManager.GetString("Msg_LanguageSaveFailed", resourceCulture);
             }
         }
         

@@ -20,6 +20,9 @@ namespace Servy.Service
         [ExcludeFromCodeCoverage]
         internal static void Main(string[] args)
         {
+            // Console output, logs and event log entries stay in English whatever the display language is
+            Servy.Core.Resources.ResourceLanguage.UseEnglish();
+
             _ = NativeMethods.FreeConsole();
             _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
 

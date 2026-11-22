@@ -129,6 +129,7 @@
     <Compile Include="Bootstrapping\AppBootstrapperIntegrationTests.cs" />
     <Compile Include="Helpers\ClipboardHelperIntegrationTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
+    <Compile Include="Localization\ResourceParityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\CursorServiceIntegrationTests.cs" />
     <Compile Include="Services\FileDialogServiceIntegrationTests.cs" />

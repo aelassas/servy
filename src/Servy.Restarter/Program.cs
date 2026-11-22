@@ -27,6 +27,9 @@ namespace Servy.Restarter
         /// <param name="args">Command line arguments. args[0] must be the service name, optional args[1] specifies the log directory.</param>
         public static void Main(string[] args)
         {
+            // Console output, logs and event log entries stay in English whatever the display language is
+            Servy.Core.Resources.ResourceLanguage.UseEnglish();
+
             Run(args, restarter: null);
         }
 

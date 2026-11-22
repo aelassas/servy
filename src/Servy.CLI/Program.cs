@@ -77,6 +77,9 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         internal static async Task<int> RunAsync(string[] args, ICliRuntime runtime)
         {
+            // Console output, logs and event log entries stay in English whatever the display language is
+            Servy.Core.Resources.ResourceLanguage.UseEnglish();
+
             // Record the System variables as they are at start, so one changed later is picked up (#7393)
             SystemEnvironmentHelper.InitializeForApplication();
 

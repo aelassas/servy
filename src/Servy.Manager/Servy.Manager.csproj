@@ -141,6 +141,7 @@
     <Compile Include="Models\MetricType.cs" />
     <Compile Include="Models\PerformanceService.cs" />
     <Compile Include="Models\ServiceItemBase.cs" />
+    <Compile Include="Utils\ColumnIds.cs" />
     <Compile Include="Utils\ColumnWidths.cs" />
     <Compile Include="Utils\DataGridColumnWidths.cs" />
     <Compile Include="Utils\HistoryResult.cs" />
@@ -244,6 +245,9 @@
     <EmbeddedResource Include="Resources\Strings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Strings.zh-CN.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
     </EmbeddedResource>
     <None Include="app.manifest" />
     <None Include="packages.config" />

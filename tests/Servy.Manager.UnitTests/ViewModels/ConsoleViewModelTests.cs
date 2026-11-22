@@ -10,7 +10,6 @@ using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
-using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -131,7 +130,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         // Assert
                         Assert.NotNull(dtViewModel.RawLines);
-                        Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                        Assert.Equal(Strings.Text_NotAvailable, dtViewModel.Pid);
                     }
                 }
             }, createApp: true);
@@ -158,7 +157,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.SelectedService = new ConsoleService { Name = "StoppedService", Pid = null };
 
                     // Assert
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
                 }
             });
         }
@@ -363,7 +362,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await task;
 
                     // Assert
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
                     Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
                 }
             });
@@ -394,7 +393,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Null(service.Pid);
                     Assert.Null(service.StdoutPath);
                     Assert.Null(service.StderrPath);
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
                 }
             });
         }

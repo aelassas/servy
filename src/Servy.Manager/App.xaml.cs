@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -29,6 +30,7 @@ using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Manager
 {
+    using Servy.UI.Localization;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -220,6 +222,11 @@ namespace Servy.Manager
         /// </remarks>
         public App()
         {
+            // Select the display language before the first resource string is read
+            StartupCulture.Apply(
+                AppDomain.CurrentDomain.SetupInformation.ConfigurationFile,
+                Environment.GetCommandLineArgs().Skip(1));
+
             var services = new ServiceCollection();
 
             // Register dependencies

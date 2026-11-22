@@ -173,6 +173,7 @@
     <Compile Include="ProcessManagement\SystemProcessWrapper.cs" />
     <Compile Include="RegexWrapper\IRegexWrapper.cs" />
     <Compile Include="RegexWrapper\RegexWrapper.cs" />
+    <Compile Include="Resources\ResourceLanguage.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -267,6 +268,9 @@
     <EmbeddedResource Include="Resources\Strings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Strings.zh-CN.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />

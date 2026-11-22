@@ -9,7 +9,6 @@ using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.UI;
 using Servy.UI.Commands;
-using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -575,7 +574,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void ResetConsole()
         {
-            Pid = UiConstants.NotAvailable;
+            Pid = Strings.Text_NotAvailable;
             _stdoutPath = null; // Clear these so Resume doesn't re-trigger
             _stderrPath = null;
 

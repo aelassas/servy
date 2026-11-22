@@ -165,6 +165,22 @@ try {
             }
         }
 
+        # 2-bis. Copy the translated satellite assemblies of the desktop applications, one folder per language.
+        # The CLI output is left out on purpose: the CLI stays in English.
+        $satelliteCultures = @("zh-CN")
+        foreach ($culture in $satelliteCultures) {
+            foreach ($dir in @($buildOutputDir, $managerBuildOutputDir)) {
+                $satelliteSource = Join-Path $dir $culture
+                if (-not (Test-Path -LiteralPath $satelliteSource)) {
+                    throw "Missing satellite assemblies required for package: $satelliteSource"
+                }
+
+                $satelliteDest = Join-Path $packageFolder $culture
+                [void](New-Item -Path $satelliteDest -ItemType Directory -Force)
+                Copy-Item (Join-Path $satelliteSource "*.resources.dll") -Destination $satelliteDest -Force
+            }
+        }
+
         # 3. Securely include Task Scheduler hooks
         $taskSchdSource = Join-Path $scriptDir "taskschd"
         if (Test-Path $taskSchdSource) {

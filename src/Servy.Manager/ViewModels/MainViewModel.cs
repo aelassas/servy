@@ -14,6 +14,7 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -40,6 +41,7 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
+        private AppLanguage _language;
         private readonly IHelpService _helpService;
         private IServiceCommands _serviceCommands;
 
@@ -236,6 +238,37 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public IAsyncCommand OpenAboutDialogCommand { get; }
 
+        /// <summary>
+        /// Command to switch the display language; the parameter is the <see cref="AppLanguage"/> value.
+        /// </summary>
+        public IAsyncCommand SetLanguageCommand { get; }
+
+        /// <summary>
+        /// Gets whether the language menu follows the Windows display language.
+        /// </summary>
+        public bool IsSystemLanguageSelected => _language == AppLanguage.System;
+
+        /// <summary>
+        /// Gets whether the language menu selects English.
+        /// </summary>
+        public bool IsEnglishSelected => _language == AppLanguage.English;
+
+        /// <summary>
+        /// Gets whether the language menu selects Simplified Chinese.
+        /// </summary>
+        public bool IsChineseSimplifiedSelected => _language == AppLanguage.ChineseSimplified;
+
+        /// <summary>
+        /// Gets the language stored in the settings file, read when the view model is created and updated by
+        /// <see cref="SetLanguageCommand"/>. It takes effect at the next start.
+        /// </summary>
+        public AppLanguage Language => _language;
+
+        /// <summary>
+        /// Gets or sets the full path of the configuration file the language is stored in.
+        /// </summary>
+        public string LanguageSettingsPath { get; set; } = string.Empty;
+
         #endregion
 
         #region Constructors
@@ -289,6 +322,9 @@ namespace Servy.Manager.ViewModels
             OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
+            SetLanguageCommand = new AsyncCommand(SetLanguageAsync, name: nameof(SetLanguageCommand));
+            LanguageSettingsPath = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile ?? string.Empty;
+            _language = StartupCulture.ReadLanguage(LanguageSettingsPath);
 
             IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
@@ -642,6 +678,22 @@ namespace Servy.Manager.ViewModels
                Helper.GetBuiltWithFramework(),
                DateTime.Now.Year),
                UiAppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Stores the language chosen in the menu and tells the user it applies at the next start.
+        /// </summary>
+        /// <param name="parameter">The <see cref="AppLanguage"/> value of the menu item.</param>
+        private async Task SetLanguageAsync(object parameter)
+        {
+            var selected = await LanguageSwitcher.ChangeAsync(LanguageSettingsPath, _language, parameter, _messageBoxService, UiAppConfig.Caption);
+
+            // Raised even when nothing changed: the clicked item is checkable and must fall back to the stored state
+            _language = selected;
+            OnPropertyChanged(nameof(Language));
+            OnPropertyChanged(nameof(IsSystemLanguageSelected));
+            OnPropertyChanged(nameof(IsEnglishSelected));
+            OnPropertyChanged(nameof(IsChineseSimplifiedSelected));
         }
 
         #endregion

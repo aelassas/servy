@@ -78,11 +78,15 @@
     <Compile Include="Commands\AsyncCommand.cs" />
     <Compile Include="Commands\IAsyncCommand.cs" />
     <Compile Include="Commands\RelayCommand.cs" />
-    <Compile Include="Constants\UiConstants.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Design\DesignTimeMocks.cs" />
     <Compile Include="Helpers\ClipboardHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
+    <Compile Include="Localization\AppLanguage.cs" />
+    <Compile Include="Localization\LanguageSwitcher.cs" />
+    <Compile Include="Localization\LocalizationCulture.cs" />
+    <Compile Include="Localization\StartupCulture.cs" />
+    <Compile Include="Localization\StartupCultureResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -108,6 +112,7 @@
     <Compile Include="Services\IFileDialogService.cs" />
     <Compile Include="Services\IHelpService.cs" />
     <Compile Include="Services\IMessageBoxService.cs" />
+    <Compile Include="Services\LanguageDisplayNames.cs" />
     <Compile Include="Validation\IServiceConfigurationValidator.cs" />
     <Compile Include="Validation\ServiceConfigurationValidator.cs" />
     <Compile Include="Services\IUiDispatcher.cs" />
@@ -126,6 +131,9 @@
     <EmbeddedResource Include="Resources\Strings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Strings.zh-CN.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="packages.config" />
