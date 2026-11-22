@@ -184,7 +184,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 Name = "IdentitySecurityService",
                 RunAsLocalSystem = false,
-                UserAccount = @".\test_svc",
+                UserAccount = @".\test_svc_account",
                 Password = "secret"
             };
 

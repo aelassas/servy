@@ -759,7 +759,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SeedSchemaInfo(conn, 8);
 
                 var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT COLLATE UNICODE_NOCASE NOT NULL", "UserAccount TEXT" };
-                var seedData = new Dictionary<string, string> { { "Name", "'AppWithPaddedAccount'" }, { "UserAccount", "'  domain\\svc_account  '" } };
+                var seedData = new Dictionary<string, string> { { "Name", "'AppWithPaddedAccount'" }, { "UserAccount", "'  domain\\test_svc_account  '" } };
 
                 var context = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "UserAccount");
 
@@ -783,7 +783,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal(4, rows.Count);
 
                 // Row 1: Space-padded UserAccount should be normalized/trimmed
-                Assert.Equal(@"domain\svc_account", (string)rows[0].UserAccount);
+                Assert.Equal(@"domain\test_svc_account", (string)rows[0].UserAccount);
 
                 // Row 2: Clean UserAccount remains unchanged
                 Assert.Equal(@"domain\clean_svc", (string)rows[1].UserAccount);

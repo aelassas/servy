@@ -521,11 +521,11 @@ namespace Servy.Core.UnitTests.Services
         public async Task InstallService_ExistingServiceWhoseRowAlreadyNamesTheNewAccount_RevokesTheAccountTheScmHad(string? rowAccount, string? username)
         {
             // Arrange: an import has already rewritten the row to the account being installed (reset to Local System,
-            // or replaced by another account), while the Service Control Manager still runs the service as .\test_svc
+            // or replaced by another account), while the Service Control Manager still runs the service as .\test_svc_account
             // (#8052). The row and the new account agree, so only the SCM read finds the account being left.
             ServiceManagerInstallArrange.ServiceAlreadyExists(_windowsServiceApi, _handles, ServiceName);
             ArrangeRecord(rowAccount);
-            ArrangeRegisteredAccount(@".\test_svc");
+            ArrangeRegisteredAccount(@".\test_svc_account");
             var options = CreateOptions(username);
 
             // Act
@@ -533,8 +533,8 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.True(result.IsSuccess);
-            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\test_svc"), Times.Once);
-            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\test_svc", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
+            _windowsServiceApi.Verify(x => x.RevokeServiceControlRights(It.IsAny<SafeServiceHandle>(), @".\test_svc_account"), Times.Once);
+            _hardener.Verify(h => h.RevokeIfUnusedAsync(@".\test_svc_account", ServiceName, _serviceRepository.Object, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

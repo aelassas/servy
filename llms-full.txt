@@ -5122,7 +5122,7 @@ For the .NET Framework 4.8 build, the scripts can be downloaded directly from th
 > **Post-Restore Action Required:**
 >
 > If any restored service ran under a custom account with a password
-> (`.\svc_account` or `DOMAIN\svc_account`) and did not already exist on the target, you must manually re-enter the logon
+> (`.\test_svc_account` or `DOMAIN\test_svc_account`) and did not already exist on the target, you must manually re-enter the logon
 > **username and password** via [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager), [`servy-cli`](https://github.com/aelassas/servy/wiki/Servy-CLI)
 > or the [PowerShell module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module). Reinstalling the service this way re-applies the hardening
 > automatically (v10.2+): the account gets write access to the log folder of the service (`logs\services\<ServiceName>\`) and access to the `Servy` service's named pipe,
@@ -6321,7 +6321,7 @@ $env:SERVY_PASSWORD = 'p@ssw0rd_123!'
 $env:SERVY_ENVIRONMENT_VARIABLES = 'API_KEY=secret_key_123;DB_URL=...'
 
 # Install the service (omit sensitive flags)
-servy-cli install --name="MySecureService" --path="C:\App\app.exe" --user="DOMAIN\svc_account"
+servy-cli install --name="MySecureService" --path="C:\App\app.exe" --user="DOMAIN\test_svc_account"
 
 # Clear variables immediately after use
 Remove-Item Env:SERVY_PASSWORD

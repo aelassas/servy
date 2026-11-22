@@ -1601,7 +1601,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         [Theory]
         [InlineData(@"NT SERVICE\Test")]
-        [InlineData(@".\test_svc")] // a local account stored with no password, configured with a blank one (#8050)
+        [InlineData(@".\test_svc_account")] // a local account stored with no password, configured with a blank one (#8050)
         public void ApplyRuntimeState_PreserveCredentialsWithIncomingLocalSystemBaselineOverStoredPasswordlessAccount_ResetsToLocalSystem(string account)
         {
             // Arrange: an import that named no account comes in as the LocalSystem baseline, over a stored account
@@ -1629,7 +1629,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             // Arrange: an account with a password is never exported, so its absence from the file says nothing and it is kept
             var incoming = new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null };
-            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @".\test_svc", Password = "stored_password" };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @".\test_svc_account", Password = "stored_password" };
 
             // Act
             TestReflection.InvokeNonPublicStatic(
@@ -1642,7 +1642,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.False(incoming.RunAsLocalSystem);
-            Assert.Equal(@".\test_svc", incoming.UserAccount);
+            Assert.Equal(@".\test_svc_account", incoming.UserAccount);
             Assert.Equal("stored_password", incoming.Password);
         }
 
@@ -1670,7 +1670,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         [Theory]
         [InlineData(false, @"NT SERVICE\Test", null)] // a stored passwordless account the file no longer names is reset (#8050)
-        [InlineData(false, @".\test_svc", null)]      // a local account stored with no password is reset too (#8050)
+        [InlineData(false, @".\test_svc_account", null)]      // a local account stored with no password is reset too (#8050)
         [InlineData(true, null, null)]                // a stored LocalSystem row
         [InlineData(true, @"DOMAIN\svc", "stored_password")] // a stored LocalSystem row with a leftover account
         [InlineData(false, @"DOMAIN\svc", null)]      // a kept account with no stored password

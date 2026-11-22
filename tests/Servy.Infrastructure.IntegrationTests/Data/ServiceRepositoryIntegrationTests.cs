@@ -543,9 +543,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [InlineData("json")]
         public async Task ImportWithoutUserAccount_OverStoredPasswordlessLocalAccount_ResetsStoredIdentityToLocalSystem(string format)
         {
-            // Arrange - a service stored with a passwordless local account, the way an import or install of .\test_svc leaves it (#8050)
+            // Arrange - a service stored with a passwordless local account, the way an import or install of .\test_svc_account leaves it (#8050)
             var name = "ResetIdentity_" + format;
-            var stored = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe", RunAsLocalSystem = false, UserAccount = @".\test_svc", Password = null };
+            var stored = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe", RunAsLocalSystem = false, UserAccount = @".\test_svc_account", Password = null };
             await _repository.UpsertAsync(stored, preserveExistingRuntimeState: false, preserveExistingCredentials: false, TestContext.Current.CancellationToken);
 
             // Act - re-import a configuration of the same service that names no account, as servy-cli import and the Manager do
@@ -567,7 +567,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange - a service stored with a passwordless local account, and a service manager that records what it installs
             var name = "ResetInstall_" + format;
-            var stored = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe", RunAsLocalSystem = false, UserAccount = @".\test_svc", Password = null };
+            var stored = new ServiceDto { Name = name, ExecutablePath = "C:\\reset.exe", RunAsLocalSystem = false, UserAccount = @".\test_svc_account", Password = null };
             await _repository.UpsertAsync(stored, preserveExistingRuntimeState: false, preserveExistingCredentials: false, TestContext.Current.CancellationToken);
 
             InstallServiceOptions? installed = null;
