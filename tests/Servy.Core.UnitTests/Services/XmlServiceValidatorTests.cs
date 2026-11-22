@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
@@ -10,8 +10,11 @@ using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Services
 {
+    [Collection(CultureTestCollection.Name)]
     public class XmlServiceValidatorTests
     {
+        private readonly EnglishCultureScope _culture = new EnglishCultureScope();
+
         private readonly XmlServiceValidator _validator;
         private readonly TestableXmlServiceValidator _testableValidator;
         private readonly Mock<IProcessHelper> _processHelperMock;

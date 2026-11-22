@@ -1,5 +1,6 @@
-using Moq;
+﻿using Moq;
 using Newtonsoft.Json;
+using Servy.Testing;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
@@ -10,8 +11,11 @@ using Servy.Core.Validation;
 
 namespace Servy.Core.UnitTests.Services
 {
+    [Collection(CultureTestCollection.Name)]
     public class JsonServiceValidatorTests
     {
+        private readonly EnglishCultureScope _culture = new EnglishCultureScope();
+
         private readonly JsonServiceValidator _validator;
         private readonly TestableJsonServiceValidator _testableValidator;
         private readonly Mock<IProcessHelper> _processHelperMock;

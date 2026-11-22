@@ -1,9 +1,9 @@
-using Moq;
+﻿using Moq;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
-using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.ComponentModel;
 using System.Windows.Threading;
@@ -493,13 +493,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             var vm = CreateViewModel();
 
-            // Branch 1: Null Service Item provided -> sets string text to N/A fallback string
+            // Branch 1: Null Service Item provided -> sets string text to the not available fallback string
             // Act
             vm.Pid = "InitialText";
             vm.ExposeSetPidText(null);
 
             // Assert
-            Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+            Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
 
             // Branch 2: Valid Service Item but null numerical PID property
             // Act
@@ -508,7 +508,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.ExposeSetPidText(itemWithNullPid);
 
             // Assert
-            Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+            Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
 
             // Branch 3: Valid Service Item containing active numeric tracking integer value
             // Act

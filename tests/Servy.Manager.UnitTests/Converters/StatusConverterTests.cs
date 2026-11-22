@@ -1,4 +1,4 @@
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
 using Servy.Testing;
@@ -38,11 +38,12 @@ namespace Servy.Manager.UnitTests.Converters
         [MemberData(nameof(StatusMappings))]
         public void Convert_ValidStatus_ReturnsLocalizedResource(ServiceStatus status, string resourceName)
         {
-            // Arrange: Extract the static public resource string value via direct reflection on Strings
-            var expected = typeof(Strings).GetProperty(resourceName)?.GetValue(null!);
+            // Arrange: read the expected value inside the English scope, because the converter reads the resources at call time
+            var expected = EnglishCulture.Run(() => typeof(Strings).GetProperty(resourceName)?.GetValue(null!));
 
             // Act
-            var result = _converter.Convert(status, typeof(string), null!, CultureInfo.InvariantCulture);
+            // The expected value comes from the resources, so the converter runs under the same culture.
+            var result = EnglishCulture.Run(() => _converter.Convert(status, typeof(string), null!, CultureInfo.InvariantCulture));
 
             // Assert
             Assert.Equal(expected, result);
@@ -106,14 +107,14 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void StatusMap_CoversEveryDeclaredServiceStatus()
         {
-            // Arrange: Extract the private static StatusMap directly from StatusConverter
-            var map = TestReflection.GetFieldStatic<Dictionary<ServiceStatus, Func<string>>>(typeof(StatusConverter), "StatusMap");
+            // Arrange: Extract the map the converter is built with from its base class
+            var map = TestReflection.GetField<Dictionary<ServiceStatus, Func<string>>>(new StatusConverter(), "_map");
 
             // Act
             var declared = Enum.GetValues(typeof(ServiceStatus)).Cast<ServiceStatus>().ToHashSet();
             var mapKeys = map.Keys.ToHashSet();
 
-            // Assert: Ensure bidirectional completeness between StatusMap keys and ServiceStatus enum values
+            // Assert: Ensure bidirectional completeness between the converter map keys and ServiceStatus enum values
             var unmappedValues = declared.Except(mapKeys).ToList();
             var extraValues = mapKeys.Except(declared).ToList();
 

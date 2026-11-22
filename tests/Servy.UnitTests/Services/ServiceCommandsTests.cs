@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Servy.Config;
 using Servy.Core.Common;
 using Servy.Core.DTOs;
@@ -917,6 +917,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 
             // Act
+            // The message is asserted in English, so the command runs under the English culture whatever Windows is set to.
             var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
@@ -1033,13 +1034,14 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken);
+            // The message is asserted in English, so the command runs under the English culture whatever Windows is set to.
+            var result = await EnglishCulture.RunAsync(async () => await sut.StartServiceAsync(serviceName, TestContext.Current.CancellationToken));
 
             // Assert
             Assert.True(result);
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync($"Service '{serviceName}' was started successfully.", UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(EnglishCulture.Run(() => $"Service '{serviceName}' was started successfully."), UiAppConfig.Caption), Times.Once);
             // The constructor defaults every verb to Success, so only a Verify can tell which verb, flag and token the SUT forwarded.
             _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, true, TestContext.Current.CancellationToken), Times.Once);
             _serviceManagerMock.Verify(m => m.IsServiceInstalled(serviceName, TestContext.Current.CancellationToken), Times.Once);

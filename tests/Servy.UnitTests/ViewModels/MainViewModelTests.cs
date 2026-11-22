@@ -6,6 +6,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Resources;
 using Servy.Services;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.ViewModels;
 using System.ComponentModel;
@@ -773,6 +774,38 @@ namespace Servy.UnitTests.ViewModels
 
             // Assert
             _serviceCommandsMock.Verify(m => m.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
+        #region Language Menu Tests
+
+        [Fact]
+        public async Task SetLanguage_SameAsCurrent_DoesNotAskForARestart()
+        {
+            // Act
+            await _viewModel.SetLanguageCommand.ExecuteAsync(_viewModel.Language);
+
+            // Assert
+            _messageBoxService.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SetLanguage_DifferentLanguage_AsksForARestart()
+        {
+            // Arrange
+            var target = _viewModel.Language == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+            _messageBoxService
+                .Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption))
+                .ReturnsAsync(false);
+
+            // Act
+            await _viewModel.SetLanguageCommand.ExecuteAsync(target);
+
+            // Assert
+            _messageBoxService.Verify(m => m.ShowConfirmAsync(
+                It.Is<string>(text => text.Contains(LanguageDisplayNames.For(target))),
+                UiAppConfig.Caption), Times.Once);
         }
 
         #endregion

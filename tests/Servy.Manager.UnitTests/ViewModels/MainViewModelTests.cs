@@ -2271,12 +2271,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task OpenAboutDialogCommand_ShouldDelegateToOpenAboutDialogAsync()
         {
-            await Helper.RunOnSTA(async () =>
+            // The dialog text is asserted in English, so the view model runs under the English culture whatever Windows is set to.
+            await EnglishCulture.RunAsync(() => Helper.RunOnSTA(async () =>
             {
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
-                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
                 // Act
                 RunOnPump(currentDispatcher, async () =>
@@ -2284,14 +2285,20 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await vm.OpenAboutDialogCommand.ExecuteAsync(null);
                 });
 
-                // Assert
+                // Assert: the command starts the dialog without awaiting it, so pump until the invocation has landed.
+                var deadline = DateTime.UtcNow.AddSeconds(5);
+                while (_helpServiceMock.Invocations.Count == 0 && DateTime.UtcNow < deadline)
+                {
+                    currentDispatcher.Invoke(DispatcherPriority.Background, () => { });
+                    await Task.Delay(10);
+                }
+
                 _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(
                     It.Is<string>(text =>
                         text.Contains("Servy Manager " + Core.Config.AppConfig.Version) &&
                         text.Contains("Built with " + Core.Helpers.Helper.GetBuiltWithFramework())),
                     UiAppConfig.Caption), Times.Once);
-                await Task.CompletedTask;
-            }, createApp: true);
+            }, createApp: true));
         }
 
         [Fact]

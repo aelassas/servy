@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -259,7 +259,8 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(protectedDir, "malicious_export.json");
 
             // Act & Assert
-            var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "data"));
+            // The warning text is English, so the guard runs under the English culture whatever Windows is set to.
+            var ex = Assert.Throws<SecurityException>(() => EnglishCulture.Run(() => InvokeSaveFile(filePath, "data")));
             Assert.Contains("Security Alert", ex.Message);
         }
 
@@ -280,7 +281,7 @@ namespace Servy.CLI.UnitTests.Commands
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act & Assert
-                var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "new config payload"));
+                var ex = Assert.Throws<SecurityException>(() => EnglishCulture.Run(() => InvokeSaveFile(filePath, "new config payload")));
 
                 // The guard's message identifies the failed file-handle validation
                 Assert.Contains("Security Alert: Target file handle validation was rejected", ex.Message);

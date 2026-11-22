@@ -1,13 +1,13 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
-using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Diagnostics;
 using System.Windows;
@@ -101,7 +101,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     // Verify basic structural state and clean empty graph collection initialization
-                    Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, dtViewModel.Pid);
                     Assert.NotNull(dtViewModel.CpuPointCollection);
                     Assert.NotNull(dtViewModel.RamPointCollection);
                     Assert.Empty(dtViewModel.CpuPointCollection);
@@ -212,9 +212,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     task.GetAwaiter().GetResult();
 
                     // Assert
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                    Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
-                    Assert.Equal(UiConstants.NotAvailable, vm.RamUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.CpuUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.RamUsage);
                     Assert.Empty(vm.CpuPointCollection);
                     Assert.Empty(vm.RamPointCollection);
                     Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
@@ -456,7 +456,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert - the running -> stopped transition clears the PID and greys out the Copy PID button
                     Assert.Null(mockService.Pid);
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.Pid);
                     Assert.False(vm.CopyPidCommand.CanExecute(null));
 
                     // The early return is what makes the branch falsifiable: no metrics are collected for a stopped service
@@ -581,7 +581,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert - the superseded selection's metrics never reach the new selection's graph
                     _mockProcessHelper.Verify(p => p.GetProcessTreeMetrics(It.IsAny<int>()), Times.Never);
-                    Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.CpuUsage);
                     Assert.Empty(vm.CpuPointCollection);
                 }
             }, createApp: true);
@@ -722,8 +722,8 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert - metrics collected for a cancelled monitoring session are discarded
                     _mockProcessHelper.Verify(p => p.FormatCpuUsage(It.IsAny<double>()), Times.Never);
-                    Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
-                    Assert.Equal(UiConstants.NotAvailable, vm.RamUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.CpuUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.RamUsage);
                     Assert.Empty(vm.CpuPointCollection);
                 }
             }, createApp: true);
@@ -764,8 +764,8 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert - the stale service's metrics are not written into the newly selected service's graph
                     _mockProcessHelper.Verify(p => p.FormatCpuUsage(It.IsAny<double>()), Times.Never);
-                    Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
-                    Assert.Equal(UiConstants.NotAvailable, vm.RamUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.CpuUsage);
+                    Assert.Equal(Strings.Text_NotAvailable, vm.RamUsage);
                     Assert.Empty(vm.CpuPointCollection);
                 }
             }, createApp: true);

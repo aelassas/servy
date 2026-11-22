@@ -1,6 +1,7 @@
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
+using Servy.Testing;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -17,30 +18,22 @@ namespace Servy.Manager.UnitTests.Converters
         [InlineData(EventLogLevel.All)]
         public void Convert_MappedLogLevelEnum_ReturnsLocalizedString(EventLogLevel level)
         {
-            // Act
-            var result = _converter.Convert(level, typeof(string), null, CultureInfo.InvariantCulture);
+            // Act
+            // Both the conversion and the expected value below read the resources, so they share the English culture.
+            var result = EnglishCulture.Run(() => _converter.Convert(level, typeof(string), null, CultureInfo.InvariantCulture));
+            var expectedResource = EnglishCulture.Run(() =>
+            {
+                switch (level)
+                {
+                    case EventLogLevel.Information: return Strings.LogLevel_Information;
+                    case EventLogLevel.Warning: return Strings.LogLevel_Warning;
+                    case EventLogLevel.Error: return Strings.LogLevel_Error;
+                    default: return Strings.LogLevel_All;
+                }
+            });
 
             // Assert
-            string expected;
-            switch (level)
-            {
-                case EventLogLevel.Information:
-                    expected = Strings.LogLevel_Information;
-                    break;
-                case EventLogLevel.Warning:
-                    expected = Strings.LogLevel_Warning;
-                    break;
-                case EventLogLevel.Error:
-                    expected = Strings.LogLevel_Error;
-                    break;
-                case EventLogLevel.All:
-                    expected = Strings.LogLevel_All;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(level));
-            }
-
-            Assert.Equal(expected, result);
+            Assert.Equal(expectedResource, result);
         }
 
         [Theory]

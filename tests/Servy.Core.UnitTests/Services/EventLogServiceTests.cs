@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -10,8 +10,11 @@ using System.Security;
 
 namespace Servy.Core.UnitTests.Services
 {
+    [Collection(CultureTestCollection.Name)]
     public class EventLogServiceTests
     {
+        private readonly EnglishCultureScope _culture = new EnglishCultureScope();
+
         private EventLogService CreateService(Mock<IEventLogReader> mockReader)
         {
             return new EventLogService(mockReader.Object);

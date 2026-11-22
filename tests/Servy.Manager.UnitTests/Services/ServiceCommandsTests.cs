@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Newtonsoft.Json;
 using Servy.Core.Common;
 using Servy.Core.Config;
@@ -992,7 +992,8 @@ namespace Servy.Manager.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
 
             // Act
-            var result = await sut.StartServiceAsync(service, cancellationToken: TestContext.Current.CancellationToken);
+            // The message is asserted in English, so the command runs under the English culture whatever Windows is set to.
+            var result = await EnglishCulture.RunAsync(async () => await sut.StartServiceAsync(service, cancellationToken: TestContext.Current.CancellationToken));
 
             // Assert
             Assert.True(result);
@@ -1002,7 +1003,7 @@ namespace Servy.Manager.UnitTests.Services
             Assert.Equal(ServiceStatus.Running, service.Status);
             // Expected text as a literal, not through the accessor: the SUT and this test now read the
             // same Servy.Core entry, so re-deriving it here would pass whatever that entry says.
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync($"Service '{service.Name}' was started successfully.", UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(EnglishCulture.Run(() => $"Service '{service.Name}' was started successfully."), UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]

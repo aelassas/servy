@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Config;
@@ -716,7 +716,8 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ShowServiceOptions { ServiceName = "telegraf" };
 
             // Act
-            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+            // The sample below is English, so the renderer runs under the English culture whatever Windows is set to.
+            var result = await EnglishCulture.RunAsync(async () => await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken));
 
             // Assert
             var expected = string.Join(Environment.NewLine, new[]

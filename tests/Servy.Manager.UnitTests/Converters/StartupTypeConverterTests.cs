@@ -1,4 +1,4 @@
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
 using Servy.Testing;
@@ -34,10 +34,11 @@ namespace Servy.Manager.UnitTests.Converters
         public void Convert_ValidEnum_ReturnsLocalizedResource(ServiceStartType input, string resourceName)
         {
             // Act
-            var result = _converter.Convert(input, typeof(string), null!, CultureInfo.InvariantCulture);
+            // The expected value comes from the resources, so the converter runs under the same culture.
+            var result = EnglishCulture.Run(() => _converter.Convert(input, typeof(string), null!, CultureInfo.InvariantCulture));
 
-            // Assert: Retrieve the expected value from the ResourceManager dynamically
-            var expected = typeof(Strings).GetProperty(resourceName)?.GetValue(null!);
+            // Assert: read the expected value inside the English scope, because the converter reads the resources at call time
+            var expected = EnglishCulture.Run(() => typeof(Strings).GetProperty(resourceName)?.GetValue(null!));
             Assert.Equal(expected, result);
         }
 
@@ -97,14 +98,14 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void StartupMap_CoversEveryDeclaredServiceStartType()
         {
-            // Arrange: Extract the private static StartupMap directly from StartupTypeConverter
-            var map = TestReflection.GetFieldStatic<Dictionary<ServiceStartType, Func<string>>>(typeof(StartupTypeConverter), "StartupMap");
+            // Arrange: Extract the map the converter is built with from its base class
+            var map = TestReflection.GetField<Dictionary<ServiceStartType, Func<string>>>(new StartupTypeConverter(), "_map");
 
             // Act
             var declared = Enum.GetValues(typeof(ServiceStartType)).Cast<ServiceStartType>().ToHashSet();
             var mapKeys = map.Keys.ToHashSet();
 
-            // Assert: Ensure bidirectional completeness between StartupMap keys and ServiceStartType enum values
+            // Assert: Ensure bidirectional completeness between the converter map keys and ServiceStartType enum values
             var unmappedValues = declared.Except(mapKeys).ToList();
             var extraValues = mapKeys.Except(declared).ToList();
 

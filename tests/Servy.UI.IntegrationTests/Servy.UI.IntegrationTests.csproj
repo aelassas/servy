@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
@@ -10,11 +10,29 @@
     <Product>Servy.UI.IntegrationTests</Product>
   </PropertyGroup>
 
+  <!--
+    Referencing the Servy and Servy.Manager WPF applications pulls their App.xaml and
+    MainWindow.xaml into the default compile glob (MSBuild globs content outside the project
+    directory), which turns this test project into a WinExe with several ApplicationDefinitions.
+    Removing their sources from the globs keeps the project a plain library while still
+    exposing their satellite resource assemblies to the resource parity tests.
+  -->
+  <ItemGroup>
+    <Compile Remove="..\..\src\**" />
+    <EmbeddedResource Remove="..\..\src\**" />
+    <None Remove="..\..\src\**" />
+    <Page Remove="..\..\src\**" />
+    <ApplicationDefinition Remove="..\..\src\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Moq" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy\Servy.csproj" />
+    <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\..\src\Servy.Manager\Servy.Manager.csproj" />
     <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
     <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>

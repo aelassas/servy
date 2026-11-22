@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
@@ -9,7 +9,6 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
-using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Windows.Threading;
 using Helper = Servy.Testing.Helper;
@@ -159,7 +158,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Assert
                         Assert.NotNull(dtViewModel.DependencyTree);
-                        Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                        Assert.Equal(Strings.Text_NotAvailable, dtViewModel.Pid);
                     }
                     finally
                     {
@@ -231,7 +230,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = new DependencyService { Name = "StoppedService", Pid = null };
 
                         // Assert
-                        Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
+                        Assert.Equal(Strings.Text_NotAvailable, viewModel.Pid);
                     }
                     finally
                     {
@@ -951,7 +950,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         task.GetAwaiter().GetResult();
 
                         // Assert
-                        Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
+                        Assert.Equal(Strings.Text_NotAvailable, viewModel.Pid);
                         var flagValue = TestReflection.GetField<bool>(viewModel, "_hadSelectedService");
                         Assert.False(flagValue);
                     }
@@ -986,7 +985,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         task.GetAwaiter().GetResult();
 
                         // Assert
-                        Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
+                        Assert.Equal(Strings.Text_NotAvailable, viewModel.Pid);
                         Assert.Null(mockService.Pid);
                     }
                     finally

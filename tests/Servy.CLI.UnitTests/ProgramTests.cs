@@ -1,4 +1,4 @@
-using Servy.CLI.Resources;
+﻿using Servy.CLI.Resources;
 using Servy.CLI.Runtime;
 using Servy.CLI.UnitTests.Runtime;
 using Servy.Core.Config;
@@ -72,10 +72,10 @@ namespace Servy.CLI.UnitTests
             string[] emptyArgs = Array.Empty<string>();
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(emptyArgs);
-            });
+            }));
 
             // Assert
             // Match against the actual verbs listed in the auto-generated help index screen
@@ -91,10 +91,10 @@ namespace Servy.CLI.UnitTests
             string[] args = { "--help" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(args);
-            });
+            }));
 
             // Assert
             // Match against the actual verbs listed in the auto-generated help index screen
@@ -116,7 +116,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "--help" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Success, result.Result);
@@ -136,10 +136,10 @@ namespace Servy.CLI.UnitTests
             var runtime = new CliRuntime(() => true);
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.RunAsync(args, runtime);
-            });
+            }));
 
             // Assert
             // The command fails before it reaches the start handler: the fixture overrides the key with a
@@ -178,10 +178,10 @@ namespace Servy.CLI.UnitTests
             string[] args = { "frobnicate" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(args);
-            });
+            }));
 
             // Assert
             // Before the guard existed a mistyped verb was silently coerced to the help verb and exited
@@ -207,10 +207,10 @@ namespace Servy.CLI.UnitTests
             string[] args = { "status", "-n", "NonExistentServiceForTestingOnly" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(args);
-            });
+            }));
 
             // Assert
             // Together with RunAsync_StatusVerb_TakesTheFastPathWithoutAnyBootstrapStep,
@@ -253,10 +253,10 @@ namespace Servy.CLI.UnitTests
             var runtime = new CliRuntime(() => true);
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.RunAsync(args, runtime);
-            });
+            }));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -274,10 +274,10 @@ namespace Servy.CLI.UnitTests
             string[] args = { "status" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () =>
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () =>
             {
                 return await Program.Main(args);
-            });
+            }));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -314,7 +314,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "show" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             // The CLI-specific sentinel 2, not a generic error, and nothing past the version check ran.
@@ -347,7 +347,7 @@ namespace Servy.CLI.UnitTests
             string[] args = commandLine.Split(' ');
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -366,7 +366,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "status", "-n", "NonExistentServiceForTestingOnly" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Success, result.Result);
@@ -384,7 +384,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "show", "--quiet" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -406,7 +406,7 @@ namespace Servy.CLI.UnitTests
             string[] args = commandLine.Split(' ');
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -426,11 +426,11 @@ namespace Servy.CLI.UnitTests
             string[] args = { "export", "-n", "NonExistentServiceForTestingOnly", "-c", "bogus", "-p", "C:\\NonExistent\\out.xml", "--quiet" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
-            Assert.Contains(string.Format(Strings.Msg_UnsupportedFileType, "bogus"), result.StdErr);
+            Assert.Contains(EnglishCulture.Run(() => string.Format(Strings.Msg_UnsupportedFileType, "bogus")), result.StdErr);
             Assert.Equal(new[] { nameof(ICliRuntime.IsSqliteVersionSafe), nameof(ICliRuntime.EnsureDatabase) }, runtime.Calls);
         }
 
@@ -443,11 +443,11 @@ namespace Servy.CLI.UnitTests
             string[] args = { "import", "-c", "bogus", "-p", "C:\\NonExistent\\in.xml" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
-            Assert.Contains(string.Format(Strings.Msg_UnsupportedFileType, "bogus"), result.StdErr);
+            Assert.Contains(EnglishCulture.Run(() => string.Format(Strings.Msg_UnsupportedFileType, "bogus")), result.StdErr);
             Assert.Equal(
                 new[]
                 {
@@ -468,7 +468,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "show" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             // The database step runs inside the animation, not before or after it.
@@ -493,7 +493,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "show" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -511,7 +511,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "show", "--quiet" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Error, result.Result);
@@ -527,7 +527,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "status", "-n", "NonExistentServiceForTestingOnly" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Success, result.Result);
@@ -547,7 +547,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { versionArgument };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Success, result.Result);
@@ -565,7 +565,7 @@ namespace Servy.CLI.UnitTests
             string[] args = { "STATUS", "-n", "NonExistentServiceForTestingOnly" };
 
             // Act
-            var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+            var result = await EnglishCulture.RunAsync(() => ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime)));
 
             // Assert
             Assert.Equal((int)CliExitCode.Success, result.Result);

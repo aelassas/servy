@@ -1,5 +1,6 @@
 using Newtonsoft.Json.Linq;
 using Servy.Testing;
+using Servy.UI.Localization;
 using System.Text;
 
 namespace Servy.Manager.UnitTests
@@ -188,6 +189,53 @@ namespace Servy.Manager.UnitTests
             // Assert
             Assert.Equal(new[] { new KeyValuePair<string, string>("LogsColumnWidths", string.Empty) }, changes);
         }
+
+        #region PersistLanguageSettings
+
+        [Fact]
+        public void PersistLanguageSettings_ExistingFile_WritesTheLanguageKeepsOtherKeysAndLeavesNoStagingFile()
+        {
+            // Arrange
+            var configPath = Path.Combine(_directory, "appsettings.manager.json");
+            File.WriteAllText(configPath, "{\"RefreshIntervalInSeconds\": 7}");
+
+            // Act
+            App.PersistLanguageSettings(configPath, AppLanguage.ChineseSimplified);
+
+            // Assert
+            var json = JObject.Parse(File.ReadAllText(configPath));
+            Assert.Equal("ChineseSimplified", json.Value<string>(StartupCulture.LanguageSettingKey));
+            Assert.Equal(7, json.Value<int>("RefreshIntervalInSeconds"));
+            Assert.Equal(AppLanguage.ChineseSimplified, StartupCulture.ReadLanguage(configPath));
+            Assert.Equal(new[] { configPath }, Directory.GetFiles(_directory));
+        }
+
+        [Fact]
+        public void PersistLanguageSettings_MissingFile_CreatesUtf8FileWithoutBomHoldingOnlyTheLanguage()
+        {
+            // Arrange
+            var configPath = Path.Combine(_directory, "appsettings.manager.json");
+
+            // Act
+            App.PersistLanguageSettings(configPath, AppLanguage.English);
+
+            // Assert
+            var bytes = File.ReadAllBytes(configPath);
+            Assert.NotEmpty(bytes);
+            Assert.NotEqual(0xEF, bytes[0]);
+            var json = JObject.Parse(Encoding.UTF8.GetString(bytes));
+            Assert.Equal("English", json.Value<string>(StartupCulture.LanguageSettingKey));
+            Assert.Single(json.Properties());
+            Assert.Equal(new[] { configPath }, Directory.GetFiles(_directory));
+        }
+
+        [Fact]
+        public void PersistLanguageSettings_NullOrBlankPath_Throws()
+        {
+            Assert.Throws<ArgumentException>(() => App.PersistLanguageSettings(string.Empty, AppLanguage.System));
+        }
+
+        #endregion
 
         [Fact]
         public void GetLayoutChanges_NothingChanged_ReturnsNoSettings()

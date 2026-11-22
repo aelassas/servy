@@ -1,8 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Servy.Core.Helpers;
 using Servy.Manager.Converters;
-using Servy.UI.Constants;
+using Servy.Manager.Resources;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -53,7 +53,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var result = converter.Convert(input!, typeof(string), null!, CultureInfo.InvariantCulture);
 
                 // Assert
-                Assert.Equal(UiConstants.NotAvailable, result);
+                Assert.Equal(Strings.Text_NotAvailable, result);
             }
         }
 
