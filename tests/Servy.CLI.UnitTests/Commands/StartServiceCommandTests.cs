@@ -67,7 +67,8 @@ namespace Servy.CLI.UnitTests.Commands
                 Times.Once);
 
             // Exact token, not It.IsAny: a hand-over that passes default matches nothing. The installed check
-            // and the disabled pre-check are BaseCommand's, shared by every lifecycle verb, so they are pinned here once.
+            // (Start, Stop and Restart; Uninstall skips it) and the disabled pre-check (Start and Restart) are
+            // BaseCommand's, so they are pinned here once.
             var token = TestContext.Current.CancellationToken;
             MockServiceManager.Verify(sm => sm.IsServiceInstalled(serviceName, token), Times.Once);
             MockServiceManager.Verify(sm => sm.GetServiceStartupType(serviceName, token), Times.Once);
