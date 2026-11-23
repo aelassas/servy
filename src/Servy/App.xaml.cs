@@ -11,6 +11,7 @@ using Servy.Core.Validation;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Bootstrapping;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.UI.Validation;
 using Servy.UI.Views;
@@ -25,7 +26,6 @@ using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy
 {
-    using Servy.UI.Localization;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
@@ -175,7 +175,7 @@ namespace Servy
                     // 2. Initialize UI Services
                     var fileDialogService = new FileDialogService();
                     var messageBoxService = new MessageBoxService(uiDispatcher);
-                    var helpService = new HelpService(messageBoxService, _bootstrapper.AppLifetimeToken);
+                    var helpService = new HelpService(messageBoxService, _bootstrapper!.AppLifetimeToken);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules, UiAppConfig.Caption);
 
