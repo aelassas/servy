@@ -20,6 +20,7 @@ namespace Servy.Core.Mappers
         /// </param>
         /// <param name="dto">The data transfer object to map.</param>
         /// <returns>A <see cref="Service"/> domain object representing the stored service.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> or <paramref name="serviceManager"/> is <see langword="null"/>.</exception>
         public static Service ToDomain(IServiceManager serviceManager, ServiceDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
