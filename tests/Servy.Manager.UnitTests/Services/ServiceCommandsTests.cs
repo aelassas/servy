@@ -311,18 +311,21 @@ namespace Servy.Manager.UnitTests.Services
             }
         }
 
-        [Fact]
-        public async Task ImportConfigAsync_FileDialogCancelled_ReturnsEarlySilently()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task ImportConfigAsync_FileDialogCancelled_ReturnsEarlySilently(string returnedPath)
         {
             // Arrange
             var sut = CreateServiceCommands();
-            _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(string.Empty);
+            _fileDialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string>())).Returns(returnedPath);
 
             // Act
             await sut.ImportJsonConfigAsync(CancellationToken.None);
 
             // Assert
             _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             Assert.False(_refreshCalled);
         }
 
@@ -2057,8 +2060,10 @@ namespace Servy.Manager.UnitTests.Services
             }
         }
 
-        [Fact]
-        public async Task ExportServiceToJsonAsync_FileDialogCancelled_ReturnsEarlyWithoutQueryingRepository()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task ExportServiceToJsonAsync_FileDialogCancelled_ReturnsEarlyWithoutQueryingRepository(string returnedPath)
         {
             // Arrange
             var sut = CreateServiceCommands();
@@ -2066,7 +2071,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // User clicks "Cancel" on the native Save File Dialog returning null or empty string
             _fileDialogServiceMock.Setup(f => f.SaveJson(Strings.SaveFileDialog_JsonTitle))
-                .Returns(string.Empty);
+                .Returns(returnedPath);
 
             // Act
             await sut.ExportServiceToJsonAsync(service, CancellationToken.None);
@@ -2074,6 +2079,7 @@ namespace Servy.Manager.UnitTests.Services
             // Assert
             _serviceRepositoryMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]

@@ -1197,18 +1197,21 @@ namespace Servy.UnitTests.Services
 
         #region ExportConfigAsync Format Conditional Branch and Catch Tests
 
-        [Fact]
-        public async Task ExportConfig_UserCancelsFileDialog_ExitsEarlyWithoutProcessing()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task ExportConfig_UserCancelsFileDialog_ExitsEarlyWithoutProcessing(string returnedPath)
         {
             // Arrange
             var sut = CreateSut();
-            _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(string.Empty);
+            _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(returnedPath);
 
             // Act
             await sut.ExportXmlConfigAsync("password", cancellationToken: CancellationToken.None);
 
             // Assert
             _modelToServiceDtoMock.Verify(m => m(), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -1711,18 +1714,21 @@ namespace Servy.UnitTests.Services
 
         #region ExportJsonConfig Branch and Catch Block Tests
 
-        [Fact]
-        public async Task ExportJsonConfig_UserCancelsFileDialog_ExitsEarlyWithoutProcessing()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task ExportJsonConfig_UserCancelsFileDialog_ExitsEarlyWithoutProcessing(string returnedPath)
         {
             // Arrange
             var sut = CreateSut();
-            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(string.Empty);
+            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(returnedPath);
 
             // Act
             await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: CancellationToken.None);
 
             // Assert
             _modelToServiceDtoMock.Verify(m => m(), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
