@@ -9,8 +9,9 @@ namespace Servy.Core.Helpers
     /// Provides unified parsing and validation primitives for service configuration values.
     /// </summary>
     /// <remarks>
-    /// This utility ensures consistent fallback behavior and centralized warning logging across the
-    /// UI, Manager, and repository mappers. It prevents silent configuration drift by explicitly
+    /// This utility ensures consistent fallback behavior and centralized warning logging across every
+    /// Servy process (the desktop apps, the CLI, the wrapper service, the Servy host and the restarter)
+    /// and the repository mappers. It prevents silent configuration drift by explicitly
     /// logging when a default value is substituted due to invalid input.
     /// </remarks>
     public static class ConfigParser
