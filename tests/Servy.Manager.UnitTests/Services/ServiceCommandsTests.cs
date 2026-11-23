@@ -1437,7 +1437,7 @@ namespace Servy.Manager.UnitTests.Services
                 await sut.ExportServiceToJsonAsync(service, token);
             }
 
-            // Assert - an exact token, not It.IsAny: ExportServiceToJsonAsync hands it to ExportServiceConfigAsync (ServiceCommands.cs:523).
+            // Assert - an exact token, not It.IsAny: ExportServiceToJsonAsync hands it to ExportServiceConfigAsync.
             _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, token), Times.Once);
 
             cts.Dispose();
@@ -1505,7 +1505,7 @@ namespace Servy.Manager.UnitTests.Services
                 await sut.ImportXmlConfigAsync(token);
             }
 
-            // Assert - an exact token, not It.IsAny: ImportXmlConfigAsync hands it to ImportConfigAsync (ServiceCommands.cs:534).
+            // Assert - an exact token, not It.IsAny: ImportXmlConfigAsync hands it to ImportConfigAsync.
             _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), true, token), Times.Once);
             _serviceRepositoryMock.Verify(r => r.GetByNameAsync(dto.Name, false, token), Times.Once);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, token), Times.Once);
