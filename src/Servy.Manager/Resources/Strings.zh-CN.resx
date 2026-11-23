@@ -504,7 +504,7 @@ Servy Manager 提供简洁的界面，用于管理由 Servy 创建的 Windows �
     <value>主菜单</value>
   </data>
   <data name="Automation_MainMenu_HelpText" xml:space="preserve">
-    <value>访问导入配置、配置设置、重置窗口布局和帮助等选项。</value>
+    <value>访问导入配置、配置设置、重置窗口布局、更改显示语言和帮助等选项。</value>
   </data>
 
   <data name="Automation_ImportMenu_HelpText" xml:space="preserve">

@@ -889,7 +889,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Access options to import configuration, configure settings, reset the window layout, and access help..
+        ///   Looks up a localized string similar to Access options to import configuration, configure settings, reset the window layout, change the display language, and access help..
         /// </summary>
         public static string Automation_MainMenu_HelpText {
             get {
