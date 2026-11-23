@@ -241,17 +241,31 @@ namespace Servy.Core.Security
                 // This ensures both the Session 0 SYSTEM service and the interactive user Manager share the exact same lock.
                 var mutexSecurity = new MutexSecurity();
 
-                // Both the Session 0 service account (LocalSystem, LocalService, NetworkService or a custom
-                // service account) and the elevated Manager/CLI are authenticated principals, so
-                // AuthenticatedUsers covers every participant while excluding ANONYMOUS LOGON and Guest,
-                // which Everyone would admit. The key files this lock guards are narrower: SecurityHelper.ApplySecurityRules
-                // grants only Administrators and Local System on them (plus the current user of an unelevated run).
-                var accessRule = new MutexAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
-                    MutexRights.Synchronize | MutexRights.Modify,
-                    AccessControlType.Allow);
+                // The only processes that build a key provider are the Session 0 Servy host service (Local System) and
+                // the elevated desktop apps and CLI (Administrators), the same two principals
+                // SecurityHelper.ApplySecurityRules grants on the key files this lock guards (#8172).
+                const MutexRights lockRights = MutexRights.Synchronize | MutexRights.Modify;
 
-                mutexSecurity.AddAccessRule(accessRule);
+                mutexSecurity.AddAccessRule(new MutexAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
+                    lockRights,
+                    AccessControlType.Allow));
+                mutexSecurity.AddAccessRule(new MutexAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                    lockRights,
+                    AccessControlType.Allow));
+
+                // Same exception as SecurityHelper.ApplySecurityRules step 4: an unelevated run keeps its own user.
+                if (!SecurityHelper.IsAdministrator())
+                {
+                    using (var identity = WindowsIdentity.GetCurrent())
+                    {
+                        if (identity.User != null)
+                        {
+                            mutexSecurity.AddAccessRule(new MutexAccessRule(identity.User, lockRights, AccessControlType.Allow));
+                        }
+                    }
+                }
 
                 // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
                 mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out bool createdNew, mutexSecurity);

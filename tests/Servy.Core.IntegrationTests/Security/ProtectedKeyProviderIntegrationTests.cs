@@ -2,6 +2,7 @@ using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Testing;
+using System.Reflection;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -697,6 +698,141 @@ namespace Servy.Core.IntegrationTests.Security
             // is what makes the next WaitOne on that name throw AbandonedMutexException.
             var mutex = new Mutex(false, KeyVaultMutexName(keyPath));
             mutex.WaitOne();
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Integration tests for the DACL <see cref="ProtectedKeyProvider.RunUnderMutex"/> applies to the
+    /// key-vault mutex (#8172): elevated runs admit only <c>Local System</c> and <c>BUILTIN\Administrators</c>,
+    /// while unelevated runs also admit the current user so non-elevated tests or tools do not lock themselves out.
+    /// The tests swap the process-global <see cref="SecurityHelper.IsAdministratorCore"/> seam, which is why they
+    /// join <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
+    /// </summary>
+    [Collection(CoreOsIntegrationCollection.Name)]
+    public class ProtectedKeyProviderMutexAclIntegrationTests : TempDirectoryTestBase
+    {
+        private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        private static readonly SecurityIdentifier AuthenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
+        private static readonly SecurityIdentifier EveryoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+
+        #region Mutex DACL Tests
+
+        [Fact]
+        public void RunUnderMutex_ElevatedRun_AdmitsOnlyLocalSystemAndAdministrators()
+        {
+            // Arrange
+            var keyPath = Path.Combine(TempDirectory, "mutex_acl_elevated.key");
+            var ivPath = Path.Combine(TempDirectory, "mutex_acl_elevated.iv");
+            var mutexName = KeyVaultMutexName(keyPath);
+
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => true;
+            List<MutexAccessRule>? capturedRules = null;
+
+            try
+            {
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    // Act: inspect the kernel mutex while RunUnderMutex holds it open
+                    InvokeRunUnderMutex(provider, keyPath, () =>
+                    {
+                        using (var opened = MutexAcl.OpenExisting(mutexName, MutexRights.ReadPermissions))
+                        {
+                            var security = opened.GetAccessControl();
+                            capturedRules = security
+                                .GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<MutexAccessRule>()
+                                .ToList();
+                        }
+                    });
+                }
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert
+            Assert.NotNull(capturedRules);
+            Assert.Contains(capturedRules, r => LocalSystemSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
+            Assert.Contains(capturedRules, r => AdministratorsSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
+            Assert.DoesNotContain(capturedRules, r => AuthenticatedUsersSid.Equals(r.IdentityReference));
+            Assert.DoesNotContain(capturedRules, r => EveryoneSid.Equals(r.IdentityReference));
+        }
+
+        [Fact]
+        public void RunUnderMutex_UnelevatedRun_AlsoAdmitsCurrentUserAndExcludesAuthenticatedUsers()
+        {
+            // Arrange
+            var keyPath = Path.Combine(TempDirectory, "mutex_acl_unelevated.key");
+            var ivPath = Path.Combine(TempDirectory, "mutex_acl_unelevated.iv");
+            var mutexName = KeyVaultMutexName(keyPath);
+
+            SecurityIdentifier currentUserSid;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUserSid = identity.User!;
+            }
+
+            var originalSeam = SecurityHelper.IsAdministratorCore;
+            SecurityHelper.IsAdministratorCore = () => false;
+            List<MutexAccessRule>? capturedRules = null;
+
+            try
+            {
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    // Act
+                    InvokeRunUnderMutex(provider, keyPath, () =>
+                    {
+                        using (var opened = MutexAcl.OpenExisting(mutexName, MutexRights.ReadPermissions))
+                        {
+                            var security = opened.GetAccessControl();
+                            capturedRules = security
+                                .GetAccessRules(true, false, typeof(SecurityIdentifier))
+                                .Cast<MutexAccessRule>()
+                                .ToList();
+                        }
+                    });
+                }
+            }
+            finally
+            {
+                SecurityHelper.IsAdministratorCore = originalSeam;
+            }
+
+            // Assert
+            Assert.NotNull(capturedRules);
+            Assert.Contains(capturedRules, r => LocalSystemSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
+            Assert.Contains(capturedRules, r => AdministratorsSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
+            Assert.Contains(capturedRules, r => currentUserSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
+            Assert.DoesNotContain(capturedRules, r => AuthenticatedUsersSid.Equals(r.IdentityReference));
+            Assert.DoesNotContain(capturedRules, r => EveryoneSid.Equals(r.IdentityReference));
+        }
+
+        #endregion
+
+        #region Test Lifecycle
+
+        private static void InvokeRunUnderMutex(ProtectedKeyProvider provider, string path, Action action)
+        {
+            var method = typeof(ProtectedKeyProvider).GetMethod("RunUnderMutex", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("ProtectedKeyProvider.RunUnderMutex was not found.");
+            method.Invoke(provider, new object[] { path, action });
+        }
+
+        private static string KeyVaultMutexName(string path)
+        {
+            uint stableHash = 2166136261;
+            foreach (char c in path.ToLowerInvariant())
+            {
+                stableHash = (stableHash ^ c) * 16777619;
+            }
+
+            return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
         }
 
         #endregion
