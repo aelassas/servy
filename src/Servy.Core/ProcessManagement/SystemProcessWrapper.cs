@@ -16,6 +16,7 @@ namespace Servy.Core.ProcessManagement
         /// Initializes a new instance of the <see cref="SystemProcessWrapper"/> class.
         /// </summary>
         /// <param name="process">The underlying managed <see cref="Process"/> instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="process"/> is <see langword="null"/>.</exception>
         public SystemProcessWrapper(Process process)
         {
             _process = process ?? throw new ArgumentNullException(nameof(process));
