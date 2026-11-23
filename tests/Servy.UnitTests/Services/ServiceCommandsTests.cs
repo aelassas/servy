@@ -1326,7 +1326,7 @@ namespace Servy.UnitTests.Services
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Resources.Strings.ExportXml_Success, It.IsAny<string>()), Times.Never);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
                 // Exact token, not It.IsAny: ExportJsonConfigAsync hands the caller's token to ExportConfigAsync
-                // (ServiceCommands.cs:316) separately from its XML twin, and a hand-over that passes default matches nothing.
+                // separately from its XML twin, and a hand-over that passes default matches nothing.
                 _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(dto, null, "password", false, cts.Token), Times.Once);
             }
 
@@ -1926,7 +1926,7 @@ namespace Servy.UnitTests.Services
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
                 Assert.NotNull(boundDtoResult);
                 Assert.Equal("JsonBindService", boundDtoResult.Name);
-                // Exact token, not It.IsAny: ImportJsonConfigAsync hands the caller's token to ImportConfigAsync (ServiceCommands.cs:334).
+                // Exact token, not It.IsAny: ImportJsonConfigAsync hands the caller's token to ImportConfigAsync.
                 _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(expectedDto, null, null, true, cts.Token), Times.Once);
             }
             finally
