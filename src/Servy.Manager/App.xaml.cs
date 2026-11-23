@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -13,6 +12,7 @@ using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.Manager.Views;
 using Servy.UI.Bootstrapping;
+using Servy.UI.Localization;
 using Servy.UI.Services;
 using Servy.UI.Validation;
 using Servy.UI.Views;
@@ -30,7 +30,6 @@ using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Manager
 {
-    using Servy.UI.Localization;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
