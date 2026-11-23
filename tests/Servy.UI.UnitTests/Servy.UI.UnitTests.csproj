@@ -121,6 +121,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bootstrapping\AppBootstrapperExitTests.cs" />
     <Compile Include="Bootstrapping\AppBootstrapperWarningsTests.cs" />
     <Compile Include="BulkObservableCollectionTests.cs" />
     <Compile Include="Commands\AsyncCommandTests.cs" />
