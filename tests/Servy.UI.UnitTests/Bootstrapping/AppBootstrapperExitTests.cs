@@ -12,7 +12,8 @@ namespace Servy.UI.UnitTests.Bootstrapping
 {
     /// <summary>
     /// Covers <see cref="AppBootstrapper.OnExit"/> giving the background start-up time to finish, so that the resume of the
-    /// Servy services paused for an update is not torn down with the process when the app exits during the pause (#8166).
+    /// Servy services paused for an update is not torn down with the process when the app exits during the pause (#8166),
+    /// and ending that wait as soon as the services have been resumed, without waiting for the rest of the start-up (#8171).
     /// </summary>
     public class AppBootstrapperExitTests
     {
