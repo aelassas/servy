@@ -1389,6 +1389,10 @@ namespace Servy.UnitTests.Services
 
                 // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowErrorAsync("Missing closing brace delimiter.", UiAppConfig.Caption), Times.Once);
+
+                // The format-validation arm is terminal: the validator's message is the only dialog, so the
+                // null-DTO arm below it never adds a second one.
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             }
             finally
             {
