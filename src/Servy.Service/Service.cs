@@ -2335,7 +2335,7 @@ namespace Servy.Service
 
         /// <summary>
         /// Dispatches the configured <see cref="RecoveryAction"/> by delegating to
-        /// the appropriate <see cref="IServiceHelper"/> method (restart service,
+        /// the appropriate <see cref="Helpers.IServiceHelper"/> method (restart service,
         /// restart child process, or reboot computer).
         /// </summary>
         /// <remarks>
