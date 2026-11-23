@@ -16,6 +16,8 @@ namespace Servy.Core.NamedPipes
         /// <param name="dto">The object instance to write.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the serialized object is larger than the frame limit for its type, which the reading end would refuse.</exception>
         Task WriteAsync<T>(Stream stream, T dto, CancellationToken ct = default);
 
@@ -26,6 +28,8 @@ namespace Servy.Core.NamedPipes
         /// <param name="stream">The source pipe stream.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous read operation, returning the deserialized object instance or <see langword="null"/> if the read fails or the stream ends.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         Task<T?> ReadAsync<T>(Stream stream, CancellationToken ct = default);
 
         /// <summary>
@@ -35,6 +39,8 @@ namespace Servy.Core.NamedPipes
         /// <param name="stream">The target pipe stream.</param>
         /// <param name="dto">The object instance to write.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the serialized object is larger than the frame limit for its type, which the reading end would refuse.</exception>
         /// <remarks>
         /// Kept as part of the public <c>Servy.Core</c> framing API for synchronous callers alongside
@@ -49,6 +55,8 @@ namespace Servy.Core.NamedPipes
         /// <param name="stream">The source pipe stream.</param>
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>The deserialized object instance or <see langword="null"/> if the read fails or the stream ends.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <remarks>
         /// Kept as part of the public <c>Servy.Core</c> framing API for synchronous callers alongside
         /// <see cref="ReadAsync{T}"/>, even though the built-in Servy host and client paths use the asynchronous pair.
@@ -62,6 +70,7 @@ namespace Servy.Core.NamedPipes
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>The service configuration or <see langword="null"/> if not found.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or blank.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
         /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
@@ -77,6 +86,7 @@ namespace Servy.Core.NamedPipes
         /// <returns>The number of records updated.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="state"/> is <see langword="null"/>.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
         /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
@@ -90,6 +100,7 @@ namespace Servy.Core.NamedPipes
         /// <param name="ct">A token to monitor for cancellation requests.</param>
         /// <returns>The counter and the time it was last written; 0 attempts and no time when the service has none.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or blank.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
         /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
@@ -106,6 +117,7 @@ namespace Servy.Core.NamedPipes
         /// <returns>The number of records updated.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="serviceName"/> is null or blank.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="attempts"/> is negative.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         /// <exception cref="TimeoutException">Thrown when the host cannot be reached or does not answer in time.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when the pipe is not served by the Servy host service.</exception>
         /// <exception cref="IOException">Thrown when the pipe breaks while the request is exchanged, for example because the host closed its end of the connection.</exception>
@@ -122,6 +134,7 @@ namespace Servy.Core.NamedPipes
         /// refused the request. The host also rebuilds the DACL from the database every time it starts, so a host that is
         /// not running picks the change up then.
         /// </returns>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="ct"/> is cancelled.</exception>
         Task<bool> RefreshPipeAccessAsync(CancellationToken ct = default);
     }
 }
