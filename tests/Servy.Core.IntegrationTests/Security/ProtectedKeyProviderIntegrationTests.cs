@@ -813,6 +813,47 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.DoesNotContain(capturedRules, r => EveryoneSid.Equals(r.IdentityReference));
         }
 
+        [Fact]
+        public void RunUnderMutex_SecondCallerWhileTheLockIsHeld_WaitsAndThenRuns()
+        {
+            // Arrange
+            var keyPath = Path.Combine(TempDirectory, "mutex_join.key");
+            var ivPath = Path.Combine(TempDirectory, "mutex_join.iv");
+            Exception? joinerError = null;
+            var joinerRan = false;
+
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // The access check is per open and per token, so one process is enough: the first caller creates the
+                // mutex with the production DACL and holds it while a second thread joins it (#8173).
+                var joiner = new Thread(() =>
+                {
+                    try { InvokeRunUnderMutex(provider, keyPath, () => joinerRan = true); }
+                    catch (Exception ex) { joinerError = ex; }
+                });
+
+                // Act: the first caller holds the mutex it created while the second caller arrives
+                InvokeRunUnderMutex(provider, keyPath, () =>
+                {
+                    joiner.Start();
+
+                    // Wait until the second caller is blocked on the lock, or has already failed
+                    var deadline = DateTime.UtcNow.AddSeconds(5);
+                    while (joiner.IsAlive && (joiner.ThreadState & ThreadState.WaitSleepJoin) == 0 && DateTime.UtcNow < deadline)
+                    {
+                        Thread.Sleep(10);
+                    }
+                });
+
+                var returned = joiner.Join(TimeSpan.FromSeconds(10));
+
+                // Assert
+                Assert.True(returned, "The second caller did not return after the lock was released");
+                Assert.Null(joinerError);
+                Assert.True(joinerRan);
+            }
+        }
+
         #endregion
 
         #region Test Lifecycle

@@ -269,7 +269,32 @@ namespace Servy.Core.Security
                 }
 
                 // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
-                mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out bool createdNew, mutexSecurity);
+                const int joinAttempts = 3;
+                Mutex? acquired = null;
+                bool createdNew = false;
+                for (int attempt = 1; acquired == null; attempt++)
+                {
+                    try
+                    {
+                        acquired = MutexAcl.Create(initiallyOwned: false, mutexName, out createdNew, mutexSecurity);
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        // Another Servy process created the mutex first. MutexAcl.Create asks for MutexRights.FullControl
+                        // even when it only joins, and the DACL above grants lockRights only, so join with exactly those rights (#8173).
+                        try
+                        {
+                            acquired = MutexAcl.OpenExisting(mutexName, lockRights);
+                            createdNew = false;
+                        }
+                        catch (WaitHandleCannotBeOpenedException) when (attempt < joinAttempts)
+                        {
+                            // The holder released and closed the mutex between the refused create and the open: create it again.
+                        }
+                    }
+                }
+
+                mutex = acquired;
 
                 if (!createdNew)
                 {
