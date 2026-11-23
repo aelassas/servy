@@ -1354,6 +1354,10 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny, out It.Ref<ServiceDto>.IsAny), Times.Never);
+
+            // The cancel guard returns before the wait cursor and before the path guard can show an "invalid path" dialog
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
