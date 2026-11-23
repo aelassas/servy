@@ -30,6 +30,7 @@ namespace Servy.Core.Services
         /// <exception cref="InvalidOperationException">
         /// The Windows Event Log service is unavailable, or the composed query was rejected.
         /// </exception>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="token"/> is cancelled.</exception>
         Task<IEnumerable<ServyEventLogEntry>> SearchAsync(EventLogLevel? level, DateTime? startDate, DateTime? endDate, string? keyword, CancellationToken token = default);
     }
 }
