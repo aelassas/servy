@@ -21,6 +21,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="dto">The service data transfer object to copy.</param>
         /// <returns>A new <see cref="ServiceDto"/> instance with identical property values.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="dto"/> is <see langword="null"/>.</exception>
         public static ServiceDto Clone(ServiceDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
