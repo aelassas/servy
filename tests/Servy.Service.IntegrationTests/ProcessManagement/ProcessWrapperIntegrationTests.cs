@@ -136,28 +136,45 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_And_WaitForExit_PopulatesPropertiesCorrectly()
         {
-            // Arrange
-            using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 42\""))
+            // A start can die within milliseconds with 0xC0000142 (STATUS_DLL_INIT_FAILED) while the runner is loaded;
+            // the window lasts a few seconds (see #7791, #8176), so a failed start is retried with a linear 500 ms * attempt
+            // backoff (about 14 s in total) before the exit code is asserted. Any other exit code is asserted at once.
+            const int StatusDllInitFailed = unchecked((int)0xC0000142);
+            const int maxAttempts = 8;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                // Act
-                bool started = wrapper.Start();
+                // Arrange
+                using (var wrapper = CreateWrapper(TestProcessStarter.PowerShellPath, "-NoProfile -Command \"exit 42\""))
+                {
+                    // Act
+                    bool started = wrapper.Start();
 
-                // Assert: Immediately verify active-handle properties while the process lifecycle is valid
-                Assert.True(started);
-                Assert.Equal("powershell.exe", Path.GetFileName(wrapper.StartInfo.FileName));
-                Assert.True(wrapper.EnableRaisingEvents); // Constructor default
-                Assert.InRange(wrapper.StartTime, DateTime.Now.AddMinutes(-1), DateTime.Now.AddMinutes(1));
+                    // Assert: Immediately verify active-handle properties while the process lifecycle is valid
+                    Assert.True(started);
+                    Assert.Equal("powershell.exe", Path.GetFileName(wrapper.StartInfo.FileName));
+                    Assert.True(wrapper.EnableRaisingEvents); // Constructor default
+                    Assert.InRange(wrapper.StartTime, DateTime.Now.AddMinutes(-1), DateTime.Now.AddMinutes(1));
 
-                string formatString = wrapper.Format();
-                Assert.Contains(wrapper.Id.ToString(), formatString);
+                    string formatString = wrapper.Format();
+                    Assert.Contains(wrapper.Id.ToString(), formatString);
 
-                // Act: Await terminal completion
-                bool exited = wrapper.WaitForExit(TestTimeouts.CiGenerousMs);
+                    // Act: Await terminal completion
+                    bool exited = wrapper.WaitForExit(TestTimeouts.CiGenerousMs);
 
-                // Assert: Verify post-execution properties
-                Assert.True(exited);
-                Assert.True(wrapper.HasExited);
-                Assert.Equal(42, wrapper.ExitCode);
+                    // Assert: Verify post-execution properties
+                    Assert.True(exited);
+                    Assert.True(wrapper.HasExited);
+
+                    if (wrapper.ExitCode == StatusDllInitFailed && attempt < maxAttempts)
+                    {
+                        Thread.Sleep(500 * attempt);
+                        continue;
+                    }
+
+                    Assert.Equal(42, wrapper.ExitCode);
+                    break;
+                }
             }
         }
 
@@ -623,10 +640,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 // powershell.exe can die within milliseconds on a loaded CI host (observed on net48 CI:
                 // "Failed to compile temporary test executable." after ~15 ms, no output), so retry the compile
-                // and keep each attempt's exit code and output for the assertion message.
+                // and keep each attempt's exit code and output for the assertion message. The failure (0xC0000142,
+                // STATUS_DLL_INIT_FAILED) comes in windows of a few seconds (three immediate attempts all failed within
+                // 49 ms on net48 CI, #8176), so attempts are spaced by a linear 500 ms * attempt backoff, 8 in all (about 14 s).
                 string compileLog = string.Empty;
+                const int maxCompileAttempts = 8;
 
-                for (int attempt = 1; attempt <= 3 && !File.Exists(tempExe); attempt++)
+                for (int attempt = 1; attempt <= maxCompileAttempts && !File.Exists(tempExe); attempt++)
                 {
                     var compilePsi = new ProcessStartInfo
                     {
@@ -644,6 +664,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         var stderr = compileProc.StandardError.ReadToEndAsync();
                         compileProc.WaitForExit();
                         compileLog += $" [attempt {attempt}: exit code {compileProc.ExitCode}; stdout: {stdout.Result}; stderr: {stderr.Result}]";
+                    }
+
+                    if (!File.Exists(tempExe) && attempt < maxCompileAttempts)
+                    {
+                        Thread.Sleep(500 * attempt);
                     }
                 }
 
