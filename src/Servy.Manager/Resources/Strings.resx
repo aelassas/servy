@@ -504,7 +504,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Main Menu</value>
   </data>
   <data name="Automation_MainMenu_HelpText" xml:space="preserve">
-    <value>Access options to import configuration, configure settings, reset the window layout, and access help.</value>
+    <value>Access options to import configuration, configure settings, reset the window layout, change the display language, and access help.</value>
   </data>
 
   <data name="Automation_ImportMenu_HelpText" xml:space="preserve">
