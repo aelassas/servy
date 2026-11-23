@@ -70,6 +70,7 @@ namespace Servy.Core.Domain
         /// Creates a new Service Domain.
         /// </summary>
         /// <param name="serviceManager">Service manager.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceManager"/> is <see langword="null"/>.</exception>
         public Service(IServiceManager serviceManager)
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
