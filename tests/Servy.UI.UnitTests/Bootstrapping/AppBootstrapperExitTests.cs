@@ -2,6 +2,8 @@ using Moq;
 using Servy.Core.Helpers;
 using Servy.Testing;
 using Servy.UI.Bootstrapping;
+using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -43,6 +45,35 @@ namespace Servy.UI.UnitTests.Bootstrapping
 
             // Assert
             Assert.Equal(TaskStatus.RanToCompletion, backgroundInit.Status);
+        }
+
+        [Fact]
+        public void OnExit_ServicesAlreadyResumed_DoesNotWaitForTheRestOfTheStartup()
+        {
+            // Arrange
+            var options = new BootstrapperOptions
+            {
+                LogFileName = "test.log",
+                ResourcesNamespace = "Servy.UI.Tests",
+                SecurityWarningTitle = "Admin Check Fail",
+                SecurityWarningMessage = "Requires Administrative elevation.",
+                SqliteVersionWarningTitle = "SQLite Core Fail",
+                SqliteVersionWarningMessageFormat = "Version {0} is required, found {1}"
+            };
+            var bootstrapper = new AppBootstrapper(options, new Mock<IProcessKiller>().Object);
+
+            // Like a start-up that resumed the paused services and now waits for the deferred warning dialog (#8171)
+            var neverEnds = new TaskCompletionSource<bool>();
+            TestReflection.SetField(bootstrapper, "_backgroundInitTask", neverEnds.Task);
+            var resumed = TestReflection.GetField<TaskCompletionSource<bool>>(bootstrapper, "_servicesResumed");
+            resumed.SetResult(true);
+            var stopwatch = Stopwatch.StartNew();
+
+            // Act
+            bootstrapper.OnExit(null);
+
+            // Assert
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"OnExit waited {stopwatch.Elapsed.TotalSeconds:0.0} s.");
         }
     }
 }
