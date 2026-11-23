@@ -573,7 +573,7 @@ begin
       if not WizardSilent then
         MsgBox(CustomMessage('UninstallPreviousFailed'), mbError, MB_OK);
 
-      Result := 'Failed to uninstall previous version';
+      Result := CustomMessage('UninstallPreviousFailed');
       Exit;
     end;
   end;
