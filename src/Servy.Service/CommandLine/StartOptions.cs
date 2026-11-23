@@ -153,7 +153,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
         /// </summary>
-        public bool AllowOverriddenRuntimeVars { get; set; }
+        public bool AllowOverriddenRuntimeVars { get; set; } = AppConfig.DefaultAllowOverriddenRuntimeVars;
 
         /// <summary>
         /// Gets or sets the full path to the pre-launch executable to run.
