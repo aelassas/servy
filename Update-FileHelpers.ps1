@@ -15,7 +15,7 @@ $script:BuildArtifactExclusionDirs = @('bin', 'obj', 'packages', '.git', '.vs', 
 $script:BuildArtifactExclusionRegex = '[\\/](bin|obj|packages|\.git|\.vs|node_modules|coveragereport|TestResults)[\\/]'
 
 # Centralized list of file extensions that require UTF-8 with BOM encoding (must agree with .editorconfig)
-$script:BomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config')
+$script:BomRequiredExtensions = @('.ps1', '.psm1', '.psd1', '.xml', '.config', '.iss', '.isl')
 
 # Bootstrap Get-FileEncoding.ps1
 $helperFile = "Get-FileEncoding.ps1"

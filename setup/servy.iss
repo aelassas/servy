@@ -1,4 +1,4 @@
-#define MyAppName "Servy"
+﻿#define MyAppName "Servy"
 #ifndef MyAppVersion
   #define MyAppVersion "1.0"  ; default if not provided
 #endif
@@ -69,29 +69,96 @@ SolidCompression=yes
 ArchitecturesAllowed=x64compatible arm64
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern dynamic
+ShowLanguageDialog=yes
 
 UsePreviousTasks=no
 UsePreviousSetupType=no
 AlwaysRestart=no
 
-[Messages]
-SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
-
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
+
+[Messages]
+english.SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
+chinesesimplified.SetupAppRunningError=安装程序检测到 %1 正在运行。%n%n请立即关闭它的所有实例，然后单击“确定”继续，或单击“取消”退出。
+
+[CustomMessages]
+; Types
+english.FullInstallation=Full installation
+chinesesimplified.FullInstallation=完整安装
+english.CustomInstallation=Custom installation
+chinesesimplified.CustomInstallation=自定义安装
+
+; Components
+english.InstallDesktopApp=Install Desktop App (%1)
+chinesesimplified.InstallDesktopApp=安装桌面应用程序 (%1)
+english.InstallCli=Install CLI (%1)
+chinesesimplified.InstallCli=安装命令行工具 (%1)
+english.InstallManagerApp=Install Manager App (%1)
+chinesesimplified.InstallManagerApp=安装管理器应用程序 (%1)
+
+; Tasks & Groups
+english.AdditionalOptions=Additional Options
+chinesesimplified.AdditionalOptions=附加选项
+english.AddServyToPath=Add Servy to PATH
+chinesesimplified.AddServyToPath=将 Servy 添加到环境变量 PATH
+
+; Icons & Run
+english.UninstallShortcut=Uninstall
+chinesesimplified.UninstallShortcut=卸载
+english.OpenDocumentation=Open Documentation
+chinesesimplified.OpenDocumentation=打开在线文档
+
+; [Code] Wizard & Error Messages
+english.SelectAtLeastOneComponent=You must select at least one component to continue.
+chinesesimplified.SelectAtLeastOneComponent=您必须至少选择一个组件才能继续。
+
+english.X64Net48OnArm64Warning=This version of Servy (servy-%1-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device.%n%nFor optimal performance, an ARM64-native version (servy-%1-arm64-installer.exe) is available.%n%nDo you want to continue with the x64 installation anyway?
+chinesesimplified.X64Net48OnArm64Warning=此版本的 Servy (servy-%1-net48-x64-installer.exe - .NET Framework 4.8) 专为 x64 系统构建，将在您的 ARM64 设备上通过 Windows x64 仿真运行。%n%n为获得最佳性能，我们提供了原生 ARM64 版本 (servy-%1-arm64-installer.exe)。%n%n是否仍要继续运行 x64 安装？
+
+english.DotNet48RequiredError=Servy requires .NET Framework 4.8 or newer. Please install it and try again.
+chinesesimplified.DotNet48RequiredError=Servy 需要 .NET Framework 4.8 或更高版本。请先安装该运行库，然后再试。
+
+english.UpgradePrompt=An older version of Servy is already installed. Would you like to upgrade to this newer version?
+chinesesimplified.UpgradePrompt=检测到已安装旧版本的 Servy。是否要升级到此新版本？
+
+english.DowngradePrompt=A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?
+chinesesimplified.DowngradePrompt=检测到已安装更新版本的 Servy。确定要降级到此旧版本吗？
+
+english.ReinstallPrompt=The same version of Servy is already installed. Would you like to reinstall it?
+chinesesimplified.ReinstallPrompt=检测到已安装相同版本的 Servy。是否要重新安装？
+
+english.CreateDataDirFailed=Failed to create the service data directory "%1".
+chinesesimplified.CreateDataDirFailed=无法创建服务数据目录“%1”。
+
+english.DataDirReparsePointWarning=The service data directory "%1" is a symbolic link or junction, so setup did not secure it. Replace it with a real directory.
+chinesesimplified.DataDirReparsePointWarning=服务数据目录“%1”是符号链接或联接点，因此安装程序未对其进行权限保护。请将其替换为真实目录。
+
+english.DataDirOwnershipFailed=Failed to give the ownership of the service data directory "%1" to Administrators.
+chinesesimplified.DataDirOwnershipFailed=无法将服务数据目录“%1”的所有权授予 Administrators 组。
+
+english.DataDirPermissionsFailed=Failed to secure the permissions of the service data directory "%1".
+chinesesimplified.DataDirPermissionsFailed=无法保护服务数据目录“%1”的访问权限。
+
+english.UninstallPreviousFailed=Failed to uninstall the previous version.
+chinesesimplified.UninstallPreviousFailed=卸载旧版本失败。
+
+english.UpdateSystemPathFailed=Failed to update system PATH environment variable.
+chinesesimplified.UpdateSystemPathFailed=更新系统 PATH 环境变量失败。
 
 [Types]
-Name: "full"; Description: "Full installation";
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
+Name: "full"; Description: "{cm:FullInstallation}";
+Name: "custom"; Description: "{cm:CustomInstallation}"; Flags: iscustom
 
 [Components]
-Name: "install_main_app"; Description: "Install Desktop App ({#MyAppExeName})"; Types: full
-Name: "install_cli"; Description: "Install CLI ({#CliExeName})"; Types: full custom
-Name: "install_manager"; Description: "Install Manager App ({#ManagerAppExeName})"; Types: full custom
+Name: "install_main_app"; Description: "{cm:InstallDesktopApp,{#MyAppExeName}}"; Types: full
+Name: "install_cli"; Description: "{cm:InstallCli,{#CliExeName}}"; Types: full custom
+Name: "install_manager"; Description: "{cm:InstallManagerApp,{#ManagerAppExeName}}"; Types: full custom
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
-Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone; Components: install_cli
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalOptions}"; Flags: checkablealone
+Name: "addpath"; Description: "{cm:AddServyToPath}"; GroupDescription: "{cm:AdditionalOptions}"; Flags: checkablealone; Components: install_cli
 
 [Files]
 Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
@@ -138,12 +205,12 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: 
 Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
 Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
-Name: "{commonprograms}\{#MyAppName}\Uninstall"; Filename: "{uninstallexe}";
+Name: "{commonprograms}\{#MyAppName}\{cm:UninstallShortcut}"; Filename: "{uninstallexe}";
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_main_app
 ; Filename: "{app}\{#ManagerAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(ManagerAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_manager
-Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall shellexec skipifsilent unchecked
+Filename: "{#DocsURL}"; Description: "{cm:OpenDocumentation}"; Flags: postinstall shellexec skipifsilent unchecked
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
@@ -167,7 +234,7 @@ begin
        not WizardIsComponentSelected('install_cli') and
        not WizardIsComponentSelected('install_manager') then
     begin
-      MsgBox('You must select at least one component to continue.', mbError, MB_OK);
+      MsgBox(CustomMessage('SelectAtLeastOneComponent'), mbError, MB_OK);
       Result := False;
     end;
   end;
@@ -339,9 +406,7 @@ begin
     else
     begin
       v := MsgBox(
-        'This version of Servy (servy-' + ExpandConstant('{#MyAppVersion}') + '-net48-x64-installer.exe - .NET Framework 4.8) is built for x64 systems and will run using Windows x64 emulation on your ARM64 device.' + #13#10#13#10 +
-        'For optimal performance, an ARM64-native version (servy-' + ExpandConstant('{#MyAppVersion}') + '-arm64-installer.exe) is available.' + #13#10#13#10 +
-        'Do you want to continue with the x64 installation anyway?',
+        FmtMessage(CustomMessage('X64Net48OnArm64Warning'), [ExpandConstant('{#MyAppVersion}')]),
         mbInformation,
         MB_YESNO
       );
@@ -363,7 +428,7 @@ begin
     else
     begin
       MsgBox(
-        'Servy requires .NET Framework 4.8 or newer. Please install it and try again.',
+        CustomMessage('DotNet48RequiredError'),
         mbCriticalError,
         MB_OK
       );
@@ -385,15 +450,15 @@ begin
 
     if installedVersion < myAppVersion then
     begin
-      message := 'An older version of Servy is already installed. Would you like to upgrade to this newer version?';
+      message := CustomMessage('UpgradePrompt');
     end
     else if installedVersion > myAppVersion then
     begin
-      message := 'A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?';
+      message := CustomMessage('DowngradePrompt');
     end
     else
     begin
-      message := 'The same version of Servy is already installed. Would you like to reinstall it?';
+      message := CustomMessage('ReinstallPrompt');
     end;
 
     if WizardSilent then
@@ -444,8 +509,8 @@ begin
 
   if not DirExists(DataDir) and not ForceDirectories(DataDir) then
   begin
-    Result := Format('Failed to create the service data directory "%s".', [DataDir]);
-    Log('ERROR: ' + Result);
+    Log(Format('ERROR: Failed to create the service data directory "%s".', [DataDir]));
+    Result := FmtMessage(CustomMessage('CreateDataDirFailed'), [DataDir]);
     Exit;
   end;
 
@@ -455,7 +520,7 @@ begin
   begin
     Log(Format('WARNING: the service data directory "%s" is a reparse point (symlink/junction); its owner and permissions were left unchanged.', [DataDir]));
     if not WizardSilent then
-      MsgBox(Format('The service data directory "%s" is a symbolic link or junction, so setup did not secure it. Replace it with a real directory.', [DataDir]), mbInformation, MB_OK);
+      MsgBox(FmtMessage(CustomMessage('DataDirReparsePointWarning'), [DataDir]), mbInformation, MB_OK);
     Exit;
   end;
 
@@ -464,7 +529,7 @@ begin
   Params := Format('"%s" /setowner *S-1-5-32-544', [DataDir]);
   if not RunIcacls(Params) then
   begin
-    Result := Format('Failed to give the ownership of the service data directory "%s" to Administrators.', [DataDir]);
+    Result := FmtMessage(CustomMessage('DataDirOwnershipFailed'), [DataDir]);
     Exit;
   end;
 
@@ -482,7 +547,7 @@ begin
   // cannot read their accounts, so it leaves the entries below this directory to them.
   Params := Format('"%s" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-1-0 /remove:g "%s"', [DataDir, ExpandConstant('{username}')]);
   if not RunIcacls(Params) then
-    Result := Format('Failed to secure the permissions of the service data directory "%s".', [DataDir]);
+    Result := FmtMessage(CustomMessage('DataDirPermissionsFailed'), [DataDir]);
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
@@ -506,7 +571,7 @@ begin
     if UnInstallOldVersion() <> 3 then
     begin
       if not WizardSilent then
-        MsgBox('Failed to uninstall the previous version.', mbError, MB_OK);
+        MsgBox(CustomMessage('UninstallPreviousFailed'), mbError, MB_OK);
 
       Result := 'Failed to uninstall previous version';
       Exit;
@@ -625,7 +690,7 @@ begin
       begin
         Log('Failed to update system PATH environment variable.');
         if not WizardSilent then
-          MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
+          MsgBox(CustomMessage('UpdateSystemPathFailed'), mbError, MB_OK);
         Exit;
       end;
 
