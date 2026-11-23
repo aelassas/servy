@@ -26,8 +26,9 @@ namespace Servy.Core.Security
 
         /// <summary>
         /// The protection scope used for DPAPI operations.
-        /// <see cref="DataProtectionScope.LocalMachine"/> is used to allow the service to access
-        /// the keys regardless of the specific user account context (e.g., SYSTEM vs. Service Account).
+        /// <see cref="DataProtectionScope.LocalMachine"/> is used so that every process that reads the keys can
+        /// unprotect them whatever account it runs under: the Servy host service runs as Local System, the
+        /// desktop apps and the CLI as an elevated administrator.
         /// </summary>
         private static readonly DataProtectionScope ProtectionScope = DataProtectionScope.LocalMachine;
 
@@ -417,7 +418,7 @@ namespace Servy.Core.Security
                         // 3. Automatic Migration: Re-save with the new machine-unique entropy.
                         // ROBUSTNESS: Ensure the upgrade save executes within the exact same global
                         // named mutex namespace as the generation loop. This prevents staging file (.tmp)
-                        // naming collisions when multiple services attempt to migrate the same legacy file concurrently.
+                        // naming collisions when several Servy processes attempt to migrate the same legacy file concurrently.
                         RunUnderMutex(path, () =>
                         {
                             SaveProtected(path, decryptedData);
