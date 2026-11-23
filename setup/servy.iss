@@ -211,7 +211,7 @@ Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeN
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Components: install_main_app
 
 Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
-Name: "{commondesktop}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
+Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
 Name: "{commonprograms}\{#MyAppName}\{cm:UninstallShortcut}"; Filename: "{uninstallexe}";
 
@@ -551,7 +551,7 @@ begin
       if not WizardSilent then
         MsgBox(CustomMessage('UninstallPreviousFailed'), mbError, MB_OK);
 
-      Result := 'Failed to uninstall previous version';
+      Result := CustomMessage('UninstallPreviousFailed');
       Exit;
     end;
   end;
