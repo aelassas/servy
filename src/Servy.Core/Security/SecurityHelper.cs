@@ -14,8 +14,9 @@ namespace Servy.Core.Security
         /// The well-known principals that stand for "any standard user" in Servy's DACL audits.
         /// </summary>
         /// <remarks>
-        /// Both the file hardening in <see cref="ServyExePermissionsHardener"/> and the install-directory audit in
-        /// <c>PathSecurityGuard.WarnIfDirectoryAclNotHardened</c> decide who counts as a standard user, so the
+        /// The file hardening in <see cref="ServyExePermissionsHardener"/>, the Servy host named-pipe DACL in
+        /// <see cref="ServyHostPipeSecurity"/> and the install-directory audit in
+        /// <c>PathSecurityGuard.WarnIfDirectoryAclNotHardened</c> all decide who counts as a standard user, so the
         /// set is declared once here rather than rebuilt at each site.
         /// </remarks>
         public static readonly IReadOnlyList<SecurityIdentifier> BroadUnprivilegedSids = new[]
