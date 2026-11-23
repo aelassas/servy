@@ -715,8 +715,6 @@ namespace Servy.Core.IntegrationTests.Security
     {
         private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-        private static readonly SecurityIdentifier AuthenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
-        private static readonly SecurityIdentifier EveryoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
 
         #region Mutex DACL Tests
 
@@ -757,10 +755,18 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Assert
             Assert.NotNull(capturedRules);
-            Assert.Contains(capturedRules, r => LocalSystemSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
-            Assert.Contains(capturedRules, r => AdministratorsSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
-            Assert.DoesNotContain(capturedRules, r => AuthenticatedUsersSid.Equals(r.IdentityReference));
-            Assert.DoesNotContain(capturedRules, r => EveryoneSid.Equals(r.IdentityReference));
+
+            // Every rule is an Allow rule carrying exactly the lock rights, so no principal can rewrite the DACL
+            Assert.All(capturedRules, r =>
+            {
+                Assert.Equal(AccessControlType.Allow, r.AccessControlType);
+                Assert.Equal(MutexRights.Synchronize | MutexRights.Modify, r.MutexRights);
+            });
+
+            // "Only": the principal set is exactly Local System and Administrators, nothing else and not the current user
+            Assert.Equal(
+                new[] { LocalSystemSid.Value, AdministratorsSid.Value }.OrderBy(v => v, StringComparer.Ordinal),
+                capturedRules.Select(r => r.IdentityReference.Value).OrderBy(v => v, StringComparer.Ordinal));
         }
 
         [Fact]
@@ -806,11 +812,19 @@ namespace Servy.Core.IntegrationTests.Security
 
             // Assert
             Assert.NotNull(capturedRules);
-            Assert.Contains(capturedRules, r => LocalSystemSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
-            Assert.Contains(capturedRules, r => AdministratorsSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
-            Assert.Contains(capturedRules, r => currentUserSid.Equals(r.IdentityReference) && r.AccessControlType == AccessControlType.Allow);
-            Assert.DoesNotContain(capturedRules, r => AuthenticatedUsersSid.Equals(r.IdentityReference));
-            Assert.DoesNotContain(capturedRules, r => EveryoneSid.Equals(r.IdentityReference));
+
+            // Every rule is an Allow rule carrying exactly the lock rights, so no principal can rewrite the DACL
+            Assert.All(capturedRules, r =>
+            {
+                Assert.Equal(AccessControlType.Allow, r.AccessControlType);
+                Assert.Equal(MutexRights.Synchronize | MutexRights.Modify, r.MutexRights);
+            });
+
+            // "Only": exactly Local System, Administrators and the current user; Distinct() because a runner's own
+            // account can be one of the first two, in which case the ACE for the same SID and rights is merged
+            Assert.Equal(
+                new[] { LocalSystemSid.Value, AdministratorsSid.Value, currentUserSid.Value }.Distinct().OrderBy(v => v, StringComparer.Ordinal),
+                capturedRules.Select(r => r.IdentityReference.Value).OrderBy(v => v, StringComparer.Ordinal));
         }
 
         [Fact]
