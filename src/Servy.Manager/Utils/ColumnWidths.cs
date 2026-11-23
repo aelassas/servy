@@ -11,8 +11,9 @@ namespace Servy.Manager.Utils
     /// </summary>
     /// <remarks>
     /// The persisted form is a comma-separated list of <c>Header=Width</c> entries, for example
-    /// <c>Name=180,Status=95.5</c>. A column is identified by its header text, as in the hidden-columns
-    /// settings, and the width is in device-independent units written with the invariant culture.
+    /// <c>Name=180,Status=95.5</c>. A column is identified by the English text of its header, whatever the display
+    /// language (see <see cref="ColumnIds"/>), as in the hidden-columns settings, and the width is in
+    /// device-independent units written with the invariant culture.
     /// </remarks>
     public static class ColumnWidths
     {
