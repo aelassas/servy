@@ -110,12 +110,13 @@ namespace Servy.Core.Helpers
             => ReadVariables(Registry.CurrentUser, UserEnvironmentSubKey);
 
         /// <summary>
-        /// Reads every value of a registry key as raw strings.
+        /// Reads the string values of a registry key, raw.
         /// </summary>
         /// <param name="hive">The hive the key is under.</param>
         /// <param name="subKey">The key path.</param>
         /// <returns>
-        /// The values by name (case-insensitive), or <see langword="null"/> when the key is missing or cannot be read.
+        /// The string values (<c>REG_SZ</c> and <c>REG_EXPAND_SZ</c>) by name (case-insensitive); the unnamed default
+        /// value and a value of any other type are left out. <see langword="null"/> when the key is missing or cannot be read.
         /// </returns>
         /// <remarks>
         /// <see cref="RegistryValueOptions.DoNotExpandEnvironmentNames"/> keeps a <c>REG_EXPAND_SZ</c> value raw, so it
