@@ -280,6 +280,7 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets a value indicating whether to allow overriding of protected runtime variables (e.g., <c>JAVA_HOME</c>, <c>JAVA_OPTS</c>, <c>CATALINA_OPTS</c>) by the service's environment variables.
+        /// Default is <see cref="AppConfig.DefaultAllowOverriddenRuntimeVars"/>.
         /// </summary>
         public bool AllowOverriddenRuntimeVars { get; set; } = AppConfig.DefaultAllowOverriddenRuntimeVars;
 
