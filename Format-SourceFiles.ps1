@@ -19,7 +19,7 @@
     Array of folder names to exclude from processing. Defaults to $script:BuildArtifactExclusionDirs from Update-FileHelpers.ps1.
 
 .PARAMETER ExcludeExtensions
-    Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite'.
+    Array of file extensions to exclude. Supports compound extensions like '.coverage.xml'. Defaults to '.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite', '.iss', '.isl'.
 
 .PARAMETER ExcludeFiles
     Array of specific filenames to exclude. Defaults to 'coverage.cobertura.xml'.
@@ -42,7 +42,7 @@ param(
     [string[]]$ExcludeDirs = $null,
 
     [Parameter(Mandatory = $false)]
-    [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite'),
+    [string[]]$ExcludeExtensions = @('.Designer.cs', '.exe', '.pdb', '.dll', '.7z', '.coverage.xml', '.ico', '.png', '.bmp', '.cur', '.res', '.snk', '.pfx', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.db', '.sqlite', '.iss', '.isl'),
 
     [Parameter(Mandatory = $false)]
     [string[]]$ExcludeFiles = @('coverage.cobertura.xml')
