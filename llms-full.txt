@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-22T20:40:53Z
+> Generated on: 2026-11-23T05:39:22Z
 
 ---
 
@@ -365,6 +365,7 @@ Manage services from PowerShell with the functions of the Servy module, which wr
    1. [Quick Install](https://github.com/aelassas/servy/wiki/Installation-Guide#quick-install)
    1. [Add Servy to PATH](https://github.com/aelassas/servy/wiki/Installation-Guide#add-servy-to-path)
    1. [Manual Installation](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-installation)
+   1. [Installer Language](https://github.com/aelassas/servy/wiki/Installation-Guide#installer-language)
    1. [Silent Install/Uninstall](https://github.com/aelassas/servy/wiki/Installation-Guide#silent-installuninstall)
       1. [Silent Install](https://github.com/aelassas/servy/wiki/Installation-Guide#silent-install)
       1. [Custom Silent Install](https://github.com/aelassas/servy/wiki/Installation-Guide#custom-silent-install)
@@ -435,6 +436,14 @@ The installer's **Add Servy to PATH** option (Additional Options page, enabled b
 1. [Download the latest release](https://github.com/aelassas/servy/releases/latest).
 2. Run the installer (you will be prompted for admin rights).
 3. Launch Servy from the Start Menu or desktop shortcut.
+
+### Installer Language
+
+Starting from v11.0, the installer is available in English and in Simplified Chinese (简体中文). When it starts, it asks for the setup language in a **Select Setup Language** dialog, with the language that matches the Windows display language preselected. The wizard pages, the component and option names, the installer's messages and the name of the **Uninstall** shortcut in the Start Menu use the selected language.
+
+The installer language does not set the display language of the Servy Desktop App or Servy Manager: each app follows its own `Language` setting, see [Display Language](Servy-Desktop-App#display-language).
+
+In a silent install the dialog is not shown. To choose the language, pass `/LANG=english` or `/LANG=chinesesimplified`.
 
 ### Silent Install/Uninstall
 
@@ -537,6 +546,7 @@ You can uninstall Servy silently (without any UI) from an administrator command 
 | `/SP-` | Disables the "This will install..." startup prompt. |
 | `/CLOSEAPPLICATIONS` | Asks running apps to close if they block files. |
 | `/NOCANCEL` | Prevents the user from canceling the installation. |
+| `/LANG=<language>` | Selects the installer language without showing the **Select Setup Language** dialog: `english` or `chinesesimplified`. |
 
 ## Security & Antivirus Setup
 
@@ -837,7 +847,7 @@ For detailed information about the post-stop hook, check out the [Pre-Stop & Pos
 
 ## Display Language
 
-The Servy Desktop App is available in English and in Simplified Chinese. The CLI, the PowerShell module, the log files, the Windows Event Log entries and the installer are in English only.
+The Servy Desktop App is available in English and in Simplified Chinese. The CLI, the PowerShell module, the log files and the Windows Event Log entries are in English only. The installer is available in English and in Simplified Chinese, see [Installer Language](Installation-Guide#installer-language).
 
 Choose the language in one of two ways:
 
@@ -958,7 +968,7 @@ Servy writes logs to both the Windows Event Log and log files in `%ProgramData%\
 
 ## Display Language
 
-Servy Manager is available in English and in Simplified Chinese. The CLI, the PowerShell module, the log files, the Windows Event Log entries and the installer are in English only.
+Servy Manager is available in English and in Simplified Chinese. The CLI, the PowerShell module, the log files and the Windows Event Log entries are in English only. The installer is available in English and in Simplified Chinese, see [Installer Language](Installation-Guide#installer-language).
 
 Choose the language in one of two ways:
 
