@@ -710,7 +710,7 @@ namespace Servy.Core.IntegrationTests.Security
     }
 
     /// <summary>
-    /// Integration tests for the DACL <see cref="ProtectedKeyProvider.RunUnderMutex"/> applies to the
+    /// Integration tests for the DACL the private <c>ProtectedKeyProvider.RunUnderMutex</c> applies to the
     /// key-vault mutex (#8172): elevated runs admit only <c>Local System</c> and <c>BUILTIN\Administrators</c>,
     /// while unelevated runs also admit the current user so non-elevated tests or tools do not lock themselves out.
     /// The tests swap the process-global <see cref="SecurityHelper.IsAdministratorCore"/> seam, which is why they
