@@ -42,6 +42,8 @@ namespace Servy.UI.Bootstrapping
         private RenamedEventHandler? _availabilityRenamedHandler;
         private ErrorEventHandler? _availabilityErrorHandler;
         private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
+        private Task? _backgroundInitTask;
+        private volatile ServyServicesPause? _servicesPause;
         private DateTime _lastErrorDialogShown = DateTime.MinValue;
         private string _lastErrorDialogSignature = string.Empty;
 
@@ -355,7 +357,8 @@ namespace Servy.UI.Bootstrapping
 
                 // 2. Background Initialization (I/O & DB)
                 // Note: Configuration and Logger settings are already loaded synchronously in OnStartup.
-                await Task.Run(async () =>
+                // Kept so that OnExit can give an in-flight resume of the paused Servy services time to finish (#8166)
+                _backgroundInitTask = Task.Run(async () =>
                 {
                     var stopwatch = Stopwatch.StartNew();
 
@@ -397,6 +400,7 @@ namespace Servy.UI.Bootstrapping
                     var deferredWarnings = new List<(string Message, string? Title)>();
 
                     var pause = new ServyServicesPause(sh, hostInstaller);
+                    _servicesPause = pause;
                     try
                     {
                         if (resourceHelper.IsExtractionNeeded(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe")
@@ -480,8 +484,9 @@ namespace Servy.UI.Bootstrapping
                     }
 
                     // The paused services are running again, so a dialog may now wait for the user: one dialog for
-                    // all the warnings, rather than one per warning in a row.
-                    if (deferredWarnings.Count > 0)
+                    // all the warnings, rather than one per warning in a row. Not once the application is exiting:
+                    // OnExit blocks the UI thread waiting for this task, so the dialog would only hold the exit up.
+                    if (deferredWarnings.Count > 0 && !ct.IsCancellationRequested)
                     {
                         var (message, title) = CombineWarnings(deferredWarnings);
                         await app.Dispatcher.InvokeAsync(() =>
@@ -512,6 +517,7 @@ namespace Servy.UI.Bootstrapping
                         }
                     }
                 });
+                await _backgroundInitTask;
 
                 // 3. Main Window Factory
                 if (_options.MainWindowFactoryAsync != null)
@@ -681,6 +687,9 @@ namespace Servy.UI.Bootstrapping
             // Phase 2 pass, so cleaning up before cancelling lets it attach a fresh watcher
             // that nothing will ever dispose.
             TryRun(() => _appLifetimeCts.Cancel(), nameof(_appLifetimeCts));
+            // The background start-up runs on a thread-pool thread, which the process exit tears down: give the resume of
+            // the Servy services it paused for an update time to finish, before the database it reads is disposed (#8166).
+            TryRun(WaitForBackgroundInitialization, nameof(_backgroundInitTask));
             TryRun(CleanupAvailabilityWatcher, nameof(CleanupAvailabilityWatcher));
             // Do NOT dispose _appLifetimeCts here - the async Task monitor (StartAvailabilityMonitorAsync)
             // still accesses .Token. Let the GC reclaim it after the monitor unwinds.
@@ -688,6 +697,31 @@ namespace Servy.UI.Bootstrapping
             TryRun(() => SecureData?.Dispose(), nameof(SecureData));
             TryRun(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));
             TryRun(() => DbContext?.Dispose(), nameof(DbContext));
+        }
+
+        /// <summary>
+        /// Blocks until the background start-up task has finished, so that the <c>finally</c> that starts the Servy services
+        /// paused for an update again is not torn down with the process, for at most the minimum start timeout of
+        /// <see cref="ServiceHelper.CalculateStartTimeout"/> per paused service plus one for the Servy host.
+        /// </summary>
+        /// <remarks>
+        /// Returns at once when the task has already completed. A faulted or cancelled task does not throw here: its
+        /// exception was already observed and logged by the start-up itself.
+        /// </remarks>
+        private void WaitForBackgroundInitialization()
+        {
+            var task = _backgroundInitTask;
+            if (task == null || task.IsCompleted)
+                return;
+
+            var pausedServices = _servicesPause?.StoppedServices.Count ?? 0;
+            var timeout = TimeSpan.FromSeconds((double)ServiceHelper.CalculateStartTimeout(null) * (pausedServices + 1));
+
+            if (Task.WaitAny(new[] { task }, timeout) < 0)
+            {
+                Logger.Warn($"The start-up work was still running {timeout.TotalSeconds:0} s after the application began to exit; " +
+                    "Servy services stopped for the update may not have been started again.");
+            }
         }
 
         /// <summary>
