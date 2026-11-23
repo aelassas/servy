@@ -16,6 +16,7 @@ namespace Servy.Core.RegexWrapper
         /// Initializes a new instance of the <see cref="RegexWrapper"/> class.
         /// </summary>
         /// <param name="regex">The <see cref="Regex"/> instance to wrap.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="regex"/> is <see langword="null"/>.</exception>
         public RegexWrapper(Regex regex)
         {
             _regex = regex ?? throw new ArgumentNullException(nameof(regex));
