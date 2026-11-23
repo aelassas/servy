@@ -38,6 +38,7 @@ namespace Servy.Core.ProcessManagement
         /// <summary>
         /// Immediately stops the associated process.
         /// </summary>
+        /// <exception cref="Win32Exception">Thrown when the process could not be terminated, for example because access to it is denied.</exception>
         void Kill();
 
         /// <summary>
