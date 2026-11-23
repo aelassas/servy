@@ -303,7 +303,7 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// Points to <c>aes_key.dat</c> within the <see cref="SecurityFolderPath"/>.
-        /// This path is used by all Servy components (UI, CLI, and Service) to locate the master encryption key.
+        /// This path is used by every Servy component that decrypts (the UI apps, the CLI and the Servy host service) to locate the master encryption key.
         /// It is not configurable: <see cref="CoreSettingsLoader.Load"/> always returns it and ignores a <c>Security:AESKeyFilePath</c> key in the application settings.
         /// </remarks>
         public static readonly string DefaultAESKeyPath = Path.Combine(SecurityFolderPath, AESKeyFileName);
@@ -1221,7 +1221,7 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// This value prevents application startup or installation deadlocks across multiple process
-        /// boundaries (e.g., CLI, Service Wrapper, and UI Manager) by throwing a deterministic
+        /// boundaries (e.g., CLI, Servy host service, and UI Manager) by throwing a deterministic
         /// <see cref="TimeoutException"/> if the key material lock cannot be acquired within 30 seconds.
         /// </remarks>
         public const int KeyProviderMutexTimeoutSeconds = 30;
