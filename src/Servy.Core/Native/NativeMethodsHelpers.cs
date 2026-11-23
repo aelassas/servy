@@ -218,6 +218,7 @@ namespace Servy.Core.Native
         /// </summary>
         /// <param name="fs">The open file stream.</param>
         /// <returns>A populated identity structure. Check <see cref="FileIdentity.IsValidHandleInfo"/> for success state.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="fs"/> is <see langword="null"/>.</exception>
         public static FileIdentity GetFileIdentity(FileStream fs)
         {
             if (fs == null) throw new ArgumentNullException(nameof(fs));
