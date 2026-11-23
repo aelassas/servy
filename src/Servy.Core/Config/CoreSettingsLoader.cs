@@ -5,8 +5,9 @@ namespace Servy.Core.Config
 {
     /// <summary>
     /// Provides the core data-layer settings (connection string and AES key/IV file paths) that every
-    /// Servy process (Desktop, Manager, Service, Host, Restarter, CLI) needs before it can open its
+    /// Servy process with a data layer (Desktop, Manager, Host, CLI) needs before it can open its
     /// <see cref="Servy.Core.Data.IAppDbContext"/> or construct its <see cref="Servy.Core.Security.ProtectedKeyProvider"/>.
+    /// The wrapper service and the restarter open neither and only call <see cref="WarnAboutIgnoredSettings"/>.
     /// </summary>
     /// <remarks>
     /// These settings are read-only: they are always the <see cref="AppConfig"/> defaults under
@@ -19,7 +20,7 @@ namespace Servy.Core.Config
     public static class CoreSettingsLoader
     {
         /// <summary>
-        /// The core data-layer settings required by every Servy process.
+        /// The core data-layer settings required by every Servy process that opens the database.
         /// </summary>
         /// <param name="ConnectionString">The SQLite connection string used to open <see cref="Servy.Core.Data.IAppDbContext"/>.</param>
         /// <param name="AESKeyFilePath">The file path of the AES key used by <see cref="Servy.Core.Security.ProtectedKeyProvider"/>.</param>
