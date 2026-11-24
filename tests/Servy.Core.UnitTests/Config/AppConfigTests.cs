@@ -100,6 +100,7 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void LegacyHandleExeFileNames_NameBothSysinternalsHandleBuilds()
         {
+            // Act & Assert
             // Literal values rather than production constants: these are the names earlier versions extracted to
             // the vault, so a renamed entry would leave that copy behind forever.
             Assert.Equal(new[] { "handle64.exe", "handle64a.exe" }, AppConfig.LegacyHandleExeFileNames);
