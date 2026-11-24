@@ -310,8 +310,15 @@ namespace Servy
             {
                 (Services as IDisposable)?.Dispose();
                 Services = null; // clear the static reference for test hosts
-                try { Logger.Shutdown(); } catch { /* fail-silent */ }
-                base.OnExit(e);
+                try
+                {
+                    // Raises Application.Exit, where AppRestarter starts the new instance and logs a failure
+                    base.OnExit(e);
+                }
+                finally
+                {
+                    try { Logger.Shutdown(); } catch { /* fail-silent */ }
+                }
             }
         }
 
