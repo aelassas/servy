@@ -478,6 +478,7 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void LsaPolicy_OpenAndClose_SucceedsOrReturnsAccessDenied()
         {
+            // Arrange
             // Standard runner environments run on least-privilege tokens.
             // Opening LSA policies succeeds when elevated or fails with ERROR_ACCESS_DENIED when running unelevated.
             var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
@@ -492,6 +493,7 @@ namespace Servy.Core.IntegrationTests.Native
                 NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES,
                 out IntPtr policyHandle);
 
+            // Assert
             if (ntStatus == 0) // STATUS_SUCCESS (Running elevated/admin)
             {
                 Assert.NotEqual(IntPtr.Zero, policyHandle);
