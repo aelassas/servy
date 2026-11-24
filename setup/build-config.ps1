@@ -23,7 +23,7 @@ function ConvertTo-NormalizedConfig {
 }
 
 $rawConfig = @{
-    Version            = "11.0"
+    Version            = "11.1"
     Tfm                = "net10.0-windows"
     BuildConfiguration = "Release"
     Runtime            = "win-x64" # "win-x64" or "win-arm64"
