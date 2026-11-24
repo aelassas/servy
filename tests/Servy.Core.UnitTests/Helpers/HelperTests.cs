@@ -2220,7 +2220,7 @@ namespace Servy.Core.UnitTests.Helpers
         /// <exception cref="InvalidOperationException">Thrown when opening the directory handle fails.</exception>
         private static void CreateDirectoryWithThirdPartyReparseTag(string path)
         {
-            // Bit 31 clear: not a Microsoft tag, and not a name surrogate, so no link semantics.
+            // Bit 31 (0x80000000) clear: not a Microsoft tag. Bit 29 (0x20000000) clear: not a name surrogate, so no link semantics.
             const uint thirdPartyTag = 0x00000BAD;
             byte[] payload = { 0x01, 0x02, 0x03, 0x04 };
 
