@@ -1519,6 +1519,59 @@ namespace Servy.UnitTests.ViewModels
             }
         }
 
+        [Fact]
+        public async Task SetLanguageCommand_UserDeclinesTheRestart_StillRaisesTheMenuStateSoTheClickedItemIsUnchecked()
+        {
+            // Arrange
+            var directory = Path.Combine(Path.GetTempPath(), "ServyLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                _viewModel.LanguageSettingsPath = Path.Combine(directory, "appsettings.desktop.json");
+                _viewModel.RestartApplication = () => { };
+                var target = _viewModel.Language == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+                _messageBoxService.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(false);
+                var raised = new List<string?>();
+                _viewModel.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+
+                // Act
+                await _viewModel.SetLanguageCommand.ExecuteAsync(target);
+
+                // Assert
+                Assert.Contains(nameof(MainViewModel.Language), raised);
+                Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
+                Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
+                Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_AlreadySelectedItemClicked_AsksNothingAndRaisesTheMenuStateToKeepItChecked()
+        {
+            // Arrange
+            var current = _viewModel.Language;
+            var restarts = 0;
+            _viewModel.RestartApplication = () => restarts++;
+            var raised = new List<string?>();
+            _viewModel.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+
+            // Act
+            await _viewModel.SetLanguageCommand.ExecuteAsync(current);
+
+            // Assert
+            Assert.Equal(current, _viewModel.Language);
+            Assert.Equal(0, restarts);
+            _messageBoxService.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            Assert.Contains(nameof(MainViewModel.Language), raised);
+            Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
+            Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
+            Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
+        }
+
         #endregion
     }
 }
