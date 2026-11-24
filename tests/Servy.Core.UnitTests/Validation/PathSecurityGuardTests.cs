@@ -1522,7 +1522,12 @@ namespace Servy.Core.UnitTests.Validation
             var security = new DirectorySecurity();
             security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
             security.AddAccessRule(new FileSystemAccessRule(sid, rights, type));
-            security.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User!, FileSystemRights.FullControl, AccessControlType.Allow));
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User!;
+            }
+            security.AddAccessRule(new FileSystemAccessRule(me, FileSystemRights.FullControl, AccessControlType.Allow));
             new DirectoryInfo(directoryPath).SetAccessControl(security);
         }
 

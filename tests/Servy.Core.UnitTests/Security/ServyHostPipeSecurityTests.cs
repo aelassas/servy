@@ -195,13 +195,18 @@ namespace Servy.Core.UnitTests.Security
         public void AccountSidResolver_LocalShorthandOfCurrentUser_ResolvesThroughSharedExpansion()
         {
             // Arrange
-            var identity = WindowsIdentity.GetCurrent();
+            string identityName;
+            SecurityIdentifier? expected;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                identityName = identity.Name;
+                expected = identity.User;
+            }
             var localPrefix = Environment.MachineName + @"\";
             Assert.SkipUnless(
-                identity.Name.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase),
-                "The .\\ shorthand names a local account; the test account '" + identity.Name + "' is not one.");
+                identityName.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase),
+                "The .\\ shorthand names a local account; the test account '" + identityName + "' is not one.");
             var account = @".\" + Environment.UserName;
-            var expected = identity.User;
 
             // Act
             var sid = AccountSidResolver.Resolve(account);
