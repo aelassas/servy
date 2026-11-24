@@ -1184,7 +1184,9 @@ namespace Servy.Core.IntegrationTests.Security
         #region Helpers
 
         /// <summary>
-        /// Creates a vault holding every file the hardening covers.
+        /// Creates a vault holding the files of this build that the hardening covers: the wrappers, the restarter,
+        /// <c>Servy.Host.exe</c>, the three settings files, the database and the key. The optional files of the .NET Framework 4.8
+        /// build (its binaries, <c>*.exe.config</c> files and DLLs) are not created, so every test sees them as absent.
         /// </summary>
         private void CreateVault()
         {
