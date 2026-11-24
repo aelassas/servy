@@ -5,9 +5,11 @@ using Servy.Testing;
 namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Covers <see cref="SystemEnvironmentHelper"/> against the real registry, in the non-elevated test process: both
-    /// environment keys are readable without elevation, a System variable missing from the process is added, and in
-    /// service mode a stale inherited value takes the registry's (#7393).
+    /// Covers <see cref="SystemEnvironmentHelper"/> against the real registry, with nothing that needs elevation: both
+    /// environment keys are readable read-only, <c>ReadVariables</c> skips non-string and unnamed values and returns
+    /// <see langword="null"/> for a missing key, a System variable missing from the process is added, in service mode
+    /// a stale inherited value takes the registry's (#7393), and <c>ProcessHelper.ResolvePath</c> expands a variable
+    /// the process did not have.
     /// </summary>
     [Collection(CoreOsIntegrationCollection.Name)]
     public class SystemEnvironmentHelperIntegrationTests : IDisposable
