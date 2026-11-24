@@ -26,6 +26,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void Constructor_WhenDisabled_DoesNotInitializeEventLog()
         {
+            // Arrange
             string source = GenerateSourceName();
 
             // Act
@@ -47,6 +48,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void Constructor_WithGlobalPrefix_WrapsInBrackets()
         {
+            // Arrange
             string source = GenerateSourceName();
 
             // Act
@@ -61,6 +63,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void Constructor_WhenPrefixContainsBrackets_SanitizesToParentheses()
         {
+            // Arrange
             string source = GenerateSourceName();
 
             // Act
@@ -77,21 +80,22 @@ namespace Servy.Core.IntegrationTests.Logging
         {
             Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
+            // Arrange
             string source = GenerateSourceName();
             using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: false))
             {
                 Assert.False(logger.IsEventLogEnabled);
 
-                // Act: enable - runs InitializeEventLog and sets _isInitialized
+                // Act & Assert: enable - runs InitializeEventLog and sets _isInitialized
                 logger.SetIsEventLogEnabled(true);
                 Assert.True(logger.IsEventLogEnabled);
 
-                // Act: enable again - takes the already-initialized branch, which only
+                // Act & Assert: enable again - takes the already-initialized branch, which only
                 // re-sets the flag. This assert reads the same on either branch.
                 logger.SetIsEventLogEnabled(true);
                 Assert.True(logger.IsEventLogEnabled);
 
-                // Act: disable - clears the flag only. Nothing is disposed and
+                // Act & Assert: disable - clears the flag only. Nothing is disposed and
                 // _isInitialized survives (only Dispose clears it), so a later
                 // re-enable does not run InitializeEventLog again.
                 logger.SetIsEventLogEnabled(false);
@@ -104,6 +108,7 @@ namespace Servy.Core.IntegrationTests.Logging
         {
             Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
+            // Arrange
             string mismatchSource = GenerateSourceName();
 
             // We intentionally bind this source to "Application" instead of AppConfig.EventLogName.
@@ -640,6 +645,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_NestedEmptyOrWhitespacePrefix_ReturnsSameScopeInstance()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false, "Root"))
             {
@@ -662,6 +668,7 @@ namespace Servy.Core.IntegrationTests.Logging
         {
             Assert.SkipUnless(_isElevated, InsufficientPrivilegesSkipReason);
 
+            // Arrange
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Error, false))
             {
@@ -712,6 +719,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_CreateNestedScope_FormatsCombinedPrefixes()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false, "Root"))
             {
@@ -732,6 +740,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_WhenPrefixContainsBrackets_SanitizesToParentheses()
         {
+            // Arrange
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false, "Root"))
             {
