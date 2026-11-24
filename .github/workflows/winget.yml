@@ -15,6 +15,11 @@ on:
       tag:
         description: 'Release tag (e.g. v1.1)'
         required: false
+      skip_publish:
+        description: 'Skip publishing to WinGet (dry run)'
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: winget-${{ github.ref }}
@@ -37,7 +42,15 @@ jobs:
           manual_tag: ${{ inputs.tag }}
           release_tag: ${{ github.event.release.tag_name }}
 
+      - name: Sync winget-pkgs fork
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          gh repo sync aelassas/winget-pkgs --branch master --force
+
       - name: Publish Servy to WinGet
+        if: ${{ inputs.skip_publish != true }}
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e #v2
         with:
           identifier: aelassas.Servy
