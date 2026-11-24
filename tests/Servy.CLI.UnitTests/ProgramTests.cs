@@ -131,6 +131,30 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
+        public async Task RunAsync_ResourcesFollowingTheUiCulture_PinsTheCoreStringsToEnglish()
+        {
+            try
+            {
+                // Arrange
+                // The state a translated Windows display language leaves before Main runs (#8186).
+                Servy.Core.Resources.ResourceLanguage.FollowUiCulture();
+                var runtime = new FakeCliRuntime();
+                string[] args = { "--help" };
+
+                // Act
+                var result = await ConsoleCapture.RunAsync(async () => await Program.RunAsync(args, runtime));
+
+                // Assert
+                Assert.Equal((int)CliExitCode.Success, result.Result);
+                Assert.Same(System.Globalization.CultureInfo.InvariantCulture, Servy.Core.Resources.Strings.Culture);
+            }
+            finally
+            {
+                Servy.Core.Resources.ResourceLanguage.FollowUiCulture();
+            }
+        }
+
+        [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange
