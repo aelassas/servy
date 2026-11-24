@@ -25,6 +25,9 @@ namespace Servy.Core.UnitTests.Validation
 
             [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             public static extern SafeFileHandle CreateFile(string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            public static extern bool DeviceIoControl(SafeFileHandle hDevice, uint dwIoControlCode, byte[] lpInBuffer, uint nInBufferSize, IntPtr lpOutBuffer, uint nOutBufferSize, out uint lpBytesReturned, IntPtr lpOverlapped);
         }
 
         #region Common Security Rules
@@ -1220,6 +1223,88 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.False(result);
+        }
+
+        /// <summary>
+        /// Writes a file and tags it with a third-party (non-Microsoft, non-name-surrogate) reparse point, so the
+        /// file carries <see cref="FileAttributes.ReparsePoint"/> while <see cref="FileSystemInfo.LinkTarget"/>
+        /// stays <see langword="null"/>.
+        /// </summary>
+        /// <param name="path">The file to create and tag.</param>
+        /// <remarks>
+        /// Same buffer layout as <c>HelperTests.CreateDirectoryWithThirdPartyReparseTag</c> (#8184): a
+        /// <c>REPARSE_GUID_DATA_BUFFER</c>-sized block (tag, data length, reserved, GUID, payload) whose data length
+        /// field counts the payload only. The test is skipped when the runner refuses the tag anyway.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when opening the file handle fails.</exception>
+        private static void CreateFileWithThirdPartyReparseTag(string path)
+        {
+            const uint GENERIC_WRITE = 0x40000000;
+            const uint OPEN_EXISTING = 3;
+            const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+            const uint FSCTL_SET_REPARSE_POINT = 0x000900A4;
+
+            // Bit 31 (0x80000000) clear: not a Microsoft tag. Bit 29 (0x20000000) clear: not a name surrogate, so no link semantics.
+            const uint thirdPartyTag = 0x00000BAD;
+            byte[] payload = { 0x01, 0x02, 0x03, 0x04 };
+
+            File.WriteAllText(path, "{}");
+
+            // Header (tag 4 + length 2 + reserved 2) + GUID (16) + payload; the length field covers the payload only.
+            byte[] buffer = new byte[24 + payload.Length];
+            BitConverter.GetBytes(thirdPartyTag).CopyTo(buffer, 0);
+            BitConverter.GetBytes((ushort)payload.Length).CopyTo(buffer, 4);
+            Guid.NewGuid().ToByteArray().CopyTo(buffer, 8);
+            payload.CopyTo(buffer, 24);
+
+            using SafeFileHandle handle = NativeTestMethods.CreateFile(path, GENERIC_WRITE, 0, IntPtr.Zero, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
+            if (handle.IsInvalid)
+            {
+                throw new InvalidOperationException($"CreateFile failed for '{path}': {Marshal.GetLastWin32Error()}");
+            }
+
+            if (!NativeTestMethods.DeviceIoControl(handle, FSCTL_SET_REPARSE_POINT, buffer, (uint)buffer.Length, IntPtr.Zero, 0, out _, IntPtr.Zero))
+            {
+                int error = Marshal.GetLastWin32Error();
+                Assert.Skip($"FSCTL_SET_REPARSE_POINT refused a third-party tag on this runner: {error}");
+            }
+        }
+
+        [Fact]
+        public void ValidatePathOnly_FileWithNonLinkReparseTag_ReturnsFail()
+        {
+            // Arrange
+            // LinkTarget is null for a third-party tag, so only the attribute operand of the file guard can refuse it;
+            // the parent (TempDirectory) is a plain directory, so HasAncestorReparsePoint does not fire first.
+            string tagged = Path.Combine(TempDirectory, "third_party_tagged.json");
+            CreateFileWithThirdPartyReparseTag(tagged);
+            var info = new FileInfo(tagged);
+            Assert.Null(info.LinkTarget);
+            Assert.Equal(FileAttributes.ReparsePoint, info.Attributes & FileAttributes.ReparsePoint);
+
+            // Act
+            var result = PathSecurityGuard.ValidatePathOnly(tagged, FileMode.Open);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Equal(PathSecurityFailureKind.Security, result.FailureKind);
+            Assert.Equal(Strings.Msg_SecurityFileReparsePointProhibited, result.ErrorMessage);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_FileWithNonLinkReparseTag_ReturnsFalse()
+        {
+            // Arrange
+            string tagged = Path.Combine(TempDirectory, "Servy.Manager.exe");
+            CreateFileWithThirdPartyReparseTag(tagged);
+            Assert.Null(new FileInfo(tagged).LinkTarget);
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(tagged, TempDirectory, out string resolvedPath);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(string.Empty, resolvedPath);
         }
 
         [Fact]
