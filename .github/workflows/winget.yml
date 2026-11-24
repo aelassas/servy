@@ -1,8 +1,14 @@
 # ==========================================================================================
 # GitHub Actions Workflow - WinGet
 # ------------------------------------------------------------------------------------------
-# Publishes the latest Servy release to WinGet
-# when a new release is published.
+# Publishes a Servy release to WinGet when a new GitHub
+# release is published or when manually triggered. It
+# resolves the release tag (the published release; on a
+# manual run the `tag` input, else the latest release),
+# force-syncs the aelassas/winget-pkgs fork's master
+# branch with upstream, and submits the x64 and ARM64
+# installers through winget-releaser. A manual run with
+# `skip_publish` set skips the submission step.
 # ==========================================================================================
 
 name: winget
