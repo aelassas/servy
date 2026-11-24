@@ -199,8 +199,16 @@ namespace Servy.Core.UnitTests.Security
         public void AccountSidResolver_LocalShorthandOfCurrentUser_ResolvesThroughSharedExpansion()
         {
             // Arrange
+            var identity = WindowsIdentity.GetCurrent();
+            var localPrefix = Environment.MachineName + @"\";
+
+            // The .\ shorthand names a local account, so the premise does not hold for a domain user.
+            // xUnit 2 has no Assert.SkipUnless: return early instead.
+            if (!identity.Name.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase))
+                return;
+
             var account = @".\" + Environment.UserName;
-            var expected = WindowsIdentity.GetCurrent().User;
+            var expected = identity.User;
 
             // Act
             var sid = AccountSidResolver.Resolve(account);
