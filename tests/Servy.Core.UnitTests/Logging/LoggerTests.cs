@@ -140,11 +140,11 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Info("Before the reset");
 
             // Act
-            Logger.Initialize((string)null);
+            Logger.Initialize((string?)null);
             Logger.Info("After the reset");
 
             // Assert
-            Assert.Null(TestReflection.GetFieldStatic<RotatingStreamWriter>(typeof(Logger), "_writer"));
+            Assert.Null(TestReflection.GetFieldStatic<RotatingStreamWriter?>(typeof(Logger), "_writer"));
             string content = File.ReadAllText(_fullLogPath);
             Assert.Contains("Before the reset", content);
             Assert.DoesNotContain("After the reset", content);
