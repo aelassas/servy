@@ -284,10 +284,10 @@ namespace Servy.Core.UnitTests.NamedPipes
         public async Task ReadAndWrite_NullStream_Throw()
         {
             // Arrange, Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _sut.Read<IpcRequestDto>(null!));
-            Assert.Throws<ArgumentNullException>(() => _sut.Write(null!, new IpcRequestDto()));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ReadAsync<IpcRequestDto>(null!));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.WriteAsync(null!, new IpcRequestDto()));
+            Assert.Throws<ArgumentNullException>(() => _sut.Read<IpcRequestDto>(null!, TestContext.Current.CancellationToken));
+            Assert.Throws<ArgumentNullException>(() => _sut.Write(null!, new IpcRequestDto(), TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.ReadAsync<IpcRequestDto>(null!, TestContext.Current.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.WriteAsync(null!, new IpcRequestDto(), TestContext.Current.CancellationToken));
         }
 
         [Fact]
