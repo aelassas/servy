@@ -245,6 +245,7 @@ namespace Servy.Core.UnitTests.NamedPipes
             using (var sync = new MemoryStream(bytes))
             using (var async = new MemoryStream(bytes))
             {
+                // Act & Assert
                 Assert.Null(_sut.Read<IpcRequestDto>(sync, CancellationToken.None));
                 Assert.Null(await _sut.ReadAsync<IpcRequestDto>(async, CancellationToken.None));
             }
