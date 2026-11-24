@@ -237,7 +237,7 @@ namespace Servy.CLI.UnitTests.Helpers
             Func<Task> dummyAction = () => Task.Delay(50);
             Exception fault = exceptionType == typeof(ObjectDisposedException)
                 ? new ObjectDisposedException("Console.Out")
-                : (Exception)Activator.CreateInstance(exceptionType, "Simulated failure on the clearing write.");
+                : (Exception)Activator.CreateInstance(exceptionType, "Simulated failure on the clearing write.")!;
 
             TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
             TestReflection.SetFieldStatic(typeof(ConsoleHelper), WindowWidthOverrideFieldName, 80);
