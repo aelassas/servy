@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-and-sign:
@@ -27,6 +28,7 @@ jobs:
       FRAMEWORK: net48
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
       MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream downloads
+      SIGNPATH_COOLDOWN_SECONDS: 10 # Delay in seconds before submitting signing requests to allow GitHub artifact propagation
 
       # Binary Version & Checksum Pins
       INNO_SETUP_VERSION: "6.6.1"
@@ -298,6 +300,19 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Print GitHub context for SignPath
+        shell: pwsh
+        run: |
+          Write-Host "GITHUB_API_URL: $env:GITHUB_API_URL"
+          Write-Host "GITHUB_REPOSITORY: $env:GITHUB_REPOSITORY"
+          Write-Host "GITHUB_REF: $env:GITHUB_REF"
+          Write-Host "GITHUB_SHA: $env:GITHUB_SHA"
+          Write-Host "GITHUB_RUN_ID: $env:GITHUB_RUN_ID"
+
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
+
       - name: Submit Servy.Host.exe for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
@@ -362,6 +377,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
+
       - name: Submit Servy.Restarter.exe for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
@@ -425,6 +444,10 @@ jobs:
           path: src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Service.exe
           if-no-files-found: error
           retention-days: 1
+
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
 
       - name: Submit Servy.Service.exe for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
@@ -492,6 +515,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
+
       - name: Submit Servy.exe for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
@@ -539,6 +566,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
+
       - name: Submit Servy.Manager.exe for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
@@ -585,6 +616,10 @@ jobs:
           path: src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe
           if-no-files-found: error
           retention-days: 1
+
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
 
       - name: Submit Servy.CLI.exe for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
@@ -645,6 +680,10 @@ jobs:
           path: ${{ env.UNSIGNED_INSTALLER_PATH }}
           if-no-files-found: error
           retention-days: 1
+
+      - name: Wait for artifact API propagation
+        shell: pwsh
+        run: Start-Sleep -s $env:SIGNPATH_COOLDOWN_SECONDS
 
       - name: Submit installer for signing
         uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
