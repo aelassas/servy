@@ -1221,6 +1221,79 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public void ReportRevokeResult_RevokedNothing_SaysThereWasNothingToRevoke()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("svc").Complete(ExePermissionsHardeningStatus.Revoked);
+
+            // Act
+            var capture = LogCapture.Run(() => ServyExePermissionsHardener.ReportRevokeResult(result), LogLevel.Info);
+
+            // Assert
+            Assert.True(capture.Result);
+            Assert.Contains("'svc' held no entry in Servy's vault; nothing to revoke.", capture.Log);
+        }
+
+        [Fact]
+        public void ReportRevokeResult_Skipped_GivesTheReasonAtInfoLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("svc").Complete(ExePermissionsHardeningStatus.Skipped, "the vault directory is a reparse point (symlink/junction)");
+
+            // Act
+            var capture = LogCapture.Run(() => ServyExePermissionsHardener.ReportRevokeResult(result), LogLevel.Info);
+
+            // Assert
+            Assert.True(capture.Result);
+            Assert.Contains("Vault access revocation skipped for 'svc': the vault directory is a reparse point (symlink/junction).", capture.Log);
+        }
+
+        [Fact]
+        public void ReportRevokeResult_Failed_NamesTheItemsAndTheLinkCaveatAtErrorLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("svc");
+            result.AddFailed(ServiceLogsFolder);
+            result.Complete(ExePermissionsHardeningStatus.Failed);
+
+            // Act
+            var capture = LogCapture.Run(() => ServyExePermissionsHardener.ReportRevokeResult(result), LogLevel.Error);
+
+            // Assert
+            Assert.False(capture.Result);
+            Assert.Contains($"Revoking the access of 'svc' to Servy's vault failed on: {ServiceLogsFolder}.", capture.Log);
+            Assert.Contains("where they stay until they are removed by hand", capture.Log);
+        }
+
+        [Fact]
+        public void ReportRevokeResult_NotRevoked_GivesTheReasonAtErrorLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("svc").Complete(ExePermissionsHardeningStatus.InvalidAccount, "the account could not be resolved");
+
+            // Act
+            var capture = LogCapture.Run(() => ServyExePermissionsHardener.ReportRevokeResult(result), LogLevel.Error);
+
+            // Assert
+            Assert.False(capture.Result);
+            Assert.Contains("The access of 'svc' to Servy's vault was not revoked: the account could not be resolved.", capture.Log);
+        }
+
+        [Fact]
+        public void ReportResult_Skipped_GivesTheReasonAtInfoLevel()
+        {
+            // Arrange
+            var result = new ExePermissionsHardeningResult("svc").Complete(ExePermissionsHardeningStatus.Skipped, "the vault directory is a reparse point (symlink/junction)");
+
+            // Act
+            var capture = LogCapture.Run(() => ServyExePermissionsHardener.ReportResult(result), LogLevel.Info);
+
+            // Assert
+            Assert.True(capture.Result);
+            Assert.Contains("Executable permission hardening skipped for 'svc': the vault directory is a reparse point (symlink/junction).", capture.Log);
+        }
+
+        [Fact]
         public void RevokeIfUnused_NothingWasGranted_RevokesNothingAndSucceeds()
         {
             // Arrange
