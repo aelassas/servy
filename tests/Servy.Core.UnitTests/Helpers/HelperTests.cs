@@ -1944,6 +1944,36 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HasAncestorReparsePoint_WhenAncestorIsNonLinkReparsePoint_ReturnsTrue()
+        {
+            // Arrange
+            // A third-party reparse tag: the directory carries the ReparsePoint attribute, but
+            // DirectoryInfo.LinkTarget is null (it is only populated for symlink and mount point
+            // tags), so only the attribute operand of the guard can make it return true.
+            string tagged = Path.Combine(_testRoot, "ThirdPartyReparse");
+            CreateDirectoryWithThirdPartyReparseTag(tagged);
+
+            try
+            {
+                var info = new DirectoryInfo(tagged);
+                Assert.Null(info.LinkTarget);
+                Assert.Equal(FileAttributes.ReparsePoint, info.Attributes & FileAttributes.ReparsePoint);
+
+                string targetPath = Path.Combine(tagged, "test.log");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetPath);
+
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(tagged, Path.Combine(_testRoot, "ThirdPartyReparseUnused"));
+            }
+        }
+
+        [Fact]
         public void HasAncestorReparsePoint_WhenAncestorIsVolumeMountPoint_ReturnsFalse()
         {
             // Arrange: mount the temp directory's own volume on an empty folder under _testRoot, so
@@ -2172,6 +2202,78 @@ namespace Servy.Core.UnitTests.Helpers
             finally
             {
                 CloseHandle(handle);
+            }
+        }
+
+        /// <summary>
+        /// Creates a directory and tags it with a third-party (non-Microsoft) reparse point, so the
+        /// directory carries <see cref="FileAttributes.ReparsePoint"/> while
+        /// <see cref="FileSystemInfo.LinkTarget"/> stays <see langword="null"/>.
+        /// </summary>
+        /// <param name="path">The directory to create and tag.</param>
+        /// <remarks>
+        /// The buffer is a <c>REPARSE_GUID_DATA_BUFFER</c>-sized block: tag, data length, reserved, GUID, then
+        /// the payload. The data length field counts the payload only: measured on the GitHub runners, NTFS
+        /// rejects a length that also counts the GUID (<c>ERROR_INVALID_REPARSE_DATA</c>, 4392) and accepts
+        /// this one. The test is skipped when the runner refuses the tag anyway.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when opening the directory handle fails.</exception>
+        private static void CreateDirectoryWithThirdPartyReparseTag(string path)
+        {
+            // Bit 31 clear: not a Microsoft tag, and not a name surrogate, so no link semantics.
+            const uint thirdPartyTag = 0x00000BAD;
+            byte[] payload = { 0x01, 0x02, 0x03, 0x04 };
+
+            Directory.CreateDirectory(path);
+
+            // Header (tag 4 + length 2 + reserved 2) + GUID (16) + payload; the length field covers the payload only.
+            byte[] buffer = new byte[24 + payload.Length];
+            BitConverter.GetBytes(thirdPartyTag).CopyTo(buffer, 0);
+            BitConverter.GetBytes((ushort)payload.Length).CopyTo(buffer, 4);
+            Guid.NewGuid().ToByteArray().CopyTo(buffer, 8);
+            payload.CopyTo(buffer, 24);
+
+            IntPtr handle = CreateFile(
+                path,
+                GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                IntPtr.Zero,
+                OPEN_EXISTING,
+                FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                IntPtr.Zero);
+
+            if (handle == new IntPtr(-1))
+            {
+                throw new InvalidOperationException($"CreateFile failed for directory '{path}': {Marshal.GetLastWin32Error()}");
+            }
+
+            try
+            {
+                bool success = DeviceIoControl(
+                    handle,
+                    FSCTL_SET_REPARSE_POINT,
+                    buffer,
+                    (uint)buffer.Length,
+                    IntPtr.Zero,
+                    0,
+                    out _,
+                    IntPtr.Zero);
+
+                if (!success)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    CloseHandle(handle);
+                    handle = IntPtr.Zero;
+                    try { Directory.Delete(path); } catch { }
+                    Assert.Skip($"FSCTL_SET_REPARSE_POINT refused a third-party tag on this runner: {error}");
+                }
+            }
+            finally
+            {
+                if (handle != IntPtr.Zero)
+                {
+                    CloseHandle(handle);
+                }
             }
         }
 
