@@ -2226,6 +2226,79 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SetLanguageCommand_UserDeclinesTheRestart_StillRaisesTheMenuStateSoTheClickedItemIsUnchecked()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var directory = Path.Combine(Path.GetTempPath(), "ServyManagerLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(directory);
+                try
+                {
+                    vm.LanguageSettingsPath = Path.Combine(directory, "appsettings.manager.json");
+                    vm.RestartApplication = () => { };
+                    var target = vm.Language == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(false);
+                    var raised = new List<string>();
+                    vm.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+
+                    // Act
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.SetLanguageCommand.ExecuteAsync(target);
+                    });
+
+                    // Assert
+                    Assert.Contains(nameof(MainViewModel.Language), raised);
+                    Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
+                    Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
+                    Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
+                }
+                finally
+                {
+                    Directory.Delete(directory, true);
+                }
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_AlreadySelectedItemClicked_AsksNothingAndRaisesTheMenuStateToKeepItChecked()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var current = vm.Language;
+                var restarts = 0;
+                vm.RestartApplication = () => restarts++;
+                var raised = new List<string>();
+                vm.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.SetLanguageCommand.ExecuteAsync(current);
+                });
+
+                // Assert
+                Assert.Equal(current, vm.Language);
+                Assert.Equal(0, restarts);
+                _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                Assert.Contains(nameof(MainViewModel.Language), raised);
+                Assert.Contains(nameof(MainViewModel.IsSystemLanguageSelected), raised);
+                Assert.Contains(nameof(MainViewModel.IsEnglishSelected), raised);
+                Assert.Contains(nameof(MainViewModel.IsChineseSimplifiedSelected), raised);
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task ConfigureCommand_ShouldDelegateToConfigureServiceAsync()
         {
             await Helper.RunOnSTA(async () =>
