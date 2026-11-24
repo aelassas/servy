@@ -605,7 +605,11 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         {
             // Arrange: a protected DACL that grants only the current user, so no elevation is needed
             var ct = CancellationToken.None;
-            var me = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User;
+            }
 
             // Act
             using (var server = LocalPipeServer.Create(_pipeName, Dacl(me)))
@@ -631,7 +635,11 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         public void LocalPipeServer_Create_ALaterInstanceReplacesTheSharedDacl()
         {
             // Arrange
-            var me = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User;
+            }
             var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
             using (var first = LocalPipeServer.Create(_pipeName, Dacl(me)))
@@ -650,7 +658,11 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         public void LocalPipeServer_Create_NameHeldByASingleInstancePipe_ThrowsWin32ExceptionNamingThePipe()
         {
             // Arrange: another server holds the name with a limit of one instance
-            var me = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User;
+            }
             using (new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
             {
                 // Act
@@ -665,7 +677,11 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         public void LocalPipeServer_Create_FirstInstanceWhileAnotherServerHoldsTheName_ThrowsAccessDenied()
         {
             // Arrange: another server holds the name and allows any number of instances, as a squatter could (#7537)
-            var me = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User;
+            }
             using (new NamedPipeServerStream(_pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
             {
                 // Act
@@ -681,7 +697,11 @@ namespace Servy.Core.IntegrationTests.NamedPipes
         public void LocalPipeServer_Create_FirstInstanceFlag_OnlyTheFirstInstanceOfTheNameMayCarryIt()
         {
             // Arrange: the first instance of a free name, created with the flag
-            var me = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User;
+            }
             using (LocalPipeServer.Create(_pipeName, Dacl(me), firstInstance: true))
             {
                 // Act: a second instance that asks to be the first, then one that does not

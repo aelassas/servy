@@ -424,7 +424,11 @@ namespace Servy.Host.IntegrationTests
             // Arrange: the SCM reports this test process as the service's process, and the service is configured for
             // LocalService now, as after a reinstall under another account that has not been followed by a restart
             var ct = CancellationToken.None;
-            var me = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier me;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                me = identity.User;
+            }
             await _repository.UpsertAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", RunAsLocalSystem = false, UserAccount = @"NT AUTHORITY\LocalService" }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
 
             // Act: the real token of the running process is read
@@ -510,7 +514,12 @@ namespace Servy.Host.IntegrationTests
             // client. The identifier is told to report an administrator, so nothing but the pipe's own remote-client
             // rejection can stop it.
             var ct = CancellationToken.None;
-            await _repository.UpsertAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", Parameters = "--secret", RunAsLocalSystem = false, UserAccount = WindowsIdentity.GetCurrent().Name }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
+            string testAccount;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                testAccount = identity.Name;
+            }
+            await _repository.UpsertAsync(new ServiceDto { Name = ServiceName, ExecutablePath = "C:\\a.exe", Parameters = "--secret", RunAsLocalSystem = false, UserAccount = testAccount }, preserveExistingRuntimeState: false, preserveExistingCredentials: false, cancellationToken: ct);
             _host.StartListening();
             _identifier.IsAdministrator = true;
             var frames = new NamedPipesService(_pipeName);
