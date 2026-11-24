@@ -474,6 +474,30 @@ namespace Servy.Core.IntegrationTests.Security
     }
 
     /// <summary>
+    /// Derives the system mutex name <c>ProtectedKeyProvider.RunUnderMutex</c> uses for a key or IV file path,
+    /// so the lock and ACL tests share one mirror of that derivation instead of each keeping a copy.
+    /// </summary>
+    internal static class KeyVaultMutex
+    {
+        /// <summary>
+        /// Mirrors the mutex name <c>ProtectedKeyProvider.RunUnderMutex</c> derives for a path:
+        /// an FNV-1a hash of the lower-cased path in the <c>Global\</c> namespace.
+        /// </summary>
+        /// <param name="path">The key or IV file path the provider locks on.</param>
+        /// <returns>The name of the system mutex the provider will open for <paramref name="path"/>.</returns>
+        internal static string NameFor(string path)
+        {
+            uint stableHash = 2166136261;
+            foreach (char c in path.ToLowerInvariant())
+            {
+                stableHash = (stableHash ^ c) * 16777619;
+            }
+
+            return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
+        }
+    }
+
+    /// <summary>
     /// Integration tests for the cross-process lock failure arms of <see cref="ProtectedKeyProvider"/>.
     /// Each test squats the provider's own global mutex name with a real kernel object, so the arm under
     /// test is reached without any production seam. The arms report through the static logger that
@@ -496,7 +520,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             // A named event carrying the mutex's own name makes MutexAcl.Create throw
             // WaitHandleCannotBeOpenedException: same name, different kernel object type.
-            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutexName(keyPath)))
+            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutex.NameFor(keyPath)))
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -537,7 +561,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             var logs = new List<string>();
 
-            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutexName(keyPath)))
+            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutex.NameFor(keyPath)))
             {
                 // Act - one fresh provider per attempt, so the instance cache cannot short-circuit the read
                 for (int attempt = 0; attempt < AppConfig.KeyProviderMigrationFailureEscalationThreshold; attempt++)
@@ -577,7 +601,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             // The holder keeps the kernel object alive after the owning thread dies, so the provider
             // opens the abandoned mutex instead of creating a fresh one of the same name.
-            using (new Mutex(false, KeyVaultMutexName(keyPath)))
+            using (new Mutex(false, KeyVaultMutex.NameFor(keyPath)))
             {
                 var owner = new Thread(() => AbandonKeyVaultMutex(keyPath));
                 owner.Start();
@@ -605,7 +629,7 @@ namespace Servy.Core.IntegrationTests.Security
 
             // The mutex already exists and is unowned, so MutexAcl.Create joins it rather than
             // creating it, and the DACL it would have applied is the creating process's.
-            using (new Mutex(false, KeyVaultMutexName(keyPath)))
+            using (new Mutex(false, KeyVaultMutex.NameFor(keyPath)))
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -635,7 +659,7 @@ namespace Servy.Core.IntegrationTests.Security
             byte[]? loserKey = null;
             Exception? loserError = null;
 
-            using (var holder = new Mutex(false, KeyVaultMutexName(keyPath)))
+            using (var holder = new Mutex(false, KeyVaultMutex.NameFor(keyPath)))
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 holder.WaitOne();
@@ -671,23 +695,6 @@ namespace Servy.Core.IntegrationTests.Security
         #region Test Lifecycle
 
         /// <summary>
-        /// Mirrors the mutex name <c>ProtectedKeyProvider.RunUnderMutex</c> derives for a path:
-        /// an FNV-1a hash of the lower-cased path in the <c>Global\</c> namespace.
-        /// </summary>
-        /// <param name="path">The key or IV file path the provider locks on.</param>
-        /// <returns>The name of the system mutex the provider will open for <paramref name="path"/>.</returns>
-        private static string KeyVaultMutexName(string path)
-        {
-            uint stableHash = 2166136261;
-            foreach (char c in path.ToLowerInvariant())
-            {
-                stableHash = (stableHash ^ c) * 16777619;
-            }
-
-            return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
-        }
-
-        /// <summary>
         /// Takes the key vault's mutex and returns without releasing it, so the thread running this
         /// method abandons the mutex when it exits.
         /// </summary>
@@ -696,7 +703,7 @@ namespace Servy.Core.IntegrationTests.Security
         {
             // Deliberately neither released nor disposed: a thread that exits while owning the mutex
             // is what makes the next WaitOne on that name throw AbandonedMutexException.
-            var mutex = new Mutex(false, KeyVaultMutexName(keyPath));
+            var mutex = new Mutex(false, KeyVaultMutex.NameFor(keyPath));
             mutex.WaitOne();
         }
 
@@ -724,7 +731,7 @@ namespace Servy.Core.IntegrationTests.Security
             // Arrange
             var keyPath = Path.Combine(TempDirectory, "mutex_acl_elevated.key");
             var ivPath = Path.Combine(TempDirectory, "mutex_acl_elevated.iv");
-            var mutexName = KeyVaultMutexName(keyPath);
+            var mutexName = KeyVaultMutex.NameFor(keyPath);
 
             var originalSeam = SecurityHelper.IsAdministratorCore;
             SecurityHelper.IsAdministratorCore = () => true;
@@ -775,7 +782,7 @@ namespace Servy.Core.IntegrationTests.Security
             // Arrange
             var keyPath = Path.Combine(TempDirectory, "mutex_acl_unelevated.key");
             var ivPath = Path.Combine(TempDirectory, "mutex_acl_unelevated.iv");
-            var mutexName = KeyVaultMutexName(keyPath);
+            var mutexName = KeyVaultMutex.NameFor(keyPath);
 
             SecurityIdentifier currentUserSid;
             using (var identity = WindowsIdentity.GetCurrent())
@@ -877,17 +884,6 @@ namespace Servy.Core.IntegrationTests.Security
             var method = typeof(ProtectedKeyProvider).GetMethod("RunUnderMutex", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?? throw new InvalidOperationException("ProtectedKeyProvider.RunUnderMutex was not found.");
             method.Invoke(provider, new object[] { path, action });
-        }
-
-        private static string KeyVaultMutexName(string path)
-        {
-            uint stableHash = 2166136261;
-            foreach (char c in path.ToLowerInvariant())
-            {
-                stableHash = (stableHash ^ c) * 16777619;
-            }
-
-            return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
         }
 
         #endregion
