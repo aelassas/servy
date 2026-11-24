@@ -83,6 +83,28 @@ namespace Servy.Restarter.UnitTests
             AssertLogDoesNotContainMessage("Attempting to restart service");
         }
 
+        [Fact]
+        public void Main_ResourcesFollowingTheUiCulture_PinsTheCoreStringsToEnglish()
+        {
+            try
+            {
+                // Arrange
+                // The state a translated Windows display language leaves before Main runs (#8186).
+                Servy.Core.Resources.ResourceLanguage.FollowUiCulture();
+                string[] args = new string[0];
+
+                // Act
+                Program.Main(args);
+
+                // Assert
+                Assert.Same(System.Globalization.CultureInfo.InvariantCulture, Servy.Core.Resources.Strings.Culture);
+            }
+            finally
+            {
+                Servy.Core.Resources.ResourceLanguage.FollowUiCulture();
+            }
+        }
+
         [Theory]
         [InlineData("")]
         [InlineData("    ")]
