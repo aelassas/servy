@@ -2266,6 +2266,88 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task SetLanguageCommand_UserDeclinesTheRestart_StoresNothingAndDoesNotRestart()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var directory = Path.Combine(Path.GetTempPath(), "ServyManagerLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(directory);
+                try
+                {
+                    vm.LanguageSettingsPath = Path.Combine(directory, "Servy.Manager.exe.config");
+                    var restarts = 0;
+                    vm.RestartApplication = () => restarts++;
+                    var before = vm.Language;
+                    var target = before == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(false);
+
+                    // Act
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.SetLanguageCommand.ExecuteAsync(target);
+                    });
+
+                    // Assert
+                    Assert.Equal(before, vm.Language);
+                    Assert.Empty(Directory.GetFiles(directory));
+                    Assert.Equal(0, restarts);
+                    _messageBoxServiceMock.Verify(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
+                }
+                finally
+                {
+                    Directory.Delete(directory, true);
+                }
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task SetLanguageCommand_SettingsFileCannotBeWritten_KeepsTheLanguageShowsTheErrorAndDoesNotRestart()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange: a file that is not a valid configuration file is refused, not overwritten
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var directory = Path.Combine(Path.GetTempPath(), "ServyManagerLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(directory);
+                try
+                {
+                    var settingsPath = Path.Combine(directory, "Servy.Manager.exe.config");
+                    File.WriteAllText(settingsPath, "<configuration><appSettings><add key=");
+                    vm.LanguageSettingsPath = settingsPath;
+                    var restarts = 0;
+                    vm.RestartApplication = () => restarts++;
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(true);
+                    var before = vm.Language;
+                    var target = before == AppLanguage.English ? AppLanguage.ChineseSimplified : AppLanguage.English;
+
+                    // Act
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.SetLanguageCommand.ExecuteAsync(target);
+                    });
+
+                    // Assert
+                    Assert.Equal(before, vm.Language);
+                    Assert.Equal("<configuration><appSettings><add key=", File.ReadAllText(settingsPath));
+                    Assert.Equal(0, restarts);
+                    _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), UiAppConfig.Caption), Times.Once);
+                }
+                finally
+                {
+                    Directory.Delete(directory, true);
+                }
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
         public async Task SetLanguageCommand_AlreadySelectedItemClicked_AsksNothingAndRaisesTheMenuStateToKeepItChecked()
         {
             await Helper.RunOnSTA(async () =>
