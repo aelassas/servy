@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-23T05:39:22Z
+> Generated on: 2026-11-25T13:43:37Z
 
 ---
 
@@ -17,7 +17,7 @@ The modern build supports **Windows 10 (1809+)**, **Windows 11**, and **Windows 
 
 Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
-Starting from v11.0, the Servy Desktop App and Servy Manager are available in Simplified Chinese (简体中文) as well as English. The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
+Starting from v11.0, the Servy Desktop App, Servy Manager, and the installer are available in Simplified Chinese (简体中文) as well as English. The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
 
 > [!TIP]
 > Use the sidebar to browse installation guides, configuration options, and more.
