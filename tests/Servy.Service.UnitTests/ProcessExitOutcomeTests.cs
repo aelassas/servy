@@ -174,7 +174,7 @@ namespace Servy.Service.UnitTests
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
             service.SetMaxFailedChecks(1);
             service.SetFailedChecks(0);
-            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts file
+            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts counter
 
             using (var recovered = new ManualResetEventSlim(false))
             {
@@ -237,7 +237,7 @@ namespace Servy.Service.UnitTests
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
             service.SetMaxFailedChecks(1);
             service.SetFailedChecks(0);
-            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts file
+            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts counter
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(1);
