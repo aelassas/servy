@@ -221,7 +221,8 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
                 // production code that stops reading a seam fails here instead of silently passing
                 // because the runner is elevated and ships a recent SQLite. They are asserted as
                 // "consulted at all" rather than as an exact count because IsAdministrator is also
-                // read by the ACL hardening OnStartup performs on the key and database files.
+                // read by SecurityHelper.CreateSecureDirectory when OnStartup's Logger.Initialize call
+                // secures the logs directory, before the elevation check runs.
                 var originalAdminSeam = SecurityHelper.IsAdministratorCore;
                 var originalSqliteSeam = DatabaseValidator.GetSqliteVersion;
 
