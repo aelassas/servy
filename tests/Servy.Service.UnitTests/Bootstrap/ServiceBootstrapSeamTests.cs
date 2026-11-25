@@ -337,8 +337,8 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
-        /// A failing start-up step preserves an exit code a lower layer has already set - the "13 from
-        /// ProtectedKeyProvider" case the constructor's comment names.
+        /// A failing start-up step preserves a non-zero exit code that was already set when the constructor's
+        /// catch-all ran, the rule its comment states; 13 is an arbitrary preset value.
         /// </summary>
         [Fact]
         public void Constructor_FailingStep_PreservesAnExitCodeAlreadySet()
