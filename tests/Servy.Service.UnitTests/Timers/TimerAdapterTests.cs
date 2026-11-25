@@ -64,6 +64,24 @@ namespace Servy.Service.UnitTests.Timers
             Assert.Null(exception);
         }
 
+        [Fact]
+        public void Dispose_StartedTimer_DisposesTheUnderlyingTimer()
+        {
+            // Arrange
+            var timer = new TimerAdapter(Interval);
+            var internalTimer = TestReflection.GetField<System.Timers.Timer>(timer, "_timer");
+            timer.AutoReset = true;
+            timer.Start();
+            Assert.True(internalTimer.Enabled);
+
+            // Act
+            timer.Dispose();
+
+            // Assert
+            // Timer.Dispose clears Enabled; an adapter that skipped _timer.Dispose() would leave it ticking
+            Assert.False(internalTimer.Enabled);
+        }
+
         [Theory]
         [InlineData("Start")]
         [InlineData("Stop")]
