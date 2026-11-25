@@ -207,16 +207,21 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 WriteCounterFile("Current", "9", DateTime.UtcNow);
 
                 // Act
-                bool result;
-                using (var transaction = conn.BeginTransaction())
+                var (result, log) = LogCapture.Run(() =>
                 {
-                    result = LegacyRecoveryImporter.Import(conn, transaction, _recoveryFolder);
-                    transaction.Commit();
-                }
+                    using (var transaction = conn.BeginTransaction())
+                    {
+                        var handled = LegacyRecoveryImporter.Import(conn, transaction, _recoveryFolder);
+                        transaction.Commit();
+                        return handled;
+                    }
+                });
 
                 // Assert: the stale file is handled without being read, so the folder may go
                 Assert.True(result);
                 Assert.Equal((1, 42L), ReadCounter(conn, "Current"));
+                // ...and it belongs to an installed service, so the orphan report must not name it
+                Assert.DoesNotContain("belongs to no installed service", log);
             }
         }
 
@@ -495,6 +500,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Assert
                 Assert.Contains($"Could not import the legacy restart attempts file '{path}' of service 'LockedLog'; the recovery folder is kept.", log);
                 Assert.DoesNotContain("Imported ", log);
+                Assert.DoesNotContain($"'{path}' belongs to no installed service", log);
             }
         }
 
