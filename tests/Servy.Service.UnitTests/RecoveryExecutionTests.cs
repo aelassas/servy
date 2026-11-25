@@ -17,10 +17,13 @@ using Xunit;
 namespace Servy.Service.UnitTests
 {
     /// <summary>
-    /// Covers the arms of <c>ExecuteRecoveryAction</c> that the health-check and process-exit suites
-    /// do not reach: the tracked-hook pruning that runs before a restart, the start-process callback
-    /// handed to <see cref="IServiceHelper.RestartProcess"/>, and the reboot failure that has to put
-    /// <c>_isRebooting</c> back.
+    /// Covers the arms of <c>InitiateRecovery</c> and <c>ExecuteRecoveryAction</c> that the health-check
+    /// and process-exit suites do not reach: the busy-flag check, a teardown that begins during the
+    /// restart-attempts read or save, the state a successful action leaves (the gate, <c>_isRebooting</c>
+    /// and the failure counter), the tracked-hook pruning that runs before a restart, the relaunch values
+    /// and start-process callback handed to <see cref="IServiceHelper.RestartProcess"/> (priority and
+    /// affinity re-applied, the teardown lock held, the relaunch skipped once a stop has begun), and the
+    /// reboot failure that has to put <c>_isRebooting</c> back.
     /// </summary>
     /// <remarks>
     /// The two teardown races the main-branch twin of this class also covers have no counterpart
@@ -57,7 +60,7 @@ namespace Servy.Service.UnitTests
         }
 
         /// <summary>
-        /// Wires the service for a recovery that runs without consulting the restart-attempts file:
+        /// Wires the service for a recovery that runs without reading the restart-attempts counter:
         /// options present, recovery enabled, the attempt cap unlimited and the relaunch arguments
         /// set, since <c>ExecuteRecoveryAction</c> passes them to the helper for a RestartProcess action.
         /// </summary>
@@ -74,7 +77,7 @@ namespace Servy.Service.UnitTests
             service.SetServiceName("ServyTestService");
             service.SetRecoveryActionEnabled(true);
             service.SetRecoveryAction(action);
-            service.SetMaxRestartAttempts(0); // unlimited: recovery never reads the attempts file
+            service.SetMaxRestartAttempts(0); // unlimited: recovery never reads the attempts counter
         }
 
         /// <summary>
