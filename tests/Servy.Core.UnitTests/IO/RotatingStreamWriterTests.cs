@@ -914,6 +914,7 @@ namespace Servy.Core.UnitTests.IO
             {
                 TestReflection.SetField(writer, "_lastRotationDate", staleDate);
 
+                // Act
                 writer.Write("123456");
                 writer.Flush();
 
