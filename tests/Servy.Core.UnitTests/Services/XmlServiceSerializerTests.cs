@@ -123,7 +123,7 @@ namespace Servy.Core.UnitTests.Services
             // so FormatLineInfo returns string.Empty and the log entry carries no coordinates.
             string xml = "<ServiceDto><Name>S</Name><StartTimeout>abc</StartTimeout></ServiceDto>";
 
-            // Assert
+            // Act & Assert
             Assert.Null(_serializer.Deserialize(xml));
         }
 
