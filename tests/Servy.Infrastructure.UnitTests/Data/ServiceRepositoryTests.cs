@@ -1699,6 +1699,32 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.DoesNotContain("already exists with the logon account", log);
         }
 
+        [Theory]
+        [InlineData(@"NT SERVICE\Test", true)]     // the import names a passwordless account, which replaces the stored one (#8054)
+        [InlineData(@"DOMAIN\svc_gmsa$", true)]    // a gMSA is passwordless too
+        [InlineData(null, false)]                   // an edit save: credentials are not preserved, so this method keeps nothing
+        public void ApplyRuntimeState_StoredPasswordAccountThatIsNotKept_DoesNotLogAKeptAccount(string incomingAccount, bool preserveCredentials)
+        {
+            // Arrange: a stored account with a password, and a write that does not keep it
+            var incoming = incomingAccount == null
+                ? new ServiceDto { Name = "Test", RunAsLocalSystem = true, UserAccount = null, Password = null }
+                : new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = incomingAccount, Password = null };
+            var existing = new ServiceDto { Name = "Test", RunAsLocalSystem = false, UserAccount = @"DOMAIN\svc", Password = "stored_password" };
+
+            // Act
+            var (_, log) = LogCapture.Run(() => TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                true,
+                preserveCredentials));
+
+            // Assert: the stored account was not kept, so nothing may say it was
+            Assert.DoesNotContain("already exists with the logon account", log);
+            Assert.DoesNotContain(@"DOMAIN\svc", log);
+        }
+
         [Fact]
         public async Task CreateEncryptedClone_CatchBlock_ThrowsInvalidOperationException()
         {
