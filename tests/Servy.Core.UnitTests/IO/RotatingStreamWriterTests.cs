@@ -1480,9 +1480,9 @@ namespace Servy.Core.UnitTests.IO
                     }
 
                     // Assert: Await state settlement loop pass
-                    // Because the background retry loops complete outside the public lock,
-                    // we allow up to 1 second for the task success handler block to commit
-                    // its state updates back down to the default variables.
+                    // rotateTask has completed, and PerformPhysicalRotation ran on its thread and reset
+                    // this state under _lock before Write returned, so the poll passes on its first
+                    // check; the 1-second bound is a safety margin, not a wait for another thread.
                     bool isDisabled = true;
                     DateTime cooldown = DateTime.MaxValue;
 
@@ -1520,9 +1520,9 @@ namespace Servy.Core.UnitTests.IO
                 }
 
                 // 3. Assert: Await state settlement loop pass
-                // ROBUSTNESS REFACTOR: Because PerformPhysicalRotation executes loops and fallback updates completely
-                // outside of the public lock thread boundary, we must use SpinWait to prevent a reflection execution
-                // race condition before the exception cooldown timestamp is officially committed.
+                // PrepareRotation set _rotationCooldownUntil under _lock before the move was attempted, and
+                // PerformPhysicalRotation ran on this thread before Write returned, so the poll passes on its
+                // first check; the 1-second bound is a safety margin, not a wait for another thread.
                 bool isDisabled = true;
                 DateTime cooldown = DateTime.MinValue;
 
