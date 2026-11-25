@@ -112,6 +112,24 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void RemoveAllowAces_TwoAdjacentAllowEntriesForTheAccount_RemovesBoth()
+        {
+            // Arrange: two grants appended one after the other, the duplicate the grant path's removal exists to prevent
+            var acl = new RawAcl(GenericAcl.AclRevision, 3);
+            acl.InsertAce(0, Ace(AceQualifier.AccessAllowed, 0x1F0, Other));
+            acl.InsertAce(1, Ace(AceQualifier.AccessAllowed, 0x14, Target));
+            acl.InsertAce(2, Ace(AceQualifier.AccessAllowed, 0x14, Target));
+
+            // Act
+            var removed = WindowsServiceApi.RemoveAllowAces(acl, Target);
+
+            // Assert
+            Assert.Equal(2, removed);
+            var kept = Assert.Single(acl.Cast<GenericAce>());
+            Assert.Equal(Other, Assert.IsType<CommonAce>(kept).SecurityIdentifier);
+        }
+
+        [Fact]
         public void RemoveAllowAces_RemovesOnlyTheAccountsAllowEntries_KeepsItsDenyAndOtherAccounts()
         {
             // Arrange
