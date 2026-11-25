@@ -19,7 +19,10 @@ namespace Servy.Service.UnitTests
 {
     /// <summary>
     /// Covers the exit-outcome arms of <c>OnProcessExited</c> and <c>EvaluateExitOutcome</c>:
-    /// the clean-exit recovery decision and the scheduled recovery that follows it.
+    /// the early return while the service cannot react, the clean-exit recovery decision, the
+    /// exit code of a cleared child wrapper, the <c>_isRecovering</c> gatekeeper, the scheduled
+    /// recovery (its delay, its run, its skip on teardown and its catch-all), the <c>/fail</c>
+    /// heartbeat ping, and the cleared persisted process state.
     /// </summary>
     /// <remarks>
     /// The two teardown races the main-branch twin of this class also covers have no counterpart
