@@ -225,7 +225,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Act & Assert
             // Custom utility unwraps TargetInvocationException automatically via ExceptionDispatchInfo,
-            // so we asset directly on IOException.
+            // so we assert directly on IOException.
             var exception = Assert.Throws<IOException>(() =>
                 TestReflection.InvokeNonPublicStatic(typeof(RotatingStreamWriter), "GenerateUniqueFileName", new object[] { basePath }));
 
