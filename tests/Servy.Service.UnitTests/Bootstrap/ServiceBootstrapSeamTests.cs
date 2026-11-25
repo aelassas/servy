@@ -536,15 +536,6 @@ namespace Servy.Service.UnitTests.Bootstrap
         /// </summary>
         private sealed class FakeBootstrapEnvironment : IServiceBootstrapEnvironment
         {
-            /// <summary>The connection string <see cref="LoadCoreSettings"/> returns.</summary>
-            public const string ConnectionString = "Data Source=:memory:";
-
-            /// <summary>The AES key path <see cref="LoadCoreSettings"/> returns.</summary>
-            public const string KeyPath = @"C:\servy-tests\aes_key.dat";
-
-            /// <summary>The AES IV path <see cref="LoadCoreSettings"/> returns.</summary>
-            public const string IvPath = @"C:\servy-tests\aes_iv.dat";
-
             /// <summary>Gets the in-memory configuration values <see cref="BuildConfiguration"/> serves.</summary>
             public NameValueCollection Settings { get; } = new NameValueCollection();
 
@@ -590,11 +581,6 @@ namespace Servy.Service.UnitTests.Bootstrap
             /// <summary>Serves <see cref="Settings"/> as the application settings.</summary>
             /// <returns>The in-memory application settings.</returns>
             public NameValueCollection BuildConfiguration() => Settings;
-
-            /// <summary>Returns the fixed test paths.</summary>
-            /// <returns>The core settings the constructor reads its paths from.</returns>
-            public CoreSettings LoadCoreSettings() =>
-                new CoreSettings(ConnectionString, KeyPath, IvPath);
 
             /// <summary>Records the configuration and the instance logger and does nothing else.</summary>
             /// <param name="configuration">The configuration the constructor passed.</param>

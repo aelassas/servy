@@ -1,4 +1,3 @@
-using Servy.Core.Config;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Specialized;
@@ -8,9 +7,8 @@ namespace Servy.Service.Bootstrap
     /// <summary>
     /// Seam over the machine-touching and process-global calls that the production constructor of
     /// <see cref="Servy.Service.Service"/> would otherwise make inline: the global logger, the Windows
-    /// event source, the application settings, the core data-layer settings and the logging
-    /// configuration. The service opens no database: it reads its configuration through the Servy
-    /// host named pipe.
+    /// event source, the application settings and the logging configuration. The service opens no
+    /// database: it reads its configuration through the Servy host named pipe.
     /// </summary>
     /// <remarks>
     /// The production implementation is <see cref="ServiceBootstrapEnvironment"/>. Every member forwards
@@ -49,12 +47,6 @@ namespace Servy.Service.Bootstrap
         /// </summary>
         /// <returns>The application settings. An absent section yields an empty collection.</returns>
         NameValueCollection BuildConfiguration();
-
-        /// <summary>
-        /// Loads the core data-layer settings: the connection string and the AES key and IV file paths.
-        /// </summary>
-        /// <returns>The resolved <see cref="CoreSettings"/>.</returns>
-        CoreSettings LoadCoreSettings();
 
         /// <summary>
         /// Applies the logging configuration found in <paramref name="configuration"/> to the global logger

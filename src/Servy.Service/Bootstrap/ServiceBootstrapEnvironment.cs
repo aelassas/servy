@@ -48,15 +48,6 @@ namespace Servy.Service.Bootstrap
         }
 
         /// <summary>
-        /// Calls <see cref="CoreSettingsLoader.Load"/>.
-        /// </summary>
-        /// <returns>The resolved <see cref="CoreSettings"/>.</returns>
-        public CoreSettings LoadCoreSettings()
-        {
-            return CoreSettingsLoader.Load();
-        }
-
-        /// <summary>
         /// Calls <see cref="LoggerConfigurator.ConfigureFromAppSettings"/> with the given configuration
         /// and instance logger.
         /// </summary>
