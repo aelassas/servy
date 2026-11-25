@@ -23,10 +23,9 @@ namespace Servy.Service.UnitTests.Bootstrap
     /// <summary>
     /// Covers the production constructor of <see cref="Service"/> through
     /// <see cref="IServiceBootstrapEnvironment"/>: the <c>Timing:*</c> parsing, the
-    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, the CVE-2025-6965 SQLite guard, the data-stack
-    /// wiring, the per-service log folder, the logging configuration and the ignored-database-setting
-    /// warning, the exit-code rules of the surrounding <c>catch</c>, and the null-argument guards of the
-    /// bootstrap overload.
+    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, the per-service log folder, the logging configuration
+    /// and the ignored-database-setting warning, the exit-code rules of the surrounding <c>catch</c>, and the
+    /// null-argument guards of the bootstrap overload.
     /// </summary>
     /// <remarks>
     /// Before the seam existed none of this was reachable from a unit test: every step touched the
@@ -159,11 +158,10 @@ namespace Servy.Service.UnitTests.Bootstrap
         }
 
         /// <summary>
-        /// A successful construction wires the four objects the data stack carries and enables shutdown
-        /// notifications.
+        /// A successful construction enables shutdown notifications and names the service after the event source.
         /// </summary>
         [Fact]
-        public void Constructor_Success_WiresTheDataStackAndEnablesShutdown()
+        public void Constructor_Success_EnablesShutdownAndUsesTheEventSourceName()
         {
             // Arrange
             var env = new FakeBootstrapEnvironment();
@@ -531,19 +529,13 @@ namespace Servy.Service.UnitTests.Bootstrap
 
         /// <summary>
         /// An <see cref="IServiceBootstrapEnvironment"/> that records what the constructor asked of it and
-        /// answers from memory, so no start-up step touches the event log, ProgramData, SQLite or the
+        /// answers from memory, so no start-up step touches the event log, ProgramData or the
         /// process-global logger.
         /// </summary>
         private sealed class FakeBootstrapEnvironment : IServiceBootstrapEnvironment
         {
             /// <summary>Gets the in-memory configuration values <see cref="BuildConfiguration"/> serves.</summary>
             public NameValueCollection Settings { get; } = new NameValueCollection();
-
-            /// <summary>Gets or sets the answer <see cref="IsSqliteVersionSafe"/> gives.</summary>
-            public bool SqliteVersionIsSafe { get; set; } = true;
-
-            /// <summary>Gets or sets the version <see cref="IsSqliteVersionSafe"/> reports.</summary>
-            public string DetectedSqliteVersion { get; set; } = AppConfig.MinRequiredSqliteVersion.ToString();
 
             /// <summary>Gets or sets the exception <see cref="EnsureEventSourceExists"/> raises, if any.</summary>
             public Exception EventSourceFailure { get; set; }
