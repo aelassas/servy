@@ -665,8 +665,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         /// <summary>
-        /// Shared no-op implementation of the IProcessWrapper members that the mocks in this file
-        /// do not exercise, so each mock only overrides the behaviour it is testing.
+        /// No-op implementation of the IProcessWrapper members that <see cref="MockThrowingProcessWrapper"/>,
+        /// the only mock in this file, does not exercise, so it only overrides the behaviour it is testing.
         /// </summary>
         private abstract class BaseMockProcessWrapper : IProcessWrapper
         {
