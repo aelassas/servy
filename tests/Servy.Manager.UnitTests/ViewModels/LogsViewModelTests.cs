@@ -87,6 +87,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_ShouldInitializeDefaults()
         {
+            // Arrange & Act
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             using (var vm = CreateViewModel())
             {
