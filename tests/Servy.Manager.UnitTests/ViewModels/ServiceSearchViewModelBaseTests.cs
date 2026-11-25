@@ -124,6 +124,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_SetNewValues_TriggersPropertyNotificationEvents()
         {
+            // Arrange
             var changedProperties = new List<string>();
             _sut.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProperties.Add(e.PropertyName); };
 
