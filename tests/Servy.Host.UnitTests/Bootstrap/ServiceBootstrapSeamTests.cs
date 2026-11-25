@@ -14,8 +14,8 @@ namespace Servy.Host.UnitTests.Bootstrap
     /// <summary>
     /// Covers the production constructor of the Servy host <see cref="Service"/> through
     /// <see cref="IServiceBootstrapEnvironment"/>: the log file, the <c>EnableEventLog</c> to <c>AutoLog</c> mapping,
-    /// the CVE-2025-6965 SQLite guard, the data-stack wiring, and the
-    /// exit-code rules of the surrounding <c>catch</c>; and the release, on <c>Dispose</c>, of the data-stack
+    /// the CVE-2025-6965 SQLite guard, the data-stack wiring, the ignored-database-setting warning, the
+    /// exit-code rules of the surrounding <c>catch</c> and the null-argument guards; and the release, on <c>Dispose</c>, of the data-stack
     /// members the constructor kept.
     /// </summary>
     public class ServiceBootstrapSeamTests : IDisposable
