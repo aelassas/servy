@@ -26,7 +26,7 @@ namespace Servy.Service.UnitTests.StreamWriters
             var factory = new StreamWriterFactory();
             string path = Path.Combine(Path.GetTempPath(), $"ServyTest_{Guid.NewGuid():N}.log");
             long rotationSizeInBytes = 1024;
-            DateRotationType dateRotationType = DateRotationType.Daily;
+            DateRotationType dateRotationType = DateRotationType.Weekly; // deliberately not the Daily (0) default, so a dropped argument fails
             int maxRotations = 3;
 
             try
