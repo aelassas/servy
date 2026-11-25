@@ -237,8 +237,8 @@ namespace Servy.Core.Services
         /// <remarks>
         /// Pure managed code over <see cref="RawAcl"/>, so it is <see langword="internal"/> rather than
         /// <see langword="private"/> and carries no <see cref="ExcludeFromCodeCoverageAttribute"/>: it holds the
-        /// Allow-only rule that keeps an administrator's Deny entry alive across a grant or a revocation, and both
-        /// callers around it need a live service handle.
+        /// Allow-only rule that keeps an administrator's Deny entry alive across a grant or a revocation, the rule
+        /// both <see cref="BuildGrantedDacl"/> and <see cref="BuildRevokedDacl"/> delegate to.
         /// </remarks>
         internal static int RemoveAllowAces(RawAcl acl, SecurityIdentifier sid)
         {
