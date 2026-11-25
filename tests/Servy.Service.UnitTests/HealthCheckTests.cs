@@ -1274,7 +1274,7 @@ namespace Servy.Service.UnitTests
             service.SetFailedChecks(0);
 
             // Act
-            timer.Raise(t => t.Elapsed += null, service, (ElapsedEventArgs?)null);
+            timer.Raise(t => t.Elapsed += null!, service, (ElapsedEventArgs)null!);
 
             // Assert
             // CheckHealth is an async void timer handler, so the effect lands off the raising thread

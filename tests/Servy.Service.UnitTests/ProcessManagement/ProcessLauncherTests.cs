@@ -501,8 +501,8 @@ namespace Servy.Service.UnitTests.ProcessManagement
             var log = Path.Combine(_tempDir, "both.log");
             var wrapper = ScriptedWrapper((o, e) =>
             {
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("err-first"));
-                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("out-second"));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("err-first"));
+                o!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("out-second"));
             });
 
             // Act
@@ -519,8 +519,8 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Arrange
             var wrapper = ScriptedWrapper((o, e) =>
             {
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
             });
 
             // Act
@@ -538,8 +538,8 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Arrange
             var wrapper = ScriptedWrapper((o, e) =>
             {
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
             });
 
             // Act
@@ -560,8 +560,8 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Arrange
             var wrapper = ScriptedWrapper((o, e) =>
             {
-                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
-                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
+                o!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one"));
+                o!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("two"));
             });
 
             // Act
@@ -581,7 +581,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
             var wrapper = ScriptedWrapper((o, e) =>
             {
                 captured = o;
-                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first"));
+                o!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first"));
             });
             ProcessLauncher.Start(
                 SyncOptions(Path.Combine(_tempDir, "out.log"), null),
@@ -590,7 +590,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
 
             // Act
             var ex = Record.Exception(() =>
-                captured!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("late")));
+                captured!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("late")));
 
             // Assert
             Assert.Null(ex);
@@ -607,7 +607,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
             var wrapper = ScriptedWrapper((o, e) =>
             {
                 captured = e;
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first"));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first"));
             });
             ProcessLauncher.Start(
                 SyncOptions(Path.Combine(_tempDir, "out.log"), Path.Combine(_tempDir, "err.log")),
@@ -616,7 +616,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
 
             // Act
             var ex = Record.Exception(() =>
-                captured!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("late")));
+                captured!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("late")));
 
             // Assert
             Assert.Null(ex);
@@ -764,8 +764,8 @@ namespace Servy.Service.UnitTests.ProcessManagement
             DataReceivedEventHandler? attachedErr = null;
             void RaiseAttached(string line)
             {
-                attachedOut?.Invoke(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("out-" + line));
-                attachedErr?.Invoke(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("err-" + line));
+                attachedOut?.Invoke(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("out-" + line));
+                attachedErr?.Invoke(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("err-" + line));
             }
 
             int kills = 0;
@@ -834,7 +834,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
         {
             // Arrange
             var wrapper = ScriptedWrapper((o, e) =>
-                e!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one")));
+                e!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("one")));
 
             // Act
             ProcessLauncher.Start(
@@ -856,7 +856,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
             // Arrange
             var log = Path.Combine(_tempDir, "nobom.log");
             var wrapper = ScriptedWrapper((o, e) =>
-                o!(null, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first")));
+                o!(null!, DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("first")));
 
             // Act
             ProcessLauncher.Start(SyncOptions(log, null), FactoryFor(wrapper), _logger.Object);

@@ -371,8 +371,8 @@ namespace Servy.Service.UnitTests
 
             // 2. The finally kept going: the field is cleared and both semaphores are disposed
             Assert.Null(TestReflection.GetField<CancellationTokenSource?>(_service, "_cancellationSource"));
-            Assert.Throws<ObjectDisposedException>(() => restartSemaphore.Wait(0));
-            Assert.Throws<ObjectDisposedException>(() => healthSemaphore.Wait(0));
+            Assert.Throws<ObjectDisposedException>(() => restartSemaphore.Wait(0, TestContext.Current.CancellationToken));
+            Assert.Throws<ObjectDisposedException>(() => healthSemaphore.Wait(0, TestContext.Current.CancellationToken));
 
             // 3. The teardown still completed
             Assert.True(TestReflection.GetField<bool>(_service, "_disposed"));
