@@ -1014,8 +1014,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
                 // 1. Act: Case - File doesn't exist yet (Lazy Init)
-                // Calling Write("") triggers CheckRotation, but _writer is still null
-                // until the write physically starts.
+                // Write("") opens the file through InitializeWriter before CheckRotation runs, so
+                // CheckRotation sees an existing 0-byte file below the 5-byte limit and does not rotate.
                 writer.Write("");
                 writer.Flush();
 
