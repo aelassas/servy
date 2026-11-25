@@ -14,9 +14,13 @@ namespace Servy.Service.UnitTests
     /// <summary>
     /// Covers the arms of <c>InitiateRecoveryAsync</c> and <c>ExecuteRecoveryAction</c> that the
     /// health-check and process-exit suites do not reach: the two teardown races around its own
-    /// semaphore wait, the catch that swallows a failing recovery action, the tracked-hook pruning
-    /// that runs before a restart, the start-process callback handed to
-    /// <see cref="IServiceHelper.RestartProcess"/>, and the reboot failure that has to put
+    /// semaphore wait, the busy-flag re-check under the lock, a stop that cancels the restart-attempts
+    /// read or begins during the attempts save, the swallowed failure of the semaphore release, the
+    /// state a successful action leaves (the gate, <c>_isRebooting</c> and the failure counter), the
+    /// catch that swallows a failing recovery action, the tracked-hook pruning that runs before a
+    /// restart, the relaunch values and start-process callback handed to
+    /// <see cref="IServiceHelper.RestartProcess"/> (priority and affinity re-applied, the teardown lock
+    /// held, the relaunch skipped once a stop has begun), and the reboot failure that has to put
     /// <c>_isRebooting</c> back.
     /// </summary>
     public class RecoveryExecutionTests : IDisposable
@@ -49,7 +53,7 @@ namespace Servy.Service.UnitTests
         }
 
         /// <summary>
-        /// Wires the service for a recovery that runs without consulting the restart-attempts file:
+        /// Wires the service for a recovery that runs without reading the restart-attempts counter:
         /// options present, recovery enabled, the attempt cap unlimited and the relaunch arguments
         /// set, since <c>ExecuteRecoveryAction</c> dereferences them for a RestartProcess action.
         /// </summary>
@@ -66,7 +70,7 @@ namespace Servy.Service.UnitTests
             service.SetServiceName("ServyTestService");
             service.SetRecoveryActionEnabled(true);
             service.SetRecoveryAction(action);
-            service.SetMaxRestartAttempts(0); // unlimited: recovery never reads the attempts file
+            service.SetMaxRestartAttempts(0); // unlimited: recovery never reads the attempts counter
         }
 
         /// <summary>
