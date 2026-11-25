@@ -1055,14 +1055,17 @@ namespace Servy.Core.UnitTests.Services
             _api.Setup(a => a.OpenService(scm, "DbOnly", SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG)).Returns(() => _handles.Service(0));
             _errors.Setup(e => e.GetLastWin32Error()).Returns(Errors.ERROR_SERVICE_DOES_NOT_EXIST);
 
-            // Act: the host itself and blank names are ignored as well
-            var updated = await Create().EnsureServicesDependOnHostAsync(new[] { "Current", "DbOnly", "Servy", " ", "current" }, TestContext.Current.CancellationToken);
+            // Act: the host itself (padded or not), blank names and a case variant of a name already seen are ignored as well
+            var updated = await Create().EnsureServicesDependOnHostAsync(new[] { "Current", "DbOnly", "Servy", " ", "current", " servy " }, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(0, updated);
             _api.Verify(a => a.ChangeServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             _api.Verify(a => a.OpenService(scm, "Servy", It.IsAny<uint>()), Times.Never);
+            _api.Verify(a => a.OpenService(scm, " servy ", It.IsAny<uint>()), Times.Never);
+            _api.Verify(a => a.OpenService(scm, " ", It.IsAny<uint>()), Times.Never);
+            _api.Verify(a => a.OpenService(scm, "current", It.IsAny<uint>()), Times.Never);
         }
 
         [Fact]
