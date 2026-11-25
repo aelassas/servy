@@ -764,6 +764,7 @@ namespace Servy.Core.UnitTests.Helpers
                 // but FileShare.None blocks AtomicSecureMove from overwriting/moving onto targetPath.
                 using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
+                    // Act & Assert
                     Assert.ThrowsAny<Exception>(() =>
                     {
                         Helper.WriteFileAtomic(targetPath, (Stream stream) =>
@@ -1076,6 +1077,7 @@ namespace Servy.Core.UnitTests.Helpers
                 // but FileShare.None blocks AtomicSecureMove from overwriting/moving onto targetPath.
                 using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
+                    // Act & Assert
                     await Assert.ThrowsAnyAsync<Exception>(async () =>
                     {
                         await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
