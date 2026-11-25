@@ -1505,7 +1505,7 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             var filePath = Path.Combine(TempDirectory, "persistent.log");
-            // Ensure the file has content so it isn't skipped by the "Length == 0" guard
+            // Create the file first: the locker below opens it with FileMode.Open, and the writer creates it only on its first write
             File.WriteAllText(filePath, "initial content");
 
             // Set a small limit (5 bytes) to ensure the next write triggers rotation
