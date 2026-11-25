@@ -154,7 +154,6 @@
     <Compile Include="TestableServiceTests.cs" />
     <Compile Include="Timers\TimerAdapterTests.cs" />
     <Compile Include="Timers\TimerFactoryTests.cs" />
-    <Compile Include="UriBuilderTests.cs" />
     <Compile Include="Validation\PathValidatorTests.cs" />
   </ItemGroup>
   <ItemGroup>
