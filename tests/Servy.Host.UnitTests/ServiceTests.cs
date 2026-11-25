@@ -69,7 +69,8 @@ namespace Servy.Host.UnitTests
             => _sut.CurrentPipeSecurity.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<PipeAccessRule>().Any(r => sid.Equals(r.IdentityReference));
 
         /// <summary>
-        /// Polls the host's current pipe DACL until it grants <paramref name="sid"/>, for at most about five seconds.
+        /// Polls the host's current pipe DACL until it grants <paramref name="sid"/>: 500 polls 10 ms apart, so it gives up after five seconds at the
+        /// earliest (longer where the timer resolution rounds each delay up).
         /// </summary>
         /// <param name="sid">The account to wait for.</param>
         /// <returns><see langword="true"/> when the account was granted in time.</returns>
