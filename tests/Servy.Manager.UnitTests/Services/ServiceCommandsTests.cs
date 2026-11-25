@@ -717,6 +717,60 @@ namespace Servy.Manager.UnitTests.Services
             }
         }
 
+        /// <summary>
+        /// A never-started <see cref="Process"/> that counts explicit disposals.
+        /// <see cref="Process.Disposed"/> is not raised by <see cref="Process.Dispose()"/> on .NET,
+        /// so overriding <c>Dispose(bool)</c> is the only way to observe it.
+        /// </summary>
+        private sealed class DisposeCountingProcess : Process
+        {
+            /// <summary>Gets the number of explicit <see cref="Process.Dispose()"/> calls seen.</summary>
+            public int DisposeCount { get; private set; }
+
+            /// <summary>Counts an explicit disposal, then releases the process resources through the base class.</summary>
+            /// <param name="disposing"><see langword="true"/> when called from <see cref="Process.Dispose()"/>; <see langword="false"/> from the finalizer.</param>
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing) DisposeCount++;
+                base.Dispose(disposing);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ConfigureServiceAsync_ProcessStartsSuccessfully_StartsInTheAppDirectoryAndDisposesTheProcess(bool withService)
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = withService ? new Service { Name = "TestService" } : null;
+            string baseDir = AppFoldersHelper.GetAppDirectory();
+
+            using (var tempExe = new TempFile(baseDir, $"test_desktop_{Guid.NewGuid():N}.exe").Write("dummy"))
+            using (var process = new DisposeCountingProcess())
+            {
+                _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe.Path);
+                _serviceRepositoryMock.Setup(r => r.GetByNameAsync("TestService", false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
+                ProcessStartInfo? capturedPsi = null;
+                _processHelperMock
+                    .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                    .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
+                    .Returns(process);
+
+                // Act
+                await sut.ConfigureServiceAsync(service, TestContext.Current.CancellationToken);
+
+                // Assert
+                // Read inside the using block, so the count excludes the test's own disposal.
+                Assert.Equal(1, process.DisposeCount);
+                Assert.NotNull(capturedPsi);
+                Assert.Equal(baseDir, capturedPsi.WorkingDirectory);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
         [Fact]
         public async Task ConfigureServiceAsync_ProcessStartReturnsNull_ShowsLaunchFailedError()
         {
