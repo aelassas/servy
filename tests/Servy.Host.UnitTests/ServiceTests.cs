@@ -1966,7 +1966,8 @@ namespace Servy.Host.UnitTests
                         observed = warned.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
                     }
 
-                    // The drain ends a handler that is still waiting on the host's own token
+                    // Same drain as the sibling tests: the request timeout has already ended the repository call by the
+                    // time the warning is logged, so this only waits for that handler to return
                     host.StopListening();
 
                     // Assert: the timeout ended the repository call, not only the read
