@@ -96,12 +96,14 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void Constructor_NullCommandLineProvider_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ServiceHelper(null!, _mockProcessHelper.Object));
         }
 
         [Fact]
         public void Constructor_NullProcessHelper_ThrowsArgumentNullException()
         {
+            // Arrange, Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ServiceHelper(_mockCommandLineProvider.Object, null!));
         }
 
