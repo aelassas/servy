@@ -16,8 +16,9 @@ namespace Servy.Service.UnitTests.Bootstrap
     /// <summary>
     /// Covers the production constructor of <see cref="Service"/> through
     /// <see cref="IServiceBootstrapEnvironment"/>: the <c>Timing:*</c> parsing, the
-    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, the per-service log folder and the exit-code rules of
-    /// the surrounding <c>catch</c>.
+    /// <c>EnableEventLog</c> to <c>AutoLog</c> mapping, the per-service log folder, the logging configuration
+    /// and the ignored-database-setting warning, the exit-code rules of the surrounding <c>catch</c>, and the
+    /// null-argument guards of the bootstrap overload.
     /// </summary>
     /// <remarks>
     /// Before the seam existed none of this was reachable from a unit test: every step touched the
