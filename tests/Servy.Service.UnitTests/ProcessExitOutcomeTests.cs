@@ -17,7 +17,8 @@ namespace Servy.Service.UnitTests
     /// exit code of a cleared child wrapper, the <c>_isRecovering</c> gatekeeper, the scheduled
     /// recovery (its delay, its run, its skip on teardown and its catch-all), the <c>/fail</c>
     /// heartbeat ping, the cleared persisted process state, the teardown races around the
-    /// health-check semaphore wait, and the handler's own catch-all.
+    /// health-check semaphore wait, the swallowed failure of its release, and the handler's own
+    /// catch-all.
     /// </summary>
     public class ProcessExitOutcomeTests : IDisposable
     {
@@ -163,7 +164,7 @@ namespace Servy.Service.UnitTests
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
             service.SetMaxFailedChecks(1);
             service.SetFailedChecks(0);
-            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts file
+            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts counter
 
             using var recovered = new ManualResetEventSlim(false);
             _ctx.Helper
@@ -367,7 +368,7 @@ namespace Servy.Service.UnitTests
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
             service.SetMaxFailedChecks(1);
             service.SetFailedChecks(0);
-            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts file
+            service.SetMaxRestartAttempts(0); // unlimited: recovery does not read the attempts counter
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(1);
