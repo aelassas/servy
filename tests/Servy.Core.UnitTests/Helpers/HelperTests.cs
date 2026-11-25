@@ -867,6 +867,7 @@ namespace Servy.Core.UnitTests.Helpers
                 // but FileShare.None makes the File.Move onto targetPath fail.
                 using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
+                    // Act & Assert
                     Assert.ThrowsAny<Exception>(() =>
                     {
                         Helper.WriteFileAtomic(targetPath, (Stream stream) =>
@@ -1414,6 +1415,7 @@ namespace Servy.Core.UnitTests.Helpers
                 // but FileShare.None makes the File.Move onto targetPath fail.
                 using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
+                    // Act & Assert
                     await Assert.ThrowsAnyAsync<Exception>(async () =>
                     {
                         await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
