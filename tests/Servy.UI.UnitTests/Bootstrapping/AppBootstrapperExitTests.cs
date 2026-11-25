@@ -35,7 +35,7 @@ namespace Servy.UI.UnitTests.Bootstrapping
             {
                 await Task.Delay(Timeout.Infinite, token).ContinueWith(_ => { }, TaskScheduler.Default);
                 await Task.Delay(500);
-            });
+            }, TestContext.Current.CancellationToken);
             TestReflection.SetField(bootstrapper, "_backgroundInitTask", backgroundInit);
 
             // Act

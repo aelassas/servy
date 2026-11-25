@@ -79,7 +79,7 @@ namespace Servy.UI.IntegrationTests.Services
             const string aboutText = "Servy v1.0";
 
             // Act
-            await _service.OpenAboutDialogAsync(aboutText, Caption);
+            await _service.OpenAboutDialogAsync(aboutText, Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(m => m.ShowInfoAsync(aboutText, Caption), Times.Once);
@@ -97,7 +97,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerResponse("{ \"name\": \"Draft Release\", \"tag_name\": \"\" }");
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -116,7 +116,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerResponse("{ \"name\": \"Draft Release\" }");
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -136,7 +136,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerResponse("null");
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -156,7 +156,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerResponse("{ \"tag_name\": \"v1.0.0\" }");
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -177,7 +177,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerResponse($"{{ \"tag_name\": \"{tagName}\" }}");
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -207,7 +207,7 @@ namespace Servy.UI.IntegrationTests.Services
             InjectMockHandlerIntoStaticClient(mockHandler.Object);
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(sent);
@@ -244,7 +244,7 @@ namespace Servy.UI.IntegrationTests.Services
                 .Returns(Task.CompletedTask);
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), Caption), Times.Once);
@@ -313,7 +313,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerResponse($"{{ \"tag_name\": \"{tagName}\" }}");
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -334,7 +334,7 @@ namespace Servy.UI.IntegrationTests.Services
             SetupHandlerFailure(new OperationCanceledException());
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             _mockMessageBox.Verify(
@@ -356,7 +356,7 @@ namespace Servy.UI.IntegrationTests.Services
                 var service = new HelpService(_mockMessageBox.Object, appLifetimeCts.Token);
 
                 // Act
-                await service.CheckUpdatesAsync(Caption);
+                await service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
                 // Assert
                 _mockMessageBox.Verify(
@@ -409,7 +409,7 @@ namespace Servy.UI.IntegrationTests.Services
                 .Returns(Task.CompletedTask);
 
             // Act
-            await _service.CheckUpdatesAsync(Caption);
+            await _service.CheckUpdatesAsync(Caption, TestContext.Current.CancellationToken);
 
             // Assert
             // The substituted text is the exception message HttpClient surfaces, which is not pinned here;
