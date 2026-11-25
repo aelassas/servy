@@ -65,7 +65,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
             hook.Dispose();
 
             // Assert - First call should dispose process and set _disposed to true
-            Assert.True(process.Disposed);
+            Assert.True(process.WasDisposed);
             Assert.Equal(1, process.DisposeCount);
             bool disposedAfterFirst = TestReflection.GetField<bool>(hook, "_disposed");
             Assert.True(disposedAfterFirst);
@@ -91,7 +91,7 @@ namespace Servy.Service.UnitTests.ProcessManagement
                 hook.CallProtectedDispose(false);
 
                 // Assert - the Process is still usable, i.e. it was NOT disposed
-                Assert.False(process.Disposed);
+                Assert.False(process.WasDisposed);
                 var ex = Record.Exception(() => _ = process.StartInfo);
                 Assert.Null(ex);
                 Assert.Same(process, hook.Process);

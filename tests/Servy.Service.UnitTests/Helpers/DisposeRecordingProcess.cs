@@ -13,7 +13,7 @@ namespace Servy.Service.UnitTests.Helpers
         public int DisposeCount { get; private set; }
 
         /// <summary>Gets a value indicating whether the instance has been explicitly disposed at least once.</summary>
-        public bool Disposed => DisposeCount > 0;
+        public bool WasDisposed => DisposeCount > 0;
 
         /// <summary>
         /// Counts explicit disposal only; the finalizer path is passed through uncounted.
