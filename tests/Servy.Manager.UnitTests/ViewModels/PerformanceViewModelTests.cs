@@ -773,7 +773,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         /// <summary>
         /// Keeps the current dispatcher pumping until <paramref name="task"/> completes, so the
-        /// <see cref="Task.Run(Action)"/> awaited inside ApplyTickAsync can finish, then observes its result.
+        /// <see cref="Task.Run{TResult}(Func{TResult}, CancellationToken)"/> awaited inside ApplyTickAsync can finish, then observes its result.
         /// </summary>
         /// <param name="task">The tick task to await.</param>
         private static void PumpUntilCompleted(Task task)
