@@ -4,7 +4,8 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Provides access to the AES encryption key and initialization vector (IV)
-    /// used for secure password encryption and decryption.
+    /// that <see cref="SecureData"/> uses to encrypt and decrypt the sensitive fields of a stored service
+    /// (the account password, the heartbeat URL, and the parameters and environment variables).
     /// </summary>
     public interface IProtectedKeyProvider : IDisposable
     {
