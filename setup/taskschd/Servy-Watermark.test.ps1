@@ -348,7 +348,6 @@ try {
     }
     Write-Host "  [OK] Get-EventsToProcess at exactly the cap delivers every event and logs no skip." -ForegroundColor Gray
 
-
     Write-Host "`n====================================================" -ForegroundColor Cyan
     Write-Host "SUCCESS: Servy-Watermark.psm1 validated successfully!" -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor Cyan
