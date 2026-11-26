@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -480,36 +479,12 @@ namespace Servy.Core.IntegrationTests.Security
     }
 
     /// <summary>
-    /// Derives the system mutex name <c>ProtectedKeyProvider.RunUnderMutex</c> uses for a key or IV file path,
-    /// so the lock and ACL tests share one mirror of that derivation instead of each keeping a copy.
-    /// </summary>
-    internal static class KeyVaultMutex
-    {
-        /// <summary>
-        /// Mirrors the mutex name <c>ProtectedKeyProvider.RunUnderMutex</c> derives for a path:
-        /// an FNV-1a hash of the lower-cased path in the <c>Global\</c> namespace.
-        /// </summary>
-        /// <param name="path">The key or IV file path the provider locks on.</param>
-        /// <returns>The name of the system mutex the provider will open for <paramref name="path"/>.</returns>
-        internal static string NameFor(string path)
-        {
-            uint stableHash = 2166136261;
-            foreach (char c in path.ToLowerInvariant())
-            {
-                stableHash = (stableHash ^ c) * 16777619;
-            }
-
-            return $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
-        }
-    }
-
-    /// <summary>
     /// Integration tests for the cross-process lock failure arms of <see cref="ProtectedKeyProvider"/>.
-    /// Each test squats the provider's own global mutex name with a real kernel object, so the arm under
+    /// Each test holds, blocks or squats the provider's lock with a real file or kernel object, so the arm under
     /// test is reached without any production seam. The arms report through the static logger that
     /// <see cref="LogCapture"/> redirects, which is why these tests join
     /// <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
-    /// A unique temporary path per test keeps both the mutex name and the provider's static
+    /// A unique temporary path per test keeps both the lock file and the provider's static
     /// migration-failure counter private to that test.
     /// </summary>
     [Collection(CoreOsIntegrationCollection.Name)]
@@ -518,15 +493,16 @@ namespace Servy.Core.IntegrationTests.Security
         #region Lock Failure Tests
 
         [Fact]
-        public void GetKey_LockNameSquattedByAnotherObjectType_FailsClosedWithoutWritingTheKey()
+        public void GetKey_LockFileCannotBeOpened_FailsClosedWithoutWritingTheKey()
         {
             // Arrange
-            var keyPath = Path.Combine(TempDirectory, "squatted.key");
-            var ivPath = Path.Combine(TempDirectory, "squatted.iv");
+            var keyPath = Path.Combine(TempDirectory, "blocked.key");
+            var ivPath = Path.Combine(TempDirectory, "blocked.iv");
 
-            // A named event carrying the mutex's own name makes MutexAcl.Create throw
-            // WaitHandleCannotBeOpenedException: same name, different kernel object type.
-            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutex.NameFor(keyPath)))
+            // A directory at the lock file's own path cannot be opened as a file, so the open is refused outright
+            // rather than reported as a sharing violation the provider would wait on.
+            Directory.CreateDirectory(keyPath + ".lock");
+
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
@@ -537,11 +513,10 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.Contains("Could not acquire the cross-process lock", wrapped.Message);
 
                 var lockFailure = Assert.IsType<System.Security.SecurityException>(wrapped.InnerException);
-                Assert.IsType<WaitHandleCannotBeOpenedException>(lockFailure.InnerException);
-                Assert.Contains("CRITICAL: Failed to allocate global synchronization mutex", captured.Log);
+                Assert.IsType<UnauthorizedAccessException>(lockFailure.InnerException);
+                Assert.Contains("CRITICAL: Failed to open the cross-process lock file", captured.Log);
 
-                // Fail closed: no key may be generated outside the cross-process lock,
-                // and no silent fallback to a per-session Local\ namespace may stand in for it.
+                // Fail closed: no key may be generated outside the cross-process lock
                 Assert.False(File.Exists(keyPath));
             }
         }
@@ -560,26 +535,24 @@ namespace Servy.Core.IntegrationTests.Security
             }
 
             // A v7.8 file: protected with NO entropy, so the primary machine-entropy unprotect fails,
-            // the null-entropy fallback succeeds, and the provider re-saves under the mutex - which
-            // the squatted name below makes impossible.
+            // the null-entropy fallback succeeds, and the provider re-saves under the lock - which
+            // the directory blocking the lock file's path below makes impossible.
             byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
             File.WriteAllBytes(keyPath, legacyEncrypted);
+            Directory.CreateDirectory(keyPath + ".lock");
 
             var logs = new List<string>();
 
-            using (new EventWaitHandle(false, EventResetMode.ManualReset, KeyVaultMutex.NameFor(keyPath)))
+            // Act - one fresh provider per attempt, so the instance cache cannot short-circuit the read
+            for (int attempt = 0; attempt < AppConfig.KeyProviderMigrationFailureEscalationThreshold; attempt++)
             {
-                // Act - one fresh provider per attempt, so the instance cache cannot short-circuit the read
-                for (int attempt = 0; attempt < AppConfig.KeyProviderMigrationFailureEscalationThreshold; attempt++)
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
                 {
-                    using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
-                    {
-                        var captured = LogCapture.Run(() => provider.GetKey());
+                    var captured = LogCapture.Run(() => provider.GetKey());
 
-                        // The service stays operational: the legacy data is still returned
-                        Assert.Equal(rawLegacyData, captured.Result);
-                        logs.Add(captured.Log);
-                    }
+                    // The service stays operational: the legacy data is still returned
+                    Assert.Equal(rawLegacyData, captured.Result);
+                    logs.Add(captured.Log);
                 }
             }
 
@@ -599,51 +572,57 @@ namespace Servy.Core.IntegrationTests.Security
         }
 
         [Fact]
-        public void GetKey_LockAbandonedByPreviousOwner_TakesOwnershipAndGeneratesTheKey()
+        public void GetKey_LockFileHeldPastTheTimeout_ThrowsTheLockTimeoutWithoutWritingTheKey()
         {
             // Arrange
-            var keyPath = Path.Combine(TempDirectory, "abandoned.key");
-            var ivPath = Path.Combine(TempDirectory, "abandoned.iv");
+            var keyPath = Path.Combine(TempDirectory, "held.key");
+            var ivPath = Path.Combine(TempDirectory, "held.iv");
 
-            // The holder keeps the kernel object alive after the owning thread dies, so the provider
-            // opens the abandoned mutex instead of creating a fresh one of the same name.
-            using (new Mutex(false, KeyVaultMutex.NameFor(keyPath)))
+            using (new FileStream(keyPath + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
-                var owner = new Thread(() => AbandonKeyVaultMutex(keyPath));
-                owner.Start();
-                owner.Join();
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
-                {
-                    // Act
-                    var captured = LogCapture.Run(() => provider.GetKey(), LogLevel.Warn);
+                // Act
+                var exception = Record.Exception(() => provider.GetKey());
+                stopwatch.Stop();
 
-                    // Assert - the #1808 failure is that this throws instead of generating the key
-                    Assert.Equal(AppConfig.AesKeySizeBytes, captured.Result.Length);
-                    Assert.True(File.Exists(keyPath));
-                    Assert.Contains("was abandoned by a previous owner", captured.Log);
-                }
+                // Assert
+                var wrapped = Assert.IsType<InvalidOperationException>(exception);
+                Assert.Contains("Could not acquire the cross-process lock", wrapped.Message);
+                Assert.IsType<TimeoutException>(wrapped.InnerException);
+
+                // The provider waited out the whole timeout before giving up, and wrote nothing outside the lock
+                Assert.True(stopwatch.Elapsed >= TimeSpan.FromSeconds(AppConfig.KeyProviderMutexTimeoutSeconds),
+                    $"GetKey gave up after {stopwatch.Elapsed}, before the {AppConfig.KeyProviderMutexTimeoutSeconds} s lock timeout.");
+                Assert.False(File.Exists(keyPath));
             }
         }
 
         [Fact]
-        public void GetKey_LockAlreadyCreatedByAnotherHolder_LogsThatItJoinedTheExistingMutex()
+        public void GetKey_GlobalMutexNameSquattedByAnotherObjectType_StillGeneratesTheKey()
         {
             // Arrange
-            var keyPath = Path.Combine(TempDirectory, "joined.key");
-            var ivPath = Path.Combine(TempDirectory, "joined.iv");
+            var keyPath = Path.Combine(TempDirectory, "squatted.key");
+            var ivPath = Path.Combine(TempDirectory, "squatted.iv");
 
-            // The mutex already exists and is unowned, so MutexAcl.Create joins it rather than
-            // creating it, and the DACL it would have applied is the creating process's.
-            using (new Mutex(false, KeyVaultMutex.NameFor(keyPath)))
+            // The Global\ name the provider used to lock on before #8209: an FNV-1a hash of the lower-cased key path.
+            // Any interactive user can create a named event under it, which used to make first key generation fail.
+            uint stableHash = 2166136261;
+            foreach (char c in keyPath.ToLowerInvariant())
+            {
+                stableHash = (stableHash ^ c) * 16777619;
+            }
+
+            using (new EventWaitHandle(false, EventResetMode.ManualReset, $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}"))
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act
-                var captured = LogCapture.Run(() => provider.GetKey(), LogLevel.Debug);
+                var key = provider.GetKey();
 
                 // Assert
-                Assert.Equal(AppConfig.AesKeySizeBytes, captured.Result.Length);
-                Assert.Contains("Joined existing cross-process mutex", captured.Log);
+                Assert.Equal(AppConfig.AesKeySizeBytes, key.Length);
+                Assert.True(File.Exists(keyPath));
             }
         }
 
@@ -665,10 +644,9 @@ namespace Servy.Core.IntegrationTests.Security
             byte[] loserKey = null;
             Exception loserError = null;
 
-            using (var holder = new Mutex(false, KeyVaultMutex.NameFor(keyPath)))
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
-                holder.WaitOne();
+                var holder = new FileStream(keyPath + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                 var loser = new Thread(() =>
                 {
                     try { loserKey = provider.GetKey(); }
@@ -685,7 +663,7 @@ namespace Servy.Core.IntegrationTests.Security
 
                 // The winner writes its key while the provider waits, then hands the lock over
                 File.Copy(winnerKeyPath, keyPath);
-                holder.ReleaseMutex();
+                holder.Dispose();
 
                 // Act
                 Assert.True(loser.Join(TimeSpan.FromSeconds(10)), "GetKey did not return after the lock was released");
@@ -697,68 +675,70 @@ namespace Servy.Core.IntegrationTests.Security
             Assert.Equal(winnerFile, File.ReadAllBytes(keyPath));
         }
         #endregion
-
-        #region Test Lifecycle
-
-        /// <summary>
-        /// Takes the key vault's mutex and returns without releasing it, so the thread running this
-        /// method abandons the mutex when it exits.
-        /// </summary>
-        /// <param name="keyPath">The key file path whose mutex name is abandoned.</param>
-        private static void AbandonKeyVaultMutex(string keyPath)
-        {
-            // Deliberately neither released nor disposed: a thread that exits while owning the mutex
-            // is what makes the next WaitOne on that name throw AbandonedMutexException.
-            var mutex = new Mutex(false, KeyVaultMutex.NameFor(keyPath));
-            mutex.WaitOne();
-        }
-
-        #endregion
     }
 
     /// <summary>
-    /// Integration tests for the DACL the private <c>ProtectedKeyProvider.RunUnderMutex</c> applies to the
-    /// key-vault mutex (#8172): elevated runs admit only <c>Local System</c> and <c>BUILTIN\Administrators</c>,
-    /// while unelevated runs also admit the current user so non-elevated tests or tools do not lock themselves out.
-    /// The tests swap the process-global <see cref="SecurityHelper.IsAdministratorCore"/> seam, which is why they
-    /// join <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
+    /// Integration tests for the lock file the private <c>ProtectedKeyProvider.RunUnderLock</c> holds (#8209): it lives in the
+    /// key directory, which is secured first exactly as the key files' own directory is - elevated runs admit only
+    /// <c>Local System</c> and <c>BUILTIN\Administrators</c>, unelevated runs also the current user - and no other handle can
+    /// open it while it is held. The tests swap the process-global <see cref="SecurityHelper.IsAdministratorCore"/> seam,
+    /// which is why they join <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
     /// </summary>
     [Collection(CoreOsIntegrationCollection.Name)]
-    public class ProtectedKeyProviderMutexAclIntegrationTests : TempDirectoryTestBase
+    public class ProtectedKeyProviderLockFileIntegrationTests : TempDirectoryTestBase
     {
         private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
 
-        #region Mutex DACL Tests
+        #region Lock File Tests
 
         [Fact]
-        public void RunUnderMutex_ElevatedRun_AdmitsOnlyLocalSystemAndAdministrators()
+        public void RunUnderLock_WhileHeld_KeepsTheLockFileNextToTheKeyExclusive()
         {
             // Arrange
-            var keyPath = Path.Combine(TempDirectory, "mutex_acl_elevated.key");
-            var ivPath = Path.Combine(TempDirectory, "mutex_acl_elevated.iv");
-            var mutexName = KeyVaultMutex.NameFor(keyPath);
+            var keyPath = Path.Combine(TempDirectory, "exclusive.key");
+            var ivPath = Path.Combine(TempDirectory, "exclusive.iv");
+            var lockPath = keyPath + ".lock";
+            var lockFileExisted = false;
+            Exception secondOpenError = null;
+
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act: try to open the lock file the most permissive way while RunUnderLock holds it
+                TestReflection.InvokeNonPublic(provider, "RunUnderLock", keyPath, (Action)(() =>
+                {
+                    lockFileExisted = File.Exists(lockPath);
+                    secondOpenError = Record.Exception(() =>
+                    {
+                        using (new FileStream(lockPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) { }
+                    });
+                }));
+            }
+
+            // Assert: the lock file sits next to the key, and the open was refused as a sharing violation (ERROR_SHARING_VIOLATION = 32)
+            Assert.True(lockFileExisted);
+            var sharingViolation = Assert.IsType<IOException>(secondOpenError);
+            Assert.Equal(32, sharingViolation.HResult & 0xFFFF);
+        }
+
+        [Fact]
+        public void RunUnderLock_ElevatedRun_SecuresTheKeyDirectoryForOnlyLocalSystemAndAdministratorsBeforeTakingTheLock()
+        {
+            // Arrange
+            var keyDirectory = Path.Combine(TempDirectory, "vault_elevated");
+            var keyPath = Path.Combine(keyDirectory, "aes_key.dat");
+            var ivPath = Path.Combine(keyDirectory, "aes_iv.dat");
 
             var originalSeam = SecurityHelper.IsAdministratorCore;
             SecurityHelper.IsAdministratorCore = () => true;
-            List<MutexAccessRule> capturedRules = null;
+            (bool Protected, List<string> DirectoryPrincipals, List<string> LockFilePrincipals)? captured = null;
 
             try
             {
                 using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
                 {
-                    // Act: inspect the kernel mutex while RunUnderMutex holds it open
-                    InvokeRunUnderMutex(provider, keyPath, () =>
-                    {
-                        using (var opened = Mutex.OpenExisting(mutexName, MutexRights.ReadPermissions))
-                        {
-                            var security = opened.GetAccessControl();
-                            capturedRules = security
-                                .GetAccessRules(true, false, typeof(SecurityIdentifier))
-                                .Cast<MutexAccessRule>()
-                                .ToList();
-                        }
-                    });
+                    // Act: inspect the key directory and the lock file while RunUnderLock holds the lock
+                    TestReflection.InvokeNonPublic(provider, "RunUnderLock", keyPath, (Action)(() => captured = InspectLock(keyDirectory, keyPath + ".lock")));
                 }
             }
             finally
@@ -766,29 +746,22 @@ namespace Servy.Core.IntegrationTests.Security
                 SecurityHelper.IsAdministratorCore = originalSeam;
             }
 
-            // Assert
-            Assert.NotNull(capturedRules);
-
-            // Every rule is an Allow rule carrying exactly the lock rights, so no principal can rewrite the DACL
-            Assert.All(capturedRules, r =>
-            {
-                Assert.Equal(AccessControlType.Allow, r.AccessControlType);
-                Assert.Equal(MutexRights.Synchronize | MutexRights.Modify, r.MutexRights);
-            });
-
-            // "Only": the principal set is exactly Local System and Administrators, nothing else and not the current user
-            Assert.Equal(
-                new[] { LocalSystemSid.Value, AdministratorsSid.Value }.OrderBy(v => v, StringComparer.Ordinal),
-                capturedRules.Select(r => r.IdentityReference.Value).OrderBy(v => v, StringComparer.Ordinal));
+            // Assert: the directory was created protected, and it and the lock file admit exactly Local System and Administrators
+            Assert.True(captured.HasValue, "RunUnderLock did not run the action.");
+            var inspected = captured.GetValueOrDefault();
+            var expected = new[] { LocalSystemSid.Value, AdministratorsSid.Value }.OrderBy(v => v, StringComparer.Ordinal);
+            Assert.True(inspected.Protected, "The key directory still inherits its parent's entries.");
+            Assert.Equal(expected, inspected.DirectoryPrincipals);
+            Assert.Equal(expected, inspected.LockFilePrincipals);
         }
 
         [Fact]
-        public void RunUnderMutex_UnelevatedRun_AlsoAdmitsCurrentUserAndExcludesAuthenticatedUsers()
+        public void RunUnderLock_UnelevatedRun_AlsoAdmitsTheCurrentUserOnTheKeyDirectoryAndTheLockFile()
         {
             // Arrange
-            var keyPath = Path.Combine(TempDirectory, "mutex_acl_unelevated.key");
-            var ivPath = Path.Combine(TempDirectory, "mutex_acl_unelevated.iv");
-            var mutexName = KeyVaultMutex.NameFor(keyPath);
+            var keyDirectory = Path.Combine(TempDirectory, "vault_unelevated");
+            var keyPath = Path.Combine(keyDirectory, "aes_key.dat");
+            var ivPath = Path.Combine(keyDirectory, "aes_iv.dat");
 
             SecurityIdentifier currentUserSid;
             using (var identity = WindowsIdentity.GetCurrent())
@@ -798,24 +771,14 @@ namespace Servy.Core.IntegrationTests.Security
 
             var originalSeam = SecurityHelper.IsAdministratorCore;
             SecurityHelper.IsAdministratorCore = () => false;
-            List<MutexAccessRule> capturedRules = null;
+            (bool Protected, List<string> DirectoryPrincipals, List<string> LockFilePrincipals)? captured = null;
 
             try
             {
                 using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
                 {
                     // Act
-                    InvokeRunUnderMutex(provider, keyPath, () =>
-                    {
-                        using (var opened = Mutex.OpenExisting(mutexName, MutexRights.ReadPermissions))
-                        {
-                            var security = opened.GetAccessControl();
-                            capturedRules = security
-                                .GetAccessRules(true, false, typeof(SecurityIdentifier))
-                                .Cast<MutexAccessRule>()
-                                .ToList();
-                        }
-                    });
+                    TestReflection.InvokeNonPublic(provider, "RunUnderLock", keyPath, (Action)(() => captured = InspectLock(keyDirectory, keyPath + ".lock")));
                 }
             }
             finally
@@ -823,44 +786,37 @@ namespace Servy.Core.IntegrationTests.Security
                 SecurityHelper.IsAdministratorCore = originalSeam;
             }
 
-            // Assert
-            Assert.NotNull(capturedRules);
-
-            // Every rule is an Allow rule carrying exactly the lock rights, so no principal can rewrite the DACL
-            Assert.All(capturedRules, r =>
-            {
-                Assert.Equal(AccessControlType.Allow, r.AccessControlType);
-                Assert.Equal(MutexRights.Synchronize | MutexRights.Modify, r.MutexRights);
-            });
-
-            // "Only": exactly Local System, Administrators and the current user; Distinct() because a runner's own
-            // account can be one of the first two, in which case the ACE for the same SID and rights is merged
-            Assert.Equal(
-                new[] { LocalSystemSid.Value, AdministratorsSid.Value, currentUserSid.Value }.Distinct().OrderBy(v => v, StringComparer.Ordinal),
-                capturedRules.Select(r => r.IdentityReference.Value).OrderBy(v => v, StringComparer.Ordinal));
+            // Assert: exactly Local System, Administrators and the current user; Distinct() because a runner's own
+            // account can be one of the first two, in which case the entry for the same SID is merged
+            Assert.True(captured.HasValue, "RunUnderLock did not run the action.");
+            var inspected = captured.GetValueOrDefault();
+            var expected = new[] { LocalSystemSid.Value, AdministratorsSid.Value, currentUserSid.Value }.Distinct().OrderBy(v => v, StringComparer.Ordinal);
+            Assert.True(inspected.Protected, "The key directory still inherits its parent's entries.");
+            Assert.Equal(expected, inspected.DirectoryPrincipals);
+            Assert.Equal(expected, inspected.LockFilePrincipals);
         }
 
         [Fact]
-        public void RunUnderMutex_SecondCallerWhileTheLockIsHeld_WaitsAndThenRuns()
+        public void RunUnderLock_SecondCallerWhileTheLockIsHeld_WaitsAndThenRuns()
         {
             // Arrange
-            var keyPath = Path.Combine(TempDirectory, "mutex_join.key");
-            var ivPath = Path.Combine(TempDirectory, "mutex_join.iv");
+            var keyPath = Path.Combine(TempDirectory, "lock_join.key");
+            var ivPath = Path.Combine(TempDirectory, "lock_join.iv");
             Exception joinerError = null;
             var joinerRan = false;
 
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
-                // The access check is per open and per token, so one process is enough: the first caller creates the
-                // mutex with the production DACL and holds it while a second thread joins it (#8173).
+                // The second caller opens the lock file the first caller created and still holds, so it has to
+                // wait for that handle to close and then reopen the existing file.
                 var joiner = new Thread(() =>
                 {
-                    try { InvokeRunUnderMutex(provider, keyPath, () => joinerRan = true); }
+                    try { TestReflection.InvokeNonPublic(provider, "RunUnderLock", keyPath, (Action)(() => joinerRan = true)); }
                     catch (Exception ex) { joinerError = ex; }
                 });
 
-                // Act: the first caller holds the mutex it created while the second caller arrives
-                InvokeRunUnderMutex(provider, keyPath, () =>
+                // Act: the first caller holds the lock while the second caller arrives
+                TestReflection.InvokeNonPublic(provider, "RunUnderLock", keyPath, (Action)(() =>
                 {
                     joiner.Start();
 
@@ -870,7 +826,10 @@ namespace Servy.Core.IntegrationTests.Security
                     {
                         Thread.Sleep(10);
                     }
-                });
+
+                    // It must not have run while the first caller still holds the lock
+                    Assert.False(joinerRan, "The second caller ran while the lock was held.");
+                }));
 
                 var returned = joiner.Join(TimeSpan.FromSeconds(10));
 
@@ -885,11 +844,34 @@ namespace Servy.Core.IntegrationTests.Security
 
         #region Test Lifecycle
 
-        private static void InvokeRunUnderMutex(ProtectedKeyProvider provider, string path, Action action)
+        /// <summary>
+        /// Reads the DACL of the key directory and of the lock file while the lock is held.
+        /// </summary>
+        /// <param name="keyDirectory">The directory that holds the key files.</param>
+        /// <param name="lockPath">The lock file path.</param>
+        /// <returns>
+        /// Whether the directory's DACL is protected from inheritance, the sorted principals of its explicit entries, and the
+        /// sorted distinct principals of every entry on the lock file.
+        /// </returns>
+        private static (bool Protected, List<string> DirectoryPrincipals, List<string> LockFilePrincipals) InspectLock(string keyDirectory, string lockPath)
         {
-            var method = typeof(ProtectedKeyProvider).GetMethod("RunUnderMutex", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?? throw new InvalidOperationException("ProtectedKeyProvider.RunUnderMutex was not found.");
-            method.Invoke(provider, new object[] { path, action });
+            var directoryAcl = new DirectoryInfo(keyDirectory).GetAccessControl(AccessControlSections.Access);
+            var directoryPrincipals = directoryAcl.GetAccessRules(true, false, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>()
+                .Select(r => r.IdentityReference.Value)
+                .Distinct()
+                .OrderBy(v => v, StringComparer.Ordinal)
+                .ToList();
+
+            var lockFilePrincipals = new FileInfo(lockPath).GetAccessControl(AccessControlSections.Access)
+                .GetAccessRules(true, true, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>()
+                .Select(r => r.IdentityReference.Value)
+                .Distinct()
+                .OrderBy(v => v, StringComparer.Ordinal)
+                .ToList();
+
+            return (directoryAcl.AreAccessRulesProtected, directoryPrincipals, lockFilePrincipals);
         }
 
         #endregion

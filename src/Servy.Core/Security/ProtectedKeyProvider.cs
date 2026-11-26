@@ -47,6 +47,17 @@ namespace Servy.Core.Security
         /// </summary>
         private static readonly ConcurrentDictionary<string, int> MigrationFailureCounts = new ConcurrentDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// The suffix appended to a key or IV file path to name the lock file <see cref="RunUnderLock"/> holds open
+        /// while it generates or migrates that file.
+        /// </summary>
+        private const string LockFileSuffix = ".lock";
+
+        /// <summary>
+        /// The pause, in milliseconds, between two attempts to open a lock file that another process or thread holds.
+        /// </summary>
+        private const int LockRetryDelayMs = 50;
+
         #endregion
 
         #region Private Fields
@@ -222,100 +233,87 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Safely executes an action delegate within a cross-process system mutex mapped to a specific filesystem path.
+        /// Safely executes an action delegate while holding an exclusive lock file next to a specific filesystem path.
         /// Ensures synchronization between Session 0 System processes and Interactive user instances.
         /// </summary>
-        /// <param name="path">The full filesystem path of the protected file; the mutex name is derived from it.</param>
-        /// <param name="action">The work to run while the mutex is held.</param>
-        /// <exception cref="System.Security.SecurityException">Thrown when the global mutex cannot be created or opened.</exception>
-        /// <exception cref="TimeoutException">Thrown when the mutex is not acquired within <see cref="AppConfig.KeyProviderMutexTimeoutSeconds"/>.</exception>
-        private void RunUnderMutex(string path, Action action)
+        /// <param name="path">The full filesystem path of the protected file; the lock file is <paramref name="path"/> followed by <see cref="LockFileSuffix"/>.</param>
+        /// <param name="action">The work to run while the lock is held.</param>
+        /// <remarks>
+        /// <para>
+        /// The lock is a file opened with <see cref="FileShare.None"/> in the directory that holds the key files, after that
+        /// directory has been secured with <see cref="SecurityHelper.CreateSecureDirectory"/> exactly as
+        /// <see cref="SaveProtected"/> secures it. A principal the key directory does not admit can neither create nor open
+        /// the lock file, so, unlike a name in the <c>Global\</c> kernel object namespace, the lock cannot be taken first
+        /// by a standard user (#8209). An unelevated run gets the same directory policy as its key files: the directory
+        /// also admits the current user.
+        /// </para>
+        /// <para>
+        /// The lock file is left in place when the lock is released. Windows closes the handle of a process that exits
+        /// while holding it, so a crashed holder never leaves the lock taken, and an existing lock file is simply opened again.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="System.Security.SecurityException">Thrown when the key directory cannot be secured or the lock file cannot be created or opened.</exception>
+        /// <exception cref="TimeoutException">Thrown when the lock is not acquired within <see cref="AppConfig.KeyProviderMutexTimeoutSeconds"/>.</exception>
+        private void RunUnderLock(string path, Action action)
         {
-            // Compute a deterministic FNV-1a stable hash of the path to avoid process-randomized string.GetHashCode() anomalies
-            uint stableHash = 2166136261;
-            foreach (char c in path.ToLowerInvariant())
-            {
-                stableHash = (stableHash ^ c) * 16777619;
-            }
-            var mutexName = $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
+            var directory = Path.GetDirectoryName(path);
+            var lockPath = path + LockFileSuffix;
+            var timeout = TimeSpan.FromSeconds(AppConfig.KeyProviderMutexTimeoutSeconds);
+            var waited = Stopwatch.StartNew();
 
-            Mutex mutex;
+            FileStream lockFile = null;
             try
             {
-                // Configure explicit DACL rules to permit cross-process and cross-session synchronization.
-                // This ensures both the Session 0 SYSTEM service and the interactive user Manager share the exact same lock.
-                var mutexSecurity = new MutexSecurity();
-
-                // The only processes that build a key provider are the Session 0 Servy host service (Local System) and
-                // the elevated desktop apps and CLI (Administrators), the same two principals
-                // SecurityHelper.ApplySecurityRules grants on the key files this lock guards (#8172).
-                const MutexRights lockRights = MutexRights.Synchronize | MutexRights.Modify;
-
-                mutexSecurity.AddAccessRule(new MutexAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
-                    lockRights,
-                    AccessControlType.Allow));
-                mutexSecurity.AddAccessRule(new MutexAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-                    lockRights,
-                    AccessControlType.Allow));
-
-                // Same exception as SecurityHelper.ApplySecurityRules step 4: an unelevated run keeps its own user.
-                if (!SecurityHelper.IsAdministrator())
+                // The lock lives in the key directory, so that directory must exist and be secured before the lock is taken
+                if (!string.IsNullOrEmpty(directory))
                 {
-                    using (var identity = WindowsIdentity.GetCurrent())
-                    {
-                        if (identity.User != null)
-                        {
-                            mutexSecurity.AddAccessRule(new MutexAccessRule(identity.User, lockRights, AccessControlType.Allow));
-                        }
-                    }
+                    SecurityHelper.CreateSecureDirectory(directory, breakInheritance: !IsChildOfVaultRoot(directory));
                 }
 
-                // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
-                mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out bool createdNew, mutexSecurity);
-
-                if (!createdNew)
-                {
-                    Logger.Debug($"Joined existing cross-process mutex '{mutexName}'; its DACL was set by the creating process.");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Fail fast: We must not silently fall back to a per-session Local\ namespace,
-                // as doing so bypasses cross-session synchronization and risks key corruption.
-                Logger.Error($"CRITICAL: Failed to allocate global synchronization mutex '{mutexName}'. Cross-process execution aborted.", ex);
-                throw new System.Security.SecurityException($"Could not establish cross-session lock boundary: {ex.Message}", ex);
-            }
-
-            using (mutex)
-            {
-                bool owned = false;
-                try
+                while (lockFile == null)
                 {
                     try
                     {
-                        owned = mutex.WaitOne(TimeSpan.FromSeconds(AppConfig.KeyProviderMutexTimeoutSeconds));
+                        lockFile = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                     }
-                    catch (AbandonedMutexException)
+                    catch (IOException ex) when (IsSharingViolation(ex) && waited.Elapsed < timeout)
                     {
-                        // Prior owner died while holding the mutex. We still own it; just log and proceed.
-                        owned = true;
-                        Logger.Warn($"Mutex '{mutexName}' was abandoned by a previous owner. Continuing with ownership.");
+                        // Another Servy process or thread holds the lock: wait for it to close its handle.
+                        Thread.Sleep(LockRetryDelayMs);
                     }
-
-                    if (!owned)
-                    {
-                        throw new TimeoutException($"Timed out waiting for cross-process lock on {path}");
-                    }
-
-                    action();
-                }
-                finally
-                {
-                    if (owned) mutex.ReleaseMutex();
                 }
             }
+            catch (IOException ex) when (IsSharingViolation(ex))
+            {
+                throw new TimeoutException($"Timed out waiting for cross-process lock on {path}", ex);
+            }
+            catch (Exception ex)
+            {
+                // Fail fast: the key file must never be written outside the cross-process lock,
+                // as doing so risks two processes generating conflicting keys.
+                Logger.Error($"CRITICAL: Failed to open the cross-process lock file '{lockPath}'. Cross-process execution aborted.", ex);
+                throw new System.Security.SecurityException($"Could not establish cross-session lock boundary: {ex.Message}", ex);
+            }
+
+            using (lockFile)
+            {
+                action();
+            }
+        }
+
+        /// <summary>
+        /// Determines whether an <see cref="IOException"/> reports that another handle holds the file open
+        /// in a way that excludes this one.
+        /// </summary>
+        /// <param name="ex">The exception thrown while opening the lock file.</param>
+        /// <returns>
+        /// <see langword="true"/> for <c>ERROR_SHARING_VIOLATION</c> (32) and <c>ERROR_LOCK_VIOLATION</c> (33);
+        /// otherwise <see langword="false"/>.
+        /// </returns>
+        private static bool IsSharingViolation(IOException ex)
+        {
+            int error = ex.HResult & 0xFFFF;
+            return error == 32 || error == 33;
         }
 
         /// <summary>
@@ -329,7 +327,7 @@ namespace Servy.Core.Security
         /// A decrypted byte array containing the raw keying material.
         /// </returns>
         /// <remarks>
-        /// This method implements a process-safe Double-Check Locking pattern using a global system mutex
+        /// This method implements a process-safe Double-Check Locking pattern using an exclusive lock file
         /// to prevent multiple concurrent Servy executables from generating conflicting cryptographic keys.
         /// </remarks>
         /// <exception cref="InvalidOperationException">
@@ -345,7 +343,7 @@ namespace Servy.Core.Security
                 if (!File.Exists(path))
                 {
                     byte[] generatedData = null;
-                    RunUnderMutex(path, () =>
+                    RunUnderLock(path, () =>
                     {
                         if (!File.Exists(path))
                         {
@@ -416,10 +414,10 @@ namespace Servy.Core.Security
                     try
                     {
                         // 3. Automatic Migration: Re-save with the new machine-unique entropy.
-                        // ROBUSTNESS: Ensure the upgrade save executes within the exact same global
-                        // named mutex namespace as the generation loop. This prevents staging file (.tmp)
+                        // ROBUSTNESS: Ensure the upgrade save executes under the exact same cross-process
+                        // lock file as the generation loop. This prevents staging file (.tmp)
                         // naming collisions when several Servy processes attempt to migrate the same legacy file concurrently.
-                        RunUnderMutex(path, () =>
+                        RunUnderLock(path, () =>
                         {
                             SaveProtected(path, decryptedData);
                         });
@@ -491,7 +489,7 @@ namespace Servy.Core.Security
             catch (Exception ex) when (ex is TimeoutException || ex is System.Security.SecurityException)
             {
                 var msg = $"Could not acquire the cross-process lock needed to create the {materialName} at '{path}'. " +
-                          "Another Servy process may be holding it, or the global lock could not be established.";
+                          "Another Servy process may be holding it, or the lock file could not be opened.";
                 Logger.Error(msg, ex);
                 throw new InvalidOperationException(msg, ex);
             }
@@ -508,8 +506,8 @@ namespace Servy.Core.Security
         /// <param name="data">The plaintext data to protect.</param>
         /// <remarks>
         /// <para>
-        /// <b>Architectural Warning:</b> This method must be executed within the boundaries of the <c>Global\</c>
-        /// named mutex established by <see cref="RunUnderMutex"/>.
+        /// <b>Architectural Warning:</b> This method must be executed while <see cref="RunUnderLock"/> holds the
+        /// cross-process lock file for <paramref name="path"/>.
         /// </para>
         /// </remarks>
         [ExcludeFromCodeCoverage]
@@ -536,8 +534,8 @@ namespace Servy.Core.Security
                 byte[] dynamicEntropy = MachineEntropy.Value;
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, ProtectionScope);
 
-                // Use a stable, deterministic staging file name. Because this runs under the global system
-                // mutex (RunUnderMutex), concurrent writers cannot clash, and an orphaned .tmp left by a prior
+                // Use a stable, deterministic staging file name. Because this runs under the cross-process
+                // lock file (RunUnderLock), concurrent writers cannot clash, and an orphaned .tmp left by a prior
                 // crash is cleanly overwritten and self-healed rather than accumulating.
                 var tempPath = $"{path}.staging.tmp";
 

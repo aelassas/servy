@@ -1202,7 +1202,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// The maximum duration in seconds that a process will block while waiting to acquire
-        /// the cross-process global synchronization mutex lock for protected cryptographic key operations.
+        /// the cross-process lock file that serializes protected cryptographic key operations.
         /// </summary>
         /// <remarks>
         /// This value prevents application startup or installation deadlocks across multiple process
