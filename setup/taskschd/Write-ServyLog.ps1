@@ -30,7 +30,8 @@ function Write-ServyLog {
         try {
             $mutex = New-Object System.Threading.Mutex($false, "Global\ServyLog_$hashString")
         } catch [System.UnauthorizedAccessException] {
-            # Standard users lack SeCreateGlobalPrivilege; per-session coordination is enough here.
+            # Creating a Global\ mutex needs no privilege, but opening one that another account created first is refused
+            # when its default DACL does not admit this user; fall back to a per-session name.
             $mutex = New-Object System.Threading.Mutex($false, "Local\ServyLog_$hashString")
         }
         $hasLock = $false
