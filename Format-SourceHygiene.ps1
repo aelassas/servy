@@ -11,7 +11,7 @@
     1. Trims trailing whitespace from all lines (trim_trailing_whitespace = true).
     2. Ensures every file ends with a trailing newline (insert_final_newline = true).
     3. Normalizes line endings to CRLF (end_of_line = crlf).
-    4. Enforces charset encoding policy (UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, .config; UTF-8 without BOM for all others).
+    4. Enforces charset encoding policy (UTF-8 with BOM for .ps1, .psm1, .psd1, .xml, .config, .iss; UTF-8 without BOM for all others).
 
     Note: .resx files are explicitly excluded because trailing whitespace within XML <value> elements
     can be meaningful string content. Additionally, trailing whitespace is preserved on .md files to respect
