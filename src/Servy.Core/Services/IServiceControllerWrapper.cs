@@ -79,6 +79,7 @@ namespace Servy.Core.Services
         /// by a childless node carrying <see cref="ServiceDependencyNode.IsCyclic"/>. Unexpected
         /// failures propagate as exceptions rather than returning <c>null</c>.
         /// </returns>
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
         ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default);
     }
 }
