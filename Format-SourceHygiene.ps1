@@ -76,7 +76,7 @@ $bomRequiredExtensions = $script:BomRequiredExtensions
 $textExtensions = @(
     '.cs', '.yml', '.yaml', '.ps1', '.psm1', '.psd1',
     '.csproj', '.props', '.targets', '.xaml',
-    '.md', '.iss', '.manifest', '.json', '.sln',
+    '.md', '.iss', '.isl', '.manifest', '.json', '.sln',
     '.xml', '.config', '.js', '.py', '.vbs', '.toml',
     '.ahk', '.nuspec', '.txt'
 )

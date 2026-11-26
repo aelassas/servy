@@ -770,6 +770,7 @@ end;
 // -----------------------------------------------------
 // Uninstall actions:
 //  - Remove Servy from PATH if necessary
+//  - Remove the Servy host service and the binaries in the data folder when no Servy-managed service remains
 //  - Clean up marker registry keys
 // -----------------------------------------------------
 procedure RemoveFromPath(const Folder: string);
@@ -971,7 +972,7 @@ begin
   DeleteFilesMatching(DataDir, '*.dll');
 end;
 
-// PATH removal and registry cleanup on uninstall
+// PATH removal, Servy host removal and registry cleanup on uninstall
 procedure CurUninstallStepChanged(Step: TUninstallStep);
 var
   AddedToPath: Cardinal;
