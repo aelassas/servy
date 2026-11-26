@@ -480,8 +480,9 @@ namespace Servy.Core.IntegrationTests.Security
 
     /// <summary>
     /// Integration tests for the cross-process lock failure arms of <see cref="ProtectedKeyProvider"/>.
-    /// Each test holds, blocks or squats the provider's lock with a real file or kernel object, so the arm under
-    /// test is reached without any production seam. The arms report through the static logger that
+    /// Each test holds or blocks the provider's lock file with a real file or directory, so the arm under test is
+    /// reached without any production seam; one more squats, with a named event, the <c>Global\</c> name the provider
+    /// locked on before #8209, to pin that first key generation no longer depends on it. The arms report through the static logger that
     /// <see cref="LogCapture"/> redirects, which is why these tests join
     /// <see cref="CoreOsIntegrationCollection"/> instead of running in parallel with the rest of the suite.
     /// A unique temporary path per test keeps both the lock file and the provider's static
