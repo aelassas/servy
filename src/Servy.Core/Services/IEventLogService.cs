@@ -25,7 +25,7 @@ namespace Servy.Core.Services
         /// Upper bound of the search range, inclusive; null for no upper bound. Only the date part is used:
         /// the bound is widened to the last tick of that local day. Interpreted as local time, as above.
         /// </param>
-        /// <param name="keyword">The keyword to search for in event data (null or empty for no keyword filtering).</param>
+        /// <param name="keyword">The text to look for in the formatted event message, compared case-insensitively (null or empty for no keyword filtering).</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A collection of matching <see cref="ServyEventLogEntry"/> records.</returns>
         /// <exception cref="System.Security.SecurityException">
