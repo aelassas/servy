@@ -145,6 +145,28 @@ try {
     Write-Host "  [OK] Update-Watermark heals a corrupt watermark file." -ForegroundColor Gray
 
     # ----------------------------------------------------
+    # Test 4c: Update-Watermark leaves no staging or backup file behind
+    # ----------------------------------------------------
+    # Arrange: an isolated directory, so files left by the earlier tests cannot mask or fake a leftover
+    $cleanupDir = Join-Path $tempDir "cleanup"
+    New-Item -ItemType Directory -Path $cleanupDir -Force | Out-Null
+    $cleanupFile = Join-Path $cleanupDir "watermark.txt"
+    $cleanupBase = [DateTime]::UtcNow.AddMinutes(-10)
+
+    # Act: a first-run write (File.Move), an advance (File.Replace with a backup) and a stale write (staging discarded)
+    Update-Watermark -TimestampFile $cleanupFile -TimeCreated $cleanupBase -ScriptDir $cleanupDir
+    Update-Watermark -TimestampFile $cleanupFile -TimeCreated $cleanupBase.AddMinutes(5) -ScriptDir $cleanupDir
+    Update-Watermark -TimestampFile $cleanupFile -TimeCreated $cleanupBase.AddMinutes(1) -ScriptDir $cleanupDir
+    $leftNames = @(Get-ChildItem -LiteralPath $cleanupDir -Force | ForEach-Object { $_.Name })
+
+    # Assert: only the watermark itself remains
+    if ($leftNames.Count -ne 1 -or $leftNames[0] -ne "watermark.txt") {
+        Write-Host "FAIL: Update-Watermark left staging or backup files behind: '$($leftNames -join ', ')'; expected only 'watermark.txt'." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] Update-Watermark removes its staging and backup files." -ForegroundColor Gray
+
+    # ----------------------------------------------------
     # Test 5: Write-FallbackError & Fallback Logging
     # ----------------------------------------------------
     $fallbackMsg = "Test fallback logging message"
