@@ -67,9 +67,10 @@ namespace Servy.Core.Helpers
         /// The deadline a wait loop compares against is floored at
         /// <see cref="AppConfig.DefaultServiceStartTimeoutSeconds"/> + <see cref="AppConfig.ScmTimeoutBufferSeconds"/>
         /// for a start and <see cref="AppConfig.DefaultStopTimeout"/> + <see cref="AppConfig.ScmTimeoutBufferSeconds"/>
-        /// for a stop, and the check is the first statement of each loop body, before any poll delay is
-        /// awaited. Substituting the poll delay therefore cannot bring the deadline closer - only the
-        /// elapsed-time source can - which is why this is the seam the timeout tests drive.
+        /// for a stop, and each loop body evaluates the check before it awaits the poll delay (the two
+        /// wait loops first refresh the status and leave on Running or Stopped). Substituting the poll
+        /// delay therefore cannot bring the deadline closer - only the elapsed-time source can - which
+        /// is why this is the seam the timeout tests drive.
         /// </remarks>
         internal Func<Func<TimeSpan>> ElapsedSourceFactory { get; set; } = () =>
         {
