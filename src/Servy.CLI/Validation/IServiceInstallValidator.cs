@@ -9,7 +9,9 @@ namespace Servy.CLI.Validation
     /// <remarks>
     /// Note: This is currently the only dedicated validator in the CLI project.
     /// The lifecycle commands (Start, Stop, Restart, Status, Uninstall) validate
-    /// inline because they only need a service-name check. Export and Import also
+    /// inline because they only need a service-name check. Show validates inline too:
+    /// its name is optional, and it refuses <c>--search</c> together with a name and
+    /// <c>--decrypt</c> without one. Export and Import also
     /// validate inline, but additionally check the configuration file type via
     /// <c>Helper.TryParseFileType</c>; Import takes no service name at all and
     /// delegates path canonicalization, UNC blocking and size limits to
