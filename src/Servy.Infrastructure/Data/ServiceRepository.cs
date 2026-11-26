@@ -14,7 +14,10 @@ namespace Servy.Infrastructure.Data
 {
     /// <summary>
     /// Repository for managing <see cref="ServiceDto"/> entities in the database.
-    /// Handles secure password encryption, decryption, and centralizes SQL schemas to prevent divergence.
+    /// Encrypts every field listed in <c>SensitiveFields</c> (the account password, the heartbeat URL, the parameters of the
+    /// process, its hooks and its failure program, and the environment variables of the process and its pre-launch hook)
+    /// before it is stored and decrypts it on read, and builds its SQL from <see cref="SqlConstants"/> so the statements
+    /// cannot diverge.
     /// </summary>
     public class ServiceRepository : IServiceRepository
     {
@@ -49,7 +52,7 @@ namespace Servy.Infrastructure.Data
         /// Initializes a new instance of the <see cref="ServiceRepository"/> class.
         /// </summary>
         /// <param name="dapper">The Dapper executor used to perform database operations. Must not be null.</param>
-        /// <param name="secureData">The service responsible for securely encrypting and decrypting passwords. Must not be null.</param>
+        /// <param name="secureData">The service that encrypts and decrypts the sensitive fields. Must not be null.</param>
         /// <param name="xmlServiceSerializer">The service responsible for serializing XML. Must not be null.</param>
         /// <param name="jsonServiceSerializer">The service responsible for serializing JSON. Must not be null.</param>
         /// <exception cref="ArgumentNullException">Thrown if any dependency is null.</exception>
