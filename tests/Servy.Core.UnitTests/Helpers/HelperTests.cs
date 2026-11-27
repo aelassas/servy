@@ -1946,6 +1946,66 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HasAncestorReparsePoint_TrustedDirectoryDiffersOnlyInCase_StopsAtIt()
+        {
+            // Arrange
+            // The trusted directory is itself a link, as Scoop's apps\servy\current is, and the caller spells it in
+            // another case than the target path (an absolute configured path typed by hand). Windows paths are
+            // case-insensitive, so the walk must still recognise it and stop there. A plain junction is used, which
+            // needs no symlink privilege, so the test always runs.
+            string realDir = Path.Combine(_testRoot, "RealAppDirCase");
+            string linkDir = Path.Combine(_testRoot, "LinkAppDirCase");
+            string trustedOtherCase = Path.Combine(_testRoot, "LINKAPPDIRCASE");
+            CreateJunctionWithSpoofedPrintName(linkDir, realDir, Path.GetFullPath(realDir));
+
+            try
+            {
+                Assert.NotEqual(linkDir, trustedOtherCase);
+                Assert.Equal(linkDir, trustedOtherCase, ignoreCase: true);
+
+                string targetFilePath = Path.Combine(linkDir, "Servy.exe");
+                Assert.True(Helper.HasAncestorReparsePoint(targetFilePath)); // without a trusted directory the link is reported
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath, trustedOtherCase);
+
+                // Assert
+                Assert.False(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(linkDir, realDir);
+            }
+        }
+
+        [Fact]
+        public void HasAncestorReparsePoint_TrustedDirectoryIsOnlyANamePrefixOfTheLink_StillReportsTheLink()
+        {
+            // Arrange
+            // "...\cur" is not an ancestor of "...\current\Servy.exe", only a string prefix of it. The walk must
+            // compare whole directory names, so the link at "...\current" is still inspected and reported.
+            string realDir = Path.Combine(_testRoot, "RealAppDirPrefix");
+            string linkDir = Path.Combine(_testRoot, "current");
+            string notAnAncestor = Path.Combine(_testRoot, "cur");
+            CreateJunctionWithSpoofedPrintName(linkDir, realDir, Path.GetFullPath(realDir));
+
+            try
+            {
+                string targetFilePath = Path.Combine(linkDir, "Servy.exe");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath, notAnAncestor);
+
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(linkDir, realDir);
+            }
+        }
+
+        [Fact]
         public void HasAncestorReparsePoint_WhenAncestorIsNonLinkReparsePoint_ReturnsTrue()
         {
             // Arrange
