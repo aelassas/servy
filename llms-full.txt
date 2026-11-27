@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-27T02:36:09Z
+> Generated on: 2026-11-27T05:20:43Z
 
 ---
 
@@ -2269,7 +2269,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 
 | Setting | Default | Description |
 | :--- | :--- | :--- |
-| `ManagerAppPublishPath` | `.\Servy.Manager.exe` | Path to the Servy Manager app launched from the Desktop app. A relative path is resolved against the Desktop app's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, or a path through a junction or symbolic link is refused, a `Security refusal` warning is written to `Servy.log`, and the Manager is treated as unavailable. |
+| `ManagerAppPublishPath` | `.\Servy.Manager.exe` | Path to the Servy Manager app launched from the Desktop app. A relative path is resolved against the Desktop app's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, a path through a junction or symbolic link below that directory, or a target that is itself a link is refused, a `Security refusal` warning is written to `Servy.log`, and the Manager is treated as unavailable. The application directory itself may be a junction, as on a Scoop install (`apps\servy\current`). |
 | `Language` | `system` | Display language of the Desktop app: `system` follows the Windows display language (Simplified Chinese display languages get Simplified Chinese, every other one gets English), `en` is English and `zh-CN` is Simplified Chinese. The **Language** menu rewrites it, and so does the `--lang` command-line option (`Servy.exe --lang zh-CN`), which takes precedence over the stored value. The **Language** menu asks for confirmation and restarts the app to apply the change; a value edited by hand applies the next time the app starts. The Desktop app and the Manager share the language: the menu and `--lang` write it to the settings of both. A value edited by hand changes only the app whose file was edited, until one app opens the other: it then passes its own language with `--lang`, which the opened app saves for both. Set it in both files to keep the two apps in the same language. An unsupported value is treated as `system`. See [Display Language](Servy-Desktop-App#display-language). |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
@@ -2285,7 +2285,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 | `MaxBulkOperationParallelism` | `8` | Maximum concurrent SCM operations during bulk tasks. Bounded to `[1, 64]`. |
 | `SearchDebounceDelayMs` | `300` | Debounce window, in milliseconds, before the search box re-runs the filter in the Console tab. Bounded to `[100, 2000]`. |
 | `LogsWindowDays` | `3` | Number of days of Windows Event Log history shown in the Logs tab. Bounded to `[1, 30]`. |
-| `DesktopAppPublishPath` | `.\Servy.exe` | Path to the Servy desktop app launched from the Manager. A relative path is resolved against the Manager's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, or a path through a junction or symbolic link is refused, a `Security refusal` warning is written to `Servy.Manager.log`, and the desktop app is treated as unavailable. |
+| `DesktopAppPublishPath` | `.\Servy.exe` | Path to the Servy desktop app launched from the Manager. A relative path is resolved against the Manager's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, a path through a junction or symbolic link below that directory, or a target that is itself a link is refused, a `Security refusal` warning is written to `Servy.Manager.log`, and the desktop app is treated as unavailable. The application directory itself may be a junction, as on a Scoop install (`apps\servy\current`). |
 | `ServicesHiddenColumns` | `""` | Comma-separated list of services-grid column headers hidden in the Manager's Services tab, for example `Description,Log On As`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the English column header text (Display Name, Description, Status, Startup Type, Log On As, PID, CPU, RAM), whatever the display language is. The Display Name column is hidden by default: the first start of the Manager adds `Display Name` to this value. |
 | `LogsHiddenColumns` | `""` | Comma-separated list of logs-grid column headers hidden in the Manager's Logs tab, for example `Event ID,Level`. The Manager rewrites it when a column is shown or hidden from the column-header context menu; an empty value shows every column. Entries are matched case-insensitively against the English column header text (`Time`, `Level`, `Event ID`), whatever the display language is. |
 | `IsDisplayNameColumnMigrated` | `false` | One-time migration flag the Manager manages itself. While it is `false`, the next start adds `Display Name` to `ServicesHiddenColumns` and then sets it to `true`. There is no need to edit it; setting it back to `false` hides the Display Name column again on the next start. |
