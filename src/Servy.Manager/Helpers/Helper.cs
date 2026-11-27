@@ -13,6 +13,7 @@ namespace Servy.Manager.Helpers
         /// Safely attempts to cancel and dispose of a <see cref="CancellationTokenSource"/>,
         /// suppressing common lifecycle exceptions to ensure process-wide shutdown integrity.
         /// </summary>
+        /// <param name="cts">The token source to cancel and dispose; <see langword="null"/> is ignored.</param>
         internal static void CancelAndDisposeSafely(CancellationTokenSource cts)
         {
             if (cts == null) return;
