@@ -11,6 +11,8 @@ namespace Servy.UI.IntegrationTests.Localization
     /// <summary>
     /// Guards the Simplified Chinese resource files against the mistakes a translation can make: a key the
     /// English file does not have, an empty value, and a format placeholder that was dropped or added.
+    /// It also keeps the language names in one place: the Language menus of Servy and Servy Manager and the
+    /// restart confirmation of <c>LanguageSwitcher</c> all read the <c>Language_*</c> entries of Servy.UI.
     /// </summary>
     /// <remarks>
     /// A key that is missing from a translation is allowed on purpose: the lookup falls back to the English
@@ -21,6 +23,15 @@ namespace Servy.UI.IntegrationTests.Localization
         private const string Culture = "zh-CN";
 
         private static readonly Regex PlaceholderPattern = new Regex(@"\{(\d+)(?:[^}]*)\}", RegexOptions.Compiled);
+
+        private const string LanguageNamePrefix = "Language_";
+
+        private const string UiResourcesNamespace = "clr-namespace:Servy.UI.Resources;assembly=Servy.UI";
+
+        private static readonly Regex XmlnsPattern = new Regex(@"xmlns:(?<prefix>\w+)=""(?<ns>[^""]*)""", RegexOptions.Compiled);
+
+        private static readonly Regex LanguageNameReferencePattern =
+            new Regex(@"\{x:Static\s+(?<prefix>\w+):Strings\.(?<name>Language_\w+)\}", RegexOptions.Compiled);
 
         public static TheoryData<string> Projects => new TheoryData<string>
         {
@@ -97,6 +108,60 @@ namespace Servy.UI.IntegrationTests.Localization
 
             // Assert
             Assert.True(exists, $"{assemblyName} was built without its {Culture} satellite assembly at '{satellite}'.");
+        }
+
+        [Theory]
+        [InlineData("Servy")]
+        [InlineData("Servy.Manager")]
+        public void ApplicationResources_KeepNoCopyOfTheLanguageNames(string project)
+        {
+            // Arrange
+            var english = ReadResx(NeutralPath(project));
+            var translated = ReadResx(TranslatedPath(project));
+
+            // Act
+            var copies = english.Keys
+                .Concat(translated.Keys)
+                .Where(k => k.StartsWith(LanguageNamePrefix, StringComparison.Ordinal))
+                .Distinct()
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToList();
+
+            // Assert
+            Assert.NotEmpty(english);
+            Assert.NotEmpty(translated);
+            Assert.Empty(copies);
+        }
+
+        [Theory]
+        [InlineData("Servy")]
+        [InlineData("Servy.Manager")]
+        public void LanguageMenu_ReadsEveryLanguageNameFromServyUI(string project)
+        {
+            // Arrange
+            var xaml = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", project, "Views", "MainWindow.xaml"));
+            var uiNames = ReadResx(NeutralPath("Servy.UI"));
+            var namespaces = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (Match match in XmlnsPattern.Matches(xaml))
+            {
+                namespaces[match.Groups["prefix"].Value] = match.Groups["ns"].Value;
+            }
+
+            // Act
+            var references = LanguageNameReferencePattern.Matches(xaml).Cast<Match>().ToList();
+            var elsewhere = references
+                .Where(m => !namespaces.TryGetValue(m.Groups["prefix"].Value, out var ns) || ns != UiResourcesNamespace)
+                .Select(m => m.Value)
+                .ToList();
+            var unknown = references
+                .Select(m => m.Groups["name"].Value)
+                .Where(name => !uiNames.ContainsKey(name))
+                .ToList();
+
+            // Assert
+            Assert.NotEmpty(references);
+            Assert.Empty(elsewhere);
+            Assert.Empty(unknown);
         }
 
         private static string NeutralPath(string project)
