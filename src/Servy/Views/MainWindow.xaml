@@ -25,6 +25,7 @@
 
     <!-- Tab Grid Dimensions -->
     <sys:Double x:Key="TabGridMinHeight">380</sys:Double>
+    <GridLength x:Key="ColumnWidthLabel">160</GridLength>
     <GridLength x:Key="ColumnWidthMain">390</GridLength>
     <GridLength x:Key="ColumnWidthAction">100</GridLength>
 
@@ -53,6 +54,36 @@
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Top" />
       <Setter Property="MinHeight" Value="{StaticResource TabGridMinHeight}" />
+    </Style>
+
+    <!-- Field Label Style (wraps long localized labels in Column 0) -->
+    <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="0,5,10,5" />
+    </Style>
+
+    <!-- Wrapped CheckBox Content Style -->
+    <Style TargetType="CheckBox">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="ContentTemplate">
+        <Setter.Value>
+          <DataTemplate>
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+          </DataTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Wrapped RadioButton Content Style -->
+    <Style TargetType="RadioButton">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="ContentTemplate">
+        <Setter.Value>
+          <DataTemplate>
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+          </DataTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <!-- Default Single-Line Field Style -->
@@ -261,14 +292,14 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
 
               <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ServiceName}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ServiceName}" />
               <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding ServiceName, UpdateSourceTrigger=PropertyChanged}"
@@ -277,8 +308,8 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxServiceName_HelpText}" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ServiceDisplayName}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ServiceDisplayName}" />
               <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding ServiceDisplayName, UpdateSourceTrigger=PropertyChanged}"
@@ -291,8 +322,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ServiceDescription}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ServiceDescription}" />
               <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding ServiceDescription, UpdateSourceTrigger=PropertyChanged}"
@@ -301,8 +332,8 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxServiceDescription_HelpText}" />
 
               <TextBlock Grid.Row="4" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPath}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPath}" />
               <TextBox Grid.Row="4" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding ExecutablePath, UpdateSourceTrigger=PropertyChanged}"
@@ -322,8 +353,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="6" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupDirectory}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupDirectory}" />
               <TextBox Grid.Row="6" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding StartupDirectory, UpdateSourceTrigger=PropertyChanged}"
@@ -343,8 +374,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="8" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessParameters}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessParameters}" />
               <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding Parameters, UpdateSourceTrigger=PropertyChanged}"
@@ -361,8 +392,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="10" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupType}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupType}" />
               <ComboBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
                         Margin="0,5"
                         ItemsSource="{Binding StartupTypes}"
@@ -374,8 +405,8 @@
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ComboBoxStartupType_HelpText}" />
 
               <TextBlock Grid.Row="11" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPriority}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPriority}" />
               <ComboBox Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
                         Margin="0,5"
                         ItemsSource="{Binding ProcessPriorities}"
@@ -387,8 +418,8 @@
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ComboBoxProcessPriority_HelpText}" />
 
               <TextBlock Grid.Row="12" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_CpuAffinity}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_CpuAffinity}" />
               <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding CpuAffinity, UpdateSourceTrigger=PropertyChanged}"
@@ -401,8 +432,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="14" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartTimeout}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartTimeout}" />
               <TextBox Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding StartTimeout, UpdateSourceTrigger=PropertyChanged}"
@@ -415,8 +446,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="16" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StopTimeout}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StopTimeout}" />
               <TextBox Grid.Row="16" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding StopTimeout, UpdateSourceTrigger=PropertyChanged}"
@@ -429,15 +460,12 @@
                          TextWrapping="Wrap" />
 
               <CheckBox Grid.Row="18" Grid.Column="1" Grid.ColumnSpan="2"
+                        Content="{x:Static resx:Strings.Label_EnableConsoleUI}"
                         IsChecked="{Binding EnableConsoleUI}"
                         Margin="0,10"
                         AutomationProperties.Name="{x:Static resx:Strings.Label_EnableConsoleUI}"
                         AutomationProperties.AutomationId="CheckBoxEnableConsoleUI"
-                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxEnableConsoleUI_HelpText}">
-                <CheckBox.Content>
-                  <TextBlock Text="{x:Static resx:Strings.Label_EnableConsoleUI}" TextWrapping="Wrap" />
-                </CheckBox.Content>
-              </CheckBox>
+                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxEnableConsoleUI_HelpText}" />
             </Grid>
           </ScrollViewer>
         </TabItem>
@@ -464,14 +492,14 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
 
               <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StdoutPath}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StdoutPath}" />
               <TextBox Grid.Row="0" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding StdoutPath, UpdateSourceTrigger=PropertyChanged}"
@@ -487,8 +515,8 @@
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowseStdoutPath_HelpText}" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StderrPath}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StderrPath}" />
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding StderrPath, UpdateSourceTrigger=PropertyChanged}"
@@ -503,7 +531,7 @@
                       AutomationProperties.AutomationId="ButtonBrowseStderrPath"
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowseStderrPath_HelpText}" />
 
-              <CheckBox Grid.Row="2" Grid.Column="1"
+              <CheckBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_EnableSizeRotation}"
                         IsChecked="{Binding EnableSizeRotation}"
                         Margin="0,5"
@@ -512,8 +540,8 @@
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxEnableSizeRotation_HelpText}" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_RotationSize}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_RotationSize}" />
               <TextBox Grid.Row="3" Grid.Column="1"
                        Margin="0,5"
                        IsEnabled="{Binding EnableSizeRotation}"
@@ -523,10 +551,11 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxRotationSize_HelpText}" />
               <TextBlock Grid.Row="3" Grid.Column="2"
                          Text="{x:Static resx:Strings.Label_RotationSizeUnit}"
+                         TextWrapping="Wrap"
                          VerticalAlignment="Center"
                          Margin="5,5,0,5" />
 
-              <CheckBox Grid.Row="4" Grid.Column="1"
+              <CheckBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_EnableDateRotation}"
                         IsChecked="{Binding EnableDateRotation}"
                         Margin="0,5"
@@ -535,8 +564,8 @@
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxEnableDateRotation_HelpText}" />
 
               <TextBlock Grid.Row="5" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_DateRotationType}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_DateRotationType}" />
               <ComboBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
                         Margin="0,5"
                         ItemsSource="{Binding DateRotationTypes}"
@@ -553,8 +582,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="7" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_MaxRotations}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_MaxRotations}" />
               <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        IsEnabled="{Binding EnableRotation}"
@@ -567,7 +596,7 @@
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
 
-              <CheckBox Grid.Row="9" Grid.Column="1"
+              <CheckBox Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_UseLocalTimeForRotation}"
                         IsChecked="{Binding UseLocalTimeForRotation}"
                         Margin="0,5"
@@ -575,7 +604,7 @@
                         AutomationProperties.AutomationId="CheckBoxUseLocalTimeForRotation"
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxUseLocalTimeForRotation_HelpText}" />
 
-              <CheckBox Grid.Row="10" Grid.Column="1"
+              <CheckBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_EnableDebugLogs}"
                         IsChecked="{Binding EnableDebugLogs}"
                         Margin="0,5"
@@ -619,12 +648,12 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
 
-              <CheckBox Grid.Row="0" Grid.Column="1"
+              <CheckBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
                         IsChecked="{Binding EnableHealthMonitoring}"
                         Margin="0,5"
@@ -633,8 +662,8 @@
                         AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxEnableHealthMonitoring_HelpText}" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_HeartbeatInterval}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_HeartbeatInterval}" />
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
@@ -644,12 +673,13 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxHeartbeatInterval_HelpText}" />
               <TextBlock Grid.Row="1" Grid.Column="2"
                          Text="{x:Static resx:Strings.Label_Seconds}"
+                         TextWrapping="Wrap"
                          VerticalAlignment="Center"
                          Margin="5,5,0,5" />
 
               <TextBlock Grid.Row="2" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_MaxFailedChecks}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_MaxFailedChecks}" />
               <TextBox Grid.Row="2" Grid.Column="1"
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
@@ -659,12 +689,13 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxMaxFailedChecks_HelpText}" />
               <TextBlock Grid.Row="2" Grid.Column="2"
                          Text="{x:Static resx:Strings.Label_Attempts}"
+                         TextWrapping="Wrap"
                          VerticalAlignment="Center"
                          Margin="5,5,0,5" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_RecoveryAction}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_RecoveryAction}" />
               <ComboBox Grid.Row="3" Grid.Column="1"
                         Margin="0,5"
                         ItemsSource="{Binding RecoveryActions}"
@@ -695,7 +726,7 @@
                 </Button.Template>
               </Button>
 
-              <CheckBox Grid.Row="4" Grid.Column="1"
+              <CheckBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_RecoveryOnCleanExit}"
                         IsEnabled="{Binding EnableHealthMonitoring}"
                         IsChecked="{Binding RecoveryOnCleanExit}"
@@ -709,8 +740,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="6" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_MaxRestartAttempts}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_MaxRestartAttempts}" />
               <TextBox Grid.Row="6" Grid.Column="1"
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
@@ -720,6 +751,7 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxMaxRestartAttempts_HelpText}" />
               <TextBlock Grid.Row="6" Grid.Column="2"
                          Text="{x:Static resx:Strings.Label_Attempts}"
+                         TextWrapping="Wrap"
                          VerticalAlignment="Center"
                          Margin="5,5,0,5" />
               <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
@@ -728,8 +760,8 @@
                          TextWrapping="Wrap" Margin="0,0,0,5" />
 
               <TextBlock Grid.Row="8" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_HeartbeatUrl}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_HeartbeatUrl}" />
               <TextBox Grid.Row="8" Grid.Column="1"
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
@@ -739,8 +771,8 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxHeartbeatUrl_HelpText}" />
 
               <TextBlock Grid.Row="9" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_HeartbeatUrlTimeoutSeconds}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_HeartbeatUrlTimeoutSeconds}" />
               <TextBox Grid.Row="9" Grid.Column="1"
                        Margin="0,5"
                        IsEnabled="{Binding EnableHealthMonitoring}"
@@ -750,10 +782,11 @@
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText}" />
               <TextBlock Grid.Row="9" Grid.Column="2"
                          Text="{x:Static resx:Strings.Label_Seconds}"
+                         TextWrapping="Wrap"
                          VerticalAlignment="Center"
                          Margin="5,5,0,5" />
 
-              <CheckBox Grid.Row="10" Grid.Column="1"
+              <CheckBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_EnableHeartbeatUrlFlags}"
                         IsEnabled="{Binding EnableHealthMonitoring}"
                         IsChecked="{Binding EnableHeartbeatUrlFlags}"
@@ -768,8 +801,8 @@
                          TextWrapping="Wrap" Margin="0,0,0,5" />
 
               <TextBlock Grid.Row="12" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" />
               <TextBox Grid.Row="12" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding FailureProgramExecutablePath, UpdateSourceTrigger=PropertyChanged}"
@@ -789,8 +822,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="14" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupDirectory}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupDirectory}" />
               <TextBox Grid.Row="14" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding FailureProgramStartupDirectory, UpdateSourceTrigger=PropertyChanged}"
@@ -814,8 +847,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="17" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessParameters}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessParameters}" />
               <TextBox Grid.Row="17" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding FailureProgramParameters, UpdateSourceTrigger=PropertyChanged}"
@@ -850,14 +883,14 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
 
               <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_EnvironmentVariables}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_EnvironmentVariables}" />
               <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding EnvironmentVariables, UpdateSourceTrigger=PropertyChanged}"
@@ -874,23 +907,22 @@
                          TextWrapping="Wrap" />
 
               <CheckBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                        Content="{x:Static resx:Strings.Label_AllowOverriddenRuntimeVars}"
                         IsChecked="{Binding AllowOverriddenRuntimeVars}"
                         Margin="0,15,0,5"
                         AutomationProperties.Name="{x:Static resx:Strings.Label_AllowOverriddenRuntimeVars}"
                         AutomationProperties.AutomationId="CheckBoxAllowOverriddenRuntimeVars"
-                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText}">
-                <TextBlock Text="{x:Static resx:Strings.Label_AllowOverriddenRuntimeVars}" />
-              </CheckBox>
+                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText}" />
 
-              <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,10">
+              <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,10" TextWrapping="Wrap">
                 <Hyperlink Command="{Binding OpenRuntimeVariablesLinkCommand}">
-                  <TextBlock Text="{x:Static resx:Strings.Label_RuntimeVariablesLink}" />
+                  <TextBlock Text="{x:Static resx:Strings.Label_RuntimeVariablesLink}" TextWrapping="Wrap" />
                 </Hyperlink>
               </TextBlock>
 
               <TextBlock Grid.Row="4" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ServiceDependencies}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ServiceDependencies}" />
               <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding ServiceDependencies, UpdateSourceTrigger=PropertyChanged}"
@@ -924,11 +956,12 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
 
-              <RadioButton Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+              <RadioButton Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
                            Margin="0,0,0,10"
                            Content="{x:Static resx:Strings.Label_RunAsLocalSystem}"
                            IsChecked="{Binding RunAsLocalSystem}"
@@ -937,13 +970,14 @@
                            AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RadioButtonLocalSystem_HelpText}" />
 
               <RadioButton Grid.Row="1" Grid.Column="0"
+                           Margin="0,0,10,5"
                            Content="{x:Static resx:Strings.Label_UserAccount}"
                            IsChecked="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
                            AutomationProperties.Name="{x:Static resx:Strings.Label_UserAccount}"
                            AutomationProperties.AutomationId="RadioButtonUserAccount"
                            AutomationProperties.HelpText="{x:Static resx:Strings.Automation_RadioButtonUserAccount_HelpText}" />
 
-              <TextBox Grid.Row="1" Grid.Column="1"
+              <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,0,0,5"
                        IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
                        Text="{Binding UserAccount, UpdateSourceTrigger=PropertyChanged}"
@@ -951,16 +985,17 @@
                        AutomationProperties.AutomationId="TextBoxUserAccount"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxUserAccount_HelpText}" />
 
-              <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+              <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
                          Text="{x:Static resx:Strings.Info_UserAccount}"
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" Margin="0,0,0,10" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
+                         Style="{StaticResource FieldLabelStyle}"
                          Text="{x:Static resx:Strings.Label_Password}"
-                         Margin="0,5,10,5" VerticalAlignment="Center" />
+                         VerticalAlignment="Center" />
 
-              <PasswordBox Grid.Row="3" Grid.Column="1"
+              <PasswordBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
                            Margin="0,0,0,10"
                            IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
                            helpers:PasswordBoxHelper.BoundPassword="{Binding Password}"
@@ -969,10 +1004,11 @@
                            AutomationProperties.HelpText="{x:Static resx:Strings.Automation_PasswordBoxUser_HelpText}" />
 
               <TextBlock Grid.Row="4" Grid.Column="0"
+                         Style="{StaticResource FieldLabelStyle}"
                          Text="{x:Static resx:Strings.Label_ConfirmPassword}"
-                         Margin="0,5,10,5" VerticalAlignment="Center" />
+                         VerticalAlignment="Center" />
 
-              <PasswordBox Grid.Row="4" Grid.Column="1"
+              <PasswordBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                            Margin="0,0,0,10"
                            IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
                            helpers:PasswordBoxHelper.BoundPassword="{Binding ConfirmPassword}"
@@ -1009,7 +1045,7 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
@@ -1020,8 +1056,8 @@
                          TextWrapping="Wrap" Margin="5,0,0,5" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" />
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PreLaunchExecutablePath, UpdateSourceTrigger=PropertyChanged}"
@@ -1041,8 +1077,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupDirectory}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupDirectory}" />
               <TextBox Grid.Row="3" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PreLaunchStartupDirectory, UpdateSourceTrigger=PropertyChanged}"
@@ -1066,8 +1102,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="6" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessParameters}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessParameters}" />
               <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PreLaunchParameters, UpdateSourceTrigger=PropertyChanged}"
@@ -1084,8 +1120,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="8" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_EnvironmentVariables}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_EnvironmentVariables}" />
               <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PreLaunchEnvironmentVariables, UpdateSourceTrigger=PropertyChanged}"
@@ -1102,8 +1138,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="10" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StdoutPath}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StdoutPath}" />
               <TextBox Grid.Row="10" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PreLaunchStdoutPath, UpdateSourceTrigger=PropertyChanged}"
@@ -1119,8 +1155,8 @@
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowsePreLaunchStdout_HelpText}" />
 
               <TextBlock Grid.Row="11" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StderrPath}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StderrPath}" />
               <TextBox Grid.Row="11" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PreLaunchStderrPath, UpdateSourceTrigger=PropertyChanged}"
@@ -1136,8 +1172,8 @@
                       AutomationProperties.HelpText="{x:Static resx:Strings.Automation_ButtonBrowsePreLaunchStderr_HelpText}" />
 
               <TextBlock Grid.Row="12" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}" />
               <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PreLaunchTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
@@ -1150,8 +1186,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="14" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}" />
               <TextBox Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PreLaunchRetryAttempts, UpdateSourceTrigger=PropertyChanged}"
@@ -1159,7 +1195,7 @@
                        AutomationProperties.AutomationId="TextBoxPreLaunchRetries"
                        AutomationProperties.HelpText="{x:Static resx:Strings.Automation_TextBoxPreLaunchRetries_HelpText}" />
 
-              <CheckBox Grid.Row="15" Grid.Column="1"
+              <CheckBox Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
                         IsChecked="{Binding PreLaunchIgnoreFailure}"
                         Margin="0,5"
@@ -1188,7 +1224,7 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
@@ -1199,8 +1235,8 @@
                          TextWrapping="Wrap" Margin="5,0,0,5" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" />
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PostLaunchExecutablePath, UpdateSourceTrigger=PropertyChanged}"
@@ -1220,8 +1256,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupDirectory}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupDirectory}" />
               <TextBox Grid.Row="3" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PostLaunchStartupDirectory, UpdateSourceTrigger=PropertyChanged}"
@@ -1245,8 +1281,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="6" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessParameters}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessParameters}" />
               <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PostLaunchParameters, UpdateSourceTrigger=PropertyChanged}"
@@ -1286,7 +1322,7 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
@@ -1297,8 +1333,8 @@
                          TextWrapping="Wrap" Margin="5,0,0,5" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" />
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PreStopExecutablePath, UpdateSourceTrigger=PropertyChanged}"
@@ -1318,8 +1354,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupDirectory}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupDirectory}" />
               <TextBox Grid.Row="3" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PreStopStartupDirectory, UpdateSourceTrigger=PropertyChanged}"
@@ -1343,8 +1379,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="6" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessParameters}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessParameters}" />
               <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PreStopParameters, UpdateSourceTrigger=PropertyChanged}"
@@ -1361,8 +1397,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="8" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_PreStopTimeoutSeconds}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_PreStopTimeoutSeconds}" />
               <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PreStopTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
@@ -1374,7 +1410,7 @@
                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                          TextWrapping="Wrap" />
 
-              <CheckBox Grid.Row="10" Grid.Column="1"
+              <CheckBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
                         Content="{x:Static resx:Strings.Label_PreStopLogAsError}"
                         IsChecked="{Binding PreStopLogAsError}"
                         Margin="0,5"
@@ -1403,7 +1439,7 @@
               </Grid.RowDefinitions>
 
               <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ColumnWidthLabel}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthMain}" />
                 <ColumnDefinition Width="{StaticResource ColumnWidthAction}" />
               </Grid.ColumnDefinitions>
@@ -1414,8 +1450,8 @@
                          TextWrapping="Wrap" Margin="5,0,0,5" />
 
               <TextBlock Grid.Row="1" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" />
               <TextBox Grid.Row="1" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PostStopExecutablePath, UpdateSourceTrigger=PropertyChanged}"
@@ -1435,8 +1471,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="3" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_StartupDirectory}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_StartupDirectory}" />
               <TextBox Grid.Row="3" Grid.Column="1"
                        Margin="0,5"
                        Text="{Binding PostStopStartupDirectory, UpdateSourceTrigger=PropertyChanged}"
@@ -1460,8 +1496,8 @@
                          TextWrapping="Wrap" />
 
               <TextBlock Grid.Row="6" Grid.Column="0"
-                         Text="{x:Static resx:Strings.Label_ProcessParameters}"
-                         Margin="0,5,10,5" />
+                         Style="{StaticResource FieldLabelStyle}"
+                         Text="{x:Static resx:Strings.Label_ProcessParameters}" />
               <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
                        Margin="0,5"
                        Text="{Binding PostStopParameters, UpdateSourceTrigger=PropertyChanged}"
@@ -1491,7 +1527,8 @@
                    Text="{x:Static resx:Strings.Label_RequiredFields}"
                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                    VerticalAlignment="Center"
-                   Margin="10,0,0,0"
+                   TextWrapping="Wrap"
+                   Margin="10,0,10,0"
                    AutomationProperties.Name="{x:Static resx:Strings.Automation_RequiredFieldsNote_Name}" />
 
         <UniformGrid Grid.Column="1"
