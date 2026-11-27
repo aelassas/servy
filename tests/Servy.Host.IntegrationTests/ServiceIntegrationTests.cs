@@ -795,7 +795,8 @@ namespace Servy.Host.IntegrationTests
             private static extern bool LogonUser(string userName, string domain, string password, int logonType, int logonProvider, out Microsoft.Win32.SafeHandles.SafeAccessTokenHandle token);
 
             /// <summary>
-            /// Connects to the pipe as the account and returns <c>CONNECTED</c>, or <c>ERROR</c> and the exception.
+            /// Connects to the pipe as the account and returns <c>CONNECTED</c>, or <c>ERROR</c> and the exception, or
+            /// <c>TIMEOUT</c> and the scheduled task's status when the task wrote no result within 180 s.
             /// </summary>
             public async Task<string> ConnectAsAsync(string runAs, string password, CancellationToken ct)
             {
