@@ -108,6 +108,19 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public void Initialize_NullConnection_ThrowsArgumentNullException()
+        {
+            // Arrange
+            DbConnection connection = null;
+
+            // Act
+            var ex = Assert.Throws<ArgumentNullException>(() => SQLiteDbInitializer.Initialize(connection, legacyRecoveryFolderPath: null));
+
+            // Assert
+            Assert.Equal("connection", ex.ParamName);
+        }
+
+        [Fact]
         public void Initialize_DatabaseNewerThanLatestSchemaVersion_RefusesAndThrows()
         {
             // Arrange: a database written by a newer Servy than this build supports.
