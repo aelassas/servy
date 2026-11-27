@@ -3,6 +3,7 @@ using Servy.Core.Resources;
 using Servy.Core.UnitTests.Logging;
 using Servy.Core.Validation;
 using Servy.Testing;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -1176,9 +1177,11 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
-        public void IsSafelyContainedWithinAppDirectory_ReparsePointInPath_ReturnsFalse()
+        public void IsSafelyContainedWithinAppDirectory_AppDirectoryIsItselfASymlink_ReturnsTrue()
         {
             // Arrange
+            // The application directory is the one the process was launched from and is trusted even when it is
+            // itself a link (#8217); only a link between it and the target is refused.
             string realDir = Path.Combine(TempDirectory, "real_app_dir");
             string linkDir = Path.Combine(TempDirectory, "link_app_dir");
             Directory.CreateDirectory(realDir);
@@ -1198,7 +1201,102 @@ namespace Servy.Core.UnitTests.Validation
             bool result = PathSecurityGuard.IsSafelyContainedWithinAppDirectory(targetFile, linkDir);
 
             // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_AppDirectoryIsAJunction_AcceptsTheCompanionUnderIt()
+        {
+            // Arrange
+            // Scoop layout (#8217): apps\servy\11.0 is the real directory, apps\servy\current a junction to it, and the
+            // process runs from current, so the default companion path is current\Servy.exe.
+            string versionDir = Path.Combine(TempDirectory, "apps", "servy", "11.0");
+            string currentDir = Path.Combine(TempDirectory, "apps", "servy", "current");
+            Directory.CreateDirectory(versionDir);
+            File.WriteAllText(Path.Combine(versionDir, "Servy.exe"), "placeholder");
+            CreateJunction(currentDir, versionDir);
+            Assert.Equal(FileAttributes.ReparsePoint, new DirectoryInfo(currentDir).Attributes & FileAttributes.ReparsePoint);
+            string companion = Path.Combine(currentDir, "Servy.exe");
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(companion, currentDir, out string resolvedPath);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(companion, resolvedPath);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_JunctionBetweenAppDirectoryAndTarget_ReturnsFalse()
+        {
+            // Arrange
+            // The application directory is a plain directory, but the target is reached through a junction inside it
+            // that points outside: the redirection the guard exists to refuse.
+            string appDir = Path.Combine(TempDirectory, "app");
+            string outsideDir = Path.Combine(TempDirectory, "outside");
+            string linkDir = Path.Combine(appDir, "bin");
+            Directory.CreateDirectory(appDir);
+            Directory.CreateDirectory(outsideDir);
+            File.WriteAllText(Path.Combine(outsideDir, "Servy.exe"), "placeholder");
+            CreateJunction(linkDir, outsideDir);
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(Path.Combine("bin", "Servy.exe"), appDir, out string resolvedPath);
+
+            // Assert
             Assert.False(result);
+            Assert.Equal(string.Empty, resolvedPath);
+        }
+
+        [Fact]
+        public void TryResolveWithinAppDirectory_JunctionBelowAJunctionedAppDirectory_ReturnsFalse()
+        {
+            // Arrange
+            // The application directory is itself a junction (trusted), and a second junction below it points
+            // outside: trusting the application directory must not stop the walk before the inner junction.
+            string versionDir = Path.Combine(TempDirectory, "apps", "servy", "11.0");
+            string currentDir = Path.Combine(TempDirectory, "apps", "servy", "current");
+            string outsideDir = Path.Combine(TempDirectory, "outside");
+            Directory.CreateDirectory(versionDir);
+            Directory.CreateDirectory(outsideDir);
+            File.WriteAllText(Path.Combine(outsideDir, "Servy.exe"), "placeholder");
+            CreateJunction(currentDir, versionDir);
+            CreateJunction(Path.Combine(versionDir, "bin"), outsideDir);
+            string target = Path.Combine(currentDir, "bin", "Servy.exe");
+
+            // Act
+            bool result = PathSecurityGuard.TryResolveWithinAppDirectory(target, currentDir, out string resolvedPath);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(string.Empty, resolvedPath);
+        }
+
+        /// <summary>
+        /// Creates an NTFS directory junction with <c>cmd /c mklink /J</c>, the link type Scoop uses for its
+        /// <c>current</c> directory, and fails the test if it cannot be created.
+        /// </summary>
+        /// <param name="junctionPath">The junction to create; it must not exist yet.</param>
+        /// <param name="targetDirectory">The existing directory the junction points to.</param>
+        /// <remarks>
+        /// A junction needs no <c>SeCreateSymbolicLinkPrivilege</c>, so unlike a symbolic link the test never has
+        /// a reason to be skipped. <see cref="TempDirectoryTestBase"/> removes the junction, not its target's
+        /// contents, when it deletes the temp directory.
+        /// </remarks>
+        private static void CreateJunction(string junctionPath, string targetDirectory)
+        {
+            var psi = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), $"/c mklink /J \"{junctionPath}\" \"{targetDirectory}\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            using var process = Process.Start(psi)!;
+            string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            Assert.True(process.ExitCode == 0, $"mklink /J \"{junctionPath}\" \"{targetDirectory}\" failed: {output}");
         }
 
         [Fact]
