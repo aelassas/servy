@@ -250,6 +250,14 @@
                   AutomationProperties.Name="{x:Static uires:Strings.Language_PortugueseBrazil}"
                   AutomationProperties.AutomationId="LanguagePortugueseBrazilMenuItem"
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguagePortugueseBrazilMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static uires:Strings.Language_Korean}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsKoreanSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.Korean}"
+                  AutomationProperties.Name="{x:Static uires:Strings.Language_Korean}"
+                  AutomationProperties.AutomationId="LanguageKoreanMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageKoreanMenuItem_HelpText}" />
       </MenuItem>
 
       <MenuItem Header="{x:Static resx:Strings.Menu_Help}"

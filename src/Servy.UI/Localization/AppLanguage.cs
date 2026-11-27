@@ -34,5 +34,8 @@ namespace Servy.UI.Localization
 
         /// <summary>Portuguese as written in Brazil.</summary>
         PortugueseBrazil,
+
+        /// <summary>Korean.</summary>
+        Korean,
     }
 }

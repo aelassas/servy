@@ -22,6 +22,7 @@ namespace Servy.UI.UnitTests.Localization
             var italian = LanguageDisplayNames.For(AppLanguage.Italian);
             var portuguesePortugal = LanguageDisplayNames.For(AppLanguage.PortuguesePortugal);
             var portugueseBrazil = LanguageDisplayNames.For(AppLanguage.PortugueseBrazil);
+            var korean = LanguageDisplayNames.For(AppLanguage.Korean);
 
             // Assert
             Assert.Equal(Strings.Language_System, system);
@@ -34,7 +35,8 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal(Strings.Language_Italian, italian);
             Assert.Equal(Strings.Language_PortuguesePortugal, portuguesePortugal);
             Assert.Equal(Strings.Language_PortugueseBrazil, portugueseBrazil);
-            Assert.Equal(10, new[] { system, english, chinese, french, german, spanish, japanese, italian, portuguesePortugal, portugueseBrazil }.Distinct().Count());
+            Assert.Equal(Strings.Language_Korean, korean);
+            Assert.Equal(11, new[] { system, english, chinese, french, german, spanish, japanese, italian, portuguesePortugal, portugueseBrazil, korean }.Distinct().Count());
         }
 
         public static IEnumerable<object[]> NativeNameCases()
@@ -51,8 +53,9 @@ namespace Servy.UI.UnitTests.Localization
                 new[] { "Language_Italian", "Italiano" },
                 new[] { "Language_PortuguesePortugal", "Portugu\u00EAs (Portugal)" },
                 new[] { "Language_PortugueseBrazil", "Portugu\u00EAs (Brasil)" },
+                new[] { "Language_Korean", "\uD55C\uAD6D\uC5B4" },
             };
-            var cultures = new[] { "", "de", "es", "fr", "ja", "zh-CN", "it", "pt-PT", "pt-BR" };
+            var cultures = new[] { "", "de", "es", "fr", "ja", "zh-CN", "it", "pt-PT", "pt-BR", "ko" };
 
             foreach (var culture in cultures)
             {

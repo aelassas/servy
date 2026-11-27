@@ -89,6 +89,7 @@ Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
 [Messages]
 english.SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
@@ -100,6 +101,7 @@ japanese.SetupAppRunningError=セットアップは %1 が実行中であるこ�
 italian.SetupAppRunningError=Il programma di installazione ha rilevato che %1 è in esecuzione.%n%nChiudere ora tutte le istanze, quindi fare clic su OK per continuare oppure su Annulla per uscire.
 portuguese.SetupAppRunningError=O programa de configuração detetou que %1 está em execução.%n%nFeche agora todas as instâncias e, em seguida, clique em OK para continuar ou em Cancelar para sair.
 brazilianportuguese.SetupAppRunningError=O programa de instalação detectou que %1 está em execução no momento.%n%nFeche todas as instâncias agora e clique em OK para continuar ou em Cancelar para sair.
+korean.SetupAppRunningError=설치 프로그램에서 %1이(가) 현재 실행 중인 것을 감지했습니다.%n%n지금 모든 인스턴스를 닫은 후 [확인]을 클릭하여 계속하거나 [취소]를 클릭하여 종료하십시오.
 
 [CustomMessages]
 ; Types
@@ -112,6 +114,7 @@ japanese.FullInstallation=完全インストール
 italian.FullInstallation=Installazione completa
 portuguese.FullInstallation=Instalação completa
 brazilianportuguese.FullInstallation=Instalação completa
+korean.FullInstallation=전체 설치
 english.CustomInstallation=Custom installation
 chinesesimplified.CustomInstallation=自定义安装
 french.CustomInstallation=Installation personnalisée
@@ -121,6 +124,7 @@ japanese.CustomInstallation=カスタム インストール
 italian.CustomInstallation=Installazione personalizzata
 portuguese.CustomInstallation=Instalação personalizada
 brazilianportuguese.CustomInstallation=Instalação personalizada
+korean.CustomInstallation=사용자 지정 설치
 
 ; Components
 english.InstallDesktopApp=Install Desktop App (%1)
@@ -132,6 +136,7 @@ japanese.InstallDesktopApp=デスクトップ アプリをインストール (%1
 italian.InstallDesktopApp=Installa l'app desktop (%1)
 portuguese.InstallDesktopApp=Instalar a aplicação de ambiente de trabalho (%1)
 brazilianportuguese.InstallDesktopApp=Instalar o aplicativo da área de trabalho (%1)
+korean.InstallDesktopApp=데스크톱 앱 설치 (%1)
 english.InstallCli=Install CLI (%1)
 chinesesimplified.InstallCli=安装命令行工具 (%1)
 french.InstallCli=Installer l'interface de ligne de commande (%1)
@@ -141,6 +146,7 @@ japanese.InstallCli=コマンド ライン ツールをインストール (%1)
 italian.InstallCli=Installa lo strumento da riga di comando (%1)
 portuguese.InstallCli=Instalar a ferramenta da linha de comandos (%1)
 brazilianportuguese.InstallCli=Instalar a ferramenta de linha de comando (%1)
+korean.InstallCli=명령줄 도구 설치 (%1)
 english.InstallManagerApp=Install Manager App (%1)
 chinesesimplified.InstallManagerApp=安装管理器应用程序 (%1)
 french.InstallManagerApp=Installer l'application Manager (%1)
@@ -150,6 +156,7 @@ japanese.InstallManagerApp=Manager アプリをインストール (%1)
 italian.InstallManagerApp=Installa l'app Manager (%1)
 portuguese.InstallManagerApp=Instalar a aplicação Manager (%1)
 brazilianportuguese.InstallManagerApp=Instalar o aplicativo Manager (%1)
+korean.InstallManagerApp=Manager 앱 설치 (%1)
 
 ; Tasks & Groups
 english.AdditionalOptions=Additional Options
@@ -161,6 +168,7 @@ japanese.AdditionalOptions=追加オプション
 italian.AdditionalOptions=Opzioni aggiuntive
 portuguese.AdditionalOptions=Opções adicionais
 brazilianportuguese.AdditionalOptions=Opções adicionais
+korean.AdditionalOptions=추가 옵션
 english.AddServyToPath=Add Servy to PATH
 chinesesimplified.AddServyToPath=将 Servy 添加到环境变量 PATH
 french.AddServyToPath=Ajouter Servy à la variable d'environnement PATH
@@ -170,6 +178,7 @@ japanese.AddServyToPath=Servy を環境変数 PATH に追加
 italian.AddServyToPath=Aggiungi Servy alla variabile di ambiente PATH
 portuguese.AddServyToPath=Adicionar o Servy à variável de ambiente PATH
 brazilianportuguese.AddServyToPath=Adicionar o Servy à variável de ambiente PATH
+korean.AddServyToPath=Servy를 환경 변수 PATH에 추가
 
 ; Icons & Run
 english.UninstallShortcut=Uninstall
@@ -181,6 +190,7 @@ japanese.UninstallShortcut=アンインストール
 italian.UninstallShortcut=Disinstalla
 portuguese.UninstallShortcut=Desinstalar
 brazilianportuguese.UninstallShortcut=Desinstalar
+korean.UninstallShortcut=제거
 english.OpenDocumentation=Open Documentation
 chinesesimplified.OpenDocumentation=打开在线文档
 french.OpenDocumentation=Ouvrir la documentation en ligne
@@ -190,6 +200,7 @@ japanese.OpenDocumentation=オンライン ドキュメントを開く
 italian.OpenDocumentation=Apri la documentazione online
 portuguese.OpenDocumentation=Abrir a documentação online
 brazilianportuguese.OpenDocumentation=Abrir a documentação online
+korean.OpenDocumentation=온라인 설명서 열기
 
 ; [Code] Wizard & Error Messages
 english.SelectAtLeastOneComponent=You must select at least one component to continue.
@@ -201,6 +212,7 @@ japanese.SelectAtLeastOneComponent=続行するには、少なくとも 1 つの
 italian.SelectAtLeastOneComponent=Per continuare è necessario selezionare almeno un componente.
 portuguese.SelectAtLeastOneComponent=Tem de selecionar pelo menos um componente para continuar.
 brazilianportuguese.SelectAtLeastOneComponent=Você deve selecionar pelo menos um componente para continuar.
+korean.SelectAtLeastOneComponent=계속하려면 구성 요소를 하나 이상 선택해야 합니다.
 
 english.Arm64ArchMismatchError=This installer is built for ARM64 systems. Please download and run the x64 installer (servy-%1-x64-installer.exe).
 chinesesimplified.Arm64ArchMismatchError=此安装程序专为 ARM64 系统构建。请下载并运行 x64 安装程序 (servy-%1-x64-installer.exe)。
@@ -211,6 +223,7 @@ japanese.Arm64ArchMismatchError=このインストーラーは ARM64 システ�
 italian.Arm64ArchMismatchError=Questo programma di installazione è progettato per i sistemi ARM64. Scaricare ed eseguire il programma di installazione x64 (servy-%1-x64-installer.exe).
 portuguese.Arm64ArchMismatchError=Este instalador foi concebido para sistemas ARM64. Transfira e execute o instalador x64 (servy-%1-x64-installer.exe).
 brazilianportuguese.Arm64ArchMismatchError=Este instalador foi criado para sistemas ARM64. Baixe e execute o instalador x64 (servy-%1-x64-installer.exe).
+korean.Arm64ArchMismatchError=이 설치 프로그램은 ARM64 시스템용으로 빌드되었습니다. x64 설치 프로그램(servy-%1-x64-installer.exe)을 다운로드하여 실행하십시오.
 
 english.X64OnArm64Warning=You are running the x64 installer on an ARM64 system. An ARM64-native version (servy-%1-arm64-installer.exe) is available for optimal performance.%n%nDo you want to continue with the x64 installation anyway?
 chinesesimplified.X64OnArm64Warning=您正在 ARM64 系统上运行 x64 安装程序。我们提供了原生 ARM64 版本 (servy-%1-arm64-installer.exe) 以获得最佳性能。%n%n是否仍要继续运行 x64 安装？
@@ -221,6 +234,7 @@ japanese.X64OnArm64Warning=ARM64 システムで x64 インストーラーを実
 italian.X64OnArm64Warning=Si sta eseguendo il programma di installazione x64 su un sistema ARM64. Per prestazioni ottimali è disponibile una versione nativa ARM64 (servy-%1-arm64-installer.exe).%n%nContinuare comunque con l'installazione x64?
 portuguese.X64OnArm64Warning=Está a executar o instalador x64 num sistema ARM64. Está disponível uma versão nativa ARM64 (servy-%1-arm64-installer.exe) para um desempenho ideal.%n%nPretende continuar mesmo assim com a instalação x64?
 brazilianportuguese.X64OnArm64Warning=Você está executando o instalador x64 em um sistema ARM64. Uma versão nativa ARM64 (servy-%1-arm64-installer.exe) está disponível para obter o desempenho ideal.%n%nDeseja continuar com a instalação x64 mesmo assim?
+korean.X64OnArm64Warning=ARM64 시스템에서 x64 설치 프로그램을 실행하고 있습니다. 최적의 성능을 위해 ARM64 네이티브 버전(servy-%1-arm64-installer.exe)을 사용할 수 있습니다.%n%n그래도 x64 설치를 계속하시겠습니까?
 
 english.UpgradePrompt=An older version of Servy is already installed. Would you like to upgrade to this newer version?
 chinesesimplified.UpgradePrompt=检测到已安装旧版本的 Servy。是否要升级到此新版本？
@@ -231,6 +245,7 @@ japanese.UpgradePrompt=以前のバージョンの Servy が既にインスト�
 italian.UpgradePrompt=Una versione precedente di Servy è già installata. Aggiornarla a questa versione più recente?
 portuguese.UpgradePrompt=Já está instalada uma versão anterior do Servy. Pretende atualizar para esta versão mais recente?
 brazilianportuguese.UpgradePrompt=Uma versão anterior do Servy já está instalada. Deseja atualizar para esta versão mais recente?
+korean.UpgradePrompt=이전 버전의 Servy가 이미 설치되어 있습니다. 이 최신 버전으로 업그레이드하시겠습니까?
 
 english.DowngradePrompt=A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?
 chinesesimplified.DowngradePrompt=检测到已安装更新版本的 Servy。确定要降级到此旧版本吗？
@@ -241,6 +256,7 @@ japanese.DowngradePrompt=新しいバージョンの Servy が既にインスト
 italian.DowngradePrompt=Una versione più recente di Servy è già installata. Tornare davvero a questa versione precedente?
 portuguese.DowngradePrompt=Já está instalada uma versão mais recente do Servy. Tem a certeza de que pretende reverter para esta versão anterior?
 brazilianportuguese.DowngradePrompt=Uma versão mais recente do Servy já está instalada. Tem certeza de que deseja reverter para esta versão anterior?
+korean.DowngradePrompt=최신 버전의 Servy가 이미 설치되어 있습니다. 이 이전 버전으로 다운그레이드하시겠습니까?
 
 english.ReinstallPrompt=The same version of Servy is already installed. Would you like to reinstall it?
 chinesesimplified.ReinstallPrompt=检测到已安装相同版本的 Servy。是否要重新安装？
@@ -251,6 +267,7 @@ japanese.ReinstallPrompt=同じバージョンの Servy が既にインストー
 italian.ReinstallPrompt=La stessa versione di Servy è già installata. Reinstallarla?
 portuguese.ReinstallPrompt=Já está instalada a mesma versão do Servy. Pretende reinstalá-la?
 brazilianportuguese.ReinstallPrompt=A mesma versão do Servy já está instalada. Deseja reinstalá-la?
+korean.ReinstallPrompt=같은 버전의 Servy가 이미 설치되어 있습니다. 다시 설치하시겠습니까?
 
 english.CreateDataDirFailed=Failed to create the service data directory "%1".
 chinesesimplified.CreateDataDirFailed=无法创建服务数据目录“%1”。
@@ -261,6 +278,7 @@ japanese.CreateDataDirFailed=サービス データ ディレクトリ "%1" を�
 italian.CreateDataDirFailed=Impossibile creare la directory dei dati del servizio "%1".
 portuguese.CreateDataDirFailed=Não foi possível criar a pasta de dados do serviço "%1".
 brazilianportuguese.CreateDataDirFailed=Não foi possível criar a pasta de dados do serviço "%1".
+korean.CreateDataDirFailed=서비스 데이터 디렉터리 "%1"을(를) 만들지 못했습니다.
 
 english.DataDirReparsePointWarning=The service data directory "%1" is a symbolic link or junction, so setup did not secure it. Replace it with a real directory.
 chinesesimplified.DataDirReparsePointWarning=服务数据目录“%1”是符号链接或联接点，因此安装程序未对其进行权限保护。请将其替换为真实目录。
@@ -271,6 +289,7 @@ japanese.DataDirReparsePointWarning=サービス データ ディレクトリ "%
 italian.DataDirReparsePointWarning=La directory dei dati del servizio "%1" è un collegamento simbolico o una giunzione, pertanto il programma di installazione non l'ha protetta. Sostituirla con una directory reale.
 portuguese.DataDirReparsePointWarning=A pasta de dados do serviço "%1" é uma ligação simbólica ou uma junção, pelo que o programa de configuração não a protegeu. Substitua-a por uma pasta real.
 brazilianportuguese.DataDirReparsePointWarning=A pasta de dados do serviço "%1" é um link simbólico ou uma junção; portanto, o programa de instalação não a protegeu. Substitua-a por uma pasta real.
+korean.DataDirReparsePointWarning=서비스 데이터 디렉터리 "%1"은(는) 심볼릭 링크 또는 연결 지점이므로 설치 프로그램에서 보호하지 않았습니다. 실제 디렉터리로 바꾸십시오.
 
 english.DataDirOwnershipFailed=Failed to give the ownership of the service data directory "%1" to Administrators.
 chinesesimplified.DataDirOwnershipFailed=无法将服务数据目录“%1”的所有权授予 Administrators 组。
@@ -281,6 +300,7 @@ japanese.DataDirOwnershipFailed=サービス データ ディレクトリ "%1" �
 italian.DataDirOwnershipFailed=Impossibile assegnare la proprietà della directory dei dati del servizio "%1" al gruppo Administrators.
 portuguese.DataDirOwnershipFailed=Não foi possível atribuir a propriedade da pasta de dados do serviço "%1" ao grupo Administradores.
 brazilianportuguese.DataDirOwnershipFailed=Não foi possível atribuir a propriedade da pasta de dados do serviço "%1" ao grupo Administradores.
+korean.DataDirOwnershipFailed=서비스 데이터 디렉터리 "%1"의 소유권을 Administrators 그룹에 부여하지 못했습니다.
 
 english.DataDirPermissionsFailed=Failed to secure the permissions of the service data directory "%1".
 chinesesimplified.DataDirPermissionsFailed=无法保护服务数据目录“%1”的访问权限。
@@ -291,6 +311,7 @@ japanese.DataDirPermissionsFailed=サービス データ ディレクトリ "%1"
 italian.DataDirPermissionsFailed=Impossibile proteggere le autorizzazioni della directory dei dati del servizio "%1".
 portuguese.DataDirPermissionsFailed=Não foi possível proteger as permissões da pasta de dados do serviço "%1".
 brazilianportuguese.DataDirPermissionsFailed=Não foi possível proteger as permissões da pasta de dados do serviço "%1".
+korean.DataDirPermissionsFailed=서비스 데이터 디렉터리 "%1"의 사용 권한을 보호하지 못했습니다.
 
 english.UninstallPreviousFailed=Failed to uninstall the previous version.
 chinesesimplified.UninstallPreviousFailed=卸载旧版本失败。
@@ -301,6 +322,7 @@ japanese.UninstallPreviousFailed=以前のバージョンをアンインスト�
 italian.UninstallPreviousFailed=Impossibile disinstallare la versione precedente.
 portuguese.UninstallPreviousFailed=Não foi possível desinstalar a versão anterior.
 brazilianportuguese.UninstallPreviousFailed=Não foi possível desinstalar a versão anterior.
+korean.UninstallPreviousFailed=이전 버전을 제거하지 못했습니다.
 
 english.UpdateSystemPathFailed=Failed to update system PATH environment variable.
 chinesesimplified.UpdateSystemPathFailed=更新系统 PATH 环境变量失败。
@@ -311,6 +333,7 @@ japanese.UpdateSystemPathFailed=システム環境変数 PATH を更新できま
 italian.UpdateSystemPathFailed=Impossibile aggiornare la variabile di ambiente PATH di sistema.
 portuguese.UpdateSystemPathFailed=Não foi possível atualizar a variável de ambiente PATH do sistema.
 brazilianportuguese.UpdateSystemPathFailed=Não foi possível atualizar a variável de ambiente PATH do sistema.
+korean.UpdateSystemPathFailed=시스템 환경 변수 PATH를 업데이트하지 못했습니다.
 
 [Types]
 Name: "full"; Description: "{cm:FullInstallation}"

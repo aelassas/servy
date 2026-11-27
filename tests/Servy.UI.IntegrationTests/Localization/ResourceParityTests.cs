@@ -7,7 +7,7 @@ namespace Servy.UI.IntegrationTests.Localization
 {
     /// <summary>
     /// Guards the translated resource files (Simplified Chinese, French, German, Spanish, Japanese, Italian, European
-    /// Portuguese and Brazilian Portuguese) against the mistakes a translation can make: a key the English file does
+    /// Portuguese, Brazilian Portuguese and Korean) against the mistakes a translation can make: a key the English file does
     /// not have, an empty value, and a format placeholder that was dropped or added.
     /// It also keeps the language names in one place: the Language menus of Servy and Servy Manager and the
     /// restart confirmation of <c>LanguageSwitcher</c> all read the <c>Language_*</c> entries of Servy.UI.
@@ -18,7 +18,7 @@ namespace Servy.UI.IntegrationTests.Localization
     /// </remarks>
     public class ResourceParityTests
     {
-        private static readonly string[] Cultures = { "zh-CN", "fr", "de", "es", "ja", "it", "pt-PT", "pt-BR" };
+        private static readonly string[] Cultures = { "zh-CN", "fr", "de", "es", "ja", "it", "pt-PT", "pt-BR", "ko" };
 
         private static readonly Regex PlaceholderPattern = new Regex(@"\{(\d+)(?:[^}]*)\}", RegexOptions.Compiled);
 
@@ -210,7 +210,7 @@ namespace Servy.UI.IntegrationTests.Localization
             var missing = uiNames.Where(name => !headers.Contains(name)).OrderBy(name => name, StringComparer.Ordinal).ToList();
 
             // Assert
-            Assert.Equal(10, uiNames.Count);
+            Assert.Equal(11, uiNames.Count);
             Assert.Empty(missing);
         }
 

@@ -85,6 +85,9 @@ Servy-Dienste können erst starten, wenn er ausgeführt wird. Details finden Sie
   <data name="Language_PortugueseBrazil" xml:space="preserve">
     <value>Português (Brasil) (Portugiesisch, Brasilien)</value>
   </data>
+  <data name="Language_Korean" xml:space="preserve">
+    <value>한국어 (Koreanisch)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>Die Spracheinstellung konnte nicht gespeichert werden: {0}</value>
   </data>

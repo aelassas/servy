@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DocumentationOpenFailed" xml:space="preserve">
+    <value>설명서를 열지 못했습니다. 웹 브라우저가 설치되어 있는지 확인하십시오. 세부 정보: {0}</value>
+  </data>
+  <data name="Msg_NoUpdatesAvailable" xml:space="preserve">
+    <value>현재 사용 가능한 업데이트가 없습니다.</value>
+  </data>
+  <data name="Msg_UpdateCheckInvalidTag" xml:space="preserve">
+    <value>업데이트 확인은 완료되었지만 최신 릴리스 식별자 형식을 안전하게 처리할 수 없습니다: '{0}'. 프로젝트 릴리스 페이지를 직접 확인하십시오.</value>
+    <comment>Displayed when the remote tag_name cannot be parsed into a deterministic .NET Version sequence.</comment>
+  </data>
+  <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
+    <value>Servy의 새 버전을 사용할 수 있습니다. 다운로드하시겠습니까?</value>
+  </data>
+  <data name="Msg_UpdateCheckCanceled" xml:space="preserve">
+    <value>업데이트 확인이 취소되었습니다.</value>
+    <comment>Displayed when the update check is canceled by application shutdown or by the caller, as opposed to the fixed update-check timeout.</comment>
+  </data>
+  <data name="Msg_UpdateCheckTimeout" xml:space="preserve">
+    <value>업데이트 확인 시간이 초과되었습니다. 나중에 다시 시도하십시오.</value>
+  </data>
+  <data name="Msg_UpdateCheckFailed" xml:space="preserve">
+    <value>업데이트를 확인하지 못했습니다: {0}</value>
+  </data>
+  <data name="Msg_ReleaseLinkOpenFailed" xml:space="preserve">
+    <value>릴리스 링크를 열지 못했습니다: {0}</value>
+  </data>
+  <data name="Msg_FailedCopyingEmbeddedResource" xml:space="preserve">
+    <value>포함된 리소스를 복사하지 못했습니다: {0}</value>
+  </data>
+  <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
+    <value>리소스 추출 경고</value>
+  </data>
+  <data name="Msg_ServyHostUnavailableTitle" xml:space="preserve">
+    <value>Servy 호스트를 사용할 수 없음</value>
+  </data>
+  <data name="Msg_StartupWarningsTitle" xml:space="preserve">
+    <value>Servy 시작 경고</value>
+  </data>  
+  <data name="Msg_ServyHostUnavailable" xml:space="preserve">
+    <value>Servy 호스트 서비스를 설치하거나 시작할 수 없습니다: {0}
+이 서비스가 실행될 때까지 Servy 서비스를 시작할 수 없습니다. 자세한 내용은 파일 로그를 참조하십시오.</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>시스템 언어 사용</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English (영어)</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>简体中文 (중국어 간체)</value>
+  </data>
+  <data name="Language_French" xml:space="preserve">
+    <value>Français (프랑스어)</value>
+  </data>
+  <data name="Language_German" xml:space="preserve">
+    <value>Deutsch (독일어)</value>
+  </data>
+  <data name="Language_Spanish" xml:space="preserve">
+    <value>Español (스페인어)</value>
+  </data>
+  <data name="Language_Japanese" xml:space="preserve">
+    <value>日本語 (일본어)</value>
+  </data>
+  <data name="Language_Italian" xml:space="preserve">
+    <value>Italiano (이탈리아어)</value>
+  </data>
+  <data name="Language_PortuguesePortugal" xml:space="preserve">
+    <value>Português (Portugal) (포르투갈어, 포르투갈)</value>
+  </data>
+  <data name="Language_PortugueseBrazil" xml:space="preserve">
+    <value>Português (Brasil) (포르투갈어, 브라질)</value>
+  </data>
+  <data name="Language_Korean" xml:space="preserve">
+    <value>한국어</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>언어 설정을 저장하지 못했습니다: {0}</value>
+  </data>
+  <data name="Msg_LanguageRestartConfirm" xml:space="preserve">
+    <value>언어를 {0}(으)로 전환하기 위해 {1}을(를) 다시 시작합니다. 저장하지 않은 입력 내용은 손실됩니다. 지금 다시 시작하시겠습니까?</value>
+  </data>
+</root>

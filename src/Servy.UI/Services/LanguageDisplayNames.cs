@@ -35,6 +35,8 @@ namespace Servy.UI.Services
                     return Strings.Language_PortuguesePortugal;
                 case AppLanguage.PortugueseBrazil:
                     return Strings.Language_PortugueseBrazil;
+                case AppLanguage.Korean:
+                    return Strings.Language_Korean;
                 default:
                     return Strings.Language_System;
             }

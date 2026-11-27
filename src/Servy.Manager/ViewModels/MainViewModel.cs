@@ -289,6 +289,11 @@ namespace Servy.Manager.ViewModels
         public bool IsPortugueseBrazilSelected => _language == AppLanguage.PortugueseBrazil;
 
         /// <summary>
+        /// Gets whether the language menu selects Korean.
+        /// </summary>
+        public bool IsKoreanSelected => _language == AppLanguage.Korean;
+
+        /// <summary>
         /// Gets the language stored in the settings file, read when the view model is created and updated by
         /// <see cref="SetLanguageCommand"/>, which restarts the application to apply it.
         /// </summary>
@@ -736,6 +741,7 @@ namespace Servy.Manager.ViewModels
             OnPropertyChanged(nameof(IsItalianSelected));
             OnPropertyChanged(nameof(IsPortuguesePortugalSelected));
             OnPropertyChanged(nameof(IsPortugueseBrazilSelected));
+            OnPropertyChanged(nameof(IsKoreanSelected));
         }
 
         #endregion

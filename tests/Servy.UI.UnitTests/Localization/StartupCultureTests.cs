@@ -543,7 +543,7 @@ namespace Servy.UI.UnitTests.Localization
 
         [Theory]
         [InlineData("en-US")]
-        [InlineData("ko-KR")]
+        [InlineData("ru-RU")]
         [InlineData("zh-TW")]
         public void Apply_SystemOnANonSimplifiedChineseDisplayLanguage_LeavesTheCultureAlone(string systemCulture)
         {
@@ -566,6 +566,8 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("ja-JP", "ja")]
         [InlineData("it-IT", "it")]
         [InlineData("it-CH", "it")]
+        [InlineData("ko", "ko")]
+        [InlineData("ko-KR", "ko")]
         public void Apply_SystemOnATranslatedDisplayLanguage_AppliesTheNeutralCultureOfThatLanguage(string systemCulture, string expected)
         {
             // Arrange
@@ -607,6 +609,8 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("it", AppLanguage.Italian)]
         [InlineData("pt-PT", AppLanguage.PortuguesePortugal)]
         [InlineData("pt-BR", AppLanguage.PortugueseBrazil)]
+        [InlineData("ko", AppLanguage.Korean)]
+        [InlineData("ko-KR", AppLanguage.Korean)]
         public void Apply_TranslatedLanguageOption_AppliesItAndStoresItsCode(string value, AppLanguage expected)
         {
             // Arrange
@@ -714,7 +718,7 @@ namespace Servy.UI.UnitTests.Localization
 
             // Assert
             logger.Verify(l => l.Warn(It.Is<string>(m =>
-                m.Contains("--lang") && m.Contains("'klingon'") && m.Contains("system, en, zh-CN, fr, de, es, ja, it, pt-PT and pt-BR.")), null), Times.Once);
+                m.Contains("--lang") && m.Contains("'klingon'") && m.Contains("system, en, zh-CN, fr, de, es, ja, it, pt-PT, pt-BR and ko.")), null), Times.Once);
         }
 
         [Fact]

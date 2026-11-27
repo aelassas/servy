@@ -1094,4 +1094,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
     <value>Servy Manager をポルトガル語 (ブラジル) で表示します。</value>
   </data>
+  <data name="Automation_LanguageKoreanMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager を韓国語で表示します。</value>
+  </data>
 </root>

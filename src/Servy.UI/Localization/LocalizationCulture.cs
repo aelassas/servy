@@ -38,18 +38,21 @@ namespace Servy.UI.Localization
         /// <summary>The name that selects <see cref="AppLanguage.PortugueseBrazil"/>, and the culture of its resources.</summary>
         public const string PortugueseBrazilCode = "pt-BR";
 
+        /// <summary>The name that selects <see cref="AppLanguage.Korean"/>, and the culture of its resources.</summary>
+        public const string KoreanCode = "ko";
+
         /// <summary>
         /// Parses a language name given on the command line or stored in a settings file.
         /// </summary>
         /// <param name="value">
-        /// <c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c>
-        /// or <c>pt-BR</c>, in any casing. A few obvious spellings of each are accepted too: <c>auto</c>, the English
-        /// name of the language (<c>english</c>, <c>french</c>, <c>german</c>, <c>spanish</c>, <c>japanese</c>,
-        /// <c>italian</c>, <c>portugueseportugal</c>, <c>portuguesebrazil</c>), any regional culture name of the
-        /// language (<c>en-*</c>, <c>fr-*</c>, <c>de-*</c>, <c>es-*</c>, <c>ja-*</c>, <c>it-*</c>), the Simplified
-        /// Chinese culture names <c>zh</c>, <c>zh-Hans</c>, <c>zh-Hans-*</c>, <c>zh-SG</c> and <c>zh-CHS</c>, and the
-        /// Portuguese culture names as <see cref="Resolve"/> maps them (<c>pt</c> and <c>pt-BR</c> to Brazilian
-        /// Portuguese, every other <c>pt-*</c> to European Portuguese).
+        /// <c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c>,
+        /// <c>pt-BR</c> or <c>ko</c>, in any casing. A few obvious spellings of each are accepted too: <c>auto</c>, the
+        /// English name of the language (<c>english</c>, <c>french</c>, <c>german</c>, <c>spanish</c>, <c>japanese</c>,
+        /// <c>italian</c>, <c>portugueseportugal</c>, <c>portuguesebrazil</c>, <c>korean</c>), any regional culture name
+        /// of the language (<c>en-*</c>, <c>fr-*</c>, <c>de-*</c>, <c>es-*</c>, <c>ja-*</c>, <c>it-*</c>,
+        /// <c>ko-*</c>), the Simplified Chinese culture names <c>zh</c>, <c>zh-Hans</c>, <c>zh-Hans-*</c>, <c>zh-SG</c>
+        /// and <c>zh-CHS</c>, and the Portuguese culture names as <see cref="Resolve"/> maps them (<c>pt</c> and
+        /// <c>pt-BR</c> to Brazilian Portuguese, every other <c>pt-*</c> to European Portuguese).
         /// </param>
         /// <param name="language">The parsed language; <see cref="AppLanguage.System"/> when the method returns <see langword="false"/>.</param>
         /// <returns><see langword="true"/> when <paramref name="value"/> names a supported language.</returns>
@@ -119,7 +122,7 @@ namespace Servy.UI.Localization
 
         /// <summary>
         /// Returns the name <paramref name="language"/> is stored under: <c>system</c>, <c>en</c>, <c>zh-CN</c>,
-        /// <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c> or <c>pt-BR</c>.
+        /// <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c>, <c>pt-BR</c> or <c>ko</c>.
         /// </summary>
         /// <param name="language">The language to name.</param>
         /// <returns>The name <see cref="TryParse"/> maps back to <paramref name="language"/>.</returns>
@@ -145,6 +148,8 @@ namespace Servy.UI.Localization
                     return PortuguesePortugalCode;
                 case AppLanguage.PortugueseBrazil:
                     return PortugueseBrazilCode;
+                case AppLanguage.Korean:
+                    return KoreanCode;
                 default:
                     return SystemCode;
             }
@@ -158,12 +163,12 @@ namespace Servy.UI.Localization
         /// <returns>
         /// The UI culture to apply, or <see langword="null"/> to leave the UI culture as Windows set it. For
         /// <see cref="AppLanguage.System"/> a Simplified Chinese display language resolves to <c>zh-CN</c>, and a
-        /// French, German, Spanish, Japanese or Italian one, neutral or regional (<c>fr-CA</c>, <c>de-CH</c>,
-        /// <c>es-419</c>, <c>ja-JP</c>, <c>it-CH</c>, ...), to the neutral culture of that language. A Portuguese one
-        /// resolves to <c>pt-BR</c> for Brazil and for the neutral <c>pt</c> (the region .NET picks for it), and to
-        /// <c>pt-PT</c> for Portugal and every other region (<c>pt-AO</c>, <c>pt-MZ</c>, ...), which writes European
-        /// Portuguese. Every other display language is left alone, because the neutral (English) resources are what
-        /// such a culture falls back to anyway.
+        /// French, German, Spanish, Japanese, Italian or Korean one, neutral or regional (<c>fr-CA</c>, <c>de-CH</c>,
+        /// <c>es-419</c>, <c>ja-JP</c>, <c>it-CH</c>, <c>ko-KR</c>, ...), to the neutral culture of that language. A
+        /// Portuguese one resolves to <c>pt-BR</c> for Brazil and for the neutral <c>pt</c> (the region .NET picks for
+        /// it), and to <c>pt-PT</c> for Portugal and every other region (<c>pt-AO</c>, <c>pt-MZ</c>, ...), which
+        /// writes European Portuguese. Every other display language is left alone, because the neutral (English)
+        /// resources are what such a culture falls back to anyway.
         /// </returns>
         public static CultureInfo? Resolve(AppLanguage language, CultureInfo? systemUiCulture)
         {
@@ -179,6 +184,7 @@ namespace Servy.UI.Localization
                 case AppLanguage.Italian:
                 case AppLanguage.PortuguesePortugal:
                 case AppLanguage.PortugueseBrazil:
+                case AppLanguage.Korean:
                     return CultureInfo.GetCultureInfo(Serialize(language));
                 default:
                     if (systemUiCulture == null)
@@ -265,6 +271,7 @@ namespace Servy.UI.Localization
             AppLanguage.Spanish,
             AppLanguage.Japanese,
             AppLanguage.Italian,
+            AppLanguage.Korean,
         };
 
         /// <summary>

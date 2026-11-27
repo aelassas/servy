@@ -1069,4 +1069,7 @@ Se il servizio è disabilitato e contrassegnato per l'eliminazione, l'installazi
   <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
     <value>Visualizza Servy in portoghese brasiliano.</value>
   </data>
+  <data name="Automation_LanguageKoreanMenuItem_HelpText" xml:space="preserve">
+    <value>Visualizza Servy in coreano.</value>
+  </data>
 </root>
