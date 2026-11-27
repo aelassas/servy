@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-25T13:43:37Z
+> Generated on: 2026-11-27T02:36:09Z
 
 ---
 
@@ -3642,7 +3642,7 @@ If the file is missing, malformed, blocked by the local-path guard, or contains 
 
 If the configuration is valid, it is saved to the Servy database and the service is installed if the `-Install` switch is provided.
 
-Under the same conditions the cmdlet throws; wrap the call in `try/catch` as with `Export-ServyServiceConfig`.
+If the file is missing, malformed, blocked by the local-path guard, or contains an invalid field, no service is created and the cmdlet throws; wrap the call in `try/catch` as with `Export-ServyServiceConfig`.
 
 
 ---
@@ -7892,7 +7892,7 @@ Yes. When the service receives a stop request, Servy sends a `Ctrl+C` console co
 
 ### Does Servy make requests for additional service shutdown time?
 
-Yes. Servy explicitly requests extra time from the SCM when the configured start/stop timeout exceeds a threshold (configurable) using the standard `RequestAdditionalTime` mechanism.
+Yes. While a service stops, Servy keeps asking the SCM for more time with the standard `RequestAdditionalTime` mechanism for as long as it is still waiting: for a synchronous pre-stop hook, for the child process tree to exit, and for leftover hook processes. Each request is `Timing:ScmAdditionalTimeMs` long (default 15000 ms, see [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration)). At startup, Servy asks once for the Start Timeout plus 10 seconds when the Start Timeout is longer than 20 seconds; that 20-second threshold is fixed, not configurable.
 
 ### When exactly does the Pre-Shutdown signal occur?
 
