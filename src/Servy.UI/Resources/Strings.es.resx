@@ -59,7 +59,7 @@ Los servicios de Servy no pueden iniciarse hasta que se ejecute. Consulte el arc
     <value>Usar el idioma del sistema</value>
   </data>
   <data name="Language_English" xml:space="preserve">
-    <value>Inglés</value>
+    <value>English (inglés)</value>
   </data>
   <data name="Language_ChineseSimplified" xml:space="preserve">
     <value>简体中文 (chino simplificado)</value>

@@ -59,10 +59,10 @@
     <value>システムの言語に従う</value>
   </data>
   <data name="Language_English" xml:space="preserve">
-    <value>英語</value>
+    <value>English (英語)</value>
   </data>
   <data name="Language_ChineseSimplified" xml:space="preserve">
-    <value>中国語 (簡体字)</value>
+    <value>简体中文 (中国語 簡体字)</value>
   </data>
   <data name="Language_French" xml:space="preserve">
     <value>Français (フランス語)</value>
