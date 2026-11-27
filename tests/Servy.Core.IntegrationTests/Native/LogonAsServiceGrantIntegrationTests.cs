@@ -1,3 +1,4 @@
+using Servy.Core.Config;
 using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Testing;
@@ -116,6 +117,24 @@ namespace Servy.Core.IntegrationTests.Native
             // Assert
             Assert.Contains($"Cannot resolve SID for '{fakeAccount}'", ex.Message);
             Assert.NotNull(ex.InnerException);
+        }
+
+        [Theory]
+        [InlineData(@"BUILTIN\LocalSystem")]
+        [InlineData(@"BUILTIN\NetworkService")]
+        [InlineData(@".\Local Service")]
+        public void Ensure_BuiltInAliasThatDoesNotResolveToASid_ReturnsWithoutTranslating(string builtInAlias)
+        {
+            // Arrange
+            // Each value is in ServiceAccounts.RunnableServiceAccounts but is not an account name
+            // NTAccount.Translate can resolve, so reaching AccountToSidOrThrow would throw.
+            Assert.True(ServiceAccounts.IsBuiltInServiceAccount(builtInAlias));
+
+            // Act
+            var ex = Record.Exception(() => LogonAsServiceGrant.Ensure(builtInAlias));
+
+            // Assert
+            Assert.Null(ex);
         }
 
         #endregion
