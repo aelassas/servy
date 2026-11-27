@@ -16,9 +16,11 @@ namespace Servy.Manager.Mappers
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Performance Note:</b> This method performs a shallow mapping of static metadata only.
+        /// <b>Performance Note:</b> This method makes no Service Control Manager query.
         /// Volatile OS-level states (Status, IsInstalled, StartupType) are initialized to placeholder
         /// defaults to prevent blocking the UI thread with SCM queries during bulk mapping.
+        /// The one live read is the CPU and RAM snapshot of the process tree, taken on a thread-pool thread
+        /// when <paramref name="calculatePerf"/> is <see langword="true"/> and the service has a PID.
         /// </para>
         /// <para>
         /// These "Pending" values are expected to be reconciled by the background
