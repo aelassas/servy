@@ -904,6 +904,11 @@ namespace Servy.Service.UnitTests.Helpers
                 mockLog.Verify(l => l.Warn(
                     "Restarter killed, but kernel cleanup is taking longer than 7 seconds.",
                     It.IsAny<Exception>()), Times.Once);
+
+                // The timeout path returns after the kill: the timeout line is the only Error, and the
+                // exit-code lines below the timeout block are never reached.
+                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Once);
+                mockLog.Verify(l => l.Info(It.Is<string>(m => m.Contains("exited with code")), It.IsAny<Exception>()), Times.Never);
             }
         }
 
