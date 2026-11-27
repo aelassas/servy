@@ -5,13 +5,13 @@ using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Manager.Mappers;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using UiAppConfig = Servy.Manager.Config.UiAppConfig;
 
 namespace Servy.Manager.UnitTests.Mappers
 {
@@ -110,7 +110,7 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.Equal(1234, result.Pid);
             Assert.True(result.IsPidEnabled);
             Assert.True(result.IsDesktopAppAvailable);
-            Assert.Equal(UiAppConfig.LocalSystem, result.LogOnAs);
+            Assert.Equal(Strings.Account_LocalSystem, result.LogOnAs);
 
             Assert.Equal(@"C:\Logs\stdout.log", result.StdoutPath);
             Assert.Equal(@"C:\Logs\stderr.log", result.StderrPath);
@@ -180,7 +180,7 @@ namespace Servy.Manager.UnitTests.Mappers
                 _mockProcessHelper.Object, cancellationToken: CancellationToken.None);
 
             // Assert
-            Assert.Equal(UiAppConfig.LocalSystem, result.LogOnAs);
+            Assert.Equal(Strings.Account_LocalSystem, result.LogOnAs);
         }
 
         [Fact]
@@ -301,9 +301,9 @@ namespace Servy.Manager.UnitTests.Mappers
         #region GetLogOnAsDisplayName Tests
 
         public static IEnumerable<object[]> GetAliasData() =>
-            ServiceAccounts.LocalSystemAliases.Select(a => new object[] { a, UiAppConfig.LocalSystem })
-                .Concat(ServiceAccounts.LocalServiceAliases.Select(a => new object[] { a, UiAppConfig.LocalService }))
-                .Concat(ServiceAccounts.NetworkServiceAliases.Select(a => new object[] { a, UiAppConfig.NetworkService }));
+            ServiceAccounts.LocalSystemAliases.Select(a => new object[] { a, Strings.Account_LocalSystem })
+                .Concat(ServiceAccounts.LocalServiceAliases.Select(a => new object[] { a, Strings.Account_LocalService }))
+                .Concat(ServiceAccounts.NetworkServiceAliases.Select(a => new object[] { a, Strings.Account_NetworkService }));
 
         [Theory]
         [MemberData(nameof(GetAliasData))]
@@ -329,13 +329,13 @@ namespace Servy.Manager.UnitTests.Mappers
             switch (expectedDisplayNameProp)
             {
                 case "LocalSystem":
-                    expected = UiAppConfig.LocalSystem;
+                    expected = Strings.Account_LocalSystem;
                     break;
                 case "LocalService":
-                    expected = UiAppConfig.LocalService;
+                    expected = Strings.Account_LocalService;
                     break;
                 case "NetworkService":
-                    expected = UiAppConfig.NetworkService;
+                    expected = Strings.Account_NetworkService;
                     break;
                 default:
                     expected = input;
