@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DetailsUnavailableAccessDenied" xml:space="preserve">
+    <value>(詳細を取得できません: アクセスが拒否されました)</value>
+  </data>
+  <data name="Msg_DetailsUnavailableTimedOut" xml:space="preserve">
+    <value>(詳細を取得できません: ネイティブ クエリがタイムアウトしました)</value>
+  </data>
+  <data name="Msg_DetailsUnavailableFaulted" xml:space="preserve">
+    <value>(詳細を取得できません: {0})</value>
+  </data>
+  <data name="Msg_ValidationError" xml:space="preserve">
+    <value>必須フィールドをすべて入力してください。</value>
+  </data>
+  <data name="Msg_ServiceNameRequired" xml:space="preserve">
+    <value>サービス名は必須です。</value>
+  </data>
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>指定されたサービスが見つかりませんでした。</value>
+  </data>
+  <data name="Msg_ServiceNotFoundDetailed" xml:space="preserve">
+    <value>指定されたサービス '{0}' が見つかりませんでした。</value>
+  </data>
+  <data name="Msg_ExecutablePathRequired" xml:space="preserve">
+    <value>サービス プロセスのパスを空にすることはできません。</value>
+  </data>
+  <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
+    <value>サービス名の末尾に空白を含めることはできません。</value>
+  </data>
+  <data name="Msg_ServiceNameContainsLeadingWhitespace" xml:space="preserve">
+    <value>サービス名の先頭に空白を含めることはできません。</value>
+  </data>
+  <data name="Msg_InvalidServiceName" xml:space="preserve">
+    <value>サービス名に無効な文字が含まれています。'\'、'/'、':'、'*'、'?'、'"'、'&lt;'、'&gt;'、'|'、';' および印刷できない文字は使用しないでください。</value>
+  </data>
+  <data name="Msg_ServiceNameLeadingTrailingDot" xml:space="preserve">
+    <value>サービス名の先頭または末尾をピリオドにすることはできません。</value>
+  </data>
+  <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
+    <value>'{0}' は Windows で予約されている名前のため、サービス名に使用できません。</value>
+  </data>
+  <data name="Msg_ServiceNameReservedForServyHost" xml:space="preserve">
+    <value>サービス名 '{0}' は Servy ホスト サービス (Servy.Host.exe) 用に予約されています。別の名前を選択してください。</value>
+  </data>
+
+  <data name="Msg_ValidationPassed" xml:space="preserve">
+    <value>サービス '{0}' の検証に成功しました。</value>
+  </data>
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>サービス ラッパーの実行可能ファイルが見つかりません。</value>
+  </data>
+  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
+    <value>指定された開始ディレクトリは無効です。</value>
+  </data>
+  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
+    <value>指定された stdout ファイルのパスは無効です。</value>
+  </data>
+  <data name="Msg_InvalidStderrPath" xml:space="preserve">
+    <value>指定された stderr ファイルのパスは無効です。</value>
+  </data>
+  <data name="Msg_InvalidRotationSize" xml:space="preserve">
+    <value>ローテーション サイズは {0} から {1} までのメガバイト (MB) 数で指定してください。</value>
+  </data>
+  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
+    <value>最大ローテーション数は {0} から {1} までの数値で指定してください。0 に設定するとローテーション数は無制限になります。</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrlTimeout" xml:space="preserve">
+    <value>ハートビート URL のタイムアウトは {0} から {1} までの秒数で指定してください。</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
+    <value>ハートビート間隔は {0} から {1} までの秒数で指定してください。</value>
+  </data>
+  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
+    <value>最大失敗チェック数は {0} から {1} までの数値で指定してください。</value>
+  </data>
+  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
+    <value>最大再起動試行回数は {0} から {1} までの数値で指定してください。0 に設定すると再起動試行回数は無制限になります。</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrl" xml:space="preserve">
+    <value>ハートビート監視 URL には、正しい形式の絶対 HTTP または HTTPS URL を指定してください。</value>
+  </data>
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>サービス '{0}' は正常にインストールされました。</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>予期しないエラーが発生しました。</value>
+  </data>
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>サービス '{0}' は正常に開始されました。</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>サービス '{0}' は正常に停止されました。</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>サービス '{0}' は正常に再起動されました。</value>
+  </data>
+
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>起動前プロセスのパスが無効です。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>指定された起動前の開始ディレクトリは無効です。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>指定された起動前の stdout ファイルのパスは無効です。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>指定された起動前の stderr ファイルのパスは無効です。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>起動前のタイムアウトは {0} から {1} までの秒数で指定してください。タイムアウトを 0 に設定すると、起動前フックは非同期 (fire-and-forget) モードで実行されます。0 に設定した場合、フックが開始されると完了を待たずにすぐにサービスが起動されます。非同期モードは、サービスの開始や正常な実行に影響しないタスクにのみ使用してください。非同期モードでは、Stdout/Stderr のリダイレクトと再試行は使用できません。</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>起動前の再試行回数は {0} から {1} までの数値で指定してください。</value>
+  </data>
+
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>障害時プログラムのパスが無効です。</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>指定された障害時プログラムの開始ディレクトリは無効です。</value>
+  </data>
+
+  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
+    <value>起動後プロセスのパスが無効です。</value>
+  </data>
+  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
+    <value>指定された起動後の開始ディレクトリは無効です。</value>
+  </data>
+
+  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
+    <value>開始タイムアウトは {0} から {1} までの秒数で指定してください。</value>
+  </data>
+  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
+    <value>停止タイムアウトは {0} から {1} までの秒数で指定してください。</value>
+  </data>
+
+  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
+    <value>停止前プロセスのパスが無効です。</value>
+  </data>
+  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
+    <value>指定された停止前の開始ディレクトリは無効です。</value>
+  </data>
+  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
+    <value>停止前のタイムアウトは {0} から {1} までの秒数で指定してください。タイムアウトを 0 に設定すると、停止前プロセスは非同期 (fire-and-forget) モードで実行されます。</value>
+  </data>
+
+  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
+    <value>停止後プロセスのパスが無効です。</value>
+  </data>
+  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
+    <value>指定された停止後の開始ディレクトリは無効です。</value>
+  </data>
+
+  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
+    <value>サービス名が {0} 文字を超えています。</value>
+  </data>
+  <data name="Msg_ServiceDependencyNameLengthReachedForName" xml:space="preserve">
+    <value>サービスの依存関係 '{0}' が最大長の {1} 文字を超えています。</value>
+  </data>
+  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
+    <value>表示名が {0} 文字を超えています。</value>
+  </data>
+  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
+    <value>説明が {0} 文字を超えています。</value>
+  </data>
+  <data name="Msg_ArgumentsLengthReachedForField" xml:space="preserve">
+    <value>フィールド '{0}' の引数が Windows のコマンド ラインの上限である {1} 文字を超えています。</value>
+  </data>
+  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
+    <value>パスワードが一致しません。</value>
+  </data>
+
+  <data name="Msg_FatalError_Title" xml:space="preserve">
+    <value>Servy - 致命的なエラー</value>
+  </data>
+  <data name="Msg_FatalError_Body" xml:space="preserve">
+    <value>致命的なエラーが発生したため、アプリケーションを終了する必要があります。詳細な診断情報はログ ファイルに保存されました。</value>
+  </data>
+  <data name="Msg_UnexpectedError_Title" xml:space="preserve">
+    <value>Servy - 予期しないエラー</value>
+  </data>
+  <data name="Msg_UnexpectedError_Body" xml:space="preserve">
+    <value>インターフェイスで予期しないエラーが発生しましたが、アプリケーションは続行を試みます。詳細はログに記録されました。</value>
+  </data>
+  <data name="Msg_StartupError_Format" xml:space="preserve">
+    <value>起動エラー: {0}</value>
+  </data>
+  <data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
+    <value>{0} の入力を空または空白のみにすることはできません。</value>
+  </data>
+  <data name="Msg_ImportPayloadTooLarge" xml:space="preserve">
+    <value>{0} のデータが許容される最大サイズの {1} MB を超えています。</value>
+  </data>
+  <data name="Msg_ImportInvalidStructure" xml:space="preserve">
+    <value>{0} の構造が無効です: {1}。</value>
+  </data>
+  <data name="Msg_ImportStructureError" xml:space="preserve">
+    <value>{0} の構造エラー: {1}。</value>
+  </data>
+  <data name="Msg_ImportEmptyDefinition" xml:space="preserve">
+    <value>{0} の逆シリアル化の結果、サービス定義が空になりました。</value>
+  </data>
+  <data name="Msg_ImportFileNotFound" xml:space="preserve">
+    <value>ファイルが見つかりません: {0}</value>
+  </data>
+  <data name="Msg_InvalidServiceDependencyName" xml:space="preserve">
+    <value>サービス名 '{0}' が無効です。使用できるのは英字、数字、ハイフン、アンダースコア、ピリオド、スペース、ドル記号 ($) のみです。読み込み順序グループを参照する場合は、先頭に '+' を付けることができます。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableMissingEquals" xml:space="preserve">
+    <value>各環境変数には、キーと値を区切るエスケープされていない '=' 文字を含める必要があります (レコード {0})。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyEmpty" xml:space="preserve">
+    <value>環境変数のキーを空にすることはできません (レコード {0})。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableForbiddenNewline" xml:space="preserve">
+    <value>環境変数 '{0}' に使用できない改行文字が含まれています。複数行の値はサポートされていません。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyInvalidChars" xml:space="preserve">
+    <value>環境変数のキー '{0}' に無効な文字が含まれています。</value>
+  </data>
+  <data name="Msg_EnvironmentVariableValueInvalidChars" xml:space="preserve">
+    <value>環境変数 '{0}' の値に無効な文字が含まれています。</value>
+  </data>
+
+  <data name="FileFilter_Executable" xml:space="preserve">
+    <value>実行可能ファイル (*.exe)|*.exe|すべてのファイル (*.*)|*.*</value>
+  </data>
+  <data name="FileFilter_Xml" xml:space="preserve">
+    <value>XML ファイル (*.xml)|*.xml</value>
+  </data>
+  <data name="FileFilter_Json" xml:space="preserve">
+    <value>JSON ファイル (*.json)|*.json</value>
+  </data>
+  <data name="FileFilter_AllFiles" xml:space="preserve">
+    <value>すべてのファイル (*.*)|*.*</value>
+  </data>
+  <data name="Title_SelectExecutable" xml:space="preserve">
+    <value>プロセスの実行可能ファイルの選択</value>
+  </data>
+  <data name="Title_SelectXml" xml:space="preserve">
+    <value>XML ファイルの選択</value>
+  </data>
+  <data name="Title_SelectJson" xml:space="preserve">
+    <value>JSON ファイルの選択</value>
+  </data>
+  <data name="Title_SelectStartupDirectory" xml:space="preserve">
+    <value>開始ディレクトリの選択</value>
+  </data>
+
+  <data name="Msg_SecurityUncPathProhibited" xml:space="preserve">
+    <value>セキュリティ警告: 悪意のある構成の挿入を防ぐため、UNC パスからのインポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveProhibited" xml:space="preserve">
+    <value>セキュリティ警告: ネットワーク ドライブ (マップされた UNC 共有を含む) からのインポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointProhibited" xml:space="preserve">
+    <value>セキュリティ警告: パスのリダイレクト攻撃を防ぐため、ディレクトリ ジャンクションまたはシンボリック リンク経由での構成のインポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointProhibited" xml:space="preserve">
+    <value>セキュリティ警告: パスのリダイレクト攻撃を防ぐため、ファイルのシンボリック リンクまたはジャンクション経由での構成のインポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityUncPathExportProhibited" xml:space="preserve">
+    <value>セキュリティ警告: 構成の流出を防ぐため、UNC パスへのエクスポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveExportProhibited" xml:space="preserve">
+    <value>セキュリティ警告: ネットワーク ドライブ (マップされた UNC 共有を含む) へのエクスポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointExportProhibited" xml:space="preserve">
+    <value>セキュリティ警告: パスのリダイレクト攻撃を防ぐため、ディレクトリ ジャンクションまたはシンボリック リンクへの構成のエクスポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointExportProhibited" xml:space="preserve">
+    <value>セキュリティ警告: パスのリダイレクト攻撃を防ぐため、ファイルのシンボリック リンクまたはジャンクションへの構成のエクスポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityReservedDeviceName" xml:space="preserve">
+    <value>セキュリティ警告: '{0}' は Windows で予約されているデバイス名のため、使用できません。</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectory" xml:space="preserve">
+    <value>セキュリティ警告: 解決されたパスは、保護されたシステム ディレクトリ '{0}' を対象としています。インポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectoryExport" xml:space="preserve">
+    <value>セキュリティ警告: 解決されたパスは、保護されたシステム ディレクトリ '{0}' を対象としています。エクスポートは禁止されています。</value>
+  </data>
+  <data name="Msg_SecurityInvalidFileType" xml:space="preserve">
+    <value>セキュリティ警告: ファイルの種類 '{0}' は無効です。サポートされているのは .json ファイルと .xml ファイルのみです。</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestination" xml:space="preserve">
+    <value>セキュリティ警告: 解決されたファイルの対象が UNC の場所を直接指しています。インポートを中止しました。</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestinationExport" xml:space="preserve">
+    <value>セキュリティ警告: 解決されたファイルの対象が UNC の場所を直接指しています。エクスポートを中止しました。</value>
+  </data>
+  <data name="Msg_SecurityHandleInvalid" xml:space="preserve">
+    <value>セキュリティ警告: 対象のファイル ハンドルを取得できませんでした。</value>
+  </data>
+  <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
+    <value>セキュリティ警告: 対象のファイル ハンドルの検証が拒否されました ({0})。</value>
+  </data>
+  <data name="Msg_SecurityHandleSizeProbeFailed" xml:space="preserve">
+    <value>セキュリティ警告: カーネル プローブ (サイズ割り当て) でパスの検証に失敗しました。</value>
+  </data>
+  <data name="Msg_InvalidConfig" xml:space="preserve">
+    <value>構成内の {0} が無効です。</value>
+  </data>
+  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
+    <value>構成内の {0} が無効です。パスが存在し、アクセス可能であることを確認してください。</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>指定されたパスは無効です。</value>
+  </data>
+  <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
+    <value>構成ファイル '{0}' のサイズは {1:N2} MB で、許容される最大サイズの {2} MB を超えています。</value>
+  </data>
+
+  <data name="Msg_DependencyUnavailable" xml:space="preserve">
+    <value>依存関係 '{0}' は使用できません。</value>
+  </data>
+  <data name="Msg_DependencyAccessDenied" xml:space="preserve">
+    <value>依存関係 '{0}' にアクセスできません (アクセスが拒否されました)。</value>
+  </data>
+
+  <data name="Msg_InvalidHexAffinityFormat" xml:space="preserve">
+    <value>CPU アフィニティの 16 進数形式が無効です: '{0}'。</value>
+  </data>
+  <data name="Msg_CoreIndexRangeOutOfBounds" xml:space="preserve">
+    <value>範囲 '{0}' の CPU アフィニティのコア インデックスが範囲外です (0-{1})。</value>
+  </data>
+  <data name="Msg_CoreIndexOutOfBounds" xml:space="preserve">
+    <value>CPU アフィニティのコア インデックス '{0}' が範囲外です (0-{1})。</value>
+  </data>
+  <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
+    <value>CPU アフィニティのコア指定が無効です: '{0}'。</value>
+  </data>
+  <data name="Msg_InvertedCoreRange" xml:space="preserve">
+    <value>CPU アフィニティのコア範囲 '{0}' が逆になっています: 開始インデックスが終了インデックスより大きくなっています。</value>
+  </data>
+  <data name="Msg_EmptyAffinityMask" xml:space="preserve">
+    <value>CPU アフィニティ マスク '{0}' ではプロセッサが 1 つも選択されていません。</value>
+  </data>
+  <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
+    <value>CPU アフィニティ マスク '{0}' で、許容範囲 (0-{1}) 外のプロセッサが選択されています。</value>
+  </data>
+
+  <data name="Msg_UnknownXmlElement" xml:space="preserve">
+    <value>不明な XML 要素が見つかりました: '{0}'。</value>
+  </data>
+  <data name="Msg_UnknownXmlAttribute" xml:space="preserve">
+    <value>不明な XML 属性が見つかりました: '{0}'。</value>
+  </data>
+
+  <data name="Msg_EventLogUnavailable" xml:space="preserve">
+    <value>Windows イベント ログにアクセスできません。'Windows Event Log' サービスが実行中であり、クエリが有効であることを確認してください。</value>
+  </data>
+  <data name="Msg_EventLogAccessDenied" xml:space="preserve">
+    <value>Windows イベント ログへのアクセスが拒否されました。アプリケーションが十分な権限 (管理者) で実行されていることを確認してください。</value>
+  </data>
+
+  <data name="Label_Parameters" xml:space="preserve">
+    <value>パラメーター</value>
+  </data>
+  <data name="Label_PreLaunchParameters" xml:space="preserve">
+    <value>起動前パラメーター</value>
+  </data>
+  <data name="Label_PostLaunchParameters" xml:space="preserve">
+    <value>起動後パラメーター</value>
+  </data>
+  <data name="Label_PreStopParameters" xml:space="preserve">
+    <value>停止前パラメーター</value>
+  </data>
+  <data name="Label_PostStopParameters" xml:space="preserve">
+    <value>停止後パラメーター</value>
+  </data>
+  <data name="Label_FailureProgramParameters" xml:space="preserve">
+    <value>障害時プログラムのパラメーター</value>
+  </data>
+  <data name="Msg_ExportDecryptionFailed" xml:space="preserve">
+    <value>サービス '{0}' はエクスポートされませんでした: 少なくとも 1 つの機密フィールドを現在の暗号化キー (aes_key.dat) で復号できないため、パラメーターと環境変数を含まないファイルが書き込まれてしまいます。キー ファイルが破損しているか置き換えられた場合は、元の aes_key.dat を復元するか、Servy.db を元のキーがあるコンピューターにコピーし直して、そこから構成をエクスポートしてください。</value>
+  </data>
+  <data name="Msg_ExportLegacyEncryptionBlocked" xml:space="preserve">
+    <value>サービス '{0}' はエクスポートされませんでした: 少なくとも 1 つの機密フィールドが古いバージョンの Servy の v2 以前の暗号化を使用しており、このバージョンではその復号を拒否します。暗号化キー (aes_key.dat) は関係ありません。サービスをアップグレードするには、v1 互換バージョンの Servy でその構成をエクスポートし、ここでサービスを削除してから、エクスポートしたファイルをインポートしてください。</value>
+  </data>
+</root>

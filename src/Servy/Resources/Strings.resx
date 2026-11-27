@@ -1048,4 +1048,16 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_LanguageChineseSimplifiedMenuItem_HelpText" xml:space="preserve">
     <value>Display Servy in Simplified Chinese.</value>
   </data>
+  <data name="Automation_LanguageFrenchMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in French.</value>
+  </data>
+  <data name="Automation_LanguageGermanMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in German.</value>
+  </data>
+  <data name="Automation_LanguageSpanishMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in Spanish.</value>
+  </data>
+  <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in Japanese.</value>
+  </data>
 </root>

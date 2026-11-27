@@ -49,7 +49,7 @@ namespace Servy.Manager.Config
 
         /// <summary>
         /// Gets the display language saved for this application, as a <c>--lang</c> value
-        /// (<c>system</c>, <c>en</c> or <c>zh-CN</c>), or <see langword="null"/> when it is not known.
+        /// (<c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c> or <c>ja</c>), or <see langword="null"/> when it is not known.
         /// </summary>
         /// <remarks>
         /// Passed to Servy.exe when this application launches it, so both applications show the same language

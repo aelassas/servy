@@ -64,6 +64,18 @@
   <data name="Language_ChineseSimplified" xml:space="preserve">
     <value>简体中文</value>
   </data>
+  <data name="Language_French" xml:space="preserve">
+    <value>Français (法语)</value>
+  </data>
+  <data name="Language_German" xml:space="preserve">
+    <value>Deutsch (德语)</value>
+  </data>
+  <data name="Language_Spanish" xml:space="preserve">
+    <value>Español (西班牙语)</value>
+  </data>
+  <data name="Language_Japanese" xml:space="preserve">
+    <value>日本語 (日语)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>保存语言设置失败：{0}</value>
   </data>

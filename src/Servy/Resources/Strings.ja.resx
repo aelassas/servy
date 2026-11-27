@@ -1,0 +1,1063 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+    <value>管理者特権が必要です</value>
+  </data>
+  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+    <value>Servy でシステム サービスを管理するには管理者特権が必要です。</value>
+  </data>
+
+  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+    <value>セキュリティ警告</value>
+  </data>
+  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+    <value>重大なセキュリティ リスク: お使いのシステムでは古い SQLite エンジン ({0}) が使用されています。CVE-2025-6965 を緩和するため、このバージョンのアプリケーションには SQLite {1} 以降が必要です。</value>
+  </data>
+
+  <!-- Splash screen -->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>Servy を読み込んでいます...</value>
+  </data>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>インポート</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>XML 構成のインポート...</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>JSON 構成のインポート...</value>
+  </data>
+  <data name="Menu_Export" xml:space="preserve">
+    <value>エクスポート</value>
+  </data>
+  <data name="Menu_ExportXml" xml:space="preserve">
+    <value>XML 構成のエクスポート...</value>
+  </data>
+  <data name="Menu_ExportJson" xml:space="preserve">
+    <value>JSON 構成のエクスポート...</value>
+  </data>
+
+  <data name="Menu_Manager" xml:space="preserve">
+    <value>マネージャー</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>ヘルプ</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>ヘルプ / ドキュメント</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>更新プログラムの確認</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>Servy のバージョン情報</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+    <value>
+Servy {0}
+
+Servy を使用すると、任意のアプリケーションをネイティブの Windows サービスとして実行でき、作業ディレクトリ、起動動作、ログ記録、正常性チェック、回復オプションを完全に制御できます。
+
+デスクトップ アプリ、CLI、PowerShell モジュールが含まれており、サービスを手動で管理することも、スクリプトや CI/CD パイプラインですべてを自動化することもできます。
+
+{1} で構築
+
+MIT ライセンスの下でライセンスされています。
+
+Copyright © {2} Akram El Assas. All rights reserved.</value>
+  </data>
+
+  <!-- Tabs -->
+  <data name="Label_MainTab" xml:space="preserve">
+    <value>メイン</value>
+  </data>
+  <data name="Label_LoggingTab" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="Label_RecoveryTab" xml:space="preserve">
+    <value>回復</value>
+  </data>
+  <data name="Label_AdvancedTab" xml:space="preserve">
+    <value>詳細設定</value>
+  </data>
+  <data name="Label_LogOnTab" xml:space="preserve">
+    <value>ログオン</value>
+  </data>
+  <data name="Label_PreLaunchTab" xml:space="preserve">
+    <value>起動前</value>
+  </data>
+  <data name="Label_PreStopTab" xml:space="preserve">
+    <value>停止前</value>
+  </data>
+  <data name="Label_PostStopTab" xml:space="preserve">
+    <value>停止後</value>
+  </data>
+
+  <!-- Labels / Info -->
+  <data name="Label_ServiceName" xml:space="preserve">
+    <value>サービス名 *</value>
+  </data>
+  <data name="Label_ServiceDisplayName" xml:space="preserve">
+    <value>表示名</value>
+  </data>
+  <data name="Info_ServiceDisplayName" xml:space="preserve">
+    <value>Windows のサービス コンソール (services.msc) に表示される、わかりやすい名前です。</value>
+  </data>
+  <data name="Label_ServiceDescription" xml:space="preserve">
+    <value>サービスの説明</value>
+  </data>
+  <data name="Label_ProcessPath" xml:space="preserve">
+    <value>プロセスのパス *</value>
+  </data>
+  <data name="Info_ProcessPath" xml:space="preserve">
+    <value>環境変数の展開をサポートしています。例: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Label_StartupDirectory" xml:space="preserve">
+    <value>開始ディレクトリ</value>
+  </data>
+  <data name="Info_StartupDirectory" xml:space="preserve">
+    <value>環境変数の展開をサポートしています。例: %ProgramData%\MyApp</value>
+  </data>
+  <data name="Label_ProcessParameters" xml:space="preserve">
+    <value>プロセスのパラメーター</value>
+  </data>
+  <data name="Info_ProcessParameters" xml:space="preserve">
+    <value>環境変数の展開をサポートしています。例: --param="%MY_VAR%\bin"</value>
+  </data>
+  <data name="Label_RequiredFields" xml:space="preserve">
+    <value>* 必須フィールド</value>
+  </data>
+
+  <data name="Dialog_SelectStdoutFile" xml:space="preserve">
+    <value>標準出力ファイルの選択</value>
+  </data>
+  <data name="Dialog_SelectStderrFile" xml:space="preserve">
+    <value>標準エラー ファイルの選択</value>
+  </data>
+
+  <!-- Startup Type ComboBox Items -->
+  <data name="Label_StartupType" xml:space="preserve">
+    <value>スタートアップの種類</value>
+  </data>
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>自動 (既定)</value>
+  </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>自動 (遅延開始)</value>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>手動</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>無効</value>
+  </data>
+
+  <!-- Process Priority ComboBox Items -->
+  <data name="Label_ProcessPriority" xml:space="preserve">
+    <value>プロセスの優先度</value>
+  </data>
+  <data name="ProcessPriority_Idle" xml:space="preserve">
+    <value>低</value>
+  </data>
+  <data name="ProcessPriority_BelowNormal" xml:space="preserve">
+    <value>通常以下</value>
+  </data>
+  <data name="ProcessPriority_Normal" xml:space="preserve">
+    <value>通常 (既定)</value>
+  </data>
+  <data name="ProcessPriority_AboveNormal" xml:space="preserve">
+    <value>通常以上</value>
+  </data>
+  <data name="ProcessPriority_High" xml:space="preserve">
+    <value>高</value>
+  </data>
+  <data name="ProcessPriority_RealTime" xml:space="preserve">
+    <value>リアルタイム (注意して使用)</value>
+  </data>
+
+  <!-- CPU Affinity -->
+  <data name="Label_CpuAffinity" xml:space="preserve">
+    <value>CPU アフィニティ</value>
+  </data>
+  <data name="Info_CpuAffinity" xml:space="preserve">
+    <value>プロセスを実行できる論理 CPU です (例: '0-3,8' または '0xFF00')。</value>
+  </data>
+
+  <!-- EnableConsoleUI -->
+  <data name="Label_EnableConsoleUI" xml:space="preserve">
+    <value>コンソール UI を有効にする (対話型コンソール アプリ用。stdout/stderr のリダイレクトは無効になります)</value>
+  </data>
+
+  <!-- I/O redirection -->
+  <data name="Label_StdoutPath" xml:space="preserve">
+    <value>Stdout ファイルのパス</value>
+  </data>
+  <data name="Label_StderrPath" xml:space="preserve">
+    <value>Stderr ファイルのパス</value>
+  </data>
+  <data name="Label_EnableSizeRotation" xml:space="preserve">
+    <value>サイズに基づくローテーションを有効にする</value>
+  </data>
+  <data name="Label_RotationSize" xml:space="preserve">
+    <value>ローテーション サイズ</value>
+  </data>
+  <data name="Label_RotationSizeUnit" xml:space="preserve">
+    <value>メガバイト (MB)</value>
+  </data>
+  <data name="Label_EnableDateRotation" xml:space="preserve">
+    <value>日付に基づくローテーションを有効にする</value>
+  </data>
+  <data name="Label_DateRotationType" xml:space="preserve">
+    <value>日付ローテーションの間隔</value>
+  </data>
+  <data name="DateRotationType_Daily" xml:space="preserve">
+    <value>毎日 (既定)</value>
+  </data>
+  <data name="DateRotationType_Weekly" xml:space="preserve">
+    <value>毎週</value>
+  </data>
+  <data name="DateRotationType_Monthly" xml:space="preserve">
+    <value>毎月</value>
+  </data>
+  <data name="DateRotationType_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="Info_DateRotation" xml:space="preserve">
+    <value>サイズに基づくローテーションと日付に基づくローテーションの両方が有効な場合は、サイズによるローテーションが優先されます。</value>
+  </data>
+  <data name="Label_UseLocalTimeForRotation" xml:space="preserve">
+    <value>ログのローテーションにローカル時刻を使用する (既定: UTC)</value>
+  </data>
+
+  <data name="Label_MaxRotations" xml:space="preserve">
+    <value>最大ローテーション数</value>
+  </data>
+  <data name="Info_MaxRotations" xml:space="preserve">
+    <value>保持するローテーション済みログ ファイルの最大数です。0 に設定すると無制限になります。</value>
+  </data>
+
+  <!-- Health monitoring -->
+  <data name="Label_EnableHealthMonitoring" xml:space="preserve">
+    <value>正常性監視を有効にする</value>
+  </data>
+  <data name="Label_HeartbeatInterval" xml:space="preserve">
+    <value>ハートビート間隔</value>
+  </data>
+  <data name="Label_Seconds" xml:space="preserve">
+    <value>秒</value>
+  </data>
+  <data name="Label_MaxFailedChecks" xml:space="preserve">
+    <value>最大失敗チェック数</value>
+  </data>
+
+  <data name="Label_Attempts" xml:space="preserve">
+    <value>回</value>
+  </data>
+  <data name="Info_MaxRestartAttempts" xml:space="preserve">
+    <value>0 に設定すると再起動試行回数は無制限になります。</value>
+  </data>
+  <data name="Label_RecoveryAction" xml:space="preserve">
+    <value>回復操作</value>
+  </data>
+  <data name="RecoveryAction_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="RecoveryAction_RestartService" xml:space="preserve">
+    <value>サービスの再起動 (既定)</value>
+  </data>
+  <data name="RecoveryAction_RestartProcess" xml:space="preserve">
+    <value>プロセスの再起動</value>
+  </data>
+  <data name="RecoveryAction_RestartComputer" xml:space="preserve">
+    <value>コンピューターの再起動</value>
+  </data>
+  <data name="Tooltip_RecoveryActionHelp" xml:space="preserve">
+    <value>回復操作のヘルプ</value>
+  </data>
+  <data name="Info_RecoveryAction" xml:space="preserve">
+    <value>サービスが NT AUTHORITY\LocalService、NT AUTHORITY\NetworkService、IIS アプリケーション プール ID (IIS APPPOOL\...)、または必要な特権を持たないユーザー アカウントで実行されている場合、サービスの再起動とコンピューターの再起動の操作は使用できません。</value>
+  </data>
+
+  <data name="Label_RecoveryOnCleanExit" xml:space="preserve">
+    <value>正常終了時にも回復を実行する</value>
+  </data>
+  <data name="Info_RecoveryOnCleanExit" xml:space="preserve">
+    <value>プロセスが正常に終了した場合でも回復操作を実行します。</value>
+  </data>
+
+  <data name="Label_MaxRestartAttempts" xml:space="preserve">
+    <value>最大再起動試行回数</value>
+  </data>
+
+  <data name="Label_HeartbeatUrl" xml:space="preserve">
+    <value>ハートビート URL</value>
+  </data>
+  <data name="Label_HeartbeatUrlTimeoutSeconds" xml:space="preserve">
+    <value>ハートビート URL のタイムアウト</value>
+  </data>
+  <data name="Label_EnableHeartbeatUrlFlags" xml:space="preserve">
+    <value>ハートビート URL フラグを有効にする (/start、/fail)</value>
+  </data>
+
+  <data name="Info_FailureProgram" xml:space="preserve">
+    <value>プロセスの障害時に実行する、オプションのスクリプトまたは実行可能ファイルを構成します。正常性監視が無効の場合、プログラムはプロセスが 0 以外のコードで終了したときに実行されます。正常性監視が有効の場合、プログラムは構成されたすべての回復操作の再試行が失敗した後にのみ実行されます。プロセスの開始に失敗した場合は実行されません。</value>
+  </data>
+  <data name="Info_HookStartupDirectory" xml:space="preserve">
+    <value>省略可能です。設定しない場合は、サービスの作業ディレクトリが既定で使用されます。</value>
+  </data>
+
+  <!-- Environment Variables -->
+  <data name="Label_EnvironmentVariables" xml:space="preserve">
+    <value>環境変数</value>
+  </data>
+  <data name="Info_EnvironmentVariables" xml:space="preserve">
+    <value>変数を varName=varValue の形式で、1 行に 1 つずつ、またはセミコロン (;) で区切って入力します。'=' は \=、'"' は \"、';' は \;、'\' は \\、'%' は %% でエスケープします (%% は 1 つの '%' になります)。環境変数の展開をサポートしています。例: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
+  </data>
+  <data name="Label_AllowOverriddenRuntimeVars" xml:space="preserve">
+    <value>ランタイム環境変数の上書きを許可する (例: JAVA_HOME、JAVA_OPTS)</value>
+  </data>
+  <data name="Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText" xml:space="preserve">
+    <value>ランタイム環境変数の上書きを許可します。</value>
+  </data>
+  <data name="Label_RuntimeVariablesLink" xml:space="preserve">
+    <value>ランタイム変数の一覧を表示します。</value>
+  </data>
+
+  <!-- Service Dependencies -->
+  <data name="Label_ServiceDependencies" xml:space="preserve">
+    <value>サービスの依存関係</value>
+  </data>
+  <data name="Info_ServiceDependencies" xml:space="preserve">
+    <value>このサービスが依存する 1 つ以上の Windows サービス名 (表示名ではありません) を指定します。サービス名は 1 行に 1 つずつ入力するか、セミコロン (;) で区切ります。各サービス名に使用できるのは英字、数字、ハイフン、アンダースコア、ピリオド、スペース、ドル記号 ($) のみで、読み込み順序グループを参照する場合は先頭に '+' を付けることができます。長さは 256 文字以下にする必要があります。このサービスが開始されると、停止している依存サービスは Windows によって自動的に開始されます。依存サービスが無効になっているか開始に失敗した場合、このサービスは開始されません。</value>
+  </data>
+
+  <!-- User Account -->
+  <data name="Label_RunAsLocalSystem" xml:space="preserve">
+    <value>ローカル システムとして実行</value>
+  </data>
+  <data name="Label_UserAccount" xml:space="preserve">
+    <value>ユーザー アカウント</value>
+  </data>
+  <data name="Info_UserAccount" xml:space="preserve">
+    <value>サービス アカウントのユーザー名です (例: .\username、DOMAIN\username、DOMAIN\gMSA$、または NT AUTHORITY\LocalService、NT AUTHORITY\NetworkService、NT SERVICE\MyService、IIS APPPOOL\MyPool などの組み込み ID)。組み込みアカウント、仮想アカウント、gMSA アカウントの場合は、パスワード フィールドを空のままにしてください。</value>
+  </data>
+  <data name="Label_Password" xml:space="preserve">
+    <value>パスワード</value>
+  </data>
+  <data name="Label_ConfirmPassword" xml:space="preserve">
+    <value>パスワードの確認</value>
+  </data>
+
+  <!-- Pre-Launch -->
+  <data name="Info_PreLaunch" xml:space="preserve">
+    <value>サービスの開始前に実行する、オプションのスクリプトまたは実行可能ファイルを構成します。これが失敗した場合、[エラーを無視する] が有効になっていない限り、サービスは開始されません。</value>
+  </data>
+  <data name="Label_ProcessPathNotRequired" xml:space="preserve">
+    <value>プロセスのパス</value>
+  </data>
+  <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
+    <value>タイムアウト</value>
+  </data>
+  <data name="Label_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>再試行回数</value>
+  </data>
+  <data name="Label_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>エラーを無視する</value>
+  </data>
+  <data name="Info_PreLaunchTimeout" xml:space="preserve">
+    <value>起動前プロセスを待機するタイムアウト (秒) です。タイムアウトを 0 に設定すると、非同期 (fire-and-forget) モードで実行されます。このモードでは、Stdout/Stderr のリダイレクトと再試行は使用できません。</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>XML サービス構成を読み込めませんでした。</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>JSON サービス構成を読み込めませんでした。</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>XML 構成のエクスポート</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>JSON 構成のエクスポート</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>XML 構成は正常にエクスポートされました。</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>JSON 構成は正常にエクスポートされました。</value>
+  </data>
+
+  <!-- Clear Action -->
+  <data name="Menu_ClearAll" xml:space="preserve">
+    <value>すべてクリア...</value>
+  </data>
+  <data name="Confirm_ClearAll" xml:space="preserve">
+    <value>すべての構成値をクリアしてもよろしいですか?</value>
+  </data>
+
+  <!-- Buttons -->
+  <data name="Button_Install" xml:space="preserve">
+    <value>インストール</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>アンインストール</value>
+  </data>
+  <data name="Button_Start" xml:space="preserve">
+    <value>開始</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>再起動</value>
+  </data>
+  <data name="Button_Browse" xml:space="preserve">
+    <value>参照</value>
+  </data>
+
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>サービス '{0}' は正常に削除されました。</value>
+  </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>管理者特権が必要です。</value>
+  </data>
+
+
+  <data name="Msg_ManagerAppNotFound" xml:space="preserve">
+    <value>Servy Manager が見つかりませんでした。</value>
+  </data>
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>この名前のサービス '{0}' は既に存在します。置き換えますか?
+
+サービスが無効になっていて削除対象としてマークされている場合は、コンピューターを再起動するまでインストールは失敗します。</value>
+  </data>
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>指定されたサービスは無効になっています。</value>
+  </data>
+
+  <!-- Post-Launch -->
+  <data name="Label_PostLaunchTab" xml:space="preserve">
+    <value>起動後</value>
+  </data>
+
+  <data name="Info_PostLaunch" xml:space="preserve">
+    <value>プロセスが正常に開始された後に実行する、オプションのスクリプトまたは実行可能ファイルを構成します。</value>
+  </data>
+
+  <!-- Debug-Logs -->
+  <data name="Label_EnableDebugLogs" xml:space="preserve">
+    <value>デバッグ ログを有効にする</value>
+  </data>
+  <data name="Info_EnableDebugLogs" xml:space="preserve">
+    <value>有効にすると、環境変数とプロセスのパラメーターが Servy.Service.log ファイルに記録されます。これらのログには機密情報が含まれる可能性があるため、運用環境ではお勧めしません。</value>
+  </data>
+
+  <!-- Start/Stop timeouts -->
+  <data name="Label_StartTimeout" xml:space="preserve">
+    <value>開始タイムアウト</value>
+  </data>
+  <data name="Info_StartTimeout" xml:space="preserve">
+    <value>起動が失敗したと見なすまでに、プロセスが正常に開始されるのを待機するタイムアウト (秒) です。</value>
+  </data>
+
+  <data name="Label_StopTimeout" xml:space="preserve">
+    <value>停止タイムアウト</value>
+  </data>
+  <data name="Info_StopTimeout" xml:space="preserve">
+    <value>プロセスが終了するのを待機するタイムアウト (秒) です。</value>
+  </data>
+
+  <!-- Pre-Stop -->
+  <data name="Info_PreStop" xml:space="preserve">
+    <value>メイン サービスの停止前に実行する、オプションのスクリプトまたは実行可能ファイルを構成します。外部システムへの通知やリソースのドレインなど、正常なシャットダウンのためのタスクに使用します。停止前プロセスは同期的に実行され、タイムアウトが 0 に設定されていない限り、実行中はサービスの停止タイムアウトが延長されます。</value>
+  </data>
+  <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
+    <value>タイムアウト</value>
+  </data>
+  <data name="Label_PreStopLogAsError" xml:space="preserve">
+    <value>停止前の失敗をエラーとして記録する</value>
+  </data>
+  <data name="Info_PreStopTimeout" xml:space="preserve">
+    <value>停止前プロセスを待機するタイムアウト (秒) です。タイムアウトを 0 に設定すると、非同期 (fire-and-forget) モードで実行されます。</value>
+  </data>
+
+  <!-- Post-Stop -->
+  <data name="Info_PostStop" xml:space="preserve">
+    <value>ラップされたプロセスとそのすべての子プロセスが終了した後に実行する、オプションのスクリプトまたは実行可能ファイルを構成します。停止後プロセスは非同期 (fire-and-forget) モードで開始され、サービスのシャットダウンをブロックしません。</value>
+  </data>
+
+  <!-- Miscellaneous -->
+  <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
+    <value>Servy Manager を起動できませんでした。</value>
+  </data>
+
+  <!-- Automation Properties -->
+  <!-- Conventions: AutomationProperties.HelpText entries use the IMPERATIVE mood ("Enter...", "Select...", "Browse..."). -->
+  <data name="Automation_ConfigMainWindow_Name" xml:space="preserve">
+    <value>Servy 構成ウィンドウ</value>
+  </data>
+  <data name="Automation_ConfigMainWindow_HelpText" xml:space="preserve">
+    <value>Servy の Windows サービスを作成して構成します。</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>メイン メニュー</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>エクスポート、インポート、ヘルプのアプリケーション メニュー オプションにアクセスします。</value>
+  </data>
+
+  <data name="Automation_MenuExport_HelpText" xml:space="preserve">
+    <value>サービス構成のエクスポート メニューを開きます。</value>
+  </data>
+  <data name="Automation_MenuExportXml_HelpText" xml:space="preserve">
+    <value>構成を XML ファイルにエクスポートします。</value>
+  </data>
+  <data name="Automation_MenuExportJson_HelpText" xml:space="preserve">
+    <value>構成を JSON ファイルにエクスポートします。</value>
+  </data>
+
+  <data name="Automation_MenuImport_HelpText" xml:space="preserve">
+    <value>サービス構成のインポート メニューを開きます。</value>
+  </data>
+  <data name="Automation_MenuImportXml_HelpText" xml:space="preserve">
+    <value>XML ファイルから構成をインポートします。</value>
+  </data>
+  <data name="Automation_MenuImportJson_HelpText" xml:space="preserve">
+    <value>JSON ファイルから構成をインポートします。</value>
+  </data>
+
+  <data name="Automation_MenuManager_HelpText" xml:space="preserve">
+    <value>Servy Manager アプリケーションを開きます。</value>
+  </data>
+  <data name="Automation_MenuClearAll_HelpText" xml:space="preserve">
+    <value>構成フォームのすべてのフィールドをクリアします。</value>
+  </data>
+
+  <data name="Automation_MenuHelp_HelpText" xml:space="preserve">
+    <value>ヘルプとドキュメントのメニューを開きます。</value>
+  </data>
+  <data name="Automation_MenuDoc_HelpText" xml:space="preserve">
+    <value>Servy の公式ドキュメントを開きます。</value>
+  </data>
+  <data name="Automation_MenuCheckUpdates_HelpText" xml:space="preserve">
+    <value>アプリケーションの更新プログラムをオンラインで確認します。</value>
+  </data>
+  <data name="Automation_MenuAbout_HelpText" xml:space="preserve">
+    <value>Servy アプリケーションに関する情報を表示します。</value>
+  </data>
+
+  <data name="Automation_ConfigurationTabControl_Name" xml:space="preserve">
+    <value>構成タブ</value>
+  </data>
+  <data name="Automation_ConfigurationTabControl_HelpText" xml:space="preserve">
+    <value>サービスのさまざまな構成セクション間を移動します。</value>
+  </data>
+
+  <data name="Automation_TabItemMain_HelpText" xml:space="preserve">
+    <value>サービスの全般オプションを構成します。</value>
+  </data>
+
+  <data name="Automation_TextBoxServiceName_Name" xml:space="preserve">
+    <value>サービス名</value>
+  </data>
+  <data name="Automation_TextBoxServiceName_HelpText" xml:space="preserve">
+    <value>サービスのシステム名を入力します。</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_Name" xml:space="preserve">
+    <value>サービスの表示名</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_HelpText" xml:space="preserve">
+    <value>サービスの表示名を入力します。</value>
+  </data>
+  <data name="Automation_TextBoxServiceDescription_HelpText" xml:space="preserve">
+    <value>サービスの説明を入力します。</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_Name" xml:space="preserve">
+    <value>プロセスのパス</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_HelpText" xml:space="preserve">
+    <value>サービスの実行可能ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseProcessPath_Name" xml:space="preserve">
+    <value>プロセスのパスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowseProcessPath_HelpText" xml:space="preserve">
+    <value>参照して実行可能プロセスのパスを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxStartupDirectory_HelpText" xml:space="preserve">
+    <value>開始時の作業ディレクトリを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStartupDirectory_Name" xml:space="preserve">
+    <value>開始ディレクトリの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowseStartupDirectory_HelpText" xml:space="preserve">
+    <value>参照して開始ディレクトリを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxProcessParameters_HelpText" xml:space="preserve">
+    <value>プロセスのコマンド ライン パラメーターを入力します。</value>
+  </data>
+  <data name="Automation_ComboBoxStartupType_HelpText" xml:space="preserve">
+    <value>サービスのスタートアップの種類を選択します。</value>
+  </data>
+  <data name="Automation_ComboBoxProcessPriority_HelpText" xml:space="preserve">
+    <value>プロセスの優先度レベルを選択します。</value>
+  </data>
+  <data name="Automation_TextBoxCpuAffinity_HelpText" xml:space="preserve">
+    <value>プロセスを実行できる論理 CPU を入力します (例: '0-3,8' または '0xFF00')。</value>
+  </data>
+  <data name="Automation_TextBoxStartTimeout_HelpText" xml:space="preserve">
+    <value>サービスの開始タイムアウトを秒単位で入力します。</value>
+  </data>
+  <data name="Automation_TextBoxStopTimeout_HelpText" xml:space="preserve">
+    <value>サービスの停止タイムアウトを秒単位で入力します。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableConsoleUI_HelpText" xml:space="preserve">
+    <value>オンにすると、コンソール UI のサポートが有効になります。</value>
+  </data>
+
+  <data name="Automation_TabItemLogging_HelpText" xml:space="preserve">
+    <value>標準出力と標準エラーのログ設定を構成します。</value>
+  </data>
+
+  <data name="Automation_TextBoxStdoutPath_HelpText" xml:space="preserve">
+    <value>標準出力ログ ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStdoutPath_Name" xml:space="preserve">
+    <value>標準出力パスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowseStdoutPath_HelpText" xml:space="preserve">
+    <value>参照して標準出力ログ ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxStderrPath_HelpText" xml:space="preserve">
+    <value>標準エラー ログ ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStderrPath_Name" xml:space="preserve">
+    <value>標準エラー パスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowseStderrPath_HelpText" xml:space="preserve">
+    <value>参照して標準エラー ログ ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_CheckBoxEnableSizeRotation_HelpText" xml:space="preserve">
+    <value>オンにすると、ファイル サイズに基づくログのローテーションが有効になります。</value>
+  </data>
+  <data name="Automation_TextBoxRotationSize_HelpText" xml:space="preserve">
+    <value>ローテーション前のログ ファイルの最大サイズを入力します。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDateRotation_HelpText" xml:space="preserve">
+    <value>オンにすると、日付に基づくログのローテーションが有効になります。</value>
+  </data>
+  <data name="Automation_ComboBoxDateRotationType_HelpText" xml:space="preserve">
+    <value>日付に基づくログのローテーションの間隔を選択します。</value>
+  </data>
+  <data name="Automation_TextBoxMaxRotations_HelpText" xml:space="preserve">
+    <value>保持するローテーション済みログの最大数を入力します。</value>
+  </data>
+  <data name="Automation_CheckBoxUseLocalTimeForRotation_HelpText" xml:space="preserve">
+    <value>オンにすると、ログのローテーションに UTC ではなくローカル時刻が使用されます。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDebugLogs_HelpText" xml:space="preserve">
+    <value>オンにすると、診断用のデバッグ ログが有効になります。</value>
+  </data>
+
+  <data name="Automation_TabItemRecovery_HelpText" xml:space="preserve">
+    <value>自動の正常性チェックと回復操作を構成します。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHealthMonitoring_HelpText" xml:space="preserve">
+    <value>オンにすると、このサービスのバックグラウンドでの正常性監視が有効になります。</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatInterval_HelpText" xml:space="preserve">
+    <value>正常性チェックのハートビート間隔を秒単位で入力します。</value>
+  </data>
+  <data name="Automation_TextBoxMaxFailedChecks_HelpText" xml:space="preserve">
+    <value>回復を開始するまでの最大失敗チェック数を入力します。</value>
+  </data>
+  <data name="Automation_ComboBoxRecoveryAction_HelpText" xml:space="preserve">
+    <value>サービスが正常性チェックに失敗したときに実行する操作を選択します。</value>
+  </data>
+  <data name="Automation_ButtonRecoveryActionHelp_HelpText" xml:space="preserve">
+    <value>回復操作のヘルプ情報を表示します。</value>
+  </data>
+  <data name="Automation_CheckBoxRecoveryOnCleanExit_HelpText" xml:space="preserve">
+    <value>オンにすると、プロセスが正常に終了した場合でも回復操作が実行されます。</value>
+  </data>
+  <data name="Automation_TextBoxMaxRestartAttempts_HelpText" xml:space="preserve">
+    <value>最大再起動試行回数を入力します。</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrl_HelpText" xml:space="preserve">
+    <value>ハートビート エンドポイントの URL を入力します。</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText" xml:space="preserve">
+    <value>正常性チェックのハートビート URL のタイムアウトを秒単位で入力します。</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHeartbeatUrlFlags_HelpText" xml:space="preserve">
+    <value>オンにすると、ハートビート URL フラグ (/start、/fail) が有効になります。</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramPath_Name" xml:space="preserve">
+    <value>障害時プログラムのパス</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramPath_HelpText" xml:space="preserve">
+    <value>障害時に実行する実行可能ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramPath_Name" xml:space="preserve">
+    <value>障害時プログラムのパスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramPath_HelpText" xml:space="preserve">
+    <value>参照して障害時プログラムの実行可能ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramStartupDir_Name" xml:space="preserve">
+    <value>障害時プログラムの開始ディレクトリ</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramStartupDir_HelpText" xml:space="preserve">
+    <value>障害時プログラムの開始ディレクトリを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramStartupDir_Name" xml:space="preserve">
+    <value>障害時プログラムの開始ディレクトリの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramStartupDir_HelpText" xml:space="preserve">
+    <value>参照して障害時プログラムの開始ディレクトリを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramParams_Name" xml:space="preserve">
+    <value>障害時プログラムのパラメーター</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramParams_HelpText" xml:space="preserve">
+    <value>障害時プログラムのコマンド ライン パラメーターを入力します。</value>
+  </data>
+
+  <data name="Automation_TabItemAdvanced_HelpText" xml:space="preserve">
+    <value>環境変数とサービスの依存関係を構成します。</value>
+  </data>
+  <data name="Automation_TextBoxEnvVars_HelpText" xml:space="preserve">
+    <value>サービスの環境変数を入力します。</value>
+  </data>
+  <data name="Automation_TextBoxServiceDependencies_HelpText" xml:space="preserve">
+    <value>Windows サービスの依存関係を入力します。</value>
+  </data>
+
+  <data name="Automation_TabItemLogOn_HelpText" xml:space="preserve">
+    <value>サービスのユーザー アカウント コンテキストを構成します。</value>
+  </data>
+  <data name="Automation_RadioButtonLocalSystem_HelpText" xml:space="preserve">
+    <value>組み込みのローカル システム アカウントでサービスを実行します。</value>
+  </data>
+  <data name="Automation_RadioButtonUserAccount_HelpText" xml:space="preserve">
+    <value>特定のユーザー アカウントでサービスを実行します。</value>
+  </data>
+
+  <data name="Automation_TextBoxUserAccount_Name" xml:space="preserve">
+    <value>ユーザー アカウント名</value>
+  </data>
+  <data name="Automation_TextBoxUserAccount_HelpText" xml:space="preserve">
+    <value>サービス アカウントのユーザー名を入力します。</value>
+  </data>
+
+  <data name="Automation_PasswordBoxUser_HelpText" xml:space="preserve">
+    <value>サービス アカウントのパスワードを入力します。</value>
+  </data>
+  <data name="Automation_PasswordBoxConfirm_HelpText" xml:space="preserve">
+    <value>サービス アカウントのパスワードを確認します。</value>
+  </data>
+
+  <data name="Automation_TabItemPreLaunch_HelpText" xml:space="preserve">
+    <value>サービスの開始前に実行するスクリプトまたはプロセスを構成します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchPath_Name" xml:space="preserve">
+    <value>起動前プロセスのパス</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchPath_HelpText" xml:space="preserve">
+    <value>起動前の実行可能ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchPath_Name" xml:space="preserve">
+    <value>起動前プロセスのパスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchPath_HelpText" xml:space="preserve">
+    <value>参照して起動前の実行可能ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchDir_Name" xml:space="preserve">
+    <value>起動前の開始ディレクトリ</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchDir_HelpText" xml:space="preserve">
+    <value>起動前プロセスの開始ディレクトリを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchDir_Name" xml:space="preserve">
+    <value>起動前の開始ディレクトリの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchDir_HelpText" xml:space="preserve">
+    <value>参照して起動前の開始ディレクトリを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchParams_Name" xml:space="preserve">
+    <value>起動前プロセスのパラメーター</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchParams_HelpText" xml:space="preserve">
+    <value>起動前プロセスのコマンド ライン パラメーターを入力します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchEnvVars_Name" xml:space="preserve">
+    <value>起動前の環境変数</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchEnvVars_HelpText" xml:space="preserve">
+    <value>起動前プロセスの環境変数を入力します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStdout_Name" xml:space="preserve">
+    <value>起動前の標準出力パス</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStdout_HelpText" xml:space="preserve">
+    <value>起動前の標準出力ログのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStdout_Name" xml:space="preserve">
+    <value>起動前の標準出力パスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStdout_HelpText" xml:space="preserve">
+    <value>参照して起動前の標準出力ログ ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStderr_Name" xml:space="preserve">
+    <value>起動前の標準エラー パス</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStderr_HelpText" xml:space="preserve">
+    <value>起動前の標準エラー ログのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStderr_Name" xml:space="preserve">
+    <value>起動前の標準エラー パスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStderr_HelpText" xml:space="preserve">
+    <value>参照して起動前の標準エラー ログ ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchTimeout_Name" xml:space="preserve">
+    <value>起動前のタイムアウト</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchTimeout_HelpText" xml:space="preserve">
+    <value>起動前のタイムアウトを秒単位で入力します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchRetries_Name" xml:space="preserve">
+    <value>起動前の再試行回数</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchRetries_HelpText" xml:space="preserve">
+    <value>起動前プロセスの再試行回数を入力します。</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreLaunchIgnoreFailure_HelpText" xml:space="preserve">
+    <value>オンにすると、起動前プロセスが失敗した場合でもサービスが開始されます。</value>
+  </data>
+
+  <data name="Automation_TabItemPostLaunch_HelpText" xml:space="preserve">
+    <value>サービスが正常に開始された後に実行するスクリプトまたはプロセスを構成します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchPath_Name" xml:space="preserve">
+    <value>起動後プロセスのパス</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchPath_HelpText" xml:space="preserve">
+    <value>起動後の実行可能ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchPath_Name" xml:space="preserve">
+    <value>起動後プロセスのパスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchPath_HelpText" xml:space="preserve">
+    <value>参照して起動後の実行可能ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchDir_Name" xml:space="preserve">
+    <value>起動後の開始ディレクトリ</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchDir_HelpText" xml:space="preserve">
+    <value>起動後プロセスの開始ディレクトリを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchDir_Name" xml:space="preserve">
+    <value>起動後の開始ディレクトリの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchDir_HelpText" xml:space="preserve">
+    <value>参照して起動後の開始ディレクトリを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchParams_Name" xml:space="preserve">
+    <value>起動後プロセスのパラメーター</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchParams_HelpText" xml:space="preserve">
+    <value>起動後プロセスのコマンド ライン パラメーターを入力します。</value>
+  </data>
+
+  <data name="Automation_TabItemPreStop_HelpText" xml:space="preserve">
+    <value>サービスの停止前に実行するスクリプトまたはプロセスを構成します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopPath_Name" xml:space="preserve">
+    <value>停止前プロセスのパス</value>
+  </data>
+  <data name="Automation_TextBoxPreStopPath_HelpText" xml:space="preserve">
+    <value>停止前の実行可能ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopPath_Name" xml:space="preserve">
+    <value>停止前プロセスのパスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopPath_HelpText" xml:space="preserve">
+    <value>参照して停止前の実行可能ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopDir_Name" xml:space="preserve">
+    <value>停止前の開始ディレクトリ</value>
+  </data>
+  <data name="Automation_TextBoxPreStopDir_HelpText" xml:space="preserve">
+    <value>停止前プロセスの開始ディレクトリを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopDir_Name" xml:space="preserve">
+    <value>停止前の開始ディレクトリの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopDir_HelpText" xml:space="preserve">
+    <value>参照して停止前の開始ディレクトリを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopParams_Name" xml:space="preserve">
+    <value>停止前プロセスのパラメーター</value>
+  </data>
+  <data name="Automation_TextBoxPreStopParams_HelpText" xml:space="preserve">
+    <value>停止前プロセスのコマンド ライン パラメーターを入力します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopTimeout_Name" xml:space="preserve">
+    <value>停止前のタイムアウト</value>
+  </data>
+  <data name="Automation_TextBoxPreStopTimeout_HelpText" xml:space="preserve">
+    <value>停止前のタイムアウトを秒単位で入力します。</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreStopLogAsError_HelpText" xml:space="preserve">
+    <value>オンにすると、停止前プロセスの失敗がエラーとして記録されます。</value>
+  </data>
+
+  <data name="Automation_TabItemPostStop_HelpText" xml:space="preserve">
+    <value>サービスの停止後に実行するスクリプトまたはプロセスを構成します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopPath_Name" xml:space="preserve">
+    <value>停止後プロセスのパス</value>
+  </data>
+  <data name="Automation_TextBoxPostStopPath_HelpText" xml:space="preserve">
+    <value>停止後の実行可能ファイルのパスを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopPath_Name" xml:space="preserve">
+    <value>停止後プロセスのパスの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopPath_HelpText" xml:space="preserve">
+    <value>参照して停止後の実行可能ファイルを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopDir_Name" xml:space="preserve">
+    <value>停止後の開始ディレクトリ</value>
+  </data>
+  <data name="Automation_TextBoxPostStopDir_HelpText" xml:space="preserve">
+    <value>停止後プロセスの開始ディレクトリを入力します。</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopDir_Name" xml:space="preserve">
+    <value>停止後の開始ディレクトリの参照</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopDir_HelpText" xml:space="preserve">
+    <value>参照して停止後の開始ディレクトリを選択します。</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopParams_Name" xml:space="preserve">
+    <value>停止後プロセスのパラメーター</value>
+  </data>
+  <data name="Automation_TextBoxPostStopParams_HelpText" xml:space="preserve">
+    <value>停止後プロセスのコマンド ライン パラメーターを入力します。</value>
+  </data>
+
+  <data name="Automation_RequiredFieldsNote_Name" xml:space="preserve">
+    <value>必須フィールドの注記</value>
+  </data>
+
+  <data name="Automation_ButtonInstall_HelpText" xml:space="preserve">
+    <value>構成したサービスをインストールします。</value>
+  </data>
+  <data name="Automation_ButtonUninstall_HelpText" xml:space="preserve">
+    <value>構成したサービスをアンインストールします。</value>
+  </data>
+  <data name="Automation_ButtonStart_HelpText" xml:space="preserve">
+    <value>構成したサービスを開始します。</value>
+  </data>
+  <data name="Automation_ButtonStop_HelpText" xml:space="preserve">
+    <value>構成したサービスを停止します。</value>
+  </data>
+  <data name="Automation_ButtonRestart_HelpText" xml:space="preserve">
+    <value>構成したサービスを再起動します。</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Automation_LanguageMenu_HelpText" xml:space="preserve">
+    <value>Servy の表示言語を選択します。</value>
+  </data>
+  <data name="Automation_LanguageSystemMenuItem_HelpText" xml:space="preserve">
+    <value>Windows の表示言語に従います。</value>
+  </data>
+  <data name="Automation_LanguageEnglishMenuItem_HelpText" xml:space="preserve">
+    <value>Servy を英語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageChineseSimplifiedMenuItem_HelpText" xml:space="preserve">
+    <value>Servy を中国語 (簡体字) で表示します。</value>
+  </data>
+  <data name="Automation_LanguageFrenchMenuItem_HelpText" xml:space="preserve">
+    <value>Servy をフランス語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageGermanMenuItem_HelpText" xml:space="preserve">
+    <value>Servy をドイツ語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageSpanishMenuItem_HelpText" xml:space="preserve">
+    <value>Servy をスペイン語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
+    <value>Servy を日本語で表示します。</value>
+  </data>
+</root>

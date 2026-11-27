@@ -2225,6 +2225,70 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Theory]
+        [InlineData(AppLanguage.French)]
+        [InlineData(AppLanguage.German)]
+        [InlineData(AppLanguage.Spanish)]
+        [InlineData(AppLanguage.Japanese)]
+        public async Task SetLanguageCommand_UserConfirmsATranslatedLanguage_StoresItAndChecksOnlyItsMenuItem(AppLanguage language)
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var directory = Path.Combine(Path.GetTempPath(), "ServyManagerLanguageMenuTests_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(directory);
+                try
+                {
+                    var settingsPath = Path.Combine(directory, "Servy.Manager.exe.config");
+                    File.WriteAllText(settingsPath, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<configuration>\r\n  <appSettings>\r\n    <add key=\"Language\" value=\"en\" />\r\n  </appSettings>\r\n</configuration>\r\n");
+                    vm.LanguageSettingsPath = settingsPath;
+                    var restarts = 0;
+                    vm.RestartApplication = () => restarts++;
+                    _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), UiAppConfig.Caption)).ReturnsAsync(true);
+                    var raised = new List<string>();
+                    vm.PropertyChanged += (sender, e) => raised.Add(e.PropertyName);
+                    var expectedItem = "Is" + language + "Selected";
+
+                    // Act
+                    RunOnPump(currentDispatcher, async () =>
+                    {
+                        await vm.SetLanguageCommand.ExecuteAsync(language);
+                    });
+
+                    // Assert
+                    var menu = LanguageMenuState(vm);
+                    Assert.Equal(language, vm.Language);
+                    Assert.Equal(new[] { expectedItem }, menu.Where(item => item.Value).Select(item => item.Key));
+                    Assert.All(menu.Keys, name => Assert.Contains(name, raised));
+                    Assert.Equal(language, StartupCulture.ReadLanguage(settingsPath));
+                    Assert.Equal(language, StartupCulture.ReadLanguage(Path.Combine(directory, "Servy.exe.config")));
+                    Assert.Equal(1, restarts);
+                }
+                finally
+                {
+                    Directory.Delete(directory, true);
+                }
+
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        private static Dictionary<string, bool> LanguageMenuState(MainViewModel viewModel)
+        {
+            return new Dictionary<string, bool>
+            {
+                { nameof(MainViewModel.IsSystemLanguageSelected), viewModel.IsSystemLanguageSelected },
+                { nameof(MainViewModel.IsEnglishSelected), viewModel.IsEnglishSelected },
+                { nameof(MainViewModel.IsChineseSimplifiedSelected), viewModel.IsChineseSimplifiedSelected },
+                { nameof(MainViewModel.IsFrenchSelected), viewModel.IsFrenchSelected },
+                { nameof(MainViewModel.IsGermanSelected), viewModel.IsGermanSelected },
+                { nameof(MainViewModel.IsSpanishSelected), viewModel.IsSpanishSelected },
+                { nameof(MainViewModel.IsJapaneseSelected), viewModel.IsJapaneseSelected },
+            };
+        }
+
         [Fact]
         public async Task SetLanguageCommand_UserDeclinesTheRestart_StillRaisesTheMenuStateSoTheClickedItemIsUnchecked()
         {

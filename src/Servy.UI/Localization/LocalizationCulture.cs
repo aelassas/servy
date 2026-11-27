@@ -18,12 +18,26 @@ namespace Servy.UI.Localization
         /// <summary>The name that selects <see cref="AppLanguage.ChineseSimplified"/>, and the culture of its resources.</summary>
         public const string ChineseSimplifiedCode = "zh-CN";
 
+        /// <summary>The name that selects <see cref="AppLanguage.French"/>, and the culture of its resources.</summary>
+        public const string FrenchCode = "fr";
+
+        /// <summary>The name that selects <see cref="AppLanguage.German"/>, and the culture of its resources.</summary>
+        public const string GermanCode = "de";
+
+        /// <summary>The name that selects <see cref="AppLanguage.Spanish"/>, and the culture of its resources.</summary>
+        public const string SpanishCode = "es";
+
+        /// <summary>The name that selects <see cref="AppLanguage.Japanese"/>, and the culture of its resources.</summary>
+        public const string JapaneseCode = "ja";
+
         /// <summary>
         /// Parses a language name given on the command line or stored in a settings file.
         /// </summary>
         /// <param name="value">
-        /// <c>system</c>, <c>en</c> or <c>zh-CN</c>, in any casing. A few obvious spellings of each are accepted
-        /// too: <c>auto</c>, <c>english</c>, any <c>en-*</c> culture name, and the Simplified Chinese culture names
+        /// <c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c> or <c>ja</c>, in any casing. A few
+        /// obvious spellings of each are accepted too: <c>auto</c>, the English name of the language (<c>english</c>,
+        /// <c>french</c>, <c>german</c>, <c>spanish</c>, <c>japanese</c>), any regional culture name of the language
+        /// (<c>en-*</c>, <c>fr-*</c>, <c>de-*</c>, <c>es-*</c>, <c>ja-*</c>), and the Simplified Chinese culture names
         /// <c>zh</c>, <c>zh-Hans</c>, <c>zh-Hans-*</c>, <c>zh-SG</c> and <c>zh-CHS</c>.
         /// </param>
         /// <param name="language">The parsed language; <see cref="AppLanguage.System"/> when the method returns <see langword="false"/>.</param>
@@ -56,6 +70,15 @@ namespace Servy.UI.Localization
                 return true;
             }
 
+            foreach (var translated in TranslatedLanguages)
+            {
+                if (Is(name, translated.ToString()) || IsCultureOfLanguage(name, Serialize(translated)))
+                {
+                    language = translated;
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -70,7 +93,8 @@ namespace Servy.UI.Localization
         }
 
         /// <summary>
-        /// Returns the name <paramref name="language"/> is stored under: <c>system</c>, <c>en</c> or <c>zh-CN</c>.
+        /// Returns the name <paramref name="language"/> is stored under: <c>system</c>, <c>en</c>, <c>zh-CN</c>,
+        /// <c>fr</c>, <c>de</c>, <c>es</c> or <c>ja</c>.
         /// </summary>
         /// <param name="language">The language to name.</param>
         /// <returns>The name <see cref="TryParse"/> maps back to <paramref name="language"/>.</returns>
@@ -82,6 +106,14 @@ namespace Servy.UI.Localization
                     return EnglishCode;
                 case AppLanguage.ChineseSimplified:
                     return ChineseSimplifiedCode;
+                case AppLanguage.French:
+                    return FrenchCode;
+                case AppLanguage.German:
+                    return GermanCode;
+                case AppLanguage.Spanish:
+                    return SpanishCode;
+                case AppLanguage.Japanese:
+                    return JapaneseCode;
                 default:
                     return SystemCode;
             }
@@ -93,9 +125,11 @@ namespace Servy.UI.Localization
         /// <param name="language">The selected language.</param>
         /// <param name="systemUiCulture">The Windows display language of the user, as the process started with it.</param>
         /// <returns>
-        /// The UI culture to apply, or <see langword="null"/> to leave the UI culture as Windows set it. That is the
-        /// answer for <see cref="AppLanguage.System"/> on every display language other than Simplified Chinese:
-        /// the neutral (English) resources are what such a culture falls back to anyway.
+        /// The UI culture to apply, or <see langword="null"/> to leave the UI culture as Windows set it. For
+        /// <see cref="AppLanguage.System"/> a Simplified Chinese display language resolves to <c>zh-CN</c>, and a
+        /// French, German, Spanish or Japanese one, neutral or regional (<c>fr-CA</c>, <c>de-CH</c>, <c>es-419</c>,
+        /// <c>ja-JP</c>, ...), to the neutral culture of that language; every other display language is left alone,
+        /// because the neutral (English) resources are what such a culture falls back to anyway.
         /// </returns>
         public static CultureInfo Resolve(AppLanguage language, CultureInfo systemUiCulture)
         {
@@ -104,11 +138,32 @@ namespace Servy.UI.Localization
                 case AppLanguage.English:
                     return CultureInfo.GetCultureInfo(EnglishCode);
                 case AppLanguage.ChineseSimplified:
-                    return CultureInfo.GetCultureInfo(ChineseSimplifiedCode);
+                case AppLanguage.French:
+                case AppLanguage.German:
+                case AppLanguage.Spanish:
+                case AppLanguage.Japanese:
+                    return CultureInfo.GetCultureInfo(Serialize(language));
                 default:
-                    return systemUiCulture != null && IsSimplifiedChineseName(systemUiCulture.Name)
-                        ? CultureInfo.GetCultureInfo(ChineseSimplifiedCode)
-                        : null;
+                    if (systemUiCulture == null)
+                    {
+                        return null;
+                    }
+
+                    if (IsSimplifiedChineseName(systemUiCulture.Name))
+                    {
+                        return CultureInfo.GetCultureInfo(ChineseSimplifiedCode);
+                    }
+
+                    foreach (var translated in TranslatedLanguages)
+                    {
+                        var code = Serialize(translated);
+                        if (IsCultureOfLanguage(systemUiCulture.Name, code))
+                        {
+                            return CultureInfo.GetCultureInfo(code);
+                        }
+                    }
+
+                    return null;
             }
         }
 
@@ -155,6 +210,28 @@ namespace Servy.UI.Localization
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// The languages besides English and Simplified Chinese whose resources are named after the neutral culture
+        /// of the language, so that every regional culture of the language selects them.
+        /// </summary>
+        private static readonly AppLanguage[] TranslatedLanguages =
+        {
+            AppLanguage.French,
+            AppLanguage.German,
+            AppLanguage.Spanish,
+            AppLanguage.Japanese,
+        };
+
+        /// <summary>
+        /// Tells whether <paramref name="cultureName"/> is the neutral culture <paramref name="code"/> or one of its
+        /// regional cultures, such as <c>fr-CA</c> or <c>es-419</c> for <c>fr</c> and <c>es</c>.
+        /// </summary>
+        private static bool IsCultureOfLanguage(string cultureName, string code)
+        {
+            var name = cultureName.Trim();
+            return Is(name, code) || name.StartsWith(code + "-", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool Is(string value, string expected)

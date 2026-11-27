@@ -13,5 +13,17 @@ namespace Servy.UI.Localization
 
         /// <summary>Simplified Chinese.</summary>
         ChineseSimplified,
+
+        /// <summary>French.</summary>
+        French,
+
+        /// <summary>German.</summary>
+        German,
+
+        /// <summary>Spanish.</summary>
+        Spanish,
+
+        /// <summary>Japanese.</summary>
+        Japanese,
     }
 }

@@ -9,7 +9,7 @@ using Xunit;
 namespace Servy.UI.IntegrationTests.Localization
 {
     /// <summary>
-    /// Guards the Simplified Chinese resource files against the mistakes a translation can make: a key the
+    /// Guards the translated resource files (Simplified Chinese, French, German, Spanish and Japanese) against the mistakes a translation can make: a key the
     /// English file does not have, an empty value, and a format placeholder that was dropped or added.
     /// It also keeps the language names in one place: the Language menus of Servy and Servy Manager and the
     /// restart confirmation of <c>LanguageSwitcher</c> all read the <c>Language_*</c> entries of Servy.UI.
@@ -20,7 +20,7 @@ namespace Servy.UI.IntegrationTests.Localization
     /// </remarks>
     public class ResourceParityTests
     {
-        private const string Culture = "zh-CN";
+        private static readonly string[] Cultures = { "zh-CN", "fr", "de", "es", "ja" };
 
         private static readonly Regex PlaceholderPattern = new Regex(@"\{(\d+)(?:[^}]*)\}", RegexOptions.Compiled);
 
@@ -30,24 +30,55 @@ namespace Servy.UI.IntegrationTests.Localization
 
         private static readonly Regex XmlnsPattern = new Regex(@"xmlns:(?<prefix>\w+)=""(?<ns>[^""]*)""", RegexOptions.Compiled);
 
+        private static readonly Regex MenuHeaderPattern =
+            new Regex(@"Header=""\{x:Static\s+\w+:Strings\.(?<name>Language_\w+)\}""", RegexOptions.Compiled);
+
         private static readonly Regex LanguageNameReferencePattern =
             new Regex(@"\{x:Static\s+(?<prefix>\w+):Strings\.(?<name>Language_\w+)\}", RegexOptions.Compiled);
 
-        public static TheoryData<string> Projects => new TheoryData<string>
+        private static readonly string[] Projects = { "Servy", "Servy.Manager", "Servy.UI", "Servy.Core" };
+
+        public static TheoryData<string, string> ProjectsAndCultures
         {
-            "Servy",
-            "Servy.Manager",
-            "Servy.UI",
-            "Servy.Core",
-        };
+            get
+            {
+                var data = new TheoryData<string, string>();
+                foreach (var project in Projects)
+                {
+                    foreach (var culture in Cultures)
+                    {
+                        data.Add(project, culture);
+                    }
+                }
+
+                return data;
+            }
+        }
+
+        public static TheoryData<string, string> SatelliteAssemblies
+        {
+            get
+            {
+                var data = new TheoryData<string, string>();
+                foreach (var assemblyName in new[] { "Servy.UI", "Servy.Core" })
+                {
+                    foreach (var culture in Cultures)
+                    {
+                        data.Add(assemblyName, culture);
+                    }
+                }
+
+                return data;
+            }
+        }
 
         [Theory]
-        [MemberData(nameof(Projects))]
-        public void Translation_HasNoKeyTheEnglishFileLacks(string project)
+        [MemberData(nameof(ProjectsAndCultures))]
+        public void Translation_HasNoKeyTheEnglishFileLacks(string project, string culture)
         {
             // Arrange
             var english = ReadResx(NeutralPath(project));
-            var translated = ReadResx(TranslatedPath(project));
+            var translated = ReadResx(TranslatedPath(project, culture));
 
             // Act
             var unknown = translated.Keys.Where(k => !english.ContainsKey(k)).OrderBy(k => k, StringComparer.Ordinal).ToList();
@@ -58,12 +89,12 @@ namespace Servy.UI.IntegrationTests.Localization
         }
 
         [Theory]
-        [MemberData(nameof(Projects))]
-        public void Translation_HasNoBlankValueForANonBlankEnglishText(string project)
+        [MemberData(nameof(ProjectsAndCultures))]
+        public void Translation_HasNoBlankValueForANonBlankEnglishText(string project, string culture)
         {
             // Arrange
             var english = ReadResx(NeutralPath(project));
-            var translated = ReadResx(TranslatedPath(project));
+            var translated = ReadResx(TranslatedPath(project, culture));
 
             // Act
             var blank = translated
@@ -77,12 +108,12 @@ namespace Servy.UI.IntegrationTests.Localization
         }
 
         [Theory]
-        [MemberData(nameof(Projects))]
-        public void Translation_KeepsEveryFormatPlaceholderOfTheEnglishText(string project)
+        [MemberData(nameof(ProjectsAndCultures))]
+        public void Translation_KeepsEveryFormatPlaceholderOfTheEnglishText(string project, string culture)
         {
             // Arrange
             var english = ReadResx(NeutralPath(project));
-            var translated = ReadResx(TranslatedPath(project));
+            var translated = ReadResx(TranslatedPath(project, culture));
 
             // Act
             var mismatches = translated
@@ -96,18 +127,17 @@ namespace Servy.UI.IntegrationTests.Localization
         }
 
         [Theory]
-        [InlineData("Servy.UI")]
-        [InlineData("Servy.Core")]
-        public void Build_PlacesTheSatelliteAssemblyNextToTheBinaries(string assemblyName)
+        [MemberData(nameof(SatelliteAssemblies))]
+        public void Build_PlacesTheSatelliteAssemblyNextToTheBinaries(string assemblyName, string culture)
         {
             // Arrange
-            var satellite = Path.Combine(AppContext.BaseDirectory, Culture, assemblyName + ".resources.dll");
+            var satellite = Path.Combine(AppContext.BaseDirectory, culture, assemblyName + ".resources.dll");
 
             // Act
             var exists = File.Exists(satellite);
 
             // Assert
-            Assert.True(exists, $"{assemblyName} was built without its {Culture} satellite assembly at '{satellite}'.");
+            Assert.True(exists, $"{assemblyName} was built without its {culture} satellite assembly at '{satellite}'.");
         }
 
         [Theory]
@@ -117,11 +147,11 @@ namespace Servy.UI.IntegrationTests.Localization
         {
             // Arrange
             var english = ReadResx(NeutralPath(project));
-            var translated = ReadResx(TranslatedPath(project));
+            var translated = Cultures.SelectMany(culture => ReadResx(TranslatedPath(project, culture)).Keys).ToList();
 
             // Act
             var copies = english.Keys
-                .Concat(translated.Keys)
+                .Concat(translated)
                 .Where(k => k.StartsWith(LanguageNamePrefix, StringComparison.Ordinal))
                 .Distinct()
                 .OrderBy(k => k, StringComparer.Ordinal)
@@ -164,14 +194,36 @@ namespace Servy.UI.IntegrationTests.Localization
             Assert.Empty(unknown);
         }
 
+        [Theory]
+        [InlineData("Servy")]
+        [InlineData("Servy.Manager")]
+        public void LanguageMenu_OffersEveryLanguageServyUINames(string project)
+        {
+            // Arrange
+            var xaml = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "src", project, "Views", "MainWindow.xaml"));
+            var uiNames = ReadResx(NeutralPath("Servy.UI")).Keys
+                .Where(k => k.StartsWith(LanguageNamePrefix, StringComparison.Ordinal))
+                .ToList();
+
+            // Act
+            var headers = new HashSet<string>(
+                MenuHeaderPattern.Matches(xaml).Cast<Match>().Select(m => m.Groups["name"].Value),
+                StringComparer.Ordinal);
+            var missing = uiNames.Where(name => !headers.Contains(name)).OrderBy(name => name, StringComparer.Ordinal).ToList();
+
+            // Assert
+            Assert.Equal(7, uiNames.Count);
+            Assert.Empty(missing);
+        }
+
         private static string NeutralPath(string project)
         {
             return Path.Combine(FindRepositoryRoot(), "src", project, "Resources", "Strings.resx");
         }
 
-        private static string TranslatedPath(string project)
+        private static string TranslatedPath(string project, string culture)
         {
-            return Path.Combine(FindRepositoryRoot(), "src", project, "Resources", "Strings." + Culture + ".resx");
+            return Path.Combine(FindRepositoryRoot(), "src", project, "Resources", "Strings." + culture + ".resx");
         }
 
         private static string FindRepositoryRoot()

@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+    <value>管理者特権が必要です</value>
+  </data>
+  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+    <value>Servy Manager でシステム サービスを管理するには管理者特権が必要です。</value>
+  </data>
+
+  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+    <value>セキュリティ警告</value>
+  </data>
+  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+    <value>重大なセキュリティ リスク: お使いのシステムでは古い SQLite エンジン ({0}) が使用されています。CVE-2025-6965 を緩和するため、このバージョンのアプリケーションには SQLite {1} 以降が必要です。</value>
+  </data>
+
+  <!-- Splash screen -->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>Servy Manager を読み込んでいます...</value>
+  </data>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>インポート</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>XML 構成のインポート...</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>JSON 構成のインポート...</value>
+  </data>
+
+  <data name="Menu_Config" xml:space="preserve">
+    <value>構成ツール</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>ヘルプ</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>ヘルプ / ドキュメント</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>更新プログラムの確認</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>Servy Manager のバージョン情報</value>
+  </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>表示</value>
+  </data>
+  <data name="Menu_ResetWindowLayout" xml:space="preserve">
+    <value>ウィンドウのレイアウトをリセット</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+    <value>
+Servy Manager {0}
+
+Servy Manager は、Servy で作成した Windows サービスを管理するための、すっきりとしたシンプルなインターフェイスを提供します。サービスの開始、停止、構成、監視を簡単に行うことができます。
+
+{1} で構築
+
+MIT ライセンスの下でライセンスされています。
+
+Copyright © {2} Akram El Assas. All rights reserved.</value>
+  </data>
+
+  <!-- Tabs -->
+  <data name="Label_ServicesTab" xml:space="preserve">
+    <value>サービス</value>
+  </data>
+  <data name="Label_LogsTab" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="Label_PerformanceTab" xml:space="preserve">
+    <value>パフォーマンス</value>
+  </data>
+  <data name="Label_ConsoleTab" xml:space="preserve">
+    <value>コンソール</value>
+  </data>
+  <data name="Label_DependenciesTab" xml:space="preserve">
+    <value>依存関係</value>
+  </data>
+
+  <data name="Console_Info" xml:space="preserve">
+    <value>コンソール出力をリアルタイムで監視するには、サービスの stdout/stderr リダイレクトを有効にしてください</value>
+  </data>
+  <data name="Label_Copy" xml:space="preserve">
+    <value>コピー</value>
+  </data>
+  <data name="Button_Resume" xml:space="preserve">
+    <value>▶ 再開</value>
+  </data>
+  <data name="Tooltip_Resume" xml:space="preserve">
+    <value>リアルタイム更新を再開します</value>
+  </data>
+
+  <data name="Dependencies_Info" xml:space="preserve">
+    <value>サービスの依存関係ツリー (SCM 経由)</value>
+  </data>
+  <data name="Button_Refresh" xml:space="preserve">
+    <value>最新の情報に更新</value>
+  </data>
+  <data name="Tooltip_Refresh" xml:space="preserve">
+    <value>サービスの依存関係ツリーを最新の情報に更新します</value>
+  </data>
+  <data name="Button_ExpandAll" xml:space="preserve">
+    <value>すべて展開</value>
+  </data>
+  <data name="Tooltip_ExpandAll" xml:space="preserve">
+    <value>依存関係ツリーのすべてのノードを展開します</value>
+  </data>
+  <data name="Button_CollapseAll" xml:space="preserve">
+    <value>すべて折りたたむ</value>
+  </data>
+  <data name="Tooltip_CollapseAll" xml:space="preserve">
+    <value>依存関係ツリーのすべてのノードを折りたたみます</value>
+  </data>
+  <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
+    <value>状態: 実行中 (緑)、停止 (赤)、循環 (オレンジ)、使用不可 (オレンジの警告アイコン)</value>
+  </data>
+  <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
+    <value>F5 キーを押すと依存関係ツリーが更新されます</value>
+  </data>
+  <data name="Tooltip_Cycle" xml:space="preserve">
+    <value>循環依存関係が検出されました</value>
+  </data>
+  <data name="Tooltip_ServiceRunning" xml:space="preserve">
+    <value>このサービスは実行中です</value>
+  </data>
+  <data name="Tooltip_ServiceStopped" xml:space="preserve">
+    <value>このサービスは停止しています</value>
+  </data>
+
+  <!-- Search -->
+  <data name="Button_Search" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="Button_Searching" xml:space="preserve">
+    <value>検索しています...</value>
+  </data>
+  <data name="Label_F5_Shortcut" xml:space="preserve">
+    <value>サービスの状態は自動的に更新されます - 一覧全体を更新するには F5 キーを押してください</value>
+  </data>
+  <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
+    <value>F5 キーを押すとログが更新されます</value>
+  </data>
+
+  <!-- Services DataGrid -->
+  <data name="Column_Name" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="Column_DisplayName" xml:space="preserve">
+    <value>表示名</value>
+  </data>
+  <data name="Column_Description" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="Column_Status" xml:space="preserve">
+    <value>状態</value>
+  </data>
+  <data name="Column_StartupType" xml:space="preserve">
+    <value>スタートアップの種類</value>
+  </data>
+  <data name="Column_LogOnAs" xml:space="preserve">
+    <value>ログオン</value>
+  </data>
+
+  <!-- Built-in service accounts (Log On As column values) -->
+  <data name="Account_LocalSystem" xml:space="preserve">
+    <value>Local System</value>
+  </data>
+  <data name="Account_LocalService" xml:space="preserve">
+    <value>Local Service</value>
+  </data>
+  <data name="Account_NetworkService" xml:space="preserve">
+    <value>Network Service</value>
+  </data>
+
+  <!-- Status -->
+  <data name="Status_Stopped" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Status_StartPending" xml:space="preserve">
+    <value>開始待ち</value>
+  </data>
+  <data name="Status_StopPending" xml:space="preserve">
+    <value>停止待ち</value>
+  </data>
+  <data name="Status_Running" xml:space="preserve">
+    <value>実行中</value>
+  </data>
+  <data name="Status_ContinuePending" xml:space="preserve">
+    <value>再開待ち</value>
+  </data>
+  <data name="Status_PausePending" xml:space="preserve">
+    <value>一時停止待ち</value>
+  </data>
+  <data name="Status_Paused" xml:space="preserve">
+    <value>一時停止</value>
+  </data>
+  <data name="Status_NotInstalled" xml:space="preserve">
+    <value>未インストール</value>
+  </data>
+  <data name="Status_Unknown" xml:space="preserve">
+    <value>不明</value>
+  </data>
+
+  <data name="Label_Fetching" xml:space="preserve">
+    <value>取得しています...</value>
+  </data>
+
+  <!-- Actions -->
+  <data name="Button_Start" xml:space="preserve">
+    <value>開始</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>再起動</value>
+  </data>
+  <data name="Button_More" xml:space="preserve">
+    <value>その他の操作</value>
+  </data>
+
+  <data name="Button_StartSelected" xml:space="preserve">
+    <value>選択項目を開始</value>
+  </data>
+  <data name="Button_StopSelected" xml:space="preserve">
+    <value>選択項目を停止</value>
+  </data>
+  <data name="Button_RestartSelected" xml:space="preserve">
+    <value>選択項目を再起動</value>
+  </data>
+
+  <data name="Msg_NoServicesSelected" xml:space="preserve">
+    <value>サービスが選択されていません。</value>
+  </data>
+  <data name="Confirm_StartSelectedServices" xml:space="preserve">
+    <value>選択したサービスを開始しますか?</value>
+  </data>
+  <data name="Confirm_StopSelectedServices" xml:space="preserve">
+    <value>選択したサービスを停止しますか?</value>
+  </data>
+  <data name="Confirm_RestartSelectedServices" xml:space="preserve">
+    <value>選択したサービスを再起動しますか?</value>
+  </data>
+  <data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
+    <value>操作は正常に完了しました。</value>
+  </data>
+  <data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
+    <value>次の対象で操作の実行中にエラーが発生しました: {0}</value>
+  </data>
+  <data name="Msg_AllOperationsFailed" xml:space="preserve">
+    <value>すべての操作が失敗しました。</value>
+  </data>
+
+  <data name="Button_Install" xml:space="preserve">
+    <value>インストール</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>アンインストール</value>
+  </data>
+  <data name="Button_Remove" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Button_Config" xml:space="preserve">
+    <value>構成を開く</value>
+  </data>
+  <data name="Button_ExportXML" xml:space="preserve">
+    <value>XML のエクスポート</value>
+  </data>
+  <data name="Button_ExportJSON" xml:space="preserve">
+    <value>JSON のエクスポート</value>
+  </data>
+
+  <!-- Startup Type Items -->
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>自動</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
+  </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>自動 (遅延開始)</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>手動</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>無効</value>
+  </data>
+  <data name="StartupType_Unknown" xml:space="preserve">
+    <value>不明</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>XML サービス構成を読み込めませんでした。</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>JSON サービス構成を読み込めませんでした。</value>
+  </data>
+  <data name="ImportXml_Success" xml:space="preserve">
+    <value>XML 構成は正常にインポートされました。</value>
+  </data>
+  <data name="ImportJson_Success" xml:space="preserve">
+    <value>JSON 構成は正常にインポートされました。</value>
+  </data>
+  <data name="ImportXml_Error" xml:space="preserve">
+    <value>XML 構成をインポートできませんでした。</value>
+  </data>
+  <data name="ImportJson_Error" xml:space="preserve">
+    <value>JSON 構成をインポートできませんでした。</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>XML 構成のエクスポート</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>JSON 構成のエクスポート</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>サービス '{0}' の XML 構成は正常にエクスポートされました。</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>サービス '{0}' の JSON 構成は正常にエクスポートされました。</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
+    <value>サービス '{0}' をアンインストールしてもよろしいですか?
+
+サービスの構成はすべて完全に失われ、復元することはできません。</value>
+  </data>
+  <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
+    <value>サービス '{0}' を削除してもよろしいですか?
+
+サービスの構成はすべて完全に失われ、復元することはできません。</value>
+  </data>
+  <data name="Msg_DesktopAppNotFound" xml:space="preserve">
+    <value>Servy デスクトップ アプリが見つかりません。</value>
+  </data>
+
+  <!-- Logs View -->
+  <data name="Label_Level" xml:space="preserve">
+    <value>レベル:</value>
+  </data>
+  <data name="Label_From" xml:space="preserve">
+    <value>開始:</value>
+  </data>
+  <data name="Label_To" xml:space="preserve">
+    <value>終了:</value>
+  </data>
+  <data name="Label_Keyword" xml:space="preserve">
+    <value>キーワード:</value>
+  </data>
+
+  <data name="Column_Time" xml:space="preserve">
+    <value>日時</value>
+  </data>
+  <data name="Column_Level" xml:space="preserve">
+    <value>レベル</value>
+  </data>
+  <data name="Column_EventId" xml:space="preserve">
+    <value>イベント ID</value>
+  </data>
+  <data name="Column_Message" xml:space="preserve">
+    <value>メッセージ</value>
+  </data>
+
+  <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
+    <value>タブの切り替え中にエラーが発生しました。もう一度お試しください。</value>
+  </data>
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>この名前のサービス '{0}' は既に存在します。置き換えますか?
+
+サービスが無効になっていて削除対象としてマークされている場合は、コンピューターを再起動するまでインストールは失敗します。</value>
+  </data>
+  <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
+    <value>この名前のサービス '{0}' は既に存在します。置き換えますか?
+
+変更を有効にするには、インポート後に [インストール] をクリックし、サービスを再起動する必要があります。
+サービスが無効になっていて削除対象としてマークされている場合は、コンピューターを再起動するまでインストールは失敗します。</value>
+  </data>
+
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>指定されたサービスは無効になっています。</value>
+  </data>
+
+  <!-- PID -->
+  <data name="Column_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Button_CopyPid" xml:space="preserve">
+    <value>PID のコピー</value>
+  </data>
+  <data name="Msg_PidCopied" xml:space="preserve">
+    <value>PID をクリップボードにコピーしました。</value>
+  </data>
+  <data name="Msg_PidCopyFailed" xml:space="preserve">
+    <value>PID をクリップボードにコピーできませんでした。</value>
+  </data>
+
+  <!-- CPU/RAM -->
+  <data name="Column_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Column_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!-- Performance tab -->
+  <data name="Column_Service" xml:space="preserve">
+    <value>サービス</value>
+  </data>
+  <data name="Label_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Label_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Label_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!-- Console Tab -->
+  <data name="Label_ConsoleFilter" xml:space="preserve">
+    <value>🔍 フィルター:</value>
+  </data>
+
+  <!-- Miscellaneous -->
+  <data name="Msg_DesktopAppLaunchFailed" xml:space="preserve">
+    <value>Servy デスクトップ アプリを起動できませんでした。</value>
+  </data>
+
+  <!-- Service Footer Templates -->
+  <data name="Footer_Service_None" xml:space="preserve">
+    <value>サービスは読み込まれませんでした ({1})</value>
+  </data>
+  <data name="Footer_Service_One" xml:space="preserve">
+    <value>1 個のサービスを読み込みました ({1})</value>
+  </data>
+  <data name="Footer_Service_Many" xml:space="preserve">
+    <value>{0} 個のサービスを読み込みました ({1})</value>
+  </data>
+
+  <!-- Logs Tab -->
+  <data name="LogLevel_All" xml:space="preserve">
+    <value>すべて</value>
+  </data>
+  <data name="LogLevel_Error" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="LogLevel_Information" xml:space="preserve">
+    <value>情報</value>
+  </data>
+  <data name="LogLevel_Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Footer_Log_None" xml:space="preserve">
+    <value>ログは見つかりませんでした ({1})</value>
+  </data>
+  <data name="Footer_Log_One" xml:space="preserve">
+    <value>1 件のログが見つかりました ({1})</value>
+  </data>
+  <data name="Footer_Log_Many" xml:space="preserve">
+    <value>{0} 件のログが見つかりました ({1})</value>
+  </data>
+
+  <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
+    <value>サービスの依存関係ツリーを読み込めませんでした。</value>
+  </data>
+  <data name="Tooltip_DependencyUnavailable" xml:space="preserve">
+    <value>この依存関係は使用できないか、アクセスできません。</value>
+  </data>
+
+  <!-- Automation Properties -->
+  <!-- Conventions: AutomationProperties.HelpText entries use the IMPERATIVE mood ("Enter...", "Select...", "Browse..."). -->
+  <data name="Automation_MainWindow_Name" xml:space="preserve">
+    <value>Servy Manager ウィンドウ</value>
+  </data>
+  <data name="Automation_MainWindow_HelpText" xml:space="preserve">
+    <value>Servy Manager のインターフェイスを使用して、サービスのパラメーターを構成し、実行を監視します。</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>メイン メニュー</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>構成のインポート、設定の構成、ウィンドウのレイアウトのリセット、表示言語の変更、ヘルプへのアクセスを行うオプションにアクセスします。</value>
+  </data>
+
+  <data name="Automation_ImportMenu_HelpText" xml:space="preserve">
+    <value>サービス構成をインポートするメニューを開きます。</value>
+  </data>
+  <data name="Automation_ImportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>XML ファイルからサービス構成をインポートします。</value>
+  </data>
+  <data name="Automation_ImportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>JSON ファイルからサービス構成をインポートします。</value>
+  </data>
+
+  <data name="Automation_ConfigMenu_HelpText" xml:space="preserve">
+    <value>選択したサービスの構成アプリを開きます。</value>
+  </data>
+
+  <data name="Automation_ViewMenu_HelpText" xml:space="preserve">
+    <value>ウィンドウのレイアウト オプションを含むメニューを開きます。</value>
+  </data>
+  <data name="Automation_ResetWindowLayoutMenuItem_HelpText" xml:space="preserve">
+    <value>ウィンドウのサイズ、位置、列の幅を既定に戻します。</value>
+  </data>
+
+  <data name="Automation_HelpMenu_HelpText" xml:space="preserve">
+    <value>ドキュメントと更新のオプションを含むメニューを開きます。</value>
+  </data>
+  <data name="Automation_DocMenuItem_HelpText" xml:space="preserve">
+    <value>Servy の公式ドキュメントを開きます。</value>
+  </data>
+  <data name="Automation_CheckUpdatesMenuItem_HelpText" xml:space="preserve">
+    <value>Servy の新しいバージョンが利用可能かどうかを確認します。</value>
+  </data>
+  <data name="Automation_AboutMenuItem_HelpText" xml:space="preserve">
+    <value>アプリケーションの情報と著作権の詳細を表示します。</value>
+  </data>
+
+  <data name="Automation_MainTabControl_Name" xml:space="preserve">
+    <value>メイン ナビゲーション タブ</value>
+  </data>
+  <data name="Automation_MainTabControl_HelpText" xml:space="preserve">
+    <value>[サービス]、[パフォーマンス]、[コンソール]、[依存関係]、[ログ] の各ビューを切り替えます。</value>
+  </data>
+
+  <data name="Automation_MainTab_Name" xml:space="preserve">
+    <value>[サービス] タブ</value>
+  </data>
+  <data name="Automation_MainTab_HelpText" xml:space="preserve">
+    <value>管理対象サービスのメイン一覧を表示します。</value>
+  </data>
+
+  <data name="Automation_SearchTextBox_Name" xml:space="preserve">
+    <value>サービスの検索</value>
+  </data>
+  <data name="Automation_SearchTextBox_HelpText" xml:space="preserve">
+    <value>キーワードを入力してサービスの一覧をフィルター処理します。</value>
+  </data>
+
+  <data name="Automation_SearchButton_HelpText" xml:space="preserve">
+    <value>サービスの検索を実行します。</value>
+  </data>
+
+  <data name="Automation_ServicesDataGrid_Name" xml:space="preserve">
+    <value>サービスの一覧</value>
+  </data>
+  <data name="Automation_ServicesDataGrid_HelpText" xml:space="preserve">
+    <value>サービスの一覧を表示および管理します。</value>
+  </data>
+
+  <data name="Automation_SelectAllColumnHeader_Name" xml:space="preserve">
+    <value>すべてのサービスの選択列</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_Name" xml:space="preserve">
+    <value>すべてのサービスを選択</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_HelpText" xml:space="preserve">
+    <value>一覧内のすべてのサービスを選択または選択解除します。</value>
+  </data>
+
+  <data name="Automation_SelectServiceCheckBox_Name" xml:space="preserve">
+    <value>サービスの選択</value>
+  </data>
+  <data name="Automation_SelectServiceCheckBox_HelpText" xml:space="preserve">
+    <value>一括操作の対象としてこのサービスを選択します。</value>
+  </data>
+
+  <data name="Automation_NameColumnHeader_Name" xml:space="preserve">
+    <value>名前列</value>
+  </data>
+  <data name="Automation_NameColumnCell_HelpText" xml:space="preserve">
+    <value>サービスの名前を表示します。</value>
+  </data>
+
+  <data name="Automation_DisplayNameColumnHeader_Name" xml:space="preserve">
+    <value>表示名列</value>
+  </data>
+  <data name="Automation_DisplayNameColumnCell_HelpText" xml:space="preserve">
+    <value>サービスの表示名を表示します。</value>
+  </data>
+
+  <data name="Automation_DescriptionColumnHeader_Name" xml:space="preserve">
+    <value>説明列</value>
+  </data>
+  <data name="Automation_DescriptionColumnCell_HelpText" xml:space="preserve">
+    <value>サービスの説明を表示します。</value>
+  </data>
+
+  <data name="Automation_StatusColumnHeader_Name" xml:space="preserve">
+    <value>状態列</value>
+  </data>
+  <data name="Automation_StatusColumnCell_HelpText" xml:space="preserve">
+    <value>サービスの現在の状態を表示します。</value>
+  </data>
+
+  <data name="Automation_StartupTypeColumnHeader_Name" xml:space="preserve">
+    <value>スタートアップの種類列</value>
+  </data>
+  <data name="Automation_StartupTypeColumnCell_HelpText" xml:space="preserve">
+    <value>サービスに構成されているスタートアップの種類を表示します。</value>
+  </data>
+
+  <data name="Automation_LogOnAsColumnHeader_Name" xml:space="preserve">
+    <value>ログオン列</value>
+  </data>
+  <data name="Automation_LogOnAsColumnCell_HelpText" xml:space="preserve">
+    <value>サービスを実行しているユーザー アカウントを表示します。</value>
+  </data>
+
+  <data name="Automation_PidColumnHeader_Name" xml:space="preserve">
+    <value>PID 列</value>
+  </data>
+  <data name="Automation_PidColumnCell_HelpText" xml:space="preserve">
+    <value>実行中のサービスのプロセス ID (PID) を表示します。</value>
+  </data>
+
+  <data name="Automation_CpuColumnHeader_Name" xml:space="preserve">
+    <value>CPU 列</value>
+  </data>
+  <data name="Automation_CpuColumnCell_HelpText" xml:space="preserve">
+    <value>サービスの現在の CPU 使用率を表示します。</value>
+  </data>
+
+  <data name="Automation_RamColumnHeader_Name" xml:space="preserve">
+    <value>RAM 列</value>
+  </data>
+  <data name="Automation_RamColumnCell_HelpText" xml:space="preserve">
+    <value>サービスの現在の RAM 使用量を表示します。</value>
+  </data>
+
+  <data name="Automation_ActionsColumnHeader_Name" xml:space="preserve">
+    <value>操作列</value>
+  </data>
+
+  <data name="Automation_StartSelectedButton_HelpText" xml:space="preserve">
+    <value>選択したすべてのサービスを開始します。</value>
+  </data>
+
+  <data name="Automation_StopSelectedButton_HelpText" xml:space="preserve">
+    <value>選択したすべてのサービスを停止します。</value>
+  </data>
+
+  <data name="Automation_RestartSelectedButton_HelpText" xml:space="preserve">
+    <value>選択したすべてのサービスを再起動します。</value>
+  </data>
+
+  <data name="Automation_StartServiceButton_Name" xml:space="preserve">
+    <value>サービスの開始</value>
+  </data>
+  <data name="Automation_StartServiceButton_HelpText" xml:space="preserve">
+    <value>現在のサービスを開始します。</value>
+  </data>
+
+  <data name="Automation_StopServiceButton_Name" xml:space="preserve">
+    <value>サービスの停止</value>
+  </data>
+  <data name="Automation_StopServiceButton_HelpText" xml:space="preserve">
+    <value>現在のサービスを停止します。</value>
+  </data>
+
+  <data name="Automation_RestartServiceButton_Name" xml:space="preserve">
+    <value>サービスの再起動</value>
+  </data>
+  <data name="Automation_RestartServiceButton_HelpText" xml:space="preserve">
+    <value>現在のサービスを再起動します。</value>
+  </data>
+
+  <data name="Automation_MoreActionsButton_HelpText" xml:space="preserve">
+    <value>現在のサービスに対するその他の操作を含むメニューを開きます。</value>
+  </data>
+
+  <data name="Automation_RowInstallMenuItem_Name" xml:space="preserve">
+    <value>サービスのインストール</value>
+  </data>
+  <data name="Automation_RowInstallMenuItem_HelpText" xml:space="preserve">
+    <value>サービス構成をシステムにインストールします。</value>
+  </data>
+
+  <data name="Automation_RowUninstallMenuItem_Name" xml:space="preserve">
+    <value>サービスのアンインストール</value>
+  </data>
+  <data name="Automation_RowUninstallMenuItem_HelpText" xml:space="preserve">
+    <value>サービスをシステムからアンインストールします。</value>
+  </data>
+
+  <data name="Automation_RowRemoveMenuItem_Name" xml:space="preserve">
+    <value>サービスの削除</value>
+  </data>
+  <data name="Automation_RowRemoveMenuItem_HelpText" xml:space="preserve">
+    <value>サービスを Servy Manager の一覧から削除します。</value>
+  </data>
+
+  <data name="Automation_RowConfigMenuItem_Name" xml:space="preserve">
+    <value>サービスの構成</value>
+  </data>
+  <data name="Automation_RowConfigMenuItem_HelpText" xml:space="preserve">
+    <value>このサービスの構成アプリを開きます。</value>
+  </data>
+
+  <data name="Automation_RowExportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>現在のサービス構成を XML ファイルにエクスポートします。</value>
+  </data>
+
+  <data name="Automation_RowExportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>現在のサービス構成を JSON ファイルにエクスポートします。</value>
+  </data>
+
+  <data name="Automation_RowCopyPidMenuItem_HelpText" xml:space="preserve">
+    <value>サービスの現在のプロセス ID をクリップボードにコピーします。</value>
+  </data>
+
+  <data name="Automation_PerformanceTab_Name" xml:space="preserve">
+    <value>[パフォーマンス] タブ</value>
+  </data>
+  <data name="Automation_PerformanceTab_HelpText" xml:space="preserve">
+    <value>実行中のサービスの CPU とメモリの使用状況の統計をリアルタイムで表示します。</value>
+  </data>
+
+  <data name="Automation_ConsoleTab_Name" xml:space="preserve">
+    <value>[コンソール] タブ</value>
+  </data>
+  <data name="Automation_ConsoleTab_HelpText" xml:space="preserve">
+    <value>選択したサービスの標準出力ログと標準エラー ログをリアルタイムで表示します。</value>
+  </data>
+
+  <data name="Automation_DependenciesTab_Name" xml:space="preserve">
+    <value>[依存関係] タブ</value>
+  </data>
+  <data name="Automation_DependenciesTab_HelpText" xml:space="preserve">
+    <value>サービスの依存関係ツリーと状態の階層を表示します。</value>
+  </data>
+
+  <data name="Automation_LogsTab_Name" xml:space="preserve">
+    <value>[ログ] タブ</value>
+  </data>
+  <data name="Automation_LogsTab_HelpText" xml:space="preserve">
+    <value>すべてのサービスのシステム イベントと診断レコードの一覧を表示します。</value>
+  </data>
+
+  <data name="Automation_MainFooterText_HelpText" xml:space="preserve">
+    <value>読み込まれたサービスの総数と実行時間を表示します。</value>
+  </data>
+
+  <data name="Automation_MainShortcutInfo_HelpText" xml:space="preserve">
+    <value>F5 キーを押すとサービスの一覧が更新されます。</value>
+  </data>
+
+  <!-- Performance View Specific Automation Properties -->
+  <data name="Automation_PerformanceView_Name" xml:space="preserve">
+    <value>パフォーマンス モニター ビュー</value>
+  </data>
+  <data name="Automation_PerformanceView_HelpText" xml:space="preserve">
+    <value>選択したプロセスのリソース使用状況の統計を表示します。</value>
+  </data>
+
+  <data name="Automation_PerformanceServiceList_Name" xml:space="preserve">
+    <value>サービスの選択</value>
+  </data>
+  <data name="Automation_PerformanceServiceList_HelpText" xml:space="preserve">
+    <value>一覧からサービスを選択して、そのパフォーマンス データを表示します。</value>
+  </data>
+
+  <data name="Automation_PidValue_Name" xml:space="preserve">
+    <value>プロセス ID</value>
+  </data>
+  <data name="Automation_PidValue_HelpText" xml:space="preserve">
+    <value>現在選択されているサービス プロセスのプロセス ID を表示します。</value>
+  </data>
+
+  <data name="Automation_CopyPidButton_HelpText" xml:space="preserve">
+    <value>プロセス ID をクリップボードにコピーします。</value>
+  </data>
+
+  <data name="Automation_CpuGraphGrid_Name" xml:space="preserve">
+    <value>CPU 使用率のグラフ</value>
+  </data>
+  <data name="Automation_CpuGraphGrid_HelpText" xml:space="preserve">
+    <value>CPU 使用率 (%) の履歴グラフを表示します。</value>
+  </data>
+
+  <data name="Automation_CpuUsageLabel_Name" xml:space="preserve">
+    <value>現在の CPU 使用率</value>
+  </data>
+  <data name="Automation_CpuUsageLabel_HelpText" xml:space="preserve">
+    <value>サービス プロセスが使用している CPU の割合をリアルタイムで表示します。</value>
+  </data>
+
+  <data name="Automation_RamGraphGrid_Name" xml:space="preserve">
+    <value>RAM 使用量のグラフ</value>
+  </data>
+  <data name="Automation_RamGraphGrid_HelpText" xml:space="preserve">
+    <value>メモリ使用量の履歴グラフを表示します。</value>
+  </data>
+
+  <data name="Automation_RamUsageLabel_Name" xml:space="preserve">
+    <value>現在の RAM 使用量</value>
+  </data>
+  <data name="Automation_RamUsageLabel_HelpText" xml:space="preserve">
+    <value>サービス プロセスのメモリ使用量をリアルタイムで表示します。</value>
+  </data>
+
+  <!-- Console View Specific Automation Properties -->
+  <data name="Automation_ConsoleViewRoot_Name" xml:space="preserve">
+    <value>コンソール出力ビュー</value>
+  </data>
+  <data name="Automation_ConsoleViewRoot_HelpText" xml:space="preserve">
+    <value>選択したサービスの標準出力ログと標準エラー ログをリアルタイムで表示します。</value>
+  </data>
+
+  <data name="Automation_ConsoleServiceList_Name" xml:space="preserve">
+    <value>サービスの選択</value>
+  </data>
+  <data name="Automation_ConsoleServiceList_HelpText" xml:space="preserve">
+    <value>サービスを選択して、そのコンソール出力を表示します。</value>
+  </data>
+
+  <data name="Automation_ResumeScrollButton_Name" xml:space="preserve">
+    <value>スクロールの再開</value>
+  </data>
+  <data name="Automation_ResumeScrollButton_HelpText" xml:space="preserve">
+    <value>最新のログ エントリへの自動スクロールを再開します。</value>
+  </data>
+
+  <data name="Automation_ConsoleInstructions_Name" xml:space="preserve">
+    <value>コンソールの説明</value>
+  </data>
+  <data name="Automation_ConsoleInstructions_HelpText" xml:space="preserve">
+    <value>リアルタイムのコンソール出力用に stdout と stderr のリダイレクトを構成する方法の説明を表示します。</value>
+  </data>
+
+  <data name="Automation_ConsoleFilterTextBox_Name" xml:space="preserve">
+    <value>ログ フィルター</value>
+  </data>
+  <data name="Automation_ConsoleFilterTextBox_HelpText" xml:space="preserve">
+    <value>表示するログ行をフィルター処理するテキストを入力します。</value>
+  </data>
+
+  <data name="Automation_ConsoleLogList_Name" xml:space="preserve">
+    <value>ログ ターミナル</value>
+  </data>
+  <data name="Automation_ConsoleLogList_HelpText" xml:space="preserve">
+    <value>スクロールするログ出力を表示します。選択した行をコピーするには、コンテキスト メニューを使用します。</value>
+  </data>
+
+  <data name="Automation_CopyLogMenuItem_Name" xml:space="preserve">
+    <value>選択範囲のコピー</value>
+  </data>
+  <data name="Automation_CopyLogMenuItem_HelpText" xml:space="preserve">
+    <value>選択したコンソール ログの行をクリップボードにコピーします。</value>
+  </data>
+
+  <!-- Dependencies View Specific Automation Properties -->
+  <data name="Automation_DependenciesViewRoot_Name" xml:space="preserve">
+    <value>依存関係ビュー</value>
+  </data>
+  <data name="Automation_DependenciesViewRoot_HelpText" xml:space="preserve">
+    <value>サービスの一覧と、その階層的な依存関係を表示します。</value>
+  </data>
+
+  <data name="Automation_DependenciesServiceList_Name" xml:space="preserve">
+    <value>サービスの選択</value>
+  </data>
+  <data name="Automation_DependenciesServiceList_HelpText" xml:space="preserve">
+    <value>サービスを検索して選択し、その依存関係を表示します。</value>
+  </data>
+
+  <data name="Automation_DependenciesRefreshButton_HelpText" xml:space="preserve">
+    <value>選択したサービスの依存関係ツリーを再読み込みします。</value>
+  </data>
+
+  <data name="Automation_DependenciesExpandAllButton_HelpText" xml:space="preserve">
+    <value>依存関係ツリーのすべての分岐を展開します。</value>
+  </data>
+
+  <data name="Automation_DependenciesCollapseAllButton_HelpText" xml:space="preserve">
+    <value>依存関係ツリーのすべての分岐を折りたたみます。</value>
+  </data>
+
+  <data name="Automation_DependenciesLegendInfo_Name" xml:space="preserve">
+    <value>依存関係の凡例情報</value>
+  </data>
+  <data name="Automation_DependenciesLegendInfo_HelpText" xml:space="preserve">
+    <value>Windows のサービス コントロール マネージャーによるサービスの依存関係ツリーのしくみについての情報を表示します。</value>
+  </data>
+
+  <data name="Automation_DependenciesTreeView_Name" xml:space="preserve">
+    <value>依存関係の階層ツリー</value>
+  </data>
+  <data name="Automation_DependenciesTreeView_HelpText" xml:space="preserve">
+    <value>選択したサービスの再帰的な依存関係を表示します。</value>
+  </data>
+
+  <data name="Automation_DependenciesUsageInfo_Name" xml:space="preserve">
+    <value>使用方法の情報</value>
+  </data>
+  <data name="Automation_DependenciesUsageInfo_HelpText" xml:space="preserve">
+    <value>ツリー ノードの状態を示す色を表示します: 緑は実行中、赤は停止、オレンジは循環、オレンジの警告アイコンは使用できない依存関係を示します。</value>
+  </data>
+
+  <data name="Automation_DependenciesShortcutInfo_Name" xml:space="preserve">
+    <value>ショートカットの情報</value>
+  </data>
+  <data name="Automation_DependenciesShortcutInfo_HelpText" xml:space="preserve">
+    <value>F5 キーを押すと依存関係ツリーが更新されます。</value>
+  </data>
+
+  <!-- Logs View Specific Automation Properties -->
+  <data name="Automation_LogsViewRoot_Name" xml:space="preserve">
+    <value>ログ ビュー</value>
+  </data>
+  <data name="Automation_LogsViewRoot_HelpText" xml:space="preserve">
+    <value>サービスのシステム イベントと診断レコードの一覧を表示します。</value>
+  </data>
+
+  <data name="Automation_LogsLevelComboBox_Name" xml:space="preserve">
+    <value>レベルでフィルター</value>
+  </data>
+  <data name="Automation_LogsLevelComboBox_HelpText" xml:space="preserve">
+    <value>表示するログ エントリをフィルター処理するログの重要度レベルを選択します。</value>
+  </data>
+
+  <data name="Automation_LogsFromDatePicker_Name" xml:space="preserve">
+    <value>開始日でフィルター</value>
+  </data>
+  <data name="Automation_LogsFromDatePicker_HelpText" xml:space="preserve">
+    <value>ログ エントリをフィルター処理する開始日を選択します。</value>
+  </data>
+
+  <data name="Automation_LogsToDatePicker_Name" xml:space="preserve">
+    <value>終了日でフィルター</value>
+  </data>
+  <data name="Automation_LogsToDatePicker_HelpText" xml:space="preserve">
+    <value>ログ エントリをフィルター処理する終了日を選択します。</value>
+  </data>
+
+  <data name="Automation_LogsKeywordTextBox_Name" xml:space="preserve">
+    <value>キーワードでフィルター</value>
+  </data>
+  <data name="Automation_LogsKeywordTextBox_HelpText" xml:space="preserve">
+    <value>ログ メッセージ内を検索するキーワードを入力します。</value>
+  </data>
+
+  <data name="Automation_LogsSearchButton_HelpText" xml:space="preserve">
+    <value>現在のレベル、日付、キーワードのフィルターでログを検索します。</value>
+  </data>
+
+  <data name="Automation_LogsDataGrid_Name" xml:space="preserve">
+    <value>システム ログ</value>
+  </data>
+  <data name="Automation_LogsDataGrid_HelpText" xml:space="preserve">
+    <value>フィルター処理された診断ログ エントリの一覧を表示します。</value>
+  </data>
+
+  <data name="Automation_LogsTimeColumnHeader_Name" xml:space="preserve">
+    <value>日時列</value>
+  </data>
+
+  <data name="Automation_LogsLevelColumnHeader_Name" xml:space="preserve">
+    <value>レベル列</value>
+  </data>
+
+  <data name="Automation_LogsLevelIcon_Name" xml:space="preserve">
+    <value>ログ レベル アイコン</value>
+  </data>
+
+  <data name="Automation_LogsEventIdColumnHeader_Name" xml:space="preserve">
+    <value>イベント ID 列</value>
+  </data>
+
+  <data name="Automation_LogsMessageColumnHeader_Name" xml:space="preserve">
+    <value>メッセージ列</value>
+  </data>
+
+  <data name="Automation_LogsTimeColumnCell_HelpText" xml:space="preserve">
+    <value>ログ エントリのタイムスタンプを表示します。</value>
+  </data>
+  <data name="Automation_LogsLevelColumnCell_HelpText" xml:space="preserve">
+    <value>ログ エントリの重要度レベルを表示します。</value>
+  </data>
+  <data name="Automation_LogsEventIdColumnCell_HelpText" xml:space="preserve">
+    <value>ログ エントリの Windows イベント ID を表示します。</value>
+  </data>
+  <data name="Automation_LogsMessageColumnCell_HelpText" xml:space="preserve">
+    <value>ログ エントリのメッセージ テキストを表示します。</value>
+  </data>
+
+  <data name="Automation_LogsGridSplitter_Name" xml:space="preserve">
+    <value>ログ詳細のサイズ変更</value>
+  </data>
+  <data name="Automation_LogsGridSplitter_HelpText" xml:space="preserve">
+    <value>ドラッグして、ログの一覧とログ メッセージの詳細ウィンドウの比率を調整します。</value>
+  </data>
+
+  <data name="Automation_LogDetailsTextBox_Name" xml:space="preserve">
+    <value>ログ エントリの詳細</value>
+  </data>
+  <data name="Automation_LogDetailsTextBox_HelpText" xml:space="preserve">
+    <value>選択したログ エントリのメッセージ全文と詳細を表示します。</value>
+  </data>
+
+  <data name="Automation_LogsFooterText_HelpText" xml:space="preserve">
+    <value>現在のログ フィルターの合計件数とクエリの実行時間を表示します。</value>
+  </data>
+
+  <data name="Automation_LogsShortcutInfo_Name" xml:space="preserve">
+    <value>ショートカットの情報</value>
+  </data>
+  <data name="Automation_LogsShortcutInfo_HelpText" xml:space="preserve">
+    <value>F5 キーを押すとログが更新されます。</value>
+  </data>
+
+  <data name="Automation_SidebarSearchTextBox_Name" xml:space="preserve">
+    <value>サービスの検索 (サイドバー)</value>
+  </data>
+  <data name="Automation_SidebarSearchTextBox_HelpText" xml:space="preserve">
+    <value>キーワードを入力してサービスを検索します。</value>
+  </data>
+  <data name="Automation_SidebarServicesDataGrid_Name" xml:space="preserve">
+    <value>サービスの一覧 (サイドバー)</value>
+  </data>
+  <data name="Automation_SidebarSearchButton_HelpText" xml:space="preserve">
+    <value>検索ボックスに入力されたテキストで検索を実行します。</value>
+  </data>
+  <data name="Automation_SidebarServicesDataGrid_HelpText" xml:space="preserve">
+    <value>現在の検索に一致するサービスの一覧です。監視するサービスを選択してください。</value>
+  </data>
+  <data name="Automation_ServiceNameHeader_Name" xml:space="preserve">
+    <value>サービス名ヘッダー</value>
+  </data>
+  <data name="Msg_ClipboardCopyFailed" xml:space="preserve">
+    <value>内容をクリップボードにコピーできませんでした。クリップボードが別のアプリケーションで使用されている可能性があります。</value>
+  </data>
+  <data name="Text_NotAvailable" xml:space="preserve">
+    <value>N/A</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Automation_LanguageMenu_HelpText" xml:space="preserve">
+    <value>Servy Manager の表示言語を選択します。</value>
+  </data>
+  <data name="Automation_LanguageSystemMenuItem_HelpText" xml:space="preserve">
+    <value>Windows の表示言語に従います。</value>
+  </data>
+  <data name="Automation_LanguageEnglishMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager を英語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageChineseSimplifiedMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager を中国語 (簡体字) で表示します。</value>
+  </data>
+  <data name="Automation_LanguageFrenchMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager をフランス語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageGermanMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager をドイツ語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageSpanishMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager をスペイン語で表示します。</value>
+  </data>
+  <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager を日本語で表示します。</value>
+  </data>
+</root>
