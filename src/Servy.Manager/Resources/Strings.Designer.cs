@@ -2167,33 +2167,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 简体中文 (Chinese, Simplified).
-        /// </summary>
-        public static string Language_ChineseSimplified {
-            get {
-                return ResourceManager.GetString("Language_ChineseSimplified", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to English.
-        /// </summary>
-        public static string Language_English {
-            get {
-                return ResourceManager.GetString("Language_English", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Follow system language.
-        /// </summary>
-        public static string Language_System {
-            get {
-                return ResourceManager.GetString("Language_System", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to All.
         /// </summary>
         public static string LogLevel_All {

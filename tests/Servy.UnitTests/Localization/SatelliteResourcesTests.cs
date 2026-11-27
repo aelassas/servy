@@ -8,7 +8,7 @@ namespace Servy.UnitTests.Localization
     {
         [Theory]
         [InlineData("Menu_Language")]
-        [InlineData("Language_System")]
+        [InlineData("Automation_LanguageSystemMenuItem_HelpText")]
         [InlineData("Automation_LanguageMenu_HelpText")]
         public void ResourceManager_ChineseCulture_LoadsTheTranslationFromTheSatelliteAssembly(string key)
         {
