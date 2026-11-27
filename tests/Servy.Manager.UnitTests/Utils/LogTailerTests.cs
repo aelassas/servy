@@ -310,6 +310,30 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// The byte order mark is skipped only when the history slice starts at offset 0 (#8210). When the
+        /// window starts after a newline further into a marked file, its first byte is the first byte of a
+        /// real line and must be kept, or the oldest history line loses its first three characters.
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryAsync_Utf8FileWithByteOrderMarkAndWindowPastOffsetZero_KeepsTheOldestLineWhole()
+        {
+            // Arrange - three lines with a mark, two requested, so the window starts after "first\n"
+            File.WriteAllText(_tempFilePath, "first\nsecond-line\nthird\n", EncodingWithByteOrderMark("utf-8"));
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 2, TestContext.Current.CancellationToken);
+
+                // Assert - one string at a time, for the same net48 comparer reason as the test above
+                Assert.Equal(2, result.Lines.Count);
+                Assert.Equal("second-line", result.Lines[0].Text);
+                Assert.Equal("third", result.Lines[1].Text);
+                Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
+            }
+        }
+
         [Theory]
         [InlineData("utf-8")]
         [InlineData("utf-16le")]
