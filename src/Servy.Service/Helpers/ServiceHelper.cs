@@ -584,7 +584,7 @@ namespace Servy.Service.Helpers
         /// automatically masking values for keys recognized as sensitive.
         /// </summary>
         /// <param name="vars">The collection of environment variables to process.</param>
-        /// <returns>A semicolon-separated string of key-value pairs, or "None" if the collection is null.</returns>
+        /// <returns>A semicolon-separated string of key-value pairs, or "None" if the collection is null or empty.</returns>
         private static string EnvironmentVariablesToString(IEnumerable<EnvironmentVariable> vars)
         {
             if (vars == null || !vars.Any()) return "None";
