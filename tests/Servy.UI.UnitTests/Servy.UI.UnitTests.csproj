@@ -133,6 +133,7 @@
     <Compile Include="Localization\LanguageDisplayNamesTests.cs" />
     <Compile Include="Localization\LanguageSwitcherTests.cs" />
     <Compile Include="Localization\LocalizationCultureTests.cs" />
+    <Compile Include="Localization\SatelliteResourcesTests.cs" />
     <Compile Include="Localization\StartupCultureTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Validation\ServiceConfigurationValidatorTests.cs" />
