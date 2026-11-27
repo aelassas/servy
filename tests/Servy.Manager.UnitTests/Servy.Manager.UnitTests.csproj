@@ -149,6 +149,7 @@
     <Compile Include="Converters\StatusConverterTests.cs" />
     <Compile Include="Design\DesignTimeServiceCommandsTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
+    <Compile Include="Localization\LanguageMenuOrderTests.cs" />
     <Compile Include="Localization\SatelliteResourcesTests.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />
     <Compile Include="Models\LogEntryModelTests.cs" />
