@@ -448,7 +448,8 @@ namespace Servy.Infrastructure.Data
 
             if (string.IsNullOrWhiteSpace(incoming.Name)) return;
 
-            // Fetch current state without decryption (performance optimization)
+            // Fetch the stored row without decrypting it: incoming is already the encrypted clone, so the password
+            // copied into it must still be ciphertext, or it would be written to the database in clear text.
             var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
 
             if (existing != null)
