@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-27T05:20:43Z
+> Generated on: 2026-11-27T06:12:13Z
 
 ---
 
@@ -6428,11 +6428,13 @@ To counter these vectors, the engine pipes all configuration paths through a str
 
 1. **Explicit UNC Inspection:** Rejects any raw path strings starting with standard network prefixes (`\\`) or parsing as a remote URI.
 2. **Drive Interface Queries:** Evaluates the target volume via `DriveInfo` to proactively block network-backed logical drive letters.
-3. **Reparse Point Ancestor Walks:** Recursively traces the full directory tree to verify that no parent or sibling paths utilize symbolic links or directory junctions.
+3. **Reparse Point Ancestor Walks:** Walks up from the target's parent directory to the drive root and refuses the path when any ancestor is a symbolic link, a directory junction or another reparse point (a volume mount point is allowed).
 4. **File-Level Symlink Evaluation:** Directly inspects filesystem attributes to confirm the target file is a physical, non-symbolic entity.
 5. **Reserved Device Blocks:** Prevents spoofing attempts using legacy system device designations (e.g., `CON`, `PRN`, `AUX`).
 6. **Protected System Directory Fencing:** Prevents configuration loading out of primary administrative operating system paths.
-7. **Win32 Kernel Handle Finalization:** Opens a temporary restricted read handle and resolves the target's final canonical path via `GetFinalPathNameByHandle`, ensuring junctions, subst mappings, and virtual devices cannot conceal a UNC target.
+7. **File Type Allow-List:** Accepts only `.json` and `.xml` files.
+8. **Existence Check (import only):** Refuses a file that does not exist.
+9. **Win32 Kernel Handle Finalization:** Opens the file and resolves its final path with `GetFinalPathNameByHandle`. The file is refused when the final path is a UNC path or lies under a protected system directory, when the handle does not name the very path that was validated (an ancestor junction, symlink or `subst` drive swapped in after the checks above), or when the file has more than one hard link.
 
 ## Supply Chain and Trust
 
