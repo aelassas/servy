@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+    <value>Élévation requise</value>
+  </data>
+  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+    <value>Servy Manager nécessite des privilèges d'administrateur pour gérer les services système.</value>
+  </data>
+
+  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+    <value>Alerte de sécurité</value>
+  </data>
+  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+    <value>Risque de sécurité critique : votre système utilise un moteur SQLite obsolète ({0}). Cette version de l'application nécessite SQLite {1} ou version ultérieure pour corriger la vulnérabilité CVE-2025-6965.</value>
+  </data>
+
+  <!-- Splash screen -->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>Chargement de Servy Manager...</value>
+  </data>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>Importer</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>Importer une configuration XML...</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>Importer une configuration JSON...</value>
+  </data>
+
+  <data name="Menu_Config" xml:space="preserve">
+    <value>Configurateur</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>Aide</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>Aide / Documentation</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>Rechercher des mises à jour</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>À propos de Servy Manager</value>
+  </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>Affichage</value>
+  </data>
+  <data name="Menu_ResetWindowLayout" xml:space="preserve">
+    <value>Réinitialiser la disposition de la fenêtre</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+    <value>
+Servy Manager {0}
+
+Servy Manager offre une interface claire et simple pour gérer les services Windows créés avec Servy. Démarrez, arrêtez, configurez et surveillez vos services en toute simplicité.
+
+Conçu avec {1}
+
+Distribué sous licence MIT.
+
+Copyright © {2} Akram El Assas. Tous droits réservés.</value>
+  </data>
+
+  <!-- Tabs -->
+  <data name="Label_ServicesTab" xml:space="preserve">
+    <value>Services</value>
+  </data>
+  <data name="Label_LogsTab" xml:space="preserve">
+    <value>Journaux</value>
+  </data>
+  <data name="Label_PerformanceTab" xml:space="preserve">
+    <value>Performances</value>
+  </data>
+  <data name="Label_ConsoleTab" xml:space="preserve">
+    <value>Console</value>
+  </data>
+  <data name="Label_DependenciesTab" xml:space="preserve">
+    <value>Dépendances</value>
+  </data>
+
+  <data name="Console_Info" xml:space="preserve">
+    <value>Activez la redirection stdout/stderr du service pour surveiller la sortie console en direct</value>
+  </data>
+  <data name="Label_Copy" xml:space="preserve">
+    <value>Copier</value>
+  </data>
+  <data name="Button_Resume" xml:space="preserve">
+    <value>▶ Reprendre</value>
+  </data>
+  <data name="Tooltip_Resume" xml:space="preserve">
+    <value>Reprendre les mises à jour en direct</value>
+  </data>
+
+  <data name="Dependencies_Info" xml:space="preserve">
+    <value>Arborescence des dépendances du service (via le SCM)</value>
+  </data>
+  <data name="Button_Refresh" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="Tooltip_Refresh" xml:space="preserve">
+    <value>Actualiser l'arborescence des dépendances du service</value>
+  </data>
+  <data name="Button_ExpandAll" xml:space="preserve">
+    <value>Développer tout</value>
+  </data>
+  <data name="Tooltip_ExpandAll" xml:space="preserve">
+    <value>Développer tous les nœuds de l'arborescence des dépendances</value>
+  </data>
+  <data name="Button_CollapseAll" xml:space="preserve">
+    <value>Réduire tout</value>
+  </data>
+  <data name="Tooltip_CollapseAll" xml:space="preserve">
+    <value>Réduire tous les nœuds de l'arborescence des dépendances</value>
+  </data>
+  <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
+    <value>État : En cours d'exécution (vert), Arrêté (rouge), Cycle (orange), Indisponible (icône d'avertissement orange)</value>
+  </data>
+  <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
+    <value>Appuyez sur F5 pour actualiser l'arborescence des dépendances</value>
+  </data>
+  <data name="Tooltip_Cycle" xml:space="preserve">
+    <value>Dépendance circulaire détectée</value>
+  </data>
+  <data name="Tooltip_ServiceRunning" xml:space="preserve">
+    <value>Ce service est en cours d'exécution</value>
+  </data>
+  <data name="Tooltip_ServiceStopped" xml:space="preserve">
+    <value>Ce service est arrêté</value>
+  </data>
+
+  <!-- Search -->
+  <data name="Button_Search" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Button_Searching" xml:space="preserve">
+    <value>Recherche...</value>
+  </data>
+  <data name="Label_F5_Shortcut" xml:space="preserve">
+    <value>Les états des services s'actualisent automatiquement - Appuyez sur F5 pour actualiser toute la liste</value>
+  </data>
+  <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
+    <value>Appuyez sur F5 pour actualiser les journaux</value>
+  </data>
+
+  <!-- Services DataGrid -->
+  <data name="Column_Name" xml:space="preserve">
+    <value>Nom</value>
+  </data>
+  <data name="Column_DisplayName" xml:space="preserve">
+    <value>Nom complet</value>
+  </data>
+  <data name="Column_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Column_Status" xml:space="preserve">
+    <value>État</value>
+  </data>
+  <data name="Column_StartupType" xml:space="preserve">
+    <value>Type de démarrage</value>
+  </data>
+  <data name="Column_LogOnAs" xml:space="preserve">
+    <value>Ouvrir une session en tant que</value>
+  </data>
+
+  <!-- Built-in service accounts (Log On As column values) -->
+  <data name="Account_LocalSystem" xml:space="preserve">
+    <value>Système local</value>
+  </data>
+  <data name="Account_LocalService" xml:space="preserve">
+    <value>Service local</value>
+  </data>
+  <data name="Account_NetworkService" xml:space="preserve">
+    <value>Service réseau</value>
+  </data>
+
+  <!-- Status -->
+  <data name="Status_Stopped" xml:space="preserve">
+    <value>Arrêté</value>
+  </data>
+  <data name="Status_StartPending" xml:space="preserve">
+    <value>Démarrage en cours</value>
+  </data>
+  <data name="Status_StopPending" xml:space="preserve">
+    <value>Arrêt en cours</value>
+  </data>
+  <data name="Status_Running" xml:space="preserve">
+    <value>En cours d'exécution</value>
+  </data>
+  <data name="Status_ContinuePending" xml:space="preserve">
+    <value>Reprise en cours</value>
+  </data>
+  <data name="Status_PausePending" xml:space="preserve">
+    <value>Suspension en cours</value>
+  </data>
+  <data name="Status_Paused" xml:space="preserve">
+    <value>Suspendu</value>
+  </data>
+  <data name="Status_NotInstalled" xml:space="preserve">
+    <value>Non installé</value>
+  </data>
+  <data name="Status_Unknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+
+  <data name="Label_Fetching" xml:space="preserve">
+    <value>Récupération...</value>
+  </data>
+
+  <!-- Actions -->
+  <data name="Button_Start" xml:space="preserve">
+    <value>Démarrer</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>Arrêter</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>Redémarrer</value>
+  </data>
+  <data name="Button_More" xml:space="preserve">
+    <value>Autres actions</value>
+  </data>
+
+  <data name="Button_StartSelected" xml:space="preserve">
+    <value>Démarrer la sélection</value>
+  </data>
+  <data name="Button_StopSelected" xml:space="preserve">
+    <value>Arrêter la sélection</value>
+  </data>
+  <data name="Button_RestartSelected" xml:space="preserve">
+    <value>Redémarrer la sélection</value>
+  </data>
+
+  <data name="Msg_NoServicesSelected" xml:space="preserve">
+    <value>Aucun service sélectionné.</value>
+  </data>
+  <data name="Confirm_StartSelectedServices" xml:space="preserve">
+    <value>Démarrer les services sélectionnés ?</value>
+  </data>
+  <data name="Confirm_StopSelectedServices" xml:space="preserve">
+    <value>Arrêter les services sélectionnés ?</value>
+  </data>
+  <data name="Confirm_RestartSelectedServices" xml:space="preserve">
+    <value>Redémarrer les services sélectionnés ?</value>
+  </data>
+  <data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
+    <value>L'opération a réussi.</value>
+  </data>
+  <data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
+    <value>Une erreur s'est produite lors de l'exécution de l'opération sur : {0}</value>
+  </data>
+  <data name="Msg_AllOperationsFailed" xml:space="preserve">
+    <value>Toutes les opérations ont échoué.</value>
+  </data>
+
+  <data name="Button_Install" xml:space="preserve">
+    <value>Installer</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>Désinstaller</value>
+  </data>
+  <data name="Button_Remove" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Button_Config" xml:space="preserve">
+    <value>Ouvrir la configuration</value>
+  </data>
+  <data name="Button_ExportXML" xml:space="preserve">
+    <value>Exporter en XML</value>
+  </data>
+  <data name="Button_ExportJSON" xml:space="preserve">
+    <value>Exporter en JSON</value>
+  </data>
+
+  <!-- Startup Type Items -->
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>Automatique</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
+  </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>Automatique (différé)</value>
+    <comment>Compact label intended for narrow grid columns in Servy.Manager UI</comment>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>Manuel</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>Désactivé</value>
+  </data>
+  <data name="StartupType_Unknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>Impossible de charger la configuration de service XML.</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>Impossible de charger la configuration de service JSON.</value>
+  </data>
+  <data name="ImportXml_Success" xml:space="preserve">
+    <value>La configuration XML a été importée.</value>
+  </data>
+  <data name="ImportJson_Success" xml:space="preserve">
+    <value>La configuration JSON a été importée.</value>
+  </data>
+  <data name="ImportXml_Error" xml:space="preserve">
+    <value>Impossible d'importer la configuration XML.</value>
+  </data>
+  <data name="ImportJson_Error" xml:space="preserve">
+    <value>Impossible d'importer la configuration JSON.</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>Exporter la configuration XML</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>Exporter la configuration JSON</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>La configuration XML du service « {0} » a été exportée.</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>La configuration JSON du service « {0} » a été exportée.</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
+    <value>Voulez-vous vraiment désinstaller le service « {0} » ?
+
+Toute la configuration du service sera définitivement perdue et ne pourra pas être récupérée.</value>
+  </data>
+  <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
+    <value>Voulez-vous vraiment supprimer le service « {0} » ?
+
+Toute la configuration du service sera définitivement perdue et ne pourra pas être récupérée.</value>
+  </data>
+  <data name="Msg_DesktopAppNotFound" xml:space="preserve">
+    <value>Application de bureau Servy introuvable.</value>
+  </data>
+
+  <!-- Logs View -->
+  <data name="Label_Level" xml:space="preserve">
+    <value>Niveau :</value>
+  </data>
+  <data name="Label_From" xml:space="preserve">
+    <value>Du :</value>
+  </data>
+  <data name="Label_To" xml:space="preserve">
+    <value>Au :</value>
+  </data>
+  <data name="Label_Keyword" xml:space="preserve">
+    <value>Mot clé :</value>
+  </data>
+
+  <data name="Column_Time" xml:space="preserve">
+    <value>Heure</value>
+  </data>
+  <data name="Column_Level" xml:space="preserve">
+    <value>Niveau</value>
+  </data>
+  <data name="Column_EventId" xml:space="preserve">
+    <value>ID de l'événement</value>
+  </data>
+  <data name="Column_Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+
+  <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
+    <value>Une erreur s'est produite lors du changement d'onglet. Réessayez.</value>
+  </data>
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>Un service portant le nom « {0} » existe déjà. Voulez-vous le remplacer ?
+
+Si le service est désactivé et marqué pour suppression, l'installation échouera tant que vous n'aurez pas redémarré l'ordinateur.</value>
+  </data>
+  <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
+    <value>Un service portant le nom « {0} » existe déjà. Voulez-vous le remplacer ?
+
+Après l'importation, vous devez cliquer sur Installer puis redémarrer le service pour que les modifications prennent effet.
+Si le service est désactivé et marqué pour suppression, l'installation échouera tant que vous n'aurez pas redémarré l'ordinateur.</value>
+  </data>
+
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>Le service spécifié est désactivé.</value>
+  </data>
+
+  <!-- PID -->
+  <data name="Column_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Button_CopyPid" xml:space="preserve">
+    <value>Copier le PID</value>
+  </data>
+  <data name="Msg_PidCopied" xml:space="preserve">
+    <value>PID copié dans le Presse-papiers.</value>
+  </data>
+  <data name="Msg_PidCopyFailed" xml:space="preserve">
+    <value>Impossible de copier le PID dans le Presse-papiers.</value>
+  </data>
+
+  <!-- CPU/RAM -->
+  <data name="Column_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Column_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!-- Performance tab -->
+  <data name="Column_Service" xml:space="preserve">
+    <value>Service</value>
+  </data>
+  <data name="Label_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Label_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Label_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!-- Console Tab -->
+  <data name="Label_ConsoleFilter" xml:space="preserve">
+    <value>🔍 Filtre :</value>
+  </data>
+
+  <!-- Miscellaneous -->
+  <data name="Msg_DesktopAppLaunchFailed" xml:space="preserve">
+    <value>Impossible de lancer l'application de bureau Servy.</value>
+  </data>
+
+  <!-- Service Footer Templates -->
+  <data name="Footer_Service_None" xml:space="preserve">
+    <value>Aucun service chargé en {1}</value>
+  </data>
+  <data name="Footer_Service_One" xml:space="preserve">
+    <value>1 service chargé en {1}</value>
+  </data>
+  <data name="Footer_Service_Many" xml:space="preserve">
+    <value>{0} services chargés en {1}</value>
+  </data>
+
+  <!-- Logs Tab -->
+  <data name="LogLevel_All" xml:space="preserve">
+    <value>Tous</value>
+  </data>
+  <data name="LogLevel_Error" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="LogLevel_Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="LogLevel_Warning" xml:space="preserve">
+    <value>Avertissement</value>
+  </data>
+  <data name="Footer_Log_None" xml:space="preserve">
+    <value>Aucun journal trouvé en {1}</value>
+  </data>
+  <data name="Footer_Log_One" xml:space="preserve">
+    <value>1 journal trouvé en {1}</value>
+  </data>
+  <data name="Footer_Log_Many" xml:space="preserve">
+    <value>{0} journaux trouvés en {1}</value>
+  </data>
+
+  <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
+    <value>Impossible de charger l'arborescence des dépendances du service.</value>
+  </data>
+  <data name="Tooltip_DependencyUnavailable" xml:space="preserve">
+    <value>Cette dépendance est indisponible ou inaccessible.</value>
+  </data>
+
+  <!-- Automation Properties -->
+  <!-- Conventions: AutomationProperties.HelpText entries use the IMPERATIVE mood ("Enter...", "Select...", "Browse..."). -->
+  <data name="Automation_MainWindow_Name" xml:space="preserve">
+    <value>Fenêtre Servy Manager</value>
+  </data>
+  <data name="Automation_MainWindow_HelpText" xml:space="preserve">
+    <value>Configurer les paramètres des services et surveiller leur exécution à l'aide de l'interface Servy Manager.</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>Menu principal</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>Accéder aux options permettant d'importer une configuration, de configurer les paramètres, de réinitialiser la disposition de la fenêtre, de changer la langue d'affichage et d'accéder à l'aide.</value>
+  </data>
+
+  <data name="Automation_ImportMenu_HelpText" xml:space="preserve">
+    <value>Ouvrir un menu pour importer des configurations de service.</value>
+  </data>
+  <data name="Automation_ImportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>Importer une configuration de service à partir d'un fichier XML.</value>
+  </data>
+  <data name="Automation_ImportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>Importer une configuration de service à partir d'un fichier JSON.</value>
+  </data>
+
+  <data name="Automation_ConfigMenu_HelpText" xml:space="preserve">
+    <value>Ouvrir l'application de configuration pour le service sélectionné.</value>
+  </data>
+
+  <data name="Automation_ViewMenu_HelpText" xml:space="preserve">
+    <value>Ouvrir un menu contenant les options de disposition de la fenêtre.</value>
+  </data>
+  <data name="Automation_ResetWindowLayoutMenuItem_HelpText" xml:space="preserve">
+    <value>Rétablir la taille, la position et la largeur des colonnes par défaut de la fenêtre.</value>
+  </data>
+
+  <data name="Automation_HelpMenu_HelpText" xml:space="preserve">
+    <value>Ouvrir un menu contenant la documentation et les options de mise à jour.</value>
+  </data>
+  <data name="Automation_DocMenuItem_HelpText" xml:space="preserve">
+    <value>Ouvrir la documentation officielle de Servy.</value>
+  </data>
+  <data name="Automation_CheckUpdatesMenuItem_HelpText" xml:space="preserve">
+    <value>Vérifier si une version plus récente de Servy est disponible.</value>
+  </data>
+  <data name="Automation_AboutMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher les informations sur l'application et les mentions de copyright.</value>
+  </data>
+
+  <data name="Automation_MainTabControl_Name" xml:space="preserve">
+    <value>Onglets de navigation principaux</value>
+  </data>
+  <data name="Automation_MainTabControl_HelpText" xml:space="preserve">
+    <value>Basculer entre les vues Services, Performances, Console, Dépendances et Journaux.</value>
+  </data>
+
+  <data name="Automation_MainTab_Name" xml:space="preserve">
+    <value>Onglet Services</value>
+  </data>
+  <data name="Automation_MainTab_HelpText" xml:space="preserve">
+    <value>Afficher la liste principale des services gérés.</value>
+  </data>
+
+  <data name="Automation_SearchTextBox_Name" xml:space="preserve">
+    <value>Rechercher des services</value>
+  </data>
+  <data name="Automation_SearchTextBox_HelpText" xml:space="preserve">
+    <value>Tapez un mot clé pour filtrer la liste des services.</value>
+  </data>
+
+  <data name="Automation_SearchButton_HelpText" xml:space="preserve">
+    <value>Lancer la recherche de services.</value>
+  </data>
+
+  <data name="Automation_ServicesDataGrid_Name" xml:space="preserve">
+    <value>Liste des services</value>
+  </data>
+  <data name="Automation_ServicesDataGrid_HelpText" xml:space="preserve">
+    <value>Afficher et gérer la liste des services.</value>
+  </data>
+
+  <data name="Automation_SelectAllColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Sélectionner tous les services</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_Name" xml:space="preserve">
+    <value>Sélectionner tous les services</value>
+  </data>
+  <data name="Automation_SelectAllServicesCheckBox_HelpText" xml:space="preserve">
+    <value>Sélectionner ou désélectionner tous les services de la liste.</value>
+  </data>
+
+  <data name="Automation_SelectServiceCheckBox_Name" xml:space="preserve">
+    <value>Sélectionner le service</value>
+  </data>
+  <data name="Automation_SelectServiceCheckBox_HelpText" xml:space="preserve">
+    <value>Sélectionner ce service pour les actions groupées.</value>
+  </data>
+
+  <data name="Automation_NameColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Nom</value>
+  </data>
+  <data name="Automation_NameColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher le nom du service.</value>
+  </data>
+
+  <data name="Automation_DisplayNameColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Nom complet</value>
+  </data>
+  <data name="Automation_DisplayNameColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher le nom complet du service.</value>
+  </data>
+
+  <data name="Automation_DescriptionColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Description</value>
+  </data>
+  <data name="Automation_DescriptionColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher la description du service.</value>
+  </data>
+
+  <data name="Automation_StatusColumnHeader_Name" xml:space="preserve">
+    <value>Colonne État</value>
+  </data>
+  <data name="Automation_StatusColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher l'état actuel du service.</value>
+  </data>
+
+  <data name="Automation_StartupTypeColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Type de démarrage</value>
+  </data>
+  <data name="Automation_StartupTypeColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher le type de démarrage configuré pour le service.</value>
+  </data>
+
+  <data name="Automation_LogOnAsColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Ouvrir une session en tant que</value>
+  </data>
+  <data name="Automation_LogOnAsColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher le compte d'utilisateur sous lequel s'exécute le service.</value>
+  </data>
+
+  <data name="Automation_PidColumnHeader_Name" xml:space="preserve">
+    <value>Colonne PID</value>
+  </data>
+  <data name="Automation_PidColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher l'identificateur de processus (PID) du service en cours d'exécution.</value>
+  </data>
+
+  <data name="Automation_CpuColumnHeader_Name" xml:space="preserve">
+    <value>Colonne CPU</value>
+  </data>
+  <data name="Automation_CpuColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher l'utilisation actuelle du processeur par le service.</value>
+  </data>
+
+  <data name="Automation_RamColumnHeader_Name" xml:space="preserve">
+    <value>Colonne RAM</value>
+  </data>
+  <data name="Automation_RamColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher l'utilisation actuelle de la mémoire RAM par le service.</value>
+  </data>
+
+  <data name="Automation_ActionsColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Actions</value>
+  </data>
+
+  <data name="Automation_StartSelectedButton_HelpText" xml:space="preserve">
+    <value>Démarrer tous les services sélectionnés.</value>
+  </data>
+
+  <data name="Automation_StopSelectedButton_HelpText" xml:space="preserve">
+    <value>Arrêter tous les services sélectionnés.</value>
+  </data>
+
+  <data name="Automation_RestartSelectedButton_HelpText" xml:space="preserve">
+    <value>Redémarrer tous les services sélectionnés.</value>
+  </data>
+
+  <data name="Automation_StartServiceButton_Name" xml:space="preserve">
+    <value>Démarrer le service</value>
+  </data>
+  <data name="Automation_StartServiceButton_HelpText" xml:space="preserve">
+    <value>Démarrer le service actuel.</value>
+  </data>
+
+  <data name="Automation_StopServiceButton_Name" xml:space="preserve">
+    <value>Arrêter le service</value>
+  </data>
+  <data name="Automation_StopServiceButton_HelpText" xml:space="preserve">
+    <value>Arrêter le service actuel.</value>
+  </data>
+
+  <data name="Automation_RestartServiceButton_Name" xml:space="preserve">
+    <value>Redémarrer le service</value>
+  </data>
+  <data name="Automation_RestartServiceButton_HelpText" xml:space="preserve">
+    <value>Redémarrer le service actuel.</value>
+  </data>
+
+  <data name="Automation_MoreActionsButton_HelpText" xml:space="preserve">
+    <value>Ouvrir un menu proposant d'autres actions pour le service actuel.</value>
+  </data>
+
+  <data name="Automation_RowInstallMenuItem_Name" xml:space="preserve">
+    <value>Installer le service</value>
+  </data>
+  <data name="Automation_RowInstallMenuItem_HelpText" xml:space="preserve">
+    <value>Installer la configuration du service sur le système.</value>
+  </data>
+
+  <data name="Automation_RowUninstallMenuItem_Name" xml:space="preserve">
+    <value>Désinstaller le service</value>
+  </data>
+  <data name="Automation_RowUninstallMenuItem_HelpText" xml:space="preserve">
+    <value>Désinstaller le service du système.</value>
+  </data>
+
+  <data name="Automation_RowRemoveMenuItem_Name" xml:space="preserve">
+    <value>Supprimer le service</value>
+  </data>
+  <data name="Automation_RowRemoveMenuItem_HelpText" xml:space="preserve">
+    <value>Supprimer le service de la liste de Servy Manager.</value>
+  </data>
+
+  <data name="Automation_RowConfigMenuItem_Name" xml:space="preserve">
+    <value>Configurer le service</value>
+  </data>
+  <data name="Automation_RowConfigMenuItem_HelpText" xml:space="preserve">
+    <value>Ouvrir l'application de configuration pour ce service.</value>
+  </data>
+
+  <data name="Automation_RowExportXmlMenuItem_HelpText" xml:space="preserve">
+    <value>Exporter la configuration du service actuel vers un fichier XML.</value>
+  </data>
+
+  <data name="Automation_RowExportJsonMenuItem_HelpText" xml:space="preserve">
+    <value>Exporter la configuration du service actuel vers un fichier JSON.</value>
+  </data>
+
+  <data name="Automation_RowCopyPidMenuItem_HelpText" xml:space="preserve">
+    <value>Copier l'ID de processus actuel du service dans le Presse-papiers.</value>
+  </data>
+
+  <data name="Automation_PerformanceTab_Name" xml:space="preserve">
+    <value>Onglet Performances</value>
+  </data>
+  <data name="Automation_PerformanceTab_HelpText" xml:space="preserve">
+    <value>Afficher en temps réel les statistiques d'utilisation du processeur et de la mémoire du service en cours d'exécution.</value>
+  </data>
+
+  <data name="Automation_ConsoleTab_Name" xml:space="preserve">
+    <value>Onglet Console</value>
+  </data>
+  <data name="Automation_ConsoleTab_HelpText" xml:space="preserve">
+    <value>Afficher en temps réel les journaux de sortie standard et d'erreur du service sélectionné.</value>
+  </data>
+
+  <data name="Automation_DependenciesTab_Name" xml:space="preserve">
+    <value>Onglet Dépendances</value>
+  </data>
+  <data name="Automation_DependenciesTab_HelpText" xml:space="preserve">
+    <value>Afficher l'arborescence des dépendances du service et la hiérarchie des états.</value>
+  </data>
+
+  <data name="Automation_LogsTab_Name" xml:space="preserve">
+    <value>Onglet Journaux</value>
+  </data>
+  <data name="Automation_LogsTab_HelpText" xml:space="preserve">
+    <value>Afficher la liste des événements système et des enregistrements de diagnostic de tous les services.</value>
+  </data>
+
+  <data name="Automation_MainFooterText_HelpText" xml:space="preserve">
+    <value>Afficher le nombre total de services chargés et la durée d'exécution.</value>
+  </data>
+
+  <data name="Automation_MainShortcutInfo_HelpText" xml:space="preserve">
+    <value>Appuyez sur F5 pour actualiser la liste des services.</value>
+  </data>
+
+  <!-- Performance View Specific Automation Properties -->
+  <data name="Automation_PerformanceView_Name" xml:space="preserve">
+    <value>Vue Analyse des performances</value>
+  </data>
+  <data name="Automation_PerformanceView_HelpText" xml:space="preserve">
+    <value>Afficher les statistiques d'utilisation des ressources du processus sélectionné.</value>
+  </data>
+
+  <data name="Automation_PerformanceServiceList_Name" xml:space="preserve">
+    <value>Sélecteur de service</value>
+  </data>
+  <data name="Automation_PerformanceServiceList_HelpText" xml:space="preserve">
+    <value>Sélectionnez un service dans la liste pour afficher ses données de performances.</value>
+  </data>
+
+  <data name="Automation_PidValue_Name" xml:space="preserve">
+    <value>ID de processus</value>
+  </data>
+  <data name="Automation_PidValue_HelpText" xml:space="preserve">
+    <value>Afficher l'ID de processus du service actuellement sélectionné.</value>
+  </data>
+
+  <data name="Automation_CopyPidButton_HelpText" xml:space="preserve">
+    <value>Copier l'ID de processus dans le Presse-papiers.</value>
+  </data>
+
+  <data name="Automation_CpuGraphGrid_Name" xml:space="preserve">
+    <value>Graphique d'utilisation du processeur</value>
+  </data>
+  <data name="Automation_CpuGraphGrid_HelpText" xml:space="preserve">
+    <value>Afficher l'historique de l'utilisation du processeur en pourcentage.</value>
+  </data>
+
+  <data name="Automation_CpuUsageLabel_Name" xml:space="preserve">
+    <value>Utilisation actuelle du processeur</value>
+  </data>
+  <data name="Automation_CpuUsageLabel_HelpText" xml:space="preserve">
+    <value>Afficher en temps réel le pourcentage de processeur utilisé par le processus du service.</value>
+  </data>
+
+  <data name="Automation_RamGraphGrid_Name" xml:space="preserve">
+    <value>Graphique d'utilisation de la RAM</value>
+  </data>
+  <data name="Automation_RamGraphGrid_HelpText" xml:space="preserve">
+    <value>Afficher l'historique de l'utilisation de la mémoire.</value>
+  </data>
+
+  <data name="Automation_RamUsageLabel_Name" xml:space="preserve">
+    <value>Utilisation actuelle de la RAM</value>
+  </data>
+  <data name="Automation_RamUsageLabel_HelpText" xml:space="preserve">
+    <value>Afficher en temps réel l'utilisation de la mémoire par le processus du service.</value>
+  </data>
+
+  <!-- Console View Specific Automation Properties -->
+  <data name="Automation_ConsoleViewRoot_Name" xml:space="preserve">
+    <value>Vue Sortie console</value>
+  </data>
+  <data name="Automation_ConsoleViewRoot_HelpText" xml:space="preserve">
+    <value>Afficher en temps réel les journaux de sortie standard et d'erreur du service sélectionné.</value>
+  </data>
+
+  <data name="Automation_ConsoleServiceList_Name" xml:space="preserve">
+    <value>Sélecteur de service</value>
+  </data>
+  <data name="Automation_ConsoleServiceList_HelpText" xml:space="preserve">
+    <value>Sélectionnez un service pour afficher sa sortie console.</value>
+  </data>
+
+  <data name="Automation_ResumeScrollButton_Name" xml:space="preserve">
+    <value>Reprendre le défilement</value>
+  </data>
+  <data name="Automation_ResumeScrollButton_HelpText" xml:space="preserve">
+    <value>Reprendre le défilement automatique jusqu'à la dernière entrée du journal.</value>
+  </data>
+
+  <data name="Automation_ConsoleInstructions_Name" xml:space="preserve">
+    <value>Instructions de la console</value>
+  </data>
+  <data name="Automation_ConsoleInstructions_HelpText" xml:space="preserve">
+    <value>Lire les instructions de configuration de la redirection stdout et stderr pour la sortie console en direct.</value>
+  </data>
+
+  <data name="Automation_ConsoleFilterTextBox_Name" xml:space="preserve">
+    <value>Filtre du journal</value>
+  </data>
+  <data name="Automation_ConsoleFilterTextBox_HelpText" xml:space="preserve">
+    <value>Saisissez du texte pour filtrer les lignes de journal affichées.</value>
+  </data>
+
+  <data name="Automation_ConsoleLogList_Name" xml:space="preserve">
+    <value>Terminal du journal</value>
+  </data>
+  <data name="Automation_ConsoleLogList_HelpText" xml:space="preserve">
+    <value>Afficher la sortie défilante du journal. Utilisez le menu contextuel pour copier les lignes sélectionnées.</value>
+  </data>
+
+  <data name="Automation_CopyLogMenuItem_Name" xml:space="preserve">
+    <value>Copier la sélection</value>
+  </data>
+  <data name="Automation_CopyLogMenuItem_HelpText" xml:space="preserve">
+    <value>Copier les lignes de journal de la console sélectionnées dans le Presse-papiers.</value>
+  </data>
+
+  <!-- Dependencies View Specific Automation Properties -->
+  <data name="Automation_DependenciesViewRoot_Name" xml:space="preserve">
+    <value>Vue Dépendances</value>
+  </data>
+  <data name="Automation_DependenciesViewRoot_HelpText" xml:space="preserve">
+    <value>Afficher la liste des services et leurs dépendances hiérarchiques.</value>
+  </data>
+
+  <data name="Automation_DependenciesServiceList_Name" xml:space="preserve">
+    <value>Sélecteur de service</value>
+  </data>
+  <data name="Automation_DependenciesServiceList_HelpText" xml:space="preserve">
+    <value>Recherchez et sélectionnez un service pour afficher ses dépendances.</value>
+  </data>
+
+  <data name="Automation_DependenciesRefreshButton_HelpText" xml:space="preserve">
+    <value>Recharger l'arborescence des dépendances du service sélectionné.</value>
+  </data>
+
+  <data name="Automation_DependenciesExpandAllButton_HelpText" xml:space="preserve">
+    <value>Développer toutes les branches de l'arborescence des dépendances.</value>
+  </data>
+
+  <data name="Automation_DependenciesCollapseAllButton_HelpText" xml:space="preserve">
+    <value>Réduire toutes les branches de l'arborescence des dépendances.</value>
+  </data>
+
+  <data name="Automation_DependenciesLegendInfo_Name" xml:space="preserve">
+    <value>Légende des dépendances</value>
+  </data>
+  <data name="Automation_DependenciesLegendInfo_HelpText" xml:space="preserve">
+    <value>Lire des informations sur l'arborescence des dépendances de service obtenue via le Gestionnaire de contrôle des services Windows.</value>
+  </data>
+
+  <data name="Automation_DependenciesTreeView_Name" xml:space="preserve">
+    <value>Arborescence hiérarchique des dépendances</value>
+  </data>
+  <data name="Automation_DependenciesTreeView_HelpText" xml:space="preserve">
+    <value>Afficher les dépendances récursives du service sélectionné.</value>
+  </data>
+
+  <data name="Automation_DependenciesUsageInfo_Name" xml:space="preserve">
+    <value>Informations d'utilisation</value>
+  </data>
+  <data name="Automation_DependenciesUsageInfo_HelpText" xml:space="preserve">
+    <value>Afficher les indicateurs de couleur d'état des nœuds de l'arborescence : vert pour en cours d'exécution, rouge pour arrêté, orange pour un cycle et une icône d'avertissement orange pour une dépendance indisponible.</value>
+  </data>
+
+  <data name="Automation_DependenciesShortcutInfo_Name" xml:space="preserve">
+    <value>Informations sur les raccourcis</value>
+  </data>
+  <data name="Automation_DependenciesShortcutInfo_HelpText" xml:space="preserve">
+    <value>Appuyez sur F5 pour actualiser l'arborescence des dépendances.</value>
+  </data>
+
+  <!-- Logs View Specific Automation Properties -->
+  <data name="Automation_LogsViewRoot_Name" xml:space="preserve">
+    <value>Vue Journaux</value>
+  </data>
+  <data name="Automation_LogsViewRoot_HelpText" xml:space="preserve">
+    <value>Afficher la liste des événements système et des enregistrements de diagnostic des services.</value>
+  </data>
+
+  <data name="Automation_LogsLevelComboBox_Name" xml:space="preserve">
+    <value>Filtrer par niveau</value>
+  </data>
+  <data name="Automation_LogsLevelComboBox_HelpText" xml:space="preserve">
+    <value>Sélectionnez un niveau de gravité pour filtrer les entrées de journal affichées.</value>
+  </data>
+
+  <data name="Automation_LogsFromDatePicker_Name" xml:space="preserve">
+    <value>Filtrer à partir de la date</value>
+  </data>
+  <data name="Automation_LogsFromDatePicker_HelpText" xml:space="preserve">
+    <value>Sélectionnez la date de début du filtrage des entrées de journal.</value>
+  </data>
+
+  <data name="Automation_LogsToDatePicker_Name" xml:space="preserve">
+    <value>Filtrer jusqu'à la date</value>
+  </data>
+  <data name="Automation_LogsToDatePicker_HelpText" xml:space="preserve">
+    <value>Sélectionnez la date de fin du filtrage des entrées de journal.</value>
+  </data>
+
+  <data name="Automation_LogsKeywordTextBox_Name" xml:space="preserve">
+    <value>Filtrer par mot clé</value>
+  </data>
+  <data name="Automation_LogsKeywordTextBox_HelpText" xml:space="preserve">
+    <value>Saisissez un mot clé à rechercher dans les messages du journal.</value>
+  </data>
+
+  <data name="Automation_LogsSearchButton_HelpText" xml:space="preserve">
+    <value>Lancer la recherche dans les journaux avec les filtres de niveau, de date et de mot clé actuels.</value>
+  </data>
+
+  <data name="Automation_LogsDataGrid_Name" xml:space="preserve">
+    <value>Journaux système</value>
+  </data>
+  <data name="Automation_LogsDataGrid_HelpText" xml:space="preserve">
+    <value>Afficher la liste filtrée des entrées de journal de diagnostic.</value>
+  </data>
+
+  <data name="Automation_LogsTimeColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Heure</value>
+  </data>
+
+  <data name="Automation_LogsLevelColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Niveau</value>
+  </data>
+
+  <data name="Automation_LogsLevelIcon_Name" xml:space="preserve">
+    <value>Icône du niveau de journal</value>
+  </data>
+
+  <data name="Automation_LogsEventIdColumnHeader_Name" xml:space="preserve">
+    <value>Colonne ID de l'événement</value>
+  </data>
+
+  <data name="Automation_LogsMessageColumnHeader_Name" xml:space="preserve">
+    <value>Colonne Message</value>
+  </data>
+
+  <data name="Automation_LogsTimeColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher l'horodatage de l'entrée de journal.</value>
+  </data>
+  <data name="Automation_LogsLevelColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher le niveau de gravité de l'entrée de journal.</value>
+  </data>
+  <data name="Automation_LogsEventIdColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher l'ID d'événement Windows de l'entrée de journal.</value>
+  </data>
+  <data name="Automation_LogsMessageColumnCell_HelpText" xml:space="preserve">
+    <value>Afficher le texte du message de l'entrée de journal.</value>
+  </data>
+
+  <data name="Automation_LogsGridSplitter_Name" xml:space="preserve">
+    <value>Redimensionnement des détails du journal</value>
+  </data>
+  <data name="Automation_LogsGridSplitter_HelpText" xml:space="preserve">
+    <value>Faites glisser pour ajuster la répartition entre la liste des journaux et le volet des détails du message.</value>
+  </data>
+
+  <data name="Automation_LogDetailsTextBox_Name" xml:space="preserve">
+    <value>Détails de l'entrée de journal</value>
+  </data>
+  <data name="Automation_LogDetailsTextBox_HelpText" xml:space="preserve">
+    <value>Afficher le texte complet du message et les détails de l'entrée de journal sélectionnée.</value>
+  </data>
+
+  <data name="Automation_LogsFooterText_HelpText" xml:space="preserve">
+    <value>Afficher le nombre total et la durée d'exécution de la requête pour le filtre de journaux actuel.</value>
+  </data>
+
+  <data name="Automation_LogsShortcutInfo_Name" xml:space="preserve">
+    <value>Informations sur les raccourcis</value>
+  </data>
+  <data name="Automation_LogsShortcutInfo_HelpText" xml:space="preserve">
+    <value>Appuyez sur F5 pour actualiser les journaux.</value>
+  </data>
+
+  <data name="Automation_SidebarSearchTextBox_Name" xml:space="preserve">
+    <value>Rechercher des services (barre latérale)</value>
+  </data>
+  <data name="Automation_SidebarSearchTextBox_HelpText" xml:space="preserve">
+    <value>Tapez un mot clé pour rechercher des services.</value>
+  </data>
+  <data name="Automation_SidebarServicesDataGrid_Name" xml:space="preserve">
+    <value>Liste des services (barre latérale)</value>
+  </data>
+  <data name="Automation_SidebarSearchButton_HelpText" xml:space="preserve">
+    <value>Lance la recherche à l'aide du texte saisi dans la zone de recherche.</value>
+  </data>
+  <data name="Automation_SidebarServicesDataGrid_HelpText" xml:space="preserve">
+    <value>Liste des services correspondant à la recherche actuelle. Sélectionnez un service pour le surveiller.</value>
+  </data>
+  <data name="Automation_ServiceNameHeader_Name" xml:space="preserve">
+    <value>En-tête Nom du service</value>
+  </data>
+  <data name="Msg_ClipboardCopyFailed" xml:space="preserve">
+    <value>Impossible de copier le contenu dans le Presse-papiers. Il est peut-être utilisé par une autre application.</value>
+  </data>
+  <data name="Text_NotAvailable" xml:space="preserve">
+    <value>N/D</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Automation_LanguageMenu_HelpText" xml:space="preserve">
+    <value>Choisir la langue d'affichage de Servy Manager.</value>
+  </data>
+  <data name="Automation_LanguageSystemMenuItem_HelpText" xml:space="preserve">
+    <value>Suivre la langue d'affichage de Windows.</value>
+  </data>
+  <data name="Automation_LanguageEnglishMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en anglais.</value>
+  </data>
+  <data name="Automation_LanguageChineseSimplifiedMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en chinois simplifié.</value>
+  </data>
+  <data name="Automation_LanguageFrenchMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en français.</value>
+  </data>
+  <data name="Automation_LanguageGermanMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en allemand.</value>
+  </data>
+  <data name="Automation_LanguageSpanishMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en espagnol.</value>
+  </data>
+  <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en japonais.</value>
+  </data>
+</root>

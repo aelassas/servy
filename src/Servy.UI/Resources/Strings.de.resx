@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DocumentationOpenFailed" xml:space="preserve">
+    <value>Die Dokumentation konnte nicht geöffnet werden. Stellen Sie sicher, dass ein Webbrowser installiert ist. Details: {0}</value>
+  </data>
+  <data name="Msg_NoUpdatesAvailable" xml:space="preserve">
+    <value>Derzeit sind keine Updates verfügbar.</value>
+  </data>
+  <data name="Msg_UpdateCheckInvalidTag" xml:space="preserve">
+    <value>Die Updateprüfung wurde erfolgreich abgeschlossen, aber das Format der neuesten Releasekennung konnte nicht sicher verarbeitet werden: "{0}". Überprüfen Sie die Releaseseite des Projekts manuell.</value>
+    <comment>Displayed when the remote tag_name cannot be parsed into a deterministic .NET Version sequence.</comment>
+  </data>
+  <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
+    <value>Eine neue Version von Servy ist verfügbar. Möchten Sie sie herunterladen?</value>
+  </data>
+  <data name="Msg_UpdateCheckCanceled" xml:space="preserve">
+    <value>Die Updateprüfung wurde abgebrochen.</value>
+    <comment>Displayed when the update check is canceled by application shutdown or by the caller, as opposed to the fixed update-check timeout.</comment>
+  </data>
+  <data name="Msg_UpdateCheckTimeout" xml:space="preserve">
+    <value>Bei der Updateprüfung ist ein Timeout aufgetreten. Versuchen Sie es später erneut.</value>
+  </data>
+  <data name="Msg_UpdateCheckFailed" xml:space="preserve">
+    <value>Fehler bei der Suche nach Updates: {0}</value>
+  </data>
+  <data name="Msg_ReleaseLinkOpenFailed" xml:space="preserve">
+    <value>Der Releaselink konnte nicht geöffnet werden: {0}</value>
+  </data>
+  <data name="Msg_FailedCopyingEmbeddedResource" xml:space="preserve">
+    <value>Fehler beim Kopieren der eingebetteten Ressource: {0}</value>
+  </data>
+  <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
+    <value>Warnung beim Extrahieren von Ressourcen</value>
+  </data>
+  <data name="Msg_ServyHostUnavailableTitle" xml:space="preserve">
+    <value>Servy-Host nicht verfügbar</value>
+  </data>
+  <data name="Msg_StartupWarningsTitle" xml:space="preserve">
+    <value>Servy-Startwarnungen</value>
+  </data>
+  <data name="Msg_ServyHostUnavailable" xml:space="preserve">
+    <value>Der Servy-Hostdienst konnte nicht installiert oder gestartet werden: {0}
+Servy-Dienste können erst starten, wenn er ausgeführt wird. Details finden Sie im Dateiprotokoll.</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>Systemsprache verwenden</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>Englisch</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>简体中文 (Chinesisch, vereinfacht)</value>
+  </data>
+  <data name="Language_French" xml:space="preserve">
+    <value>Français (Französisch)</value>
+  </data>
+  <data name="Language_German" xml:space="preserve">
+    <value>Deutsch</value>
+  </data>
+  <data name="Language_Spanish" xml:space="preserve">
+    <value>Español (Spanisch)</value>
+  </data>
+  <data name="Language_Japanese" xml:space="preserve">
+    <value>日本語 (Japanisch)</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>Die Spracheinstellung konnte nicht gespeichert werden: {0}</value>
+  </data>
+  <data name="Msg_LanguageRestartConfirm" xml:space="preserve">
+    <value>{1} wird neu gestartet, um die Sprache auf {0} umzustellen. Nicht gespeicherte Eingaben gehen verloren. Jetzt neu starten?</value>
+  </data>
+</root>

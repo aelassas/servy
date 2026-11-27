@@ -22,6 +22,25 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("zh-Hans-SG", AppLanguage.ChineseSimplified)]
         [InlineData("zh-SG", AppLanguage.ChineseSimplified)]
         [InlineData("ChineseSimplified", AppLanguage.ChineseSimplified)]
+        [InlineData("fr", AppLanguage.French)]
+        [InlineData("FR", AppLanguage.French)]
+        [InlineData("fr-FR", AppLanguage.French)]
+        [InlineData("fr-CA", AppLanguage.French)]
+        [InlineData("french", AppLanguage.French)]
+        [InlineData("de", AppLanguage.German)]
+        [InlineData("de-DE", AppLanguage.German)]
+        [InlineData("de-AT", AppLanguage.German)]
+        [InlineData("de-CH", AppLanguage.German)]
+        [InlineData("German", AppLanguage.German)]
+        [InlineData("es", AppLanguage.Spanish)]
+        [InlineData("es-ES", AppLanguage.Spanish)]
+        [InlineData("es-MX", AppLanguage.Spanish)]
+        [InlineData("es-419", AppLanguage.Spanish)]
+        [InlineData("spanish", AppLanguage.Spanish)]
+        [InlineData("ja", AppLanguage.Japanese)]
+        [InlineData("ja-JP", AppLanguage.Japanese)]
+        [InlineData(" JA ", AppLanguage.Japanese)]
+        [InlineData("Japanese", AppLanguage.Japanese)]
         public void TryParse_SupportedName_ReturnsTrueAndTheLanguage(string value, AppLanguage expected)
         {
             // Act
@@ -36,7 +55,12 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        [InlineData("fr")]
+        [InlineData("it")]
+        [InlineData("pt-BR")]
+        [InlineData("fra")]
+        [InlineData("deu")]
+        [InlineData("esp")]
+        [InlineData("jap")]
         [InlineData("zh-TW")]
         [InlineData("zh-Hant")]
         [InlineData("zh-HK")]
@@ -69,6 +93,10 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(AppLanguage.System, "system")]
         [InlineData(AppLanguage.English, "en")]
         [InlineData(AppLanguage.ChineseSimplified, "zh-CN")]
+        [InlineData(AppLanguage.French, "fr")]
+        [InlineData(AppLanguage.German, "de")]
+        [InlineData(AppLanguage.Spanish, "es")]
+        [InlineData(AppLanguage.Japanese, "ja")]
         public void Serialize_EveryLanguage_WritesTheNameTryParseReadsBack(AppLanguage language, string expected)
         {
             // Act
@@ -103,6 +131,46 @@ namespace Servy.UI.UnitTests.Localization
         }
 
         [Theory]
+        [InlineData(AppLanguage.French, "fr")]
+        [InlineData(AppLanguage.German, "de")]
+        [InlineData(AppLanguage.Spanish, "es")]
+        [InlineData(AppLanguage.Japanese, "ja")]
+        public void Resolve_TranslatedLanguage_ReturnsItsNeutralCultureWhateverTheSystemLanguageIs(AppLanguage language, string expected)
+        {
+            // Act
+            var culture = LocalizationCulture.Resolve(language, CultureInfo.GetCultureInfo("zh-CN"));
+
+            // Assert
+            Assert.NotNull(culture);
+            Assert.Equal(expected, culture.Name);
+        }
+
+        [Theory]
+        [InlineData("fr", "fr")]
+        [InlineData("fr-FR", "fr")]
+        [InlineData("fr-CA", "fr")]
+        [InlineData("fr-BE", "fr")]
+        [InlineData("de", "de")]
+        [InlineData("de-DE", "de")]
+        [InlineData("de-AT", "de")]
+        [InlineData("de-CH", "de")]
+        [InlineData("es", "es")]
+        [InlineData("es-ES", "es")]
+        [InlineData("es-MX", "es")]
+        [InlineData("es-419", "es")]
+        [InlineData("ja", "ja")]
+        [InlineData("ja-JP", "ja")]
+        public void Resolve_SystemOnATranslatedDisplayLanguage_ReturnsTheNeutralCultureOfThatLanguage(string systemCulture, string expected)
+        {
+            // Act
+            var culture = LocalizationCulture.Resolve(AppLanguage.System, CultureInfo.GetCultureInfo(systemCulture));
+
+            // Assert
+            Assert.NotNull(culture);
+            Assert.Equal(expected, culture.Name);
+        }
+
+        [Theory]
         [InlineData("zh-CN")]
         [InlineData("zh-SG")]
         [InlineData("zh-Hans")]
@@ -118,8 +186,9 @@ namespace Servy.UI.UnitTests.Localization
 
         [Theory]
         [InlineData("en-US")]
-        [InlineData("fr-FR")]
-        [InlineData("de-DE")]
+        [InlineData("it-IT")]
+        [InlineData("pt-BR")]
+        [InlineData("ko-KR")]
         [InlineData("zh-TW")]
         [InlineData("zh-HK")]
         [InlineData("zh-Hant")]

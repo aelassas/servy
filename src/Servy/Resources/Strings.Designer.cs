@@ -592,11 +592,47 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Display Servy in French.
+        /// </summary>
+        public static string Automation_LanguageFrenchMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageFrenchMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy in German.
+        /// </summary>
+        public static string Automation_LanguageGermanMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageGermanMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy in Japanese.
+        /// </summary>
+        public static string Automation_LanguageJapaneseMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageJapaneseMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose the display language of Servy.
         /// </summary>
         public static string Automation_LanguageMenu_HelpText {
             get {
                 return ResourceManager.GetString("Automation_LanguageMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy in Spanish.
+        /// </summary>
+        public static string Automation_LanguageSpanishMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageSpanishMenuItem_HelpText", resourceCulture);
             }
         }
         

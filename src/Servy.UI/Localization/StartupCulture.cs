@@ -137,7 +137,8 @@ namespace Servy.UI.Localization
             if (result.RejectedArgument != null)
             {
                 Warn(logger, $"Ignored {LanguageArg} '{result.RejectedArgument}': supported values are "
-                    + $"{LocalizationCulture.SystemCode}, {LocalizationCulture.EnglishCode} and {LocalizationCulture.ChineseSimplifiedCode}.");
+                    + $"{LocalizationCulture.SystemCode}, {LocalizationCulture.EnglishCode}, {LocalizationCulture.ChineseSimplifiedCode}, "
+                    + $"{LocalizationCulture.FrenchCode}, {LocalizationCulture.GermanCode}, {LocalizationCulture.SpanishCode} and {LocalizationCulture.JapaneseCode}.");
             }
 
             if (result.SyncError != null)

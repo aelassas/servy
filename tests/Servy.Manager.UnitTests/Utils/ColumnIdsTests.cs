@@ -66,6 +66,31 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Theory]
+        [InlineData("fr")]
+        [InlineData("de")]
+        [InlineData("es")]
+        [InlineData("ja")]
+        public void FromHeader_EveryColumnResourceInATranslatedCulture_MapsBackToADistinctEnglishHeader(string cultureName)
+        {
+            // Arrange
+            var culture = CultureInfo.GetCultureInfo(cultureName);
+            var keys = typeof(Strings).GetProperties()
+                .Select(p => p.Name)
+                .Where(n => n.StartsWith("Column_", StringComparison.Ordinal))
+                .ToList();
+
+            // Act
+            var ids = keys
+                .Select(k => ColumnIds.FromHeader(Strings.ResourceManager.GetString(k, culture), Strings.ResourceManager, culture))
+                .ToList();
+
+            // Assert
+            Assert.NotEmpty(keys);
+            Assert.Equal(keys.Select(k => Strings.ResourceManager.GetString(k, CultureInfo.InvariantCulture)), ids);
+            Assert.Equal(ids.Count, ids.Distinct().Count());
+        }
+
+        [Theory]
         [InlineData("Not a column")]
         [InlineData("")]
         [InlineData(null)]

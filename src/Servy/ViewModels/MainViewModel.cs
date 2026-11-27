@@ -839,6 +839,26 @@ namespace Servy.ViewModels
         public bool IsChineseSimplifiedSelected => _language == AppLanguage.ChineseSimplified;
 
         /// <summary>
+        /// Gets whether the language menu selects French.
+        /// </summary>
+        public bool IsFrenchSelected => _language == AppLanguage.French;
+
+        /// <summary>
+        /// Gets whether the language menu selects German.
+        /// </summary>
+        public bool IsGermanSelected => _language == AppLanguage.German;
+
+        /// <summary>
+        /// Gets whether the language menu selects Spanish.
+        /// </summary>
+        public bool IsSpanishSelected => _language == AppLanguage.Spanish;
+
+        /// <summary>
+        /// Gets whether the language menu selects Japanese.
+        /// </summary>
+        public bool IsJapaneseSelected => _language == AppLanguage.Japanese;
+
+        /// <summary>
         /// Gets the language stored in the settings file, read when the view model is created and updated by
         /// <see cref="SetLanguageCommand"/>, which restarts the application to apply it.
         /// </summary>
@@ -1378,6 +1398,10 @@ namespace Servy.ViewModels
             OnPropertyChanged(nameof(IsSystemLanguageSelected));
             OnPropertyChanged(nameof(IsEnglishSelected));
             OnPropertyChanged(nameof(IsChineseSimplifiedSelected));
+            OnPropertyChanged(nameof(IsFrenchSelected));
+            OnPropertyChanged(nameof(IsGermanSelected));
+            OnPropertyChanged(nameof(IsSpanishSelected));
+            OnPropertyChanged(nameof(IsJapaneseSelected));
         }
 
         /// <summary>

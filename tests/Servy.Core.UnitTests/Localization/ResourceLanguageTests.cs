@@ -47,5 +47,35 @@ namespace Servy.Core.UnitTests.Localization
                 ResourceLanguage.FollowUiCulture();
             }
         }
+
+        [Theory]
+        [InlineData("fr-FR")]
+        [InlineData("de-DE")]
+        [InlineData("es-ES")]
+        [InlineData("ja-JP")]
+        public void UseEnglish_TranslatedUiCulture_KeepsTheCoreStringsInEnglish(string cultureName)
+        {
+            var previous = CultureInfo.CurrentUICulture;
+            try
+            {
+                // Arrange: without the pin the translated satellite assembly answers under that UI culture
+                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(cultureName);
+                ResourceLanguage.FollowUiCulture();
+                var translated = Strings.Msg_UnexpectedError;
+
+                // Act
+                ResourceLanguage.UseEnglish();
+                var pinned = Strings.Msg_UnexpectedError;
+
+                // Assert
+                Assert.NotEqual(English, translated);
+                Assert.Equal(English, pinned);
+            }
+            finally
+            {
+                ResourceLanguage.FollowUiCulture();
+                CultureInfo.CurrentUICulture = previous;
+            }
+        }
     }
 }

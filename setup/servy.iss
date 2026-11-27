@@ -82,74 +82,166 @@ AlwaysRestart=no
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "chinesesimplified"; MessagesFile: "Languages\ChineseSimplified.isl"
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 
 [Messages]
 english.SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
 chinesesimplified.SetupAppRunningError=安装程序检测到 %1 正在运行。%n%n请立即关闭它的所有实例，然后单击“确定”继续，或单击“取消”退出。
+french.SetupAppRunningError=Le programme d'installation a détecté que %1 est en cours d'exécution.%n%nFermez maintenant toutes ses instances, puis cliquez sur OK pour continuer, ou sur Annuler pour quitter.
+german.SetupAppRunningError=Das Setup hat festgestellt, dass %1 gerade ausgeführt wird.%n%nSchließen Sie jetzt alle Instanzen, und klicken Sie dann auf OK, um fortzufahren, oder auf Abbrechen, um das Setup zu beenden.
+spanish.SetupAppRunningError=El programa de instalación detectó que %1 se está ejecutando.%n%nCierre ahora todas sus instancias y, a continuación, haga clic en Aceptar para continuar o en Cancelar para salir.
+japanese.SetupAppRunningError=セットアップは %1 が実行中であることを検出しました。%n%n今すぐすべてのインスタンスを閉じてから、[OK] をクリックして続行するか、[キャンセル] をクリックして終了してください。
 
 [CustomMessages]
 ; Types
 english.FullInstallation=Full installation
 chinesesimplified.FullInstallation=完整安装
+french.FullInstallation=Installation complète
+german.FullInstallation=Vollständige Installation
+spanish.FullInstallation=Instalación completa
+japanese.FullInstallation=完全インストール
 english.CustomInstallation=Custom installation
 chinesesimplified.CustomInstallation=自定义安装
+french.CustomInstallation=Installation personnalisée
+german.CustomInstallation=Benutzerdefinierte Installation
+spanish.CustomInstallation=Instalación personalizada
+japanese.CustomInstallation=カスタム インストール
 
 ; Components
 english.InstallDesktopApp=Install Desktop App (%1)
 chinesesimplified.InstallDesktopApp=安装桌面应用程序 (%1)
+french.InstallDesktopApp=Installer l'application de bureau (%1)
+german.InstallDesktopApp=Desktop-App installieren (%1)
+spanish.InstallDesktopApp=Instalar la aplicación de escritorio (%1)
+japanese.InstallDesktopApp=デスクトップ アプリをインストール (%1)
 english.InstallCli=Install CLI (%1)
 chinesesimplified.InstallCli=安装命令行工具 (%1)
+french.InstallCli=Installer l'interface de ligne de commande (%1)
+german.InstallCli=Befehlszeilentool installieren (%1)
+spanish.InstallCli=Instalar la herramienta de línea de comandos (%1)
+japanese.InstallCli=コマンド ライン ツールをインストール (%1)
 english.InstallManagerApp=Install Manager App (%1)
 chinesesimplified.InstallManagerApp=安装管理器应用程序 (%1)
+french.InstallManagerApp=Installer l'application Manager (%1)
+german.InstallManagerApp=Manager-App installieren (%1)
+spanish.InstallManagerApp=Instalar la aplicación Manager (%1)
+japanese.InstallManagerApp=Manager アプリをインストール (%1)
 
 ; Tasks & Groups
 english.AdditionalOptions=Additional Options
 chinesesimplified.AdditionalOptions=附加选项
+french.AdditionalOptions=Options supplémentaires
+german.AdditionalOptions=Zusätzliche Optionen
+spanish.AdditionalOptions=Opciones adicionales
+japanese.AdditionalOptions=追加オプション
 english.AddServyToPath=Add Servy to PATH
 chinesesimplified.AddServyToPath=将 Servy 添加到环境变量 PATH
+french.AddServyToPath=Ajouter Servy à la variable d'environnement PATH
+german.AddServyToPath=Servy zur Umgebungsvariablen PATH hinzufügen
+spanish.AddServyToPath=Agregar Servy a la variable de entorno PATH
+japanese.AddServyToPath=Servy を環境変数 PATH に追加
 
 ; Icons & Run
 english.UninstallShortcut=Uninstall
 chinesesimplified.UninstallShortcut=卸载
+french.UninstallShortcut=Désinstaller
+german.UninstallShortcut=Deinstallieren
+spanish.UninstallShortcut=Desinstalar
+japanese.UninstallShortcut=アンインストール
 english.OpenDocumentation=Open Documentation
 chinesesimplified.OpenDocumentation=打开在线文档
+french.OpenDocumentation=Ouvrir la documentation en ligne
+german.OpenDocumentation=Onlinedokumentation öffnen
+spanish.OpenDocumentation=Abrir la documentación en línea
+japanese.OpenDocumentation=オンライン ドキュメントを開く
 
 ; [Code] Wizard & Error Messages
 english.SelectAtLeastOneComponent=You must select at least one component to continue.
 chinesesimplified.SelectAtLeastOneComponent=您必须至少选择一个组件才能继续。
+french.SelectAtLeastOneComponent=Vous devez sélectionner au moins un composant pour continuer.
+german.SelectAtLeastOneComponent=Sie müssen mindestens eine Komponente auswählen, um fortzufahren.
+spanish.SelectAtLeastOneComponent=Debe seleccionar al menos un componente para continuar.
+japanese.SelectAtLeastOneComponent=続行するには、少なくとも 1 つのコンポーネントを選択する必要があります。
 
 english.Arm64ArchMismatchError=This installer is built for ARM64 systems. Please download and run the x64 installer (servy-%1-x64-installer.exe).
 chinesesimplified.Arm64ArchMismatchError=此安装程序专为 ARM64 系统构建。请下载并运行 x64 安装程序 (servy-%1-x64-installer.exe)。
+french.Arm64ArchMismatchError=Ce programme d'installation est conçu pour les systèmes ARM64. Téléchargez et exécutez le programme d'installation x64 (servy-%1-x64-installer.exe).
+german.Arm64ArchMismatchError=Dieses Installationsprogramm ist für ARM64-Systeme erstellt. Laden Sie das x64-Installationsprogramm (servy-%1-x64-installer.exe) herunter, und führen Sie es aus.
+spanish.Arm64ArchMismatchError=Este instalador está diseñado para sistemas ARM64. Descargue y ejecute el instalador x64 (servy-%1-x64-installer.exe).
+japanese.Arm64ArchMismatchError=このインストーラーは ARM64 システム用にビルドされています。x64 インストーラー (servy-%1-x64-installer.exe) をダウンロードして実行してください。
 
 english.X64OnArm64Warning=You are running the x64 installer on an ARM64 system. An ARM64-native version (servy-%1-arm64-installer.exe) is available for optimal performance.%n%nDo you want to continue with the x64 installation anyway?
 chinesesimplified.X64OnArm64Warning=您正在 ARM64 系统上运行 x64 安装程序。我们提供了原生 ARM64 版本 (servy-%1-arm64-installer.exe) 以获得最佳性能。%n%n是否仍要继续运行 x64 安装？
+french.X64OnArm64Warning=Vous exécutez le programme d'installation x64 sur un système ARM64. Une version ARM64 native (servy-%1-arm64-installer.exe) est disponible pour des performances optimales.%n%nVoulez-vous quand même continuer l'installation x64 ?
+german.X64OnArm64Warning=Sie führen das x64-Installationsprogramm auf einem ARM64-System aus. Für optimale Leistung ist eine native ARM64-Version (servy-%1-arm64-installer.exe) verfügbar.%n%nMöchten Sie die x64-Installation trotzdem fortsetzen?
+spanish.X64OnArm64Warning=Está ejecutando el instalador x64 en un sistema ARM64. Hay disponible una versión nativa para ARM64 (servy-%1-arm64-installer.exe) que ofrece un rendimiento óptimo.%n%n¿Desea continuar de todos modos con la instalación x64?
+japanese.X64OnArm64Warning=ARM64 システムで x64 インストーラーを実行しています。最適なパフォーマンスを得られる ARM64 ネイティブ版 (servy-%1-arm64-installer.exe) が用意されています。%n%nこのまま x64 版のインストールを続行しますか?
 
 english.UpgradePrompt=An older version of Servy is already installed. Would you like to upgrade to this newer version?
 chinesesimplified.UpgradePrompt=检测到已安装旧版本的 Servy。是否要升级到此新版本？
+french.UpgradePrompt=Une version antérieure de Servy est déjà installée. Voulez-vous la mettre à niveau vers cette nouvelle version ?
+german.UpgradePrompt=Eine ältere Version von Servy ist bereits installiert. Möchten Sie auf diese neuere Version aktualisieren?
+spanish.UpgradePrompt=Ya hay instalada una versión anterior de Servy. ¿Desea actualizarla a esta versión más reciente?
+japanese.UpgradePrompt=以前のバージョンの Servy が既にインストールされています。この新しいバージョンにアップグレードしますか?
 
 english.DowngradePrompt=A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?
 chinesesimplified.DowngradePrompt=检测到已安装更新版本的 Servy。确定要降级到此旧版本吗？
+french.DowngradePrompt=Une version plus récente de Servy est déjà installée. Voulez-vous vraiment revenir à cette version antérieure ?
+german.DowngradePrompt=Eine neuere Version von Servy ist bereits installiert. Möchten Sie wirklich auf diese ältere Version zurückstufen?
+spanish.DowngradePrompt=Ya hay instalada una versión más reciente de Servy. ¿Está seguro de que desea cambiar a esta versión anterior?
+japanese.DowngradePrompt=新しいバージョンの Servy が既にインストールされています。この古いバージョンにダウングレードしてもよろしいですか?
 
 english.ReinstallPrompt=The same version of Servy is already installed. Would you like to reinstall it?
 chinesesimplified.ReinstallPrompt=检测到已安装相同版本的 Servy。是否要重新安装？
+french.ReinstallPrompt=La même version de Servy est déjà installée. Voulez-vous la réinstaller ?
+german.ReinstallPrompt=Dieselbe Version von Servy ist bereits installiert. Möchten Sie sie erneut installieren?
+spanish.ReinstallPrompt=Ya está instalada la misma versión de Servy. ¿Desea volver a instalarla?
+japanese.ReinstallPrompt=同じバージョンの Servy が既にインストールされています。再インストールしますか?
 
 english.CreateDataDirFailed=Failed to create the service data directory "%1".
 chinesesimplified.CreateDataDirFailed=无法创建服务数据目录“%1”。
+french.CreateDataDirFailed=Impossible de créer le répertoire de données du service « %1 ».
+german.CreateDataDirFailed=Das Datenverzeichnis des Dienstes „%1“ konnte nicht erstellt werden.
+spanish.CreateDataDirFailed=No se pudo crear el directorio de datos del servicio "%1".
+japanese.CreateDataDirFailed=サービス データ ディレクトリ "%1" を作成できませんでした。
 
 english.DataDirReparsePointWarning=The service data directory "%1" is a symbolic link or junction, so setup did not secure it. Replace it with a real directory.
 chinesesimplified.DataDirReparsePointWarning=服务数据目录“%1”是符号链接或联接点，因此安装程序未对其进行权限保护。请将其替换为真实目录。
+french.DataDirReparsePointWarning=Le répertoire de données du service « %1 » est un lien symbolique ou une jonction ; le programme d'installation ne l'a donc pas sécurisé. Remplacez-le par un répertoire réel.
+german.DataDirReparsePointWarning=Das Datenverzeichnis des Dienstes „%1“ ist eine symbolische Verknüpfung oder ein Verbindungspunkt, daher hat das Setup es nicht geschützt. Ersetzen Sie es durch ein echtes Verzeichnis.
+spanish.DataDirReparsePointWarning=El directorio de datos del servicio "%1" es un vínculo simbólico o una unión, por lo que el programa de instalación no lo protegió. Reemplácelo por un directorio real.
+japanese.DataDirReparsePointWarning=サービス データ ディレクトリ "%1" はシンボリック リンクまたはジャンクションであるため、セットアップはアクセス許可を保護しませんでした。実際のディレクトリに置き換えてください。
 
 english.DataDirOwnershipFailed=Failed to give the ownership of the service data directory "%1" to Administrators.
 chinesesimplified.DataDirOwnershipFailed=无法将服务数据目录“%1”的所有权授予 Administrators 组。
+french.DataDirOwnershipFailed=Impossible d'attribuer la propriété du répertoire de données du service « %1 » au groupe Administrateurs.
+german.DataDirOwnershipFailed=Der Besitz des Datenverzeichnisses des Dienstes „%1“ konnte nicht an die Gruppe „Administratoren“ übertragen werden.
+spanish.DataDirOwnershipFailed=No se pudo asignar la propiedad del directorio de datos del servicio "%1" al grupo Administradores.
+japanese.DataDirOwnershipFailed=サービス データ ディレクトリ "%1" の所有権を Administrators グループに付与できませんでした。
 
 english.DataDirPermissionsFailed=Failed to secure the permissions of the service data directory "%1".
 chinesesimplified.DataDirPermissionsFailed=无法保护服务数据目录“%1”的访问权限。
+french.DataDirPermissionsFailed=Impossible de sécuriser les autorisations du répertoire de données du service « %1 ».
+german.DataDirPermissionsFailed=Die Berechtigungen des Datenverzeichnisses des Dienstes „%1“ konnten nicht geschützt werden.
+spanish.DataDirPermissionsFailed=No se pudieron proteger los permisos del directorio de datos del servicio "%1".
+japanese.DataDirPermissionsFailed=サービス データ ディレクトリ "%1" のアクセス許可を保護できませんでした。
 
 english.UninstallPreviousFailed=Failed to uninstall the previous version.
 chinesesimplified.UninstallPreviousFailed=卸载旧版本失败。
+french.UninstallPreviousFailed=Échec de la désinstallation de la version précédente.
+german.UninstallPreviousFailed=Die vorherige Version konnte nicht deinstalliert werden.
+spanish.UninstallPreviousFailed=No se pudo desinstalar la versión anterior.
+japanese.UninstallPreviousFailed=以前のバージョンをアンインストールできませんでした。
 
 english.UpdateSystemPathFailed=Failed to update system PATH environment variable.
 chinesesimplified.UpdateSystemPathFailed=更新系统 PATH 环境变量失败。
+french.UpdateSystemPathFailed=Échec de la mise à jour de la variable d'environnement PATH du système.
+german.UpdateSystemPathFailed=Die Systemumgebungsvariable PATH konnte nicht aktualisiert werden.
+spanish.UpdateSystemPathFailed=No se pudo actualizar la variable de entorno PATH del sistema.
+japanese.UpdateSystemPathFailed=システム環境変数 PATH を更新できませんでした。
 
 [Types]
 Name: "full"; Description: "{cm:FullInstallation}"

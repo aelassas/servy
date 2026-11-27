@@ -26,6 +26,6 @@
     <NeutralResourcesLanguage>en</NeutralResourcesLanguage>
     <NeutralLanguage Condition="'$(NeutralLanguage)' == ''">en</NeutralLanguage>
     <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
-    <SatelliteResourceLanguages>en;zh-CN</SatelliteResourceLanguages>
+    <SatelliteResourceLanguages>en;zh-CN;fr;de;es;ja</SatelliteResourceLanguages>
   </PropertyGroup>
 </Project>

@@ -14,12 +14,20 @@ namespace Servy.UI.UnitTests.Localization
             var system = LanguageDisplayNames.For(AppLanguage.System);
             var english = LanguageDisplayNames.For(AppLanguage.English);
             var chinese = LanguageDisplayNames.For(AppLanguage.ChineseSimplified);
+            var french = LanguageDisplayNames.For(AppLanguage.French);
+            var german = LanguageDisplayNames.For(AppLanguage.German);
+            var spanish = LanguageDisplayNames.For(AppLanguage.Spanish);
+            var japanese = LanguageDisplayNames.For(AppLanguage.Japanese);
 
             // Assert
             Assert.Equal(Strings.Language_System, system);
             Assert.Equal(Strings.Language_English, english);
             Assert.Equal(Strings.Language_ChineseSimplified, chinese);
-            Assert.Equal(3, new[] { system, english, chinese }.Distinct().Count());
+            Assert.Equal(Strings.Language_French, french);
+            Assert.Equal(Strings.Language_German, german);
+            Assert.Equal(Strings.Language_Spanish, spanish);
+            Assert.Equal(Strings.Language_Japanese, japanese);
+            Assert.Equal(7, new[] { system, english, chinese, french, german, spanish, japanese }.Distinct().Count());
         }
     }
 }

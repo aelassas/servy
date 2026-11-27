@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DocumentationOpenFailed" xml:space="preserve">
+    <value>ドキュメントを開けませんでした。Web ブラウザーがインストールされていることを確認してください。詳細: {0}</value>
+  </data>
+  <data name="Msg_NoUpdatesAvailable" xml:space="preserve">
+    <value>現在利用できる更新プログラムはありません。</value>
+  </data>
+  <data name="Msg_UpdateCheckInvalidTag" xml:space="preserve">
+    <value>更新プログラムの確認は正常に完了しましたが、最新リリースの識別子の形式を安全に処理できませんでした: '{0}'。プロジェクトのリリース ページを手動で確認してください。</value>
+    <comment>Displayed when the remote tag_name cannot be parsed into a deterministic .NET Version sequence.</comment>
+  </data>
+  <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
+    <value>Servy の新しいバージョンが利用可能です。ダウンロードしますか?</value>
+  </data>
+  <data name="Msg_UpdateCheckCanceled" xml:space="preserve">
+    <value>更新プログラムの確認は取り消されました。</value>
+    <comment>Displayed when the update check is canceled by application shutdown or by the caller, as opposed to the fixed update-check timeout.</comment>
+  </data>
+  <data name="Msg_UpdateCheckTimeout" xml:space="preserve">
+    <value>更新プログラムの確認がタイムアウトしました。しばらくしてからもう一度お試しください。</value>
+  </data>
+  <data name="Msg_UpdateCheckFailed" xml:space="preserve">
+    <value>更新プログラムを確認できませんでした: {0}</value>
+  </data>
+  <data name="Msg_ReleaseLinkOpenFailed" xml:space="preserve">
+    <value>リリースのリンクを開けませんでした: {0}</value>
+  </data>
+  <data name="Msg_FailedCopyingEmbeddedResource" xml:space="preserve">
+    <value>埋め込みリソースをコピーできませんでした: {0}</value>
+  </data>
+  <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
+    <value>リソース抽出の警告</value>
+  </data>
+  <data name="Msg_ServyHostUnavailableTitle" xml:space="preserve">
+    <value>Servy ホストを使用できません</value>
+  </data>
+  <data name="Msg_StartupWarningsTitle" xml:space="preserve">
+    <value>Servy 起動時の警告</value>
+  </data>
+  <data name="Msg_ServyHostUnavailable" xml:space="preserve">
+    <value>Servy ホスト サービスをインストールまたは開始できませんでした: {0}
+このサービスが実行されるまで、Servy のサービスは開始できません。詳細はファイル ログを参照してください。</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>システムの言語に従う</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>英語</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>中国語 (簡体字)</value>
+  </data>
+  <data name="Language_French" xml:space="preserve">
+    <value>Français (フランス語)</value>
+  </data>
+  <data name="Language_German" xml:space="preserve">
+    <value>Deutsch (ドイツ語)</value>
+  </data>
+  <data name="Language_Spanish" xml:space="preserve">
+    <value>Español (スペイン語)</value>
+  </data>
+  <data name="Language_Japanese" xml:space="preserve">
+    <value>日本語</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>言語設定を保存できませんでした: {0}</value>
+  </data>
+  <data name="Msg_LanguageRestartConfirm" xml:space="preserve">
+    <value>言語を {0} に切り替えるため、{1} を再起動します。保存されていない入力内容は失われます。今すぐ再起動しますか?</value>
+  </data>
+</root>

@@ -543,7 +543,7 @@ namespace Servy.UI.UnitTests.Localization
 
         [Theory]
         [InlineData("en-US")]
-        [InlineData("fr-FR")]
+        [InlineData("it-IT")]
         [InlineData("zh-TW")]
         public void Apply_SystemOnANonSimplifiedChineseDisplayLanguage_LeavesTheCultureAlone(string systemCulture)
         {
@@ -557,6 +557,45 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal(AppLanguage.System, result.Language);
             Assert.Null(result.Culture);
             Assert.Empty(applied);
+        }
+
+        [Theory]
+        [InlineData("fr-CA", "fr")]
+        [InlineData("de-CH", "de")]
+        [InlineData("es-419", "es")]
+        [InlineData("ja-JP", "ja")]
+        public void Apply_SystemOnATranslatedDisplayLanguage_AppliesTheNeutralCultureOfThatLanguage(string systemCulture, string expected)
+        {
+            // Arrange
+            var applied = new List<CultureInfo>();
+
+            // Act
+            var result = StartupCulture.Apply(_configPath, null, Culture(systemCulture), applied.Add);
+
+            // Assert
+            Assert.Equal(AppLanguage.System, result.Language);
+            Assert.Equal(expected, Assert.Single(applied).Name);
+            Assert.Equal(expected, result.Culture?.Name);
+        }
+
+        [Theory]
+        [InlineData("fr", AppLanguage.French)]
+        [InlineData("de-AT", AppLanguage.German)]
+        [InlineData("es-MX", AppLanguage.Spanish)]
+        [InlineData("ja", AppLanguage.Japanese)]
+        public void Apply_TranslatedLanguageOption_AppliesItAndStoresItsCode(string value, AppLanguage expected)
+        {
+            // Arrange
+            var applied = new List<CultureInfo>();
+
+            // Act
+            var result = StartupCulture.Apply(_configPath, new[] { "--lang", value }, Culture("en-US"), applied.Add);
+
+            // Assert
+            Assert.Equal(expected, result.Language);
+            Assert.Null(result.RejectedArgument);
+            Assert.Equal(LocalizationCulture.Serialize(expected), Assert.Single(applied).Name);
+            Assert.Equal(expected, StartupCulture.ReadLanguage(_configPath));
         }
 
         [Fact]
@@ -651,7 +690,7 @@ namespace Servy.UI.UnitTests.Localization
 
             // Assert
             logger.Verify(l => l.Warn(It.Is<string>(m =>
-                m.Contains("--lang") && m.Contains("'klingon'") && m.Contains("system") && m.Contains("en") && m.Contains("zh-CN")), null), Times.Once);
+                m.Contains("--lang") && m.Contains("'klingon'") && m.Contains("system, en, zh-CN, fr, de, es and ja.")), null), Times.Once);
         }
 
         [Fact]
