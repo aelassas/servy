@@ -1,6 +1,7 @@
 using Servy.UI.Localization;
 using Servy.UI.Resources;
 using Servy.UI.Services;
+using System.Globalization;
 using Xunit;
 
 namespace Servy.UI.UnitTests.Localization
@@ -28,6 +29,49 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal(Strings.Language_Spanish, spanish);
             Assert.Equal(Strings.Language_Japanese, japanese);
             Assert.Equal(7, new[] { system, english, chinese, french, german, spanish, japanese }.Distinct().Count());
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("de")]
+        [InlineData("es")]
+        [InlineData("fr")]
+        [InlineData("ja")]
+        [InlineData("zh-CN")]
+        public void LanguageEnglish_EveryCulture_StartsWithTheNativeName(string cultureName)
+        {
+            // Arrange: the Language menu lists each language under its own name first, so a user
+            // who cannot read the current UI language can still find English
+            var culture = CultureInfo.GetCultureInfo(cultureName);
+
+            // Act
+            var name = Strings.ResourceManager.GetString("Language_English", culture);
+
+            // Assert
+            Assert.NotNull(name);
+            Assert.StartsWith("English", name, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("de")]
+        [InlineData("es")]
+        [InlineData("fr")]
+        [InlineData("ja")]
+        [InlineData("zh-CN")]
+        public void LanguageChineseSimplified_EveryCulture_StartsWithTheNativeName(string cultureName)
+        {
+            // Arrange: the native name of Simplified Chinese is \u7B80\u4F53\u4E2D\u6587, spelled with
+            // escapes so this file stays ASCII
+            var culture = CultureInfo.GetCultureInfo(cultureName);
+            const string nativeName = "\u7B80\u4F53\u4E2D\u6587";
+
+            // Act
+            var name = Strings.ResourceManager.GetString("Language_ChineseSimplified", culture);
+
+            // Assert
+            Assert.NotNull(name);
+            Assert.StartsWith(nativeName, name, StringComparison.Ordinal);
         }
     }
 }
