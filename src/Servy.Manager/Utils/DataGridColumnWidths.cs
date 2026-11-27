@@ -105,7 +105,7 @@ namespace Servy.Manager.Utils
             var measured = new List<KeyValuePair<string, double>>();
             foreach (var column in grid.Columns)
             {
-                if (IsHandled(column) && column.Width.IsAbsolute && column.Visibility == System.Windows.Visibility.Visible)
+                if (IsHandled(column) && column.Width.IsAbsolute && column.Visibility == Visibility.Visible)
                 {
                     measured.Add(new KeyValuePair<string, double>(ColumnIds.For(column), column.ActualWidth));
                 }
