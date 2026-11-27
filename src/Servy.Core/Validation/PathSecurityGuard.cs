@@ -440,7 +440,8 @@ namespace Servy.Core.Validation
 
         /// <summary>
         /// Validates that a target file path resolves strictly within the specified base directory,
-        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points.
+        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points between the
+        /// base directory and the target (the base directory itself may be a junction, as on a Scoop install).
         /// </summary>
         /// <param name="targetPath">The path to validate.</param>
         /// <param name="baseDirectory">The trusted application directory.</param>
