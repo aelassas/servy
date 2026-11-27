@@ -186,14 +186,6 @@
                   AutomationProperties.Name="{x:Static uires:Strings.Language_English}"
                   AutomationProperties.AutomationId="LanguageEnglishMenuItem"
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageEnglishMenuItem_HelpText}" />
-        <MenuItem Header="{x:Static uires:Strings.Language_ChineseSimplified}"
-                  IsCheckable="True"
-                  IsChecked="{Binding IsChineseSimplifiedSelected, Mode=OneWay}"
-                  Command="{Binding SetLanguageCommand}"
-                  CommandParameter="{x:Static loc:AppLanguage.ChineseSimplified}"
-                  AutomationProperties.Name="{x:Static uires:Strings.Language_ChineseSimplified}"
-                  AutomationProperties.AutomationId="LanguageChineseSimplifiedMenuItem"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageChineseSimplifiedMenuItem_HelpText}" />
         <MenuItem Header="{x:Static uires:Strings.Language_French}"
                   IsCheckable="True"
                   IsChecked="{Binding IsFrenchSelected, Mode=OneWay}"
@@ -201,7 +193,7 @@
                   CommandParameter="{x:Static loc:AppLanguage.French}"
                   AutomationProperties.Name="{x:Static uires:Strings.Language_French}"
                   AutomationProperties.AutomationId="LanguageFrenchMenuItem"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageFrenchMenuItem_HelpText}" />
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageFrenchMenuItem_HelpText}" />        
         <MenuItem Header="{x:Static uires:Strings.Language_German}"
                   IsCheckable="True"
                   IsChecked="{Binding IsGermanSelected, Mode=OneWay}"
@@ -218,14 +210,6 @@
                   AutomationProperties.Name="{x:Static uires:Strings.Language_Spanish}"
                   AutomationProperties.AutomationId="LanguageSpanishMenuItem"
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageSpanishMenuItem_HelpText}" />
-        <MenuItem Header="{x:Static uires:Strings.Language_Japanese}"
-                  IsCheckable="True"
-                  IsChecked="{Binding IsJapaneseSelected, Mode=OneWay}"
-                  Command="{Binding SetLanguageCommand}"
-                  CommandParameter="{x:Static loc:AppLanguage.Japanese}"
-                  AutomationProperties.Name="{x:Static uires:Strings.Language_Japanese}"
-                  AutomationProperties.AutomationId="LanguageJapaneseMenuItem"
-                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageJapaneseMenuItem_HelpText}" />
         <MenuItem Header="{x:Static uires:Strings.Language_Italian}"
                   IsCheckable="True"
                   IsChecked="{Binding IsItalianSelected, Mode=OneWay}"
@@ -250,6 +234,22 @@
                   AutomationProperties.Name="{x:Static uires:Strings.Language_PortugueseBrazil}"
                   AutomationProperties.AutomationId="LanguagePortugueseBrazilMenuItem"
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguagePortugueseBrazilMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static uires:Strings.Language_ChineseSimplified}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsChineseSimplifiedSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.ChineseSimplified}"
+                  AutomationProperties.Name="{x:Static uires:Strings.Language_ChineseSimplified}"
+                  AutomationProperties.AutomationId="LanguageChineseSimplifiedMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageChineseSimplifiedMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static uires:Strings.Language_Japanese}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsJapaneseSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.Japanese}"
+                  AutomationProperties.Name="{x:Static uires:Strings.Language_Japanese}"
+                  AutomationProperties.AutomationId="LanguageJapaneseMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageJapaneseMenuItem_HelpText}" />
         <MenuItem Header="{x:Static uires:Strings.Language_Korean}"
                   IsCheckable="True"
                   IsChecked="{Binding IsKoreanSelected, Mode=OneWay}"
