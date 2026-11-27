@@ -103,10 +103,10 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>복사</value>
   </data>
   <data name="Button_Resume" xml:space="preserve">
-    <value>▶ 다시 시작</value>
+    <value>▶ 계속</value>
   </data>
   <data name="Tooltip_Resume" xml:space="preserve">
-    <value>실시간 업데이트를 다시 시작합니다.</value>
+    <value>실시간 업데이트를 계속합니다.</value>
   </data>
 
   <data name="Dependencies_Info" xml:space="preserve">
@@ -397,7 +397,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>이 이름의 서비스 '{0}'이(가) 이미 있습니다. 바꾸시겠습니까?
 
 변경 내용을 적용하려면 가져온 후 [설치]를 클릭하고 서비스를 다시 시작해야 합니다.
-서비스가 사용 안 함 상태이고 삭제 대상으로 표시된 경우 컴퓨터를 다시 시작할 때까지 설치가 실패합니다.</value>
+서비스가 사용 안 함으로 설정되어 있고 삭제 대상으로 표시된 경우 컴퓨터를 다시 시작할 때까지 설치가 실패합니다.</value>
   </data>
 
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
@@ -532,7 +532,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>설명서 및 업데이트 옵션이 포함된 메뉴를 엽니다.</value>
   </data>
   <data name="Automation_DocMenuItem_HelpText" xml:space="preserve">
-    <value>Servy 공식 설명서를 엽니다.</value>
+    <value>공식 Servy 설명서를 엽니다.</value>
   </data>
   <data name="Automation_CheckUpdatesMenuItem_HelpText" xml:space="preserve">
     <value>최신 버전의 Servy를 사용할 수 있는지 확인합니다.</value>
@@ -840,10 +840,10 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <data name="Automation_ResumeScrollButton_Name" xml:space="preserve">
-    <value>스크롤 다시 시작</value>
+    <value>스크롤 재개</value>
   </data>
   <data name="Automation_ResumeScrollButton_HelpText" xml:space="preserve">
-    <value>최신 로그 항목으로의 자동 스크롤을 다시 시작합니다.</value>
+    <value>최신 로그 항목으로의 자동 스크롤을 재개합니다.</value>
   </data>
 
   <data name="Automation_ConsoleInstructions_Name" xml:space="preserve">
