@@ -372,7 +372,8 @@ namespace Servy.Core.Validation
 
         /// <summary>
         /// Validates that a target file path resolves strictly within the specified base directory,
-        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points, and
+        /// rejecting UNC paths, rooted paths pointing outside the base, and reparse points between the
+        /// base directory and the target (the base directory itself may be a junction, as on a Scoop install), and
         /// hands back the resolved path so callers use the very string that was validated.
         /// </summary>
         /// <param name="targetPath">The path to validate.</param>
@@ -413,8 +414,9 @@ namespace Servy.Core.Validation
                     return false;
                 }
 
-                // Reject reparse points (junctions/symlinks)
-                if (Helper.HasAncestorReparsePoint(fullTargetPath))
+                // Reject reparse points (junctions/symlinks) between the application directory and the target.
+                // The application directory itself may be a junction (Scoop's apps\servy\current) and is trusted.
+                if (Helper.HasAncestorReparsePoint(fullTargetPath, fullBaseDir))
                 {
                     Logger.Warn($"Security refusal: Path '{fullTargetPath}' traverses a junction or symbolic link.");
                     return false;

@@ -833,10 +833,38 @@ namespace Servy.Core.Helpers
         /// <see cref="FileAttributes.ReparsePoint"/> bitmask flag.
         /// </remarks>
         public static bool HasAncestorReparsePoint(string fullPath)
+            => HasAncestorReparsePoint(fullPath, null);
+
+        /// <summary>
+        /// Walks up the directory tree from the parent of <paramref name="fullPath"/> and determines whether any
+        /// directory strictly below <paramref name="trustedDirectory"/> is an NTFS reparse point (such as a
+        /// junction point or symbolic link).
+        /// </summary>
+        /// <param name="fullPath">The fully canonicalized absolute path to evaluate.</param>
+        /// <param name="trustedDirectory">
+        /// The directory at which the walk stops without inspecting it, such as the application directory the
+        /// process was launched from. When <c>null</c>, empty, or not an ancestor of <paramref name="fullPath"/>,
+        /// every ancestor is inspected, exactly as <see cref="HasAncestorReparsePoint(string)"/> does.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if a directory between <paramref name="trustedDirectory"/> and <paramref name="fullPath"/>
+        /// is a reparse point; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// A package manager such as Scoop launches the application through a junction (<c>apps\servy\current</c>),
+        /// so the application directory itself, or one of its ancestors, may be a reparse point. That directory is
+        /// already trusted, so neither it nor its ancestors are inspected; a junction or symbolic link that lies
+        /// between it and the target is still reported.
+        /// </remarks>
+        public static bool HasAncestorReparsePoint(string fullPath, string trustedDirectory)
         {
             var parentPath = Path.GetDirectoryName(fullPath);
             if (string.IsNullOrWhiteSpace(parentPath))
                 return false; // drive root or UNC share root - no ancestors to inspect
+
+            string trustedRoot = string.IsNullOrWhiteSpace(trustedDirectory)
+                ? null
+                : Path.GetFullPath(trustedDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
             var current = new DirectoryInfo(parentPath);
 
@@ -845,6 +873,12 @@ namespace Servy.Core.Helpers
             // directories that are about to be created.
             while (current != null)
             {
+                if (trustedRoot != null &&
+                    string.Equals(current.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), trustedRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false; // reached the trusted directory: it and its ancestors are not inspected
+                }
+
                 if (current.Exists)
                 {
                     if ((current.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
