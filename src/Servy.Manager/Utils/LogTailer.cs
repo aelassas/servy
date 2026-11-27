@@ -595,7 +595,7 @@ namespace Servy.Manager.Utils
                     // Split the slice the way the live tail does: on '\n' only, one trailing '\r' stripped.
                     // StreamReader.ReadLine also ended a line at a lone '\r', which the backward scan above
                     // does not count, so the newest lines fell outside a cap applied from the oldest end.
-                    // A UTF-8 byte order mark is skipped when the slice starts at offset 0.
+                    // The byte order mark DetectEncoding found (UTF-8, UTF-16 or UTF-32) is skipped when the slice starts at offset 0.
                     var historySplitter = new LogLineSplitter(encoding);
                     var tempLines = new List<string>();
                     int sliceIndex = pos == 0 ? (int)firstDataOffset : 0;
