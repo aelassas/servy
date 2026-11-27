@@ -155,7 +155,7 @@ namespace Servy.Service.Helpers
         /// Initializes a new instance of the <see cref="ServiceHelper"/> class.
         /// </summary>
         /// <param name="commandLineProvider">The provider used to access system command line arguments.</param>
-        /// <param name="processHelper">The process helper used for any necessary process-related operations during parsing.</param>
+        /// <param name="processHelper">The process helper used to resolve paths while parsing, to validate the configured paths, and to start the restarter and <c>shutdown.exe</c>.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="commandLineProvider"/> or <paramref name="processHelper"/> is null.
         /// </exception>
