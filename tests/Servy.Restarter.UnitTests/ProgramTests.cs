@@ -68,7 +68,7 @@ namespace Servy.Restarter.UnitTests
 
             // The ExitsEarly half: without the guard's return, args[0] throws on the empty array
             // and the catch-all logs the pre-scoped-logger failure instead.
-            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to initialize or execute.");
+            AssertLogDoesNotContainMessage("Servy.Restarter.Net48.exe failed to initialize or execute.");
             AssertLogDoesNotContainMessage("Attempting to restart service");
         }
 
@@ -204,7 +204,7 @@ namespace Servy.Restarter.UnitTests
 
             // The fallback logger was built, so start-up carries on rather than reaching the catch-all.
             AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
-            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to initialize or execute.");
+            AssertLogDoesNotContainMessage("Servy.Restarter.Net48.exe failed to initialize or execute.");
         }
 
         [Fact]
@@ -245,11 +245,11 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(1, Environment.ExitCode);
-            AssertLogContainsMessage("Servy.Restarter.exe failed to initialize or execute.");
+            AssertLogContainsMessage("Servy.Restarter.Net48.exe failed to initialize or execute.");
 
             // The arm is the branch: with a logger available the catch-all reports the other message, so
             // this pins the else rather than the if.
-            AssertLogDoesNotContainMessage("Servy.Restarter.exe failed to restart the service.");
+            AssertLogDoesNotContainMessage("Servy.Restarter.Net48.exe failed to restart the service.");
         }
 
         #endregion
@@ -358,6 +358,7 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(0, Environment.ExitCode);
+            AssertLogContainsMessage($"Attempting to restart service '{serviceName}' using Servy.Restarter.Net48.exe.");
             AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
             mockRestarter.Verify(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()), Times.Once);
         }
@@ -472,7 +473,7 @@ namespace Servy.Restarter.UnitTests
             // The service-name prefix is what only the scoped logger can add, so asserting it pins
             // the "scoped first" half of the scoped > root > static order rather than merely that
             // some logger reported the failure.
-            AssertLogContainsMessage("[Invalid\\Service/Path:Characters] Servy.Restarter.exe failed to restart the service.");
+            AssertLogContainsMessage("[Invalid\\Service/Path:Characters] Servy.Restarter.Net48.exe failed to restart the service.");
         }
 
         #endregion
