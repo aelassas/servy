@@ -1094,4 +1094,7 @@ Se o serviço estiver desativado e marcado para eliminação, a instalação fal
   <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
     <value>Apresentar o Servy Manager em português do Brasil.</value>
   </data>
+  <data name="Automation_LanguageKoreanMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy Manager em coreano.</value>
+  </data>
 </root>

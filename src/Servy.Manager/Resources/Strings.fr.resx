@@ -1094,4 +1094,7 @@ Si le service est désactivé et marqué pour suppression, l'installation échou
   <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
     <value>Afficher Servy Manager en portugais brésilien.</value>
   </data>
+  <data name="Automation_LanguageKoreanMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en coréen.</value>
+  </data>
 </root>

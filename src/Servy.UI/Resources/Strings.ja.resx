@@ -85,6 +85,9 @@
   <data name="Language_PortugueseBrazil" xml:space="preserve">
     <value>Português (Brasil) (ポルトガル語、ブラジル)</value>
   </data>
+  <data name="Language_Korean" xml:space="preserve">
+    <value>한국어 (韓国語)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>言語設定を保存できませんでした: {0}</value>
   </data>

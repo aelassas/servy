@@ -2233,6 +2233,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [InlineData(AppLanguage.Italian)]
         [InlineData(AppLanguage.PortuguesePortugal)]
         [InlineData(AppLanguage.PortugueseBrazil)]
+        [InlineData(AppLanguage.Korean)]
         public async Task SetLanguageCommand_UserConfirmsATranslatedLanguage_StoresItAndChecksOnlyItsMenuItem(AppLanguage language)
         {
             await Helper.RunOnSTA(async () =>
@@ -2292,6 +2293,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 { nameof(MainViewModel.IsItalianSelected), viewModel.IsItalianSelected },
                 { nameof(MainViewModel.IsPortuguesePortugalSelected), viewModel.IsPortuguesePortugalSelected },
                 { nameof(MainViewModel.IsPortugueseBrazilSelected), viewModel.IsPortugueseBrazilSelected },
+                { nameof(MainViewModel.IsKoreanSelected), viewModel.IsKoreanSelected },
             };
         }
 

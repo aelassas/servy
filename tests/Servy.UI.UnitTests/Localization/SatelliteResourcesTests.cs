@@ -36,6 +36,8 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("ja", "ja-JP", "Msg_LanguageRestartConfirm")]
         [InlineData("it", "it-CH", "Language_System")]
         [InlineData("it", "it-CH", "Msg_LanguageRestartConfirm")]
+        [InlineData("ko", "ko-KR", "Language_System")]
+        [InlineData("ko", "ko-KR", "Msg_LanguageRestartConfirm")]
         public void ResourceManager_TranslatedCulture_LoadsTheTranslationFromTheSatelliteAssembly(string neutralName, string regionalName, string key)
         {
             // Arrange: a regional culture of the language falls back to the satellite of its neutral culture
@@ -81,11 +83,11 @@ namespace Servy.UI.UnitTests.Localization
         public void ResourceManager_UntranslatedCulture_FallsBackToTheEnglishText()
         {
             // Arrange
-            var korean = CultureInfo.GetCultureInfo("ko-KR");
+            var russian = CultureInfo.GetCultureInfo("ru-RU");
 
             // Act
             var english = Strings.ResourceManager.GetString("Language_System", CultureInfo.InvariantCulture);
-            var fallback = Strings.ResourceManager.GetString("Language_System", korean);
+            var fallback = Strings.ResourceManager.GetString("Language_System", russian);
 
             // Assert
             Assert.Equal("Follow system language", english);

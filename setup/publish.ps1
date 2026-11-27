@@ -167,7 +167,7 @@ try {
 
         # 2-bis. Copy the translated satellite assemblies of the desktop applications, one folder per language.
         # The CLI output is left out on purpose: the CLI stays in English.
-        $satelliteCultures = @("zh-CN", "fr", "de", "es", "ja", "it", "pt-PT", "pt-BR")
+        $satelliteCultures = @("zh-CN", "fr", "de", "es", "ja", "it", "pt-PT", "pt-BR", "ko")
         foreach ($culture in $satelliteCultures) {
             foreach ($dir in @($buildOutputDir, $managerBuildOutputDir)) {
                 $satelliteSource = Join-Path $dir $culture

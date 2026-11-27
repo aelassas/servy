@@ -15,7 +15,7 @@ Starting from v10.2, Servy provides enterprise-grade per-service isolation betwe
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for monitoring and managing all installed services in real time.
 
-The Servy Desktop App, Servy Manager, and the installer are available in English, Simplified Chinese (简体中文, since v11.0), French (Français), German (Deutsch), Spanish (Español), Japanese (日本語), Italian (Italiano), European Portuguese (Português, Portugal), and Brazilian Portuguese (Português, Brasil). By default they follow the Windows display language, including its regional variants such as `fr-CA`, `de-CH`, `es-MX`, or `it-CH`, and the **Language** menu switches between them. The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
+The Servy Desktop App, Servy Manager, and the installer are available in English, Simplified Chinese (简体中文, since v11.0), French (Français), German (Deutsch), Spanish (Español), Japanese (日本語), Italian (Italiano), European Portuguese (Português, Portugal), Brazilian Portuguese (Português, Brasil), and Korean (한국어). By default they follow the Windows display language, including its regional variants such as `fr-CA`, `de-CH`, `es-MX`, `it-CH`, or `ko-KR`, and the **Language** menu switches between them. The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
 
 ## License
 

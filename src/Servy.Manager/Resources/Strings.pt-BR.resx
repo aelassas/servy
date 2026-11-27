@@ -1094,4 +1094,7 @@ Se o serviço estiver desativado e marcado para exclusão, a instalação falhar
   <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
     <value>Exibir o Servy Manager em português brasileiro.</value>
   </data>
+  <data name="Automation_LanguageKoreanMenuItem_HelpText" xml:space="preserve">
+    <value>Exibir o Servy Manager em coreano.</value>
+  </data>
 </root>

@@ -56,6 +56,7 @@ namespace Servy.Core.UnitTests.Localization
         [InlineData("it-IT")]
         [InlineData("pt-PT")]
         [InlineData("pt-BR")]
+        [InlineData("ko-KR")]
         public void UseEnglish_TranslatedUiCulture_KeepsTheCoreStringsInEnglish(string cultureName)
         {
             var previous = CultureInfo.CurrentUICulture;

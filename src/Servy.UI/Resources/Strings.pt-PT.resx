@@ -85,6 +85,9 @@ Os serviços Servy não podem ser iniciados enquanto este não estiver em execu�
   <data name="Language_PortugueseBrazil" xml:space="preserve">
     <value>Português (Brasil) (português, Brasil)</value>
   </data>
+  <data name="Language_Korean" xml:space="preserve">
+    <value>한국어 (coreano)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>Falha ao guardar a definição de idioma: {0}</value>
   </data>

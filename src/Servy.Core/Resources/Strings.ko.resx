@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DetailsUnavailableAccessDenied" xml:space="preserve">
+    <value>(세부 정보를 사용할 수 없음: 액세스가 거부되었습니다.)</value>
+  </data>
+  <data name="Msg_DetailsUnavailableTimedOut" xml:space="preserve">
+    <value>(세부 정보를 사용할 수 없음: 네이티브 쿼리 시간이 초과되었습니다.)</value>
+  </data>
+  <data name="Msg_DetailsUnavailableFaulted" xml:space="preserve">
+    <value>(세부 정보를 사용할 수 없음: {0})</value>
+  </data>
+  <data name="Msg_ValidationError" xml:space="preserve">
+    <value>필수 필드를 모두 입력하십시오.</value>
+  </data>
+  <data name="Msg_ServiceNameRequired" xml:space="preserve">
+    <value>서비스 이름은 필수입니다.</value>
+  </data>
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>지정한 서비스를 찾을 수 없습니다.</value>
+  </data>
+  <data name="Msg_ServiceNotFoundDetailed" xml:space="preserve">
+    <value>지정한 서비스 '{0}'을(를) 찾을 수 없습니다.</value>
+  </data>
+  <data name="Msg_ExecutablePathRequired" xml:space="preserve">
+    <value>서비스 프로세스 경로는 비워 둘 수 없습니다.</value>
+  </data>
+  <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
+    <value>서비스 이름 끝에 공백을 사용할 수 없습니다.</value>
+  </data>
+  <data name="Msg_ServiceNameContainsLeadingWhitespace" xml:space="preserve">
+    <value>서비스 이름 앞에 공백을 사용할 수 없습니다.</value>
+  </data>
+  <data name="Msg_InvalidServiceName" xml:space="preserve">
+    <value>서비스 이름에 잘못된 문자가 포함되어 있습니다. '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|', ';' 및 인쇄할 수 없는 문자는 사용하지 마십시오.</value>
+  </data>
+  <data name="Msg_ServiceNameLeadingTrailingDot" xml:space="preserve">
+    <value>서비스 이름은 마침표로 시작하거나 끝날 수 없습니다.</value>
+  </data>
+  <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
+    <value>'{0}'은(는) Windows에서 예약된 이름이므로 서비스 이름에 사용할 수 없습니다.</value>
+  </data>
+  <data name="Msg_ServiceNameReservedForServyHost" xml:space="preserve">
+    <value>서비스 이름 '{0}'은(는) Servy 호스트 서비스(Servy.Host.exe)용으로 예약되어 있습니다. 다른 이름을 선택하십시오.</value>
+  </data>
+
+  <data name="Msg_ValidationPassed" xml:space="preserve">
+    <value>서비스 '{0}'의 유효성 검사를 통과했습니다.</value>
+  </data>
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>서비스 래퍼 실행 파일을 찾을 수 없습니다.</value>
+  </data>
+  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
+    <value>지정한 시작 디렉터리가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
+    <value>지정한 stdout 파일 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidStderrPath" xml:space="preserve">
+    <value>지정한 stderr 파일 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidRotationSize" xml:space="preserve">
+    <value>회전 크기는 {0}에서 {1} 사이의 메가바이트(MB) 수여야 합니다.</value>
+  </data>
+  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
+    <value>최대 회전 수는 {0}에서 {1} 사이의 숫자여야 합니다. 회전 수를 무제한으로 하려면 0으로 설정하십시오.</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrlTimeout" xml:space="preserve">
+    <value>하트비트 URL 시간 제한은 {0}에서 {1} 사이의 초 단위 숫자여야 합니다.</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
+    <value>하트비트 간격은 {0}에서 {1} 사이의 초 단위 숫자여야 합니다.</value>
+  </data>
+  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
+    <value>최대 실패 검사 수는 {0}에서 {1} 사이의 숫자여야 합니다.</value>
+  </data>
+  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
+    <value>최대 다시 시작 시도 횟수는 {0}에서 {1} 사이의 숫자여야 합니다. 다시 시작 시도 횟수를 무제한으로 하려면 0으로 설정하십시오.</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrl" xml:space="preserve">
+    <value>하트비트 모니터링 URL은 올바른 형식의 절대 HTTP 또는 HTTPS URL이어야 합니다.</value>
+  </data>
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>서비스 '{0}'을(를) 설치했습니다.</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>예기치 않은 오류가 발생했습니다.</value>
+  </data>
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>서비스 '{0}'을(를) 시작했습니다.</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>서비스 '{0}'을(를) 중지했습니다.</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>서비스 '{0}'을(를) 다시 시작했습니다.</value>
+  </data>
+
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>시작 전 프로세스 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>지정한 시작 전 시작 디렉터리가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>지정한 시작 전 stdout 파일 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>지정한 시작 전 stderr 파일 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>시작 전 시간 제한은 {0}에서 {1} 사이의 초 단위 숫자여야 합니다. 시간 제한을 0으로 설정하면 시작 전 후크가 비동기(fire-and-forget) 모드로 실행됩니다. 0으로 설정하면 후크가 시작된 후 완료를 기다리지 않고 즉시 서비스가 시작됩니다. 비동기 모드는 서비스의 시작 또는 정상적인 실행에 영향을 주지 않는 작업에만 사용하십시오. 비동기 모드에서는 Stdout/Stderr 리디렉션과 재시도를 사용할 수 없습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>시작 전 재시도 횟수는 {0}에서 {1} 사이의 숫자여야 합니다.</value>
+  </data>
+
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>실패 시 프로그램 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>지정한 실패 시 프로그램 시작 디렉터리가 잘못되었습니다.</value>
+  </data>
+
+  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
+    <value>시작 후 프로세스 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
+    <value>지정한 시작 후 시작 디렉터리가 잘못되었습니다.</value>
+  </data>
+
+  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
+    <value>시작 시간 제한은 {0}에서 {1} 사이의 초 단위 숫자여야 합니다.</value>
+  </data>
+  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
+    <value>중지 시간 제한은 {0}에서 {1} 사이의 초 단위 숫자여야 합니다.</value>
+  </data>
+
+  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
+    <value>중지 전 프로세스 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
+    <value>지정한 중지 전 시작 디렉터리가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
+    <value>중지 전 시간 제한은 {0}에서 {1} 사이의 초 단위 숫자여야 합니다. 시간 제한을 0으로 설정하면 중지 전 프로세스가 비동기(fire-and-forget) 모드로 실행됩니다.</value>
+  </data>
+
+  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
+    <value>중지 후 프로세스 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
+    <value>지정한 중지 후 시작 디렉터리가 잘못되었습니다.</value>
+  </data>
+
+  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
+    <value>서비스 이름이 {0}자를 초과합니다.</value>
+  </data>
+  <data name="Msg_ServiceDependencyNameLengthReachedForName" xml:space="preserve">
+    <value>서비스 종속성 '{0}'이(가) 최대 길이인 {1}자를 초과합니다.</value>
+  </data>
+  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
+    <value>표시 이름이 {0}자를 초과합니다.</value>
+  </data>
+  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
+    <value>설명이 {0}자를 초과합니다.</value>
+  </data>
+  <data name="Msg_ArgumentsLengthReachedForField" xml:space="preserve">
+    <value>필드 '{0}'의 인수가 Windows 명령줄 제한인 {1}자를 초과합니다.</value>
+  </data>
+  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
+    <value>암호가 일치하지 않습니다.</value>
+  </data>
+
+  <data name="Msg_FatalError_Title" xml:space="preserve">
+    <value>Servy - 치명적인 오류</value>
+  </data>
+  <data name="Msg_FatalError_Body" xml:space="preserve">
+    <value>치명적인 오류가 발생하여 애플리케이션을 종료해야 합니다. 자세한 진단 정보가 로그 파일에 저장되었습니다.</value>
+  </data>
+  <data name="Msg_UnexpectedError_Title" xml:space="preserve">
+    <value>Servy - 예기치 않은 오류</value>
+  </data>
+  <data name="Msg_UnexpectedError_Body" xml:space="preserve">
+    <value>인터페이스에서 예기치 않은 오류가 발생했지만 애플리케이션은 계속 실행을 시도합니다. 자세한 내용은 로그에 기록되었습니다.</value>
+  </data>
+  <data name="Msg_StartupError_Format" xml:space="preserve">
+    <value>시작 오류: {0}</value>
+  </data>
+  <data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
+    <value>{0} 입력은 비어 있거나 공백만으로 구성될 수 없습니다.</value>
+  </data>
+  <data name="Msg_ImportPayloadTooLarge" xml:space="preserve">
+    <value>{0} 데이터가 허용되는 최대 크기인 {1} MB를 초과합니다.</value>
+  </data>
+  <data name="Msg_ImportInvalidStructure" xml:space="preserve">
+    <value>잘못된 {0} 구조: {1}.</value>
+  </data>
+  <data name="Msg_ImportStructureError" xml:space="preserve">
+    <value>{0} 구조 오류: {1}.</value>
+  </data>
+  <data name="Msg_ImportEmptyDefinition" xml:space="preserve">
+    <value>{0} 역직렬화 결과 서비스 정의가 비어 있습니다.</value>
+  </data>
+  <data name="Msg_ImportFileNotFound" xml:space="preserve">
+    <value>파일을 찾을 수 없습니다: {0}</value>
+  </data>
+  <data name="Msg_InvalidServiceDependencyName" xml:space="preserve">
+    <value>서비스 이름 '{0}'이(가) 잘못되었습니다. 문자, 숫자, 하이픈, 밑줄, 마침표, 공백 및 달러 기호($)만 사용할 수 있으며, 로드 순서 그룹을 참조하려면 앞에 '+'를 붙일 수 있습니다.</value>
+  </data>
+  <data name="Msg_EnvironmentVariableMissingEquals" xml:space="preserve">
+    <value>각 환경 변수에는 키와 값을 구분하는 이스케이프되지 않은 '=' 문자가 포함되어야 합니다(레코드 {0}).</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyEmpty" xml:space="preserve">
+    <value>환경 변수 키는 비워 둘 수 없습니다(레코드 {0}).</value>
+  </data>
+  <data name="Msg_EnvironmentVariableForbiddenNewline" xml:space="preserve">
+    <value>환경 변수 '{0}'에 허용되지 않는 줄 바꿈 문자가 포함되어 있습니다. 여러 줄 값은 지원되지 않습니다.</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyInvalidChars" xml:space="preserve">
+    <value>환경 변수 키 '{0}'에 잘못된 문자가 포함되어 있습니다.</value>
+  </data>
+  <data name="Msg_EnvironmentVariableValueInvalidChars" xml:space="preserve">
+    <value>환경 변수 '{0}'의 값에 잘못된 문자가 포함되어 있습니다.</value>
+  </data>
+
+  <data name="FileFilter_Executable" xml:space="preserve">
+    <value>실행 파일 (*.exe)|*.exe|모든 파일 (*.*)|*.*</value>
+  </data>
+  <data name="FileFilter_Xml" xml:space="preserve">
+    <value>XML 파일 (*.xml)|*.xml</value>
+  </data>
+  <data name="FileFilter_Json" xml:space="preserve">
+    <value>JSON 파일 (*.json)|*.json</value>
+  </data>
+  <data name="FileFilter_AllFiles" xml:space="preserve">
+    <value>모든 파일 (*.*)|*.*</value>
+  </data>
+  <data name="Title_SelectExecutable" xml:space="preserve">
+    <value>프로세스 실행 파일 선택</value>
+  </data>
+  <data name="Title_SelectXml" xml:space="preserve">
+    <value>XML 파일 선택</value>
+  </data>
+  <data name="Title_SelectJson" xml:space="preserve">
+    <value>JSON 파일 선택</value>
+  </data>
+  <data name="Title_SelectStartupDirectory" xml:space="preserve">
+    <value>시작 디렉터리 선택</value>
+  </data>
+
+  <data name="Msg_SecurityUncPathProhibited" xml:space="preserve">
+    <value>보안 경고: 악의적인 구성 삽입을 방지하기 위해 UNC 경로에서 가져오기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveProhibited" xml:space="preserve">
+    <value>보안 경고: 네트워크 드라이브(매핑된 UNC 공유 포함)에서 가져오기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointProhibited" xml:space="preserve">
+    <value>보안 경고: 경로 리디렉션 공격을 방지하기 위해 디렉터리 정션 또는 심볼릭 링크를 통한 구성 가져오기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointProhibited" xml:space="preserve">
+    <value>보안 경고: 경로 리디렉션 공격을 방지하기 위해 파일 심볼릭 링크 또는 정션을 통한 구성 가져오기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityUncPathExportProhibited" xml:space="preserve">
+    <value>보안 경고: 구성 유출을 방지하기 위해 UNC 경로로 내보내기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveExportProhibited" xml:space="preserve">
+    <value>보안 경고: 네트워크 드라이브(매핑된 UNC 공유 포함)로 내보내기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointExportProhibited" xml:space="preserve">
+    <value>보안 경고: 경로 리디렉션 공격을 방지하기 위해 디렉터리 정션 또는 심볼릭 링크로 구성 내보내기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointExportProhibited" xml:space="preserve">
+    <value>보안 경고: 경로 리디렉션 공격을 방지하기 위해 파일 심볼릭 링크 또는 정션으로 구성 내보내기가 금지되어 있습니다.</value>
+  </data>
+  <data name="Msg_SecurityReservedDeviceName" xml:space="preserve">
+    <value>보안 경고: '{0}'은(는) Windows에서 예약된 장치 이름이므로 사용할 수 없습니다.</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectory" xml:space="preserve">
+    <value>보안 경고: 확인된 경로가 보호된 시스템 디렉터리 '{0}'을(를) 대상으로 합니다. 가져오기가 금지되었습니다.</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectoryExport" xml:space="preserve">
+    <value>보안 경고: 확인된 경로가 보호된 시스템 디렉터리 '{0}'을(를) 대상으로 합니다. 내보내기가 금지되었습니다.</value>
+  </data>
+  <data name="Msg_SecurityInvalidFileType" xml:space="preserve">
+    <value>보안 경고: 파일 형식 '{0}'이(가) 잘못되었습니다. .json 및 .xml 파일만 지원됩니다.</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestination" xml:space="preserve">
+    <value>보안 경고: 확인된 파일 대상이 UNC 위치를 직접 가리킵니다. 가져오기를 중단했습니다.</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestinationExport" xml:space="preserve">
+    <value>보안 경고: 확인된 파일 대상이 UNC 위치를 직접 가리킵니다. 내보내기를 중단했습니다.</value>
+  </data>
+  <data name="Msg_SecurityHandleInvalid" xml:space="preserve">
+    <value>보안 경고: 대상의 파일 핸들을 가져올 수 없습니다.</value>
+  </data>
+  <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
+    <value>보안 경고: 대상 파일 핸들의 유효성 검사가 거부되었습니다({0}).</value>
+  </data>
+  <data name="Msg_SecurityHandleSizeProbeFailed" xml:space="preserve">
+    <value>보안 경고: 커널 프로브(크기 할당)에서 경로 유효성 검사에 실패했습니다.</value>
+  </data>
+  <data name="Msg_InvalidConfig" xml:space="preserve">
+    <value>구성의 {0}이(가) 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
+    <value>구성의 {0}이(가) 잘못되었습니다. 경로가 존재하고 액세스할 수 있는지 확인하십시오.</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>지정한 경로가 잘못되었습니다.</value>
+  </data>
+  <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
+    <value>구성 파일 '{0}'의 크기는 {1:N2} MB로, 허용되는 최대 크기인 {2} MB를 초과합니다.</value>
+  </data>
+
+  <data name="Msg_DependencyUnavailable" xml:space="preserve">
+    <value>종속성 '{0}'을(를) 사용할 수 없습니다.</value>
+  </data>
+  <data name="Msg_DependencyAccessDenied" xml:space="preserve">
+    <value>종속성 '{0}'에 액세스할 수 없습니다(액세스가 거부됨).</value>
+  </data>
+
+  <data name="Msg_InvalidHexAffinityFormat" xml:space="preserve">
+    <value>CPU 선호도 16진수 형식이 잘못되었습니다: '{0}'.</value>
+  </data>
+  <data name="Msg_CoreIndexRangeOutOfBounds" xml:space="preserve">
+    <value>범위 '{0}'의 CPU 선호도 코어 인덱스가 범위(0-{1})를 벗어났습니다.</value>
+  </data>
+  <data name="Msg_CoreIndexOutOfBounds" xml:space="preserve">
+    <value>CPU 선호도 코어 인덱스 '{0}'이(가) 범위(0-{1})를 벗어났습니다.</value>
+  </data>
+  <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
+    <value>CPU 선호도 코어 지정이 잘못되었습니다: '{0}'.</value>
+  </data>
+  <data name="Msg_InvertedCoreRange" xml:space="preserve">
+    <value>CPU 선호도 코어 범위 '{0}'이(가) 반전되었습니다: 시작 인덱스가 끝 인덱스보다 큽니다.</value>
+  </data>
+  <data name="Msg_EmptyAffinityMask" xml:space="preserve">
+    <value>CPU 선호도 마스크 '{0}'에서 선택된 프로세서가 없습니다.</value>
+  </data>
+  <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
+    <value>CPU 선호도 마스크 '{0}'에서 허용 범위(0-{1})를 벗어난 프로세서를 선택했습니다.</value>
+  </data>
+
+  <data name="Msg_UnknownXmlElement" xml:space="preserve">
+    <value>알 수 없는 XML 요소가 발견되었습니다: '{0}'.</value>
+  </data>
+  <data name="Msg_UnknownXmlAttribute" xml:space="preserve">
+    <value>알 수 없는 XML 특성이 발견되었습니다: '{0}'.</value>
+  </data>
+
+  <data name="Msg_EventLogUnavailable" xml:space="preserve">
+    <value>Windows 이벤트 로그에 액세스할 수 없습니다. 'Windows Event Log' 서비스가 실행 중이고 쿼리가 올바른지 확인하십시오.</value>
+  </data>
+  <data name="Msg_EventLogAccessDenied" xml:space="preserve">
+    <value>Windows 이벤트 로그에 대한 액세스가 거부되었습니다. 애플리케이션이 충분한 권한(관리자)으로 실행되고 있는지 확인하십시오.</value>
+  </data>
+
+  <data name="Label_Parameters" xml:space="preserve">
+    <value>매개 변수</value>
+  </data>
+  <data name="Label_PreLaunchParameters" xml:space="preserve">
+    <value>시작 전 매개 변수</value>
+  </data>
+  <data name="Label_PostLaunchParameters" xml:space="preserve">
+    <value>시작 후 매개 변수</value>
+  </data>
+  <data name="Label_PreStopParameters" xml:space="preserve">
+    <value>중지 전 매개 변수</value>
+  </data>
+  <data name="Label_PostStopParameters" xml:space="preserve">
+    <value>중지 후 매개 변수</value>
+  </data>
+  <data name="Label_FailureProgramParameters" xml:space="preserve">
+    <value>실패 시 프로그램 매개 변수</value>
+  </data>
+  <data name="Msg_ExportDecryptionFailed" xml:space="preserve">
+    <value>서비스 '{0}'을(를) 내보내지 않았습니다: 하나 이상의 중요한 필드를 현재 암호화 키(aes_key.dat)로 해독할 수 없으므로 매개 변수와 환경 변수가 없는 파일이 작성됩니다. 키 파일이 손상되었거나 교체된 경우 원래 aes_key.dat를 복원하거나, Servy.db를 해당 키가 있는 컴퓨터로 다시 복사한 후 그곳에서 구성을 내보내십시오.</value>
+  </data>
+  <data name="Msg_ExportLegacyEncryptionBlocked" xml:space="preserve">
+    <value>서비스 '{0}'을(를) 내보내지 않았습니다: 하나 이상의 중요한 필드가 이전 Servy 버전의 v2 이전 암호화를 사용하며, 이 버전에서는 해당 암호화의 해독을 거부합니다. 암호화 키(aes_key.dat)와는 관계가 없습니다. 서비스를 업그레이드하려면 v1 호환 버전의 Servy로 구성을 내보내고, 여기에서 서비스를 제거한 다음 내보낸 파일을 가져오십시오.</value>
+  </data>
+</root>

@@ -628,6 +628,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Display Servy in Korean.
+        /// </summary>
+        public static string Automation_LanguageKoreanMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageKoreanMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose the display language of Servy.
         /// </summary>
         public static string Automation_LanguageMenu_HelpText {

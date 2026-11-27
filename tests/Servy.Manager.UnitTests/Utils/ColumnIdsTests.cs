@@ -75,6 +75,7 @@ namespace Servy.Manager.UnitTests.Utils
         [InlineData("it")]
         [InlineData("pt-PT")]
         [InlineData("pt-BR")]
+        [InlineData("ko")]
         public void FromHeader_EveryColumnResourceInATranslatedCulture_MapsBackToADistinctEnglishHeader(string cultureName)
         {
             // Arrange

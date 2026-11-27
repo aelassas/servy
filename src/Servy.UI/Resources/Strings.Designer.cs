@@ -115,6 +115,15 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 한국어 (Korean).
+        /// </summary>
+        public static string Language_Korean {
+            get {
+                return ResourceManager.GetString("Language_Korean", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Português (Brasil) (Portuguese, Brazil).
         /// </summary>
         public static string Language_PortugueseBrazil {

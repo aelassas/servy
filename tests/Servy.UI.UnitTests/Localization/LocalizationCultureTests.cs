@@ -53,6 +53,10 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(" pt-br ", AppLanguage.PortugueseBrazil)]
         [InlineData("pt", AppLanguage.PortugueseBrazil)]
         [InlineData("PortugueseBrazil", AppLanguage.PortugueseBrazil)]
+        [InlineData("ko", AppLanguage.Korean)]
+        [InlineData("ko-KR", AppLanguage.Korean)]
+        [InlineData(" KO-kr ", AppLanguage.Korean)]
+        [InlineData("Korean", AppLanguage.Korean)]
         public void TryParse_SupportedName_ReturnsTrueAndTheLanguage(string value, AppLanguage expected)
         {
             // Act
@@ -67,8 +71,9 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        [InlineData("ko")]
+        [InlineData("nl")]
         [InlineData("ru-RU")]
+        [InlineData("kor")]
         [InlineData("ita")]
         [InlineData("ptx")]
         [InlineData("portuguese")]
@@ -115,6 +120,7 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(AppLanguage.Italian, "it")]
         [InlineData(AppLanguage.PortuguesePortugal, "pt-PT")]
         [InlineData(AppLanguage.PortugueseBrazil, "pt-BR")]
+        [InlineData(AppLanguage.Korean, "ko")]
         public void Serialize_EveryLanguage_WritesTheNameTryParseReadsBack(AppLanguage language, string expected)
         {
             // Act
@@ -154,6 +160,7 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(AppLanguage.Spanish, "es")]
         [InlineData(AppLanguage.Japanese, "ja")]
         [InlineData(AppLanguage.Italian, "it")]
+        [InlineData(AppLanguage.Korean, "ko")]
         public void Resolve_TranslatedLanguage_ReturnsItsNeutralCultureWhateverTheSystemLanguageIs(AppLanguage language, string expected)
         {
             // Act
@@ -182,6 +189,8 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("it", "it")]
         [InlineData("it-IT", "it")]
         [InlineData("it-CH", "it")]
+        [InlineData("ko", "ko")]
+        [InlineData("ko-KR", "ko")]
         public void Resolve_SystemOnATranslatedDisplayLanguage_ReturnsTheNeutralCultureOfThatLanguage(string systemCulture, string expected)
         {
             // Act
@@ -239,7 +248,7 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("en-US")]
         [InlineData("ru-RU")]
         [InlineData("nl-NL")]
-        [InlineData("ko-KR")]
+        [InlineData("pl-PL")]
         [InlineData("zh-TW")]
         [InlineData("zh-HK")]
         [InlineData("zh-Hant")]

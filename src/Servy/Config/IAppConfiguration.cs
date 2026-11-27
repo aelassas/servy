@@ -24,7 +24,7 @@ namespace Servy.Config
 
         /// <summary>
         /// Gets the display language saved for this application, as a <c>--lang</c> value
-        /// (<c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c> or <c>pt-BR</c>),
+        /// (<c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c>, <c>pt-BR</c> or <c>ko</c>),
         /// or <see langword="null"/> when it is not known.
         /// </summary>
         /// <remarks>
