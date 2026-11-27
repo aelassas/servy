@@ -48,8 +48,9 @@ namespace Servy.UI.Localization
         /// <param name="value">
         /// <c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c>,
         /// <c>pt-BR</c> or <c>ko</c>, in any casing. A few obvious spellings of each are accepted too: <c>auto</c>, the
-        /// English name of the language (<c>english</c>, <c>french</c>, <c>german</c>, <c>spanish</c>, <c>japanese</c>,
-        /// <c>italian</c>, <c>portugueseportugal</c>, <c>portuguesebrazil</c>, <c>korean</c>), any regional culture name
+        /// English name of the language (<c>english</c>, <c>chinesesimplified</c>, <c>french</c>, <c>german</c>,
+        /// <c>spanish</c>, <c>japanese</c>, <c>italian</c>, <c>portugueseportugal</c>, <c>portuguesebrazil</c>,
+        /// <c>korean</c>), any regional culture name
         /// of the language (<c>en-*</c>, <c>fr-*</c>, <c>de-*</c>, <c>es-*</c>, <c>ja-*</c>, <c>it-*</c>,
         /// <c>ko-*</c>), the Simplified Chinese culture names <c>zh</c>, <c>zh-Hans</c>, <c>zh-Hans-*</c>, <c>zh-SG</c>
         /// and <c>zh-CHS</c>, and the Portuguese culture names as <see cref="Resolve"/> maps them (<c>pt</c> and
