@@ -1,7 +1,7 @@
 # Servy - Full Documentation Context
 
 > Auto-generated full documentation context compiled from the Servy Wiki.
-> Generated on: 2026-11-27T06:12:13Z
+> Generated on: 2026-11-27T09:12:24Z
 
 ---
 
@@ -17,7 +17,7 @@ The modern build supports **Windows 10 (1809+)**, **Windows 11**, and **Windows 
 
 Starting from v10.2, Servy provides enterprise-grade per-service isolation between custom accounts, authenticated encryption, and automated ACL hardening. All releases feature signed binaries, SBOMs, and continuous vulnerability scanning. See [Security](https://github.com/aelassas/servy/wiki/Security) and [Architecture](https://github.com/aelassas/servy/wiki/Architecture) for details.
 
-Starting from v11.0, the Servy Desktop App, Servy Manager, and the installer are available in Simplified Chinese (简体中文) as well as English. The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
+The Servy Desktop App, Servy Manager, and the installer are available in English, Simplified Chinese (简体中文, since v11.0), French (Français), German (Deutsch), Spanish (Español), and Japanese (日本語). The CLI, the PowerShell module, and the logs remain in English, so that scripts, automation, and log searches see the same text on every machine, whatever its display language.
 
 > [!TIP]
 > Use the sidebar to browse installation guides, configuration options, and more.
@@ -80,7 +80,7 @@ Servy covers the basics of running an executable as a service, plus the operatio
 * Manage services with the desktop app, the Manager app, the CLI (`servy-cli`), the PowerShell module (`Servy.psm1`), or [embedded installers](https://github.com/aelassas/servy/wiki/Embedding-in-Custom-Installers).
 * Script deployments and use Servy in CI/CD pipelines.
 * Export and import service configurations for backup and migration.
-* Use the desktop app and the Manager app in English or Simplified Chinese (简体中文), from v11.0. The CLI, the PowerShell module, and the logs remain in English. See [Display Language](https://github.com/aelassas/servy/wiki/Servy-Desktop-App#display-language).
+* Use the desktop app and the Manager app in English, Simplified Chinese (简体中文, from v11.0), French (Français), German (Deutsch), Spanish (Español), or Japanese (日本語). The CLI, the PowerShell module, and the logs remain in English. See [Display Language](https://github.com/aelassas/servy/wiki/Servy-Desktop-App#display-language).
 
 **Security**
 
@@ -439,11 +439,11 @@ The installer's **Add Servy to PATH** option (Additional Options page, enabled b
 
 ### Installer Language
 
-Starting from v11.0, the installer is available in English and in Simplified Chinese (简体中文). When it starts, it asks for the setup language in a **Select Setup Language** dialog, with the language that matches the Windows display language preselected. The wizard pages, the component and option names, the installer's messages and the name of the **Uninstall** shortcut in the Start Menu use the selected language.
+The installer is available in English, Simplified Chinese (简体中文, since v11.0), French (Français), German (Deutsch), Spanish (Español), and Japanese (日本語). When it starts, it asks for the setup language in a **Select Setup Language** dialog, with the language that matches the Windows display language preselected. The wizard pages, the component and option names, the installer's messages and the name of the **Uninstall** shortcut in the Start Menu use the selected language.
 
 The installer language does not set the display language of the Servy Desktop App or Servy Manager: each app follows its own `Language` setting, see [Display Language](Servy-Desktop-App#display-language).
 
-In a silent install the dialog is not shown. To choose the language, pass `/LANG=english` or `/LANG=chinesesimplified`.
+In a silent install the dialog is not shown. To choose the language, pass `/LANG=english`, `/LANG=chinesesimplified`, `/LANG=french`, `/LANG=german`, `/LANG=spanish` or `/LANG=japanese`.
 
 ### Silent Install/Uninstall
 
@@ -546,7 +546,7 @@ You can uninstall Servy silently (without any UI) from an administrator command 
 | `/SP-` | Disables the "This will install..." startup prompt. |
 | `/CLOSEAPPLICATIONS` | Asks running apps to close if they block files. |
 | `/NOCANCEL` | Prevents the user from canceling the installation. |
-| `/LANG=<language>` | Selects the installer language without showing the **Select Setup Language** dialog: `english` or `chinesesimplified`. |
+| `/LANG=<language>` | Selects the installer language without showing the **Select Setup Language** dialog: `english`, `chinesesimplified`, `french`, `german`, `spanish` or `japanese`. |
 
 ## Security & Antivirus Setup
 
@@ -847,18 +847,18 @@ For detailed information about the post-stop hook, check out the [Pre-Stop & Pos
 
 ## Display Language
 
-The Servy Desktop App is available in English and in Simplified Chinese. The CLI, the PowerShell module, the log files and the Windows Event Log entries are in English only. The installer is available in English and in Simplified Chinese, see [Installer Language](Installation-Guide#installer-language).
+The Servy Desktop App is available in English, Simplified Chinese, French, German, Spanish and Japanese. The CLI, the PowerShell module, the log files and the Windows Event Log entries are in English only. The installer is available in the same languages, see [Installer Language](Installation-Guide#installer-language).
 
 Choose the language in one of two ways:
 
-- **Language menu:** pick **Follow system language**, **English** or **简体中文 (Chinese, Simplified)**. The Servy Desktop App asks for confirmation first, because it restarts to apply the language and any input that is not saved is lost. Choose **Yes** to save the language and restart, or **No** to keep the current language; nothing is saved then.
-- **`--lang` option:** start the app with `Servy.exe --lang zh-CN`, `Servy.exe --lang en` or `Servy.exe --lang system`. The form `--lang=zh-CN` works too. The option takes precedence over the saved choice and replaces it, so later starts without the option use the same language. It does not restart anything: the app simply starts in that language. An unsupported value is ignored and reported as a warning in `Servy.log`.
+- **Language menu:** pick **Follow system language**, **English**, **简体中文 (Chinese, Simplified)**, **Français (French)**, **Deutsch (German)**, **Español (Spanish)** or **日本語 (Japanese)**. The Servy Desktop App asks for confirmation first, because it restarts to apply the language and any input that is not saved is lost. Choose **Yes** to save the language and restart, or **No** to keep the current language; nothing is saved then.
+- **`--lang` option:** start the app with `Servy.exe --lang zh-CN`, `Servy.exe --lang fr`, `Servy.exe --lang de`, `Servy.exe --lang es`, `Servy.exe --lang ja`, `Servy.exe --lang en` or `Servy.exe --lang system`. A regional culture name selects its language too (`--lang fr-CA`, `--lang de-AT`, `--lang es-MX`). The form `--lang=zh-CN` works too. The option takes precedence over the saved choice and replaces it, so later starts without the option use the same language. It does not restart anything: the app simply starts in that language. An unsupported value is ignored and reported as a warning in `Servy.log`.
 
 The language is shared with Servy Manager: a change made here, from the menu or with `--lang`, is saved for both apps, so they display the same language. If the setting cannot be saved for the other app, a warning is written to the log and only this app changes. The other app picks it up the next time it starts. When Servy Manager opens this app to create or edit a service, it passes the language saved in its own settings with `--lang`, and **Open Manager** here does the same for Servy Manager, so the app that opens shows the same language even when the two apps are not in the same folder.
 
-**Follow system language** uses the Windows display language of the signed-in user: a Simplified Chinese display language gives Simplified Chinese, any other display language gives English.
+**Follow system language** uses the Windows display language of the signed-in user: a Simplified Chinese, French, German, Spanish or Japanese display language gives that language, whatever its region (`fr-FR`, `fr-CA`, `de-DE`, `de-AT`, `de-CH`, `es-ES`, `es-MX`, `es-419`, `ja-JP`, ...), and any other display language gives English.
 
-The choice is stored in the `Language` setting (`system`, `en` or `zh-CN`) of `appsettings.desktop.json` (`Servy.exe.config` for the .NET Framework 4.8 build), see [Desktop App Settings](Advanced-Configuration#desktop-app-settings). Changing the language does not change how numbers and dates are formatted: they keep following the Windows regional format.
+The choice is stored in the `Language` setting (`system`, `en`, `zh-CN`, `fr`, `de`, `es` or `ja`) of `appsettings.desktop.json` (`Servy.exe.config` for the .NET Framework 4.8 build), see [Desktop App Settings](Advanced-Configuration#desktop-app-settings). Changing the language does not change how numbers and dates are formatted: they keep following the Windows regional format.
 
 ## Availability
 
@@ -968,18 +968,18 @@ Servy writes logs to both the Windows Event Log and log files in `%ProgramData%\
 
 ## Display Language
 
-Servy Manager is available in English and in Simplified Chinese. The CLI, the PowerShell module, the log files and the Windows Event Log entries are in English only. The installer is available in English and in Simplified Chinese, see [Installer Language](Installation-Guide#installer-language).
+Servy Manager is available in English, Simplified Chinese, French, German, Spanish and Japanese. The CLI, the PowerShell module, the log files and the Windows Event Log entries are in English only. The installer is available in the same languages, see [Installer Language](Installation-Guide#installer-language).
 
 Choose the language in one of two ways:
 
-- **Language menu:** pick **Follow system language**, **English** or **简体中文 (Chinese, Simplified)**. Servy Manager asks for confirmation first, because it restarts to apply the language and any input that is not saved is lost. Choose **Yes** to save the language and restart, or **No** to keep the current language; nothing is saved then.
-- **`--lang` option:** start the app with `Servy.Manager.exe --lang zh-CN`, `Servy.Manager.exe --lang en` or `Servy.Manager.exe --lang system`. The form `--lang=zh-CN` works too. The option takes precedence over the saved choice and replaces it, so later starts without the option use the same language. It does not restart anything: the app simply starts in that language. An unsupported value is ignored and reported as a warning in `Servy.Manager.log`.
+- **Language menu:** pick **Follow system language**, **English**, **简体中文 (Chinese, Simplified)**, **Français (French)**, **Deutsch (German)**, **Español (Spanish)** or **日本語 (Japanese)**. Servy Manager asks for confirmation first, because it restarts to apply the language and any input that is not saved is lost. Choose **Yes** to save the language and restart, or **No** to keep the current language; nothing is saved then.
+- **`--lang` option:** start the app with `Servy.Manager.exe --lang zh-CN`, `Servy.Manager.exe --lang fr`, `Servy.Manager.exe --lang de`, `Servy.Manager.exe --lang es`, `Servy.Manager.exe --lang ja`, `Servy.Manager.exe --lang en` or `Servy.Manager.exe --lang system`. A regional culture name selects its language too (`--lang fr-CA`, `--lang de-AT`, `--lang es-MX`). The form `--lang=zh-CN` works too. The option takes precedence over the saved choice and replaces it, so later starts without the option use the same language. It does not restart anything: the app simply starts in that language. An unsupported value is ignored and reported as a warning in `Servy.Manager.log`.
 
 The language is shared with the Servy Desktop App: a change made here, from the menu or with `--lang`, is saved for both apps, so they display the same language. If the setting cannot be saved for the other app, a warning is written to the log and only this app changes. The other app picks it up the next time it starts. When this app opens the Servy Desktop App to create or edit a service, it passes the language saved in its own settings with `--lang`, and **Open Manager** in the Desktop App does the same for this app, so the app that opens shows the same language even when the two apps are not in the same folder.
 
-**Follow system language** uses the Windows display language of the signed-in user: a Simplified Chinese display language gives Simplified Chinese, any other display language gives English.
+**Follow system language** uses the Windows display language of the signed-in user: a Simplified Chinese, French, German, Spanish or Japanese display language gives that language, whatever its region (`fr-FR`, `fr-CA`, `de-DE`, `de-AT`, `de-CH`, `es-ES`, `es-MX`, `es-419`, `ja-JP`, ...), and any other display language gives English.
 
-The choice is stored in the `Language` setting (`system`, `en` or `zh-CN`) of `appsettings.manager.json` (`Servy.Manager.exe.config` for the .NET Framework 4.8 build), see [Manager App Settings](Advanced-Configuration#manager-app-settings). Changing the language does not change how numbers and dates are formatted: they keep following the Windows regional format.
+The choice is stored in the `Language` setting (`system`, `en`, `zh-CN`, `fr`, `de`, `es` or `ja`) of `appsettings.manager.json` (`Servy.Manager.exe.config` for the .NET Framework 4.8 build), see [Manager App Settings](Advanced-Configuration#manager-app-settings). Changing the language does not change how numbers and dates are formatted: they keep following the Windows regional format.
 
 ## Availability
 
@@ -2270,7 +2270,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 | Setting | Default | Description |
 | :--- | :--- | :--- |
 | `ManagerAppPublishPath` | `.\Servy.Manager.exe` | Path to the Servy Manager app launched from the Desktop app. A relative path is resolved against the Desktop app's directory. The resolved path must stay inside that directory: a path outside it, a UNC path, a path through a junction or symbolic link below that directory, or a target that is itself a link is refused, a `Security refusal` warning is written to `Servy.log`, and the Manager is treated as unavailable. The application directory itself may be a junction, as on a Scoop install (`apps\servy\current`). |
-| `Language` | `system` | Display language of the Desktop app: `system` follows the Windows display language (Simplified Chinese display languages get Simplified Chinese, every other one gets English), `en` is English and `zh-CN` is Simplified Chinese. The **Language** menu rewrites it, and so does the `--lang` command-line option (`Servy.exe --lang zh-CN`), which takes precedence over the stored value. The **Language** menu asks for confirmation and restarts the app to apply the change; a value edited by hand applies the next time the app starts. The Desktop app and the Manager share the language: the menu and `--lang` write it to the settings of both. A value edited by hand changes only the app whose file was edited, until one app opens the other: it then passes its own language with `--lang`, which the opened app saves for both. Set it in both files to keep the two apps in the same language. An unsupported value is treated as `system`. See [Display Language](Servy-Desktop-App#display-language). |
+| `Language` | `system` | Display language of the Desktop app: `system` follows the Windows display language (Simplified Chinese, French, German, Spanish and Japanese display languages, regional variants such as `fr-CA`, `de-CH` or `es-MX` included, get that language; every other one gets English), `en` is English, `zh-CN` is Simplified Chinese, `fr` is French, `de` is German, `es` is Spanish and `ja` is Japanese. The **Language** menu rewrites it, and so does the `--lang` command-line option (`Servy.exe --lang zh-CN`), which takes precedence over the stored value. The **Language** menu asks for confirmation and restarts the app to apply the change; a value edited by hand applies the next time the app starts. The Desktop app and the Manager share the language: the menu and `--lang` write it to the settings of both. A value edited by hand changes only the app whose file was edited, until one app opens the other: it then passes its own language with `--lang`, which the opened app saves for both. Set it in both files to keep the two apps in the same language. An unsupported value is treated as `system`. See [Display Language](Servy-Desktop-App#display-language). |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
 ### Manager App Settings
@@ -2292,7 +2292,7 @@ The `Servy` service (`Servy.Host.exe`, or `Servy.Host.Net48.exe` in the .NET Fra
 | `MainWindowPlacement` | `""` | Position, size and state of the Manager's main window, as `Left,Top,Width,Height,State`, for example `120,80,1200,700,Normal`. The four numbers are the bounds of the non-maximized window in device-independent units and `State` is `Normal` or `Maximized`. The Manager rewrites it shortly after the window is moved, resized, maximized or restored, and again when the window closes, and restores it at the next start, moved and resized if needed so the window fits the current screens and its minimum size of 1000 x 500. An empty or unreadable value starts the window at its default size of 1000 x 600. The **View > Reset window layout** menu item restores that default size, centers the window, resets the column widths of both grids and saves that layout in this setting and the two below. |
 | `ServicesColumnWidths` | `""` | Column widths of the services grid in the Manager's Services tab, as a comma-separated list of `Header=Width` entries, for example `Name=180,Status=95`. The Manager rewrites it shortly after a column is resized, and again when the window closes, and restores it at the next start. Entries are matched case-insensitively against the English column header text (Name, Display Name, Description, Status, Startup Type, Log On As, PID, CPU, RAM), whatever the display language is; a hidden column keeps the width it had. An empty value uses the default widths, and an unreadable entry is ignored. |
 | `LogsColumnWidths` | `""` | Column widths of the logs grid in the Manager's Logs tab, in the same `Header=Width` form, for example `Time=200,Level=100`. It covers the `Time`, `Level` and `Event ID` columns; the `Message` column always fills the remaining width. The Manager rewrites it shortly after a column is resized, and again when the window closes, provided the Logs tab was opened in that session. An empty value uses the default widths. |
-| `Language` | `system` | Display language of the Manager app: `system` follows the Windows display language (Simplified Chinese display languages get Simplified Chinese, every other one gets English), `en` is English and `zh-CN` is Simplified Chinese. The **Language** menu rewrites it, and so does the `--lang` command-line option (`Servy.Manager.exe --lang zh-CN`), which takes precedence over the stored value. The **Language** menu asks for confirmation and restarts the app to apply the change; a value edited by hand applies the next time the app starts. The Desktop app and the Manager share the language: the menu and `--lang` write it to the settings of both. A value edited by hand changes only the app whose file was edited, until one app opens the other: it then passes its own language with `--lang`, which the opened app saves for both. Set it in both files to keep the two apps in the same language. An unsupported value is treated as `system`. See [Display Language](Servy-Manager#display-language). |
+| `Language` | `system` | Display language of the Manager app: `system` follows the Windows display language (Simplified Chinese, French, German, Spanish and Japanese display languages, regional variants such as `fr-CA`, `de-CH` or `es-MX` included, get that language; every other one gets English), `en` is English, `zh-CN` is Simplified Chinese, `fr` is French, `de` is German, `es` is Spanish and `ja` is Japanese. The **Language** menu rewrites it, and so does the `--lang` command-line option (`Servy.Manager.exe --lang zh-CN`), which takes precedence over the stored value. The **Language** menu asks for confirmation and restarts the app to apply the change; a value edited by hand applies the next time the app starts. The Desktop app and the Manager share the language: the menu and `--lang` write it to the settings of both. A value edited by hand changes only the app whose file was edited, until one app opens the other: it then passes its own language with `--lang`, which the opened app saves for both. Set it in both files to keep the two apps in the same language. An unsupported value is treated as `system`. See [Display Language](Servy-Manager#display-language). |
 | `General Logging` | - | Uses the settings from the **General Logging** section above. |
 
 > [!NOTE]
