@@ -613,14 +613,13 @@ namespace Servy.Manager.Utils
                     }
 
                     // Read forward from the discovered position. Resolve the torn tail's first byte
-                    // before the StreamReader takes the stream over, so nothing seeks underneath it.
+                    // first: OffsetAfterLastNewline seeks, and the slice read below seeks back to pos.
                     long tornTailStart = tornTail ? OffsetAfterLastNewline(fs, end) : 0;
 
                     // Read exactly [pos, end). Feeding the FileStream itself to the StreamReader let it
                     // read on to the live end of file, so lines appended during the load entered the
                     // history while finalPos still pointed before them and the live tailer published them
-                    // a second time. The slice holds the same bytes the reader already decoded: at most
-                    // maxLines lines plus the torn tail.
+                    // a second time. The slice holds at most maxLines complete lines plus the torn tail.
                     byte[] slice = new byte[end - pos];
                     fs.Seek(pos, SeekOrigin.Begin);
 
@@ -636,49 +635,53 @@ namespace Servy.Manager.Utils
                         sliceBytesRead += bytesRead;
                     }
 
-                    using (StreamReader sr = new StreamReader(new MemoryStream(slice), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+                    // Split the slice the way the live tail does: on '\n' only, one trailing '\r' stripped.
+                    // StreamReader.ReadLine also ended a line at a lone '\r', which the backward scan above
+                    // does not count, so the newest lines fell outside a cap applied from the oldest end.
+                    // A UTF-8 byte order mark is skipped when the slice starts at offset 0.
+                    var historySplitter = new LogLineSplitter(encoding);
+                    var tempLines = new List<string>();
+                    int sliceIndex = pos == 0 ? (int)firstDataOffset : 0;
+                    string parsed;
+                    while (historySplitter.TryReadLine(slice, slice.Length, ref sliceIndex, out parsed))
                     {
-                        string line;
-                        var tempLines = new List<string>();
-                        while ((line = sr.ReadLine()) != null && tempLines.Count < maxLines)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            tempLines.Add(line);
-                        }
+                        cancellationToken.ThrowIfCancellationRequested();
+                        tempLines.Add(parsed);
+                    }
 
-                        // The file does not end with a newline, so the writer may still be flushing its
-                        // last line. Leave that line out of the history and point the live tailer at its
-                        // first byte instead: RunFromPositionAsync holds an unterminated fragment in its
-                        // LogLineSplitter and publishes it once, whole, when the newline arrives. Without
-                        // this the history published the torn prefix and the tail published the remainder as
-                        // a second line. While a line is mid-flush the history therefore holds at most
-                        // maxLines - 1 complete lines.
-                        // The hand-over depends on the tail being torn and not on a line having been read:
-                        // maxLines can be 0, which the clamp above permits and the contract documents, and
-                        // the read loop then returns nothing. Leaving finalPos at fs.Length there would
-                        // hand the live tailer a position past the fragment's start and lose it.
-                        if (tornTail)
-                        {
-                            if (tempLines.Count > 0)
-                            {
-                                tempLines.RemoveAt(tempLines.Count - 1);
-                            }
+                    // The file does not end with a newline, so the writer may still be flushing its
+                    // last line. That unterminated line stays pending in the splitter and never enters
+                    // the history; the live tailer is pointed at its first byte instead:
+                    // RunFromPositionAsync holds an unterminated fragment in its LogLineSplitter and
+                    // publishes it once, whole, when the newline arrives. Without this the history
+                    // published the torn prefix and the tail published the remainder as a second line.
+                    // While a line is mid-flush the history therefore holds at most maxLines - 1 complete
+                    // lines.
+                    // The hand-over depends on the tail being torn and not on a line having been read:
+                    // maxLines can be 0, which the clamp above permits and the contract documents, and
+                    // the slice then holds no complete line. Leaving finalPos at fs.Length there would
+                    // hand the live tailer a position past the fragment's start and lose it.
+                    if (tornTail)
+                    {
+                        finalPos = tornTailStart;
+                    }
 
-                            finalPos = tornTailStart;
-                        }
+                    if (tempLines.Count > maxLines)
+                    {
+                        tempLines.RemoveRange(0, tempLines.Count - maxLines);
+                    }
 
-                        for (int i = 0; i < tempLines.Count; i++)
-                        {
-                            // Logic: The very last line in the file is 'lastWrite'
-                            // Every line before it is 1 tick (100 nanoseconds) older.
-                            long offsetTicks = tempLines.Count - 1 - i;
-                            DateTime syntheticTime = lastWrite.AddTicks(-offsetTicks);
+                    for (int i = 0; i < tempLines.Count; i++)
+                    {
+                        // Logic: The very last line in the file is 'lastWrite'
+                        // Every line before it is 1 tick (100 nanoseconds) older.
+                        long offsetTicks = tempLines.Count - 1 - i;
+                        DateTime syntheticTime = lastWrite.AddTicks(-offsetTicks);
 
-                            // Create the line with its synthetic timestamp
-                            LogLine logLine = new LogLine(tempLines[i], type, syntheticTime);
+                        // Create the line with its synthetic timestamp
+                        LogLine logLine = new LogLine(tempLines[i], type, syntheticTime);
 
-                            lines.Add(logLine);
-                        }
+                        lines.Add(logLine);
                     }
                 }
             }

@@ -264,6 +264,59 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// The UTF-8 history load counts lines on '\n' only, so it must also split them on '\n' only, the
+        /// way the live tail does (#8210). A lone '\r' written by a progress bar is part of its line: when the
+        /// history split on it too, the window yielded more lines than it counted, and the cap dropped the
+        /// newest ones while the live tailer already started after them. The second row is the torn-tail
+        /// shape, where the unterminated line must be the one left out, not a line split off at a '\r'.
+        /// </summary>
+        /// <param name="content">The file content.</param>
+        /// <param name="maxLines">The number of history lines requested.</param>
+        [Theory]
+        [InlineData("old\nbuild 10%\r50%\r100%\nSERVICE READY\n", 2)]
+        [InlineData("old\nbuild 10%\r50%\r100%\nSERVICE READY\nhalf-writ", 3)]
+        public async Task GetHistoryAsync_LoneCarriageReturnInsideWindow_KeepsTheNewestLines(string content, int maxLines)
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, content);
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, maxLines, CancellationToken.None);
+
+                // Assert - the progress line is one line, the newest line is kept, and the tail resumes right after it
+                Assert.Equal(new[] { "build 10%\r50%\r100%", "SERVICE READY" }, result.Lines.Select(l => l.Text));
+                Assert.Equal("old\nbuild 10%\r50%\r100%\nSERVICE READY\n".Length, (int)result.Position);
+            }
+        }
+
+        /// <summary>
+        /// The UTF-8 history load splits the raw slice itself (#8210), so it must skip a UTF-8 byte order
+        /// mark when the slice starts at offset 0, as <c>StreamReader</c> did before; otherwise the first
+        /// history line starts with U+FEFF.
+        /// </summary>
+        [Fact]
+        public async Task GetHistoryAsync_Utf8FileWithByteOrderMark_FirstLineHasNoMark()
+        {
+            // Arrange
+            File.WriteAllText(_tempFilePath, "a\nb\n", EncodingWithByteOrderMark("utf-8"));
+
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, CancellationToken.None);
+
+                // Assert - one string at a time: Assert.Equal on two strings is ordinal, while xUnit v2's
+                // collection comparer on net48 compares culture-sensitively and ignores a leading U+FEFF.
+                Assert.Equal(2, result.Lines.Count);
+                Assert.Equal("a", result.Lines[0].Text);
+                Assert.Equal("b", result.Lines[1].Text);
+                Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
+            }
+        }
+
         [Theory]
         [InlineData("utf-8")]
         [InlineData("utf-16le")]
