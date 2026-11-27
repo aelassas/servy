@@ -37,75 +37,46 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal(10, new[] { system, english, chinese, french, german, spanish, japanese, italian, portuguesePortugal, portugueseBrazil }.Distinct().Count());
         }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("de")]
-        [InlineData("es")]
-        [InlineData("fr")]
-        [InlineData("ja")]
-        [InlineData("it")]
-        [InlineData("pt-PT")]
-        [InlineData("pt-BR")]
-        [InlineData("zh-CN")]
-        public void LanguageEnglish_EveryCulture_StartsWithTheNativeName(string cultureName)
+        public static IEnumerable<object[]> NativeNameCases()
         {
-            // Arrange: the Language menu lists each language under its own name first, so a user
-            // who cannot read the current UI language can still find English
-            var culture = CultureInfo.GetCultureInfo(cultureName);
+            // The native names are spelled with escapes so this file stays ASCII
+            var keys = new[]
+            {
+                new[] { "Language_English", "English" },
+                new[] { "Language_ChineseSimplified", "\u7B80\u4F53\u4E2D\u6587" },
+                new[] { "Language_French", "Fran\u00E7ais" },
+                new[] { "Language_German", "Deutsch" },
+                new[] { "Language_Spanish", "Espa\u00F1ol" },
+                new[] { "Language_Japanese", "\u65E5\u672C\u8A9E" },
+                new[] { "Language_Italian", "Italiano" },
+                new[] { "Language_PortuguesePortugal", "Portugu\u00EAs (Portugal)" },
+                new[] { "Language_PortugueseBrazil", "Portugu\u00EAs (Brasil)" },
+            };
+            var cultures = new[] { "", "de", "es", "fr", "ja", "zh-CN", "it", "pt-PT", "pt-BR" };
 
-            // Act
-            var name = Strings.ResourceManager.GetString("Language_English", culture);
-
-            // Assert
-            Assert.NotNull(name);
-            Assert.StartsWith("English", name, StringComparison.Ordinal);
+            foreach (var culture in cultures)
+            {
+                foreach (var key in keys)
+                {
+                    yield return new object[] { key[0], key[1], culture };
+                }
+            }
         }
 
         [Theory]
-        [InlineData("")]
-        [InlineData("de")]
-        [InlineData("es")]
-        [InlineData("fr")]
-        [InlineData("ja")]
-        [InlineData("it")]
-        [InlineData("pt-PT")]
-        [InlineData("pt-BR")]
-        [InlineData("zh-CN")]
-        public void LanguageChineseSimplified_EveryCulture_StartsWithTheNativeName(string cultureName)
+        [MemberData(nameof(NativeNameCases))]
+        public void LanguageName_EveryCulture_StartsWithTheNativeName(string key, string nativeName, string cultureName)
         {
-            // Arrange: the native name of Simplified Chinese is \u7B80\u4F53\u4E2D\u6587, spelled with
-            // escapes so this file stays ASCII
+            // Arrange: the Language menu lists each language under its own name first, so a user
+            // who cannot read the current UI language can still find their own
             var culture = CultureInfo.GetCultureInfo(cultureName);
-            const string nativeName = "\u7B80\u4F53\u4E2D\u6587";
 
             // Act
-            var name = Strings.ResourceManager.GetString("Language_ChineseSimplified", culture);
+            var name = Strings.ResourceManager.GetString(key, culture);
 
             // Assert
             Assert.NotNull(name);
             Assert.StartsWith(nativeName, name, StringComparison.Ordinal);
-        }
-
-        [Theory]
-        [InlineData("Language_Italian", "Italiano")]
-        [InlineData("Language_PortuguesePortugal", "Portugu\u00EAs (Portugal)")]
-        [InlineData("Language_PortugueseBrazil", "Portugu\u00EAs (Brasil)")]
-        public void LanguageItalianAndPortuguese_EveryCulture_StartWithTheNativeName(string key, string nativeName)
-        {
-            // Arrange: the native names are spelled with escapes so this file stays ASCII
-            var cultureNames = new[] { "", "de", "es", "fr", "ja", "it", "pt-PT", "pt-BR", "zh-CN" };
-
-            // Act
-            var names = cultureNames
-                .Select(cultureName => Strings.ResourceManager.GetString(key, CultureInfo.GetCultureInfo(cultureName)))
-                .ToList();
-
-            // Assert
-            Assert.All(names, name =>
-            {
-                Assert.NotNull(name);
-                Assert.StartsWith(nativeName, name, StringComparison.Ordinal);
-            });
         }
     }
 }
