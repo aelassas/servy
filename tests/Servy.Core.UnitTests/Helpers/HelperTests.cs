@@ -1350,6 +1350,68 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void HasAncestorReparsePoint_TrustedDirectoryDiffersOnlyInCase_StopsAtIt()
+        {
+            // Arrange
+            // The trusted directory is itself a link, as Scoop's apps\servy\current is, and the caller spells it in
+            // another case than the target path (an absolute configured path typed by hand). Windows paths are
+            // case-insensitive, so the walk must still recognise it and stop there. A plain junction is used, which
+            // needs no symlink privilege, so the test always runs.
+            string realDir = Path.Combine(_testRoot, "RealAppDirCase");
+            string linkDir = Path.Combine(_testRoot, "LinkAppDirCase");
+            string trustedOtherCase = Path.Combine(_testRoot, "LINKAPPDIRCASE");
+            Directory.CreateDirectory(realDir);
+            CreateJunctionWithMklink(linkDir, realDir);
+
+            try
+            {
+                Assert.NotEqual(linkDir, trustedOtherCase);
+                Assert.Equal(linkDir, trustedOtherCase, ignoreCase: true);
+
+                string targetFilePath = Path.Combine(linkDir, "Servy.exe");
+                Assert.True(Helper.HasAncestorReparsePoint(targetFilePath)); // without a trusted directory the link is reported
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath, trustedOtherCase);
+
+                // Assert
+                Assert.False(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(linkDir, realDir);
+            }
+        }
+
+        [Fact]
+        public void HasAncestorReparsePoint_TrustedDirectoryIsOnlyANamePrefixOfTheLink_StillReportsTheLink()
+        {
+            // Arrange
+            // "...\cur" is not an ancestor of "...\current\Servy.exe", only a string prefix of it. The walk must
+            // compare whole directory names, so the link at "...\current" is still inspected and reported.
+            string realDir = Path.Combine(_testRoot, "RealAppDirPrefix");
+            string linkDir = Path.Combine(_testRoot, "current");
+            string notAnAncestor = Path.Combine(_testRoot, "cur");
+            Directory.CreateDirectory(realDir);
+            CreateJunctionWithMklink(linkDir, realDir);
+
+            try
+            {
+                string targetFilePath = Path.Combine(linkDir, "Servy.exe");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath, notAnAncestor);
+
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(linkDir, realDir);
+            }
+        }
+
+        [Fact]
         public void HasAncestorReparsePoint_WhenPathIsDriveRoot_ReturnsFalse()
         {
             // Arrange: a drive-root path has no parent directory, so Path.GetDirectoryName
@@ -1369,6 +1431,28 @@ namespace Servy.Core.UnitTests.Helpers
         #endregion
 
         #region Reparse Points Management Helpers
+
+        /// <summary>
+        /// Creates an NTFS directory junction with <c>cmd /c mklink /J</c>, which needs no symlink privilege, so a
+        /// test that relies on it always runs; fails the test if the junction cannot be created.
+        /// </summary>
+        private static void CreateJunctionWithMklink(string junctionPath, string targetDirectory)
+        {
+            var psi = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), $"/c mklink /J \"{junctionPath}\" \"{targetDirectory}\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+
+            using (var process = Process.Start(psi))
+            {
+                string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+                process.WaitForExit();
+                Assert.True(process.ExitCode == 0, $"mklink /J \"{junctionPath}\" \"{targetDirectory}\" failed: {output}");
+            }
+        }
 
         /// <summary>
         /// Centralized factory method to create symbolic links with backoff retry routines.
