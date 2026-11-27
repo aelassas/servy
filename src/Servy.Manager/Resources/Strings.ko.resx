@@ -24,7 +24,7 @@
     <value>보안 경고</value>
   </data>
   <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
-    <value>심각한 보안 위험: 시스템에서 오래된 SQLite 엔진({0})을 사용하고 있습니다. 이 버전의 애플리케이션에서 CVE-2025-6965를 완화하려면 SQLite {1} 이상이 필요합니다.</value>
+    <value>심각한 보안 위험: 시스템에서 오래된 SQLite 엔진({0})을 사용하고 있습니다. CVE-2025-6965를 완화하려면 이 버전의 애플리케이션에 SQLite {1} 이상이 필요합니다.</value>
   </data>
 
   <!-- Splash screen -->
@@ -391,7 +391,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
     <value>이 이름의 서비스 '{0}'이(가) 이미 있습니다. 바꾸시겠습니까?
 
-서비스가 사용 안 함 상태이고 삭제 대상으로 표시된 경우 컴퓨터를 다시 시작할 때까지 설치가 실패합니다.</value>
+서비스가 사용 안 함으로 설정되어 있고 삭제 대상으로 표시된 경우 컴퓨터를 다시 시작할 때까지 설치가 실패합니다.</value>
   </data>
   <data name="Msg_ImportServiceConfirmation" xml:space="preserve">
     <value>이 이름의 서비스 '{0}'이(가) 이미 있습니다. 바꾸시겠습니까?
@@ -401,7 +401,7 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   </data>
 
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
-    <value>지정한 서비스를 사용할 수 없도록 설정되어 있습니다.</value>
+    <value>지정한 서비스가 사용 안 함으로 설정되어 있습니다.</value>
   </data>
 
   <!-- PID -->
@@ -452,13 +452,13 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
 
   <!-- Service Footer Templates -->
   <data name="Footer_Service_None" xml:space="preserve">
-    <value>로드된 서비스 없음({1})</value>
+    <value>서비스 없음({1})</value>
   </data>
   <data name="Footer_Service_One" xml:space="preserve">
-    <value>서비스 1개를 로드했습니다({1}).</value>
+    <value>서비스 1개 로드됨({1})</value>
   </data>
   <data name="Footer_Service_Many" xml:space="preserve">
-    <value>서비스 {0}개를 로드했습니다({1}).</value>
+    <value>서비스 {0}개 로드됨({1})</value>
   </data>
 
   <!-- Logs Tab -->
@@ -475,13 +475,13 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
     <value>경고</value>
   </data>
   <data name="Footer_Log_None" xml:space="preserve">
-    <value>로그를 찾을 수 없음({1})</value>
+    <value>로그 없음({1})</value>
   </data>
   <data name="Footer_Log_One" xml:space="preserve">
-    <value>로그 1개를 찾았습니다({1}).</value>
+    <value>로그 1개 찾음({1})</value>
   </data>
   <data name="Footer_Log_Many" xml:space="preserve">
-    <value>로그 {0}개를 찾았습니다({1}).</value>
+    <value>로그 {0}개 찾음({1})</value>
   </data>
 
   <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
