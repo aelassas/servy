@@ -820,7 +820,8 @@ namespace Servy.Host.IntegrationTests
                 Run("schtasks.exe", $"/Create /F /TN {task} /SC ONCE /ST 23:59 /RU \"{runAs}\"" + (password == null ? "" : $" /RP \"{password}\"") + $" /TR \"{command}\"");
                 Run("schtasks.exe", $"/Run /TN {task}");
 
-                for (var i = 0; i < 240; i++)
+                // A first-ever logon of a service account on a slow runner can take minutes to start powershell.exe
+                for (var i = 0; i < 720; i++)
                 {
                     if (File.Exists(output))
                     {
@@ -835,9 +836,14 @@ namespace Servy.Host.IntegrationTests
                         }
                     }
                     await Task.Delay(250, ct);
+
+                    // Nothing after 60 s: ask the scheduler to start the task again (ignored while an instance is still running)
+                    if (i == 239) TryRun("schtasks.exe", $"/Run /TN {task}");
                 }
 
-                return $"TIMEOUT: the scheduled task as '{runAs}' wrote nothing in 60 s";
+                var (_, status) = Execute("schtasks.exe", $"/Query /TN {task} /V /FO LIST");
+                var details = string.Join(" | ", status.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Status:") || l.StartsWith("Last Result:") || l.StartsWith("Last Run Time:")));
+                return $"TIMEOUT: the scheduled task as '{runAs}' wrote nothing in 180 s ({details})";
             }
 
             public void Dispose()
