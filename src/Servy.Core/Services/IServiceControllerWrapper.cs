@@ -48,8 +48,9 @@ namespace Servy.Core.Services
         void Continue();
 
         /// <summary>
-        /// Discards the cached <see cref="Status"/>, <see cref="DisplayName"/> and
-        /// <see cref="StartType"/> values so the next read queries the Service Control Manager again.
+        /// Discards the cached <see cref="Status"/> and <see cref="StartType"/> values and the cached
+        /// list <see cref="GetDependencyNames"/> reads, so the next read queries the Service Control
+        /// Manager again. <see cref="DisplayName"/> is not discarded and keeps the value it already holds.
         /// </summary>
         void Refresh();
 
