@@ -59,31 +59,31 @@ Os serviços Servy não podem ser iniciados enquanto este não estiver em execu�
     <value>Seguir o idioma do sistema</value>
   </data>
   <data name="Language_English" xml:space="preserve">
-    <value>English (Inglês)</value>
+    <value>English (inglês)</value>
   </data>
   <data name="Language_ChineseSimplified" xml:space="preserve">
-    <value>简体中文 (Chinês Simplificado)</value>
+    <value>简体中文 (chinês simplificado)</value>
   </data>
   <data name="Language_French" xml:space="preserve">
-    <value>Français (Francês)</value>
+    <value>Français (francês)</value>
   </data>
   <data name="Language_German" xml:space="preserve">
-    <value>Deutsch (Alemão)</value>
+    <value>Deutsch (alemão)</value>
   </data>
   <data name="Language_Spanish" xml:space="preserve">
-    <value>Español (Espanhol)</value>
+    <value>Español (espanhol)</value>
   </data>
   <data name="Language_Japanese" xml:space="preserve">
-    <value>日本語 (Japonês)</value>
+    <value>日本語 (japonês)</value>
   </data>
   <data name="Language_Italian" xml:space="preserve">
-    <value>Italiano (Italiano)</value>
+    <value>Italiano (italiano)</value>
   </data>
   <data name="Language_PortuguesePortugal" xml:space="preserve">
     <value>Português (Portugal)</value>
   </data>
   <data name="Language_PortugueseBrazil" xml:space="preserve">
-    <value>Português (Brasil) (Português, Brasil)</value>
+    <value>Português (Brasil) (português, Brasil)</value>
   </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>Falha ao guardar a definição de idioma: {0}</value>
