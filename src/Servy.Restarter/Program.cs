@@ -125,7 +125,7 @@ namespace Servy.Restarter
                 }
 
                 // 8. Execution
-                scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
+                scopedLogger.Info($"Attempting to restart service '{serviceName}' using {AppConfig.ServyRestarterExe}.");
 
                 var result = restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
 
@@ -145,11 +145,11 @@ namespace Servy.Restarter
                 var finalLogger = scopedLogger ?? rootLogger;
                 if (finalLogger != null)
                 {
-                    finalLogger.Error("Servy.Restarter.exe failed to restart the service.", ex);
+                    finalLogger.Error($"{AppConfig.ServyRestarterExe} failed to restart the service.", ex);
                 }
                 else
                 {
-                    Logger.Error("Servy.Restarter.exe failed to initialize or execute.", ex);
+                    Logger.Error($"{AppConfig.ServyRestarterExe} failed to initialize or execute.", ex);
                 }
                 Environment.ExitCode = 1;
             }

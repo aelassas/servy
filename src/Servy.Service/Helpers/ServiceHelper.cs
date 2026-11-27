@@ -430,7 +430,7 @@ namespace Servy.Service.Helpers
                 {
                     if (process == null)
                     {
-                        logger?.Error("Failed to start Servy.Restarter.exe.");
+                        logger?.Error($"Failed to start {AppConfig.ServyRestarterExe}.");
                         return;
                     }
 
@@ -440,7 +440,7 @@ namespace Servy.Service.Helpers
                     // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!WaitForProcessExit(process, restarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {restarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"{AppConfig.ServyRestarterExe} timed out after {restarterExeMaxWaitMs / (double)AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
@@ -463,11 +463,11 @@ namespace Servy.Service.Helpers
 
                     if (process.ExitCode == 0)
                     {
-                        logger?.Info($"Servy.Restarter.exe exited with code {process.ExitCode}.");
+                        logger?.Info($"{AppConfig.ServyRestarterExe} exited with code {process.ExitCode}.");
                     }
                     else
                     {
-                        logger?.Error($"Servy.Restarter.exe exited with non-zero code {process.ExitCode}; the service restart likely failed.");
+                        logger?.Error($"{AppConfig.ServyRestarterExe} exited with non-zero code {process.ExitCode}; the service restart likely failed.");
                     }
                 }
             }

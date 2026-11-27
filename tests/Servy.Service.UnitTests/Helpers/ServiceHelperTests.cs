@@ -772,12 +772,12 @@ namespace Servy.Service.UnitTests.Helpers
                 // Assert
                 if (exitCode == 0)
                 {
-                    mockLog.Verify(l => l.Info(It.Is<string>(m => m.Contains("exited with code 0")), It.IsAny<Exception>()), Times.Once);
+                    mockLog.Verify(l => l.Info("Servy.Restarter.exe exited with code 0.", It.IsAny<Exception>()), Times.Once);
                     mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
                 }
                 else
                 {
-                    mockLog.Verify(l => l.Error(It.Is<string>(m => m.Contains($"exited with non-zero code {exitCode}")), It.IsAny<Exception>()), Times.Once);
+                    mockLog.Verify(l => l.Error($"Servy.Restarter.exe exited with non-zero code {exitCode}; the service restart likely failed.", It.IsAny<Exception>()), Times.Once);
                 }
             }
         }

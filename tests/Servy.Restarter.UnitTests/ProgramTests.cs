@@ -368,6 +368,7 @@ namespace Servy.Restarter.UnitTests
 
             // Assert
             Assert.Equal(0, Environment.ExitCode);
+            AssertLogContainsMessage($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
             AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
             mockRestarter.Verify(r => r.RestartService(serviceName, It.IsAny<TimeSpan>()), Times.Once);
         }
