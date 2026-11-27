@@ -1060,4 +1060,13 @@ Servy 可让任意应用程序作为原生 Windows 服务运行，并可完全�
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>以日语显示 Servy。</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>以意大利语显示 Servy。</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>以欧洲葡萄牙语显示 Servy。</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>以巴西葡萄牙语显示 Servy。</value>
+  </data>
 </root>

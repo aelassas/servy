@@ -34,6 +34,8 @@ namespace Servy.Manager.UnitTests.Localization
         [InlineData("es", "es-419", "Automation_LanguageMenu_HelpText")]
         [InlineData("ja", "ja-JP", "Menu_Language")]
         [InlineData("ja", "ja-JP", "Automation_LanguageMenu_HelpText")]
+        [InlineData("it", "it-CH", "Menu_Language")]
+        [InlineData("it", "it-CH", "Automation_LanguageMenu_HelpText")]
         public void ResourceManager_TranslatedCulture_LoadsTheTranslationFromTheSatelliteAssembly(string neutralName, string regionalName, string key)
         {
             // Arrange: a regional culture of the language falls back to the satellite of its neutral culture
@@ -52,15 +54,38 @@ namespace Servy.Manager.UnitTests.Localization
             Assert.Equal(translated, regionalText);
         }
 
+        [Theory]
+        [InlineData("Automation_LanguageMenu_HelpText")]
+        [InlineData("Automation_LanguageSystemMenuItem_HelpText")]
+        public void ResourceManager_PortugueseCultures_LoadTheirOwnTranslationsFromTheirSatelliteAssemblies(string key)
+        {
+            // Arrange: Portuguese has one satellite per region, so pt-PT and pt-BR each load their own text
+            var european = CultureInfo.GetCultureInfo("pt-PT");
+            var brazilian = CultureInfo.GetCultureInfo("pt-BR");
+
+            // Act
+            var english = Strings.ResourceManager.GetString(key, CultureInfo.InvariantCulture);
+            var europeanText = Strings.ResourceManager.GetString(key, european);
+            var brazilianText = Strings.ResourceManager.GetString(key, brazilian);
+
+            // Assert
+            Assert.False(string.IsNullOrWhiteSpace(english));
+            Assert.False(string.IsNullOrWhiteSpace(europeanText));
+            Assert.False(string.IsNullOrWhiteSpace(brazilianText));
+            Assert.NotEqual(english, europeanText);
+            Assert.NotEqual(english, brazilianText);
+            Assert.NotEqual(europeanText, brazilianText);
+        }
+
         [Fact]
         public void ResourceManager_UntranslatedCulture_FallsBackToTheEnglishText()
         {
             // Arrange
-            var italian = CultureInfo.GetCultureInfo("it-IT");
+            var korean = CultureInfo.GetCultureInfo("ko-KR");
 
             // Act
             var english = Strings.ResourceManager.GetString("Menu_Language", CultureInfo.InvariantCulture);
-            var fallback = Strings.ResourceManager.GetString("Menu_Language", italian);
+            var fallback = Strings.ResourceManager.GetString("Menu_Language", korean);
 
             // Assert
             Assert.Equal("Language", english);

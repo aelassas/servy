@@ -29,6 +29,12 @@ namespace Servy.UI.Services
                     return Strings.Language_Spanish;
                 case AppLanguage.Japanese:
                     return Strings.Language_Japanese;
+                case AppLanguage.Italian:
+                    return Strings.Language_Italian;
+                case AppLanguage.PortuguesePortugal:
+                    return Strings.Language_PortuguesePortugal;
+                case AppLanguage.PortugueseBrazil:
+                    return Strings.Language_PortugueseBrazil;
                 default:
                     return Strings.Language_System;
             }

@@ -25,5 +25,14 @@ namespace Servy.UI.Localization
 
         /// <summary>Japanese.</summary>
         Japanese,
+
+        /// <summary>Italian.</summary>
+        Italian,
+
+        /// <summary>Portuguese as written in Portugal.</summary>
+        PortuguesePortugal,
+
+        /// <summary>Portuguese as written in Brazil.</summary>
+        PortugueseBrazil,
     }
 }

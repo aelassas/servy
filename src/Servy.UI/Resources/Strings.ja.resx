@@ -76,6 +76,15 @@
   <data name="Language_Japanese" xml:space="preserve">
     <value>日本語</value>
   </data>
+  <data name="Language_Italian" xml:space="preserve">
+    <value>Italiano (イタリア語)</value>
+  </data>
+  <data name="Language_PortuguesePortugal" xml:space="preserve">
+    <value>Português (Portugal) (ポルトガル語、ポルトガル)</value>
+  </data>
+  <data name="Language_PortugueseBrazil" xml:space="preserve">
+    <value>Português (Brasil) (ポルトガル語、ブラジル)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>言語設定を保存できませんでした: {0}</value>
   </data>

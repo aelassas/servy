@@ -572,7 +572,7 @@ namespace Servy.UI.UnitTests.Localization
 
         [Theory]
         [InlineData("en-US")]
-        [InlineData("it-IT")]
+        [InlineData("ko-KR")]
         [InlineData("zh-TW")]
         public void Apply_SystemOnANonSimplifiedChineseDisplayLanguage_LeavesTheCultureAlone(string systemCulture)
         {
@@ -593,7 +593,28 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("de-CH", "de")]
         [InlineData("es-419", "es")]
         [InlineData("ja-JP", "ja")]
+        [InlineData("it-IT", "it")]
+        [InlineData("it-CH", "it")]
         public void Apply_SystemOnATranslatedDisplayLanguage_AppliesTheNeutralCultureOfThatLanguage(string systemCulture, string expected)
+        {
+            // Arrange
+            var applied = new List<CultureInfo>();
+
+            // Act
+            var result = StartupCulture.Apply(_configPath, null, Culture(systemCulture), applied.Add);
+
+            // Assert
+            Assert.Equal(AppLanguage.System, result.Language);
+            Assert.Equal(expected, Assert.Single(applied).Name);
+            Assert.Equal(expected, result.Culture?.Name);
+        }
+
+        [Theory]
+        [InlineData("pt-PT", "pt-PT")]
+        [InlineData("pt-AO", "pt-PT")]
+        [InlineData("pt-BR", "pt-BR")]
+        [InlineData("pt", "pt-BR")]
+        public void Apply_SystemOnAPortugueseDisplayLanguage_AppliesTheMatchingPortugueseCulture(string systemCulture, string expected)
         {
             // Arrange
             var applied = new List<CultureInfo>();
@@ -612,6 +633,9 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("de-AT", AppLanguage.German)]
         [InlineData("es-MX", AppLanguage.Spanish)]
         [InlineData("ja", AppLanguage.Japanese)]
+        [InlineData("it", AppLanguage.Italian)]
+        [InlineData("pt-PT", AppLanguage.PortuguesePortugal)]
+        [InlineData("pt-BR", AppLanguage.PortugueseBrazil)]
         public void Apply_TranslatedLanguageOption_AppliesItAndStoresItsCode(string value, AppLanguage expected)
         {
             // Arrange
@@ -719,7 +743,7 @@ namespace Servy.UI.UnitTests.Localization
 
             // Assert
             logger.Verify(l => l.Warn(It.Is<string>(m =>
-                m.Contains("--lang") && m.Contains("'klingon'") && m.Contains("system, en, zh-CN, fr, de, es and ja.")), null), Times.Once);
+                m.Contains("--lang") && m.Contains("'klingon'") && m.Contains("system, en, zh-CN, fr, de, es, ja, it, pt-PT and pt-BR.")), null), Times.Once);
         }
 
         [Fact]

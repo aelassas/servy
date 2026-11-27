@@ -1456,6 +1456,9 @@ namespace Servy.UnitTests.ViewModels
         [InlineData(AppLanguage.German)]
         [InlineData(AppLanguage.Spanish)]
         [InlineData(AppLanguage.Japanese)]
+        [InlineData(AppLanguage.Italian)]
+        [InlineData(AppLanguage.PortuguesePortugal)]
+        [InlineData(AppLanguage.PortugueseBrazil)]
         public async Task SetLanguageCommand_UserConfirmsATranslatedLanguage_StoresItAndChecksOnlyItsMenuItem(AppLanguage language)
         {
             // Arrange
@@ -1505,6 +1508,9 @@ namespace Servy.UnitTests.ViewModels
                 { nameof(MainViewModel.IsGermanSelected), viewModel.IsGermanSelected },
                 { nameof(MainViewModel.IsSpanishSelected), viewModel.IsSpanishSelected },
                 { nameof(MainViewModel.IsJapaneseSelected), viewModel.IsJapaneseSelected },
+                { nameof(MainViewModel.IsItalianSelected), viewModel.IsItalianSelected },
+                { nameof(MainViewModel.IsPortuguesePortugalSelected), viewModel.IsPortuguesePortugalSelected },
+                { nameof(MainViewModel.IsPortugueseBrazilSelected), viewModel.IsPortugueseBrazilSelected },
             };
         }
 

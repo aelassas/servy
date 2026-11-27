@@ -21,6 +21,9 @@ namespace Servy.UI.UnitTests.Localization
             var german = LanguageDisplayNames.For(AppLanguage.German);
             var spanish = LanguageDisplayNames.For(AppLanguage.Spanish);
             var japanese = LanguageDisplayNames.For(AppLanguage.Japanese);
+            var italian = LanguageDisplayNames.For(AppLanguage.Italian);
+            var portuguesePortugal = LanguageDisplayNames.For(AppLanguage.PortuguesePortugal);
+            var portugueseBrazil = LanguageDisplayNames.For(AppLanguage.PortugueseBrazil);
 
             // Assert
             Assert.Equal(Strings.Language_System, system);
@@ -30,7 +33,10 @@ namespace Servy.UI.UnitTests.Localization
             Assert.Equal(Strings.Language_German, german);
             Assert.Equal(Strings.Language_Spanish, spanish);
             Assert.Equal(Strings.Language_Japanese, japanese);
-            Assert.Equal(7, new[] { system, english, chinese, french, german, spanish, japanese }.Distinct().Count());
+            Assert.Equal(Strings.Language_Italian, italian);
+            Assert.Equal(Strings.Language_PortuguesePortugal, portuguesePortugal);
+            Assert.Equal(Strings.Language_PortugueseBrazil, portugueseBrazil);
+            Assert.Equal(10, new[] { system, english, chinese, french, german, spanish, japanese, italian, portuguesePortugal, portugueseBrazil }.Distinct().Count());
         }
 
         [Theory]
@@ -39,6 +45,9 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("es")]
         [InlineData("fr")]
         [InlineData("ja")]
+        [InlineData("it")]
+        [InlineData("pt-PT")]
+        [InlineData("pt-BR")]
         [InlineData("zh-CN")]
         public void LanguageEnglish_EveryCulture_StartsWithTheNativeName(string cultureName)
         {
@@ -60,6 +69,9 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("es")]
         [InlineData("fr")]
         [InlineData("ja")]
+        [InlineData("it")]
+        [InlineData("pt-PT")]
+        [InlineData("pt-BR")]
         [InlineData("zh-CN")]
         public void LanguageChineseSimplified_EveryCulture_StartsWithTheNativeName(string cultureName)
         {
@@ -74,6 +86,28 @@ namespace Servy.UI.UnitTests.Localization
             // Assert
             Assert.NotNull(name);
             Assert.StartsWith(nativeName, name, StringComparison.Ordinal);
+        }
+
+        [Theory]
+        [InlineData("Language_Italian", "Italiano")]
+        [InlineData("Language_PortuguesePortugal", "Portugu\u00EAs (Portugal)")]
+        [InlineData("Language_PortugueseBrazil", "Portugu\u00EAs (Brasil)")]
+        public void LanguageItalianAndPortuguese_EveryCulture_StartWithTheNativeName(string key, string nativeName)
+        {
+            // Arrange: the native names are spelled with escapes so this file stays ASCII
+            var cultureNames = new[] { "", "de", "es", "fr", "ja", "it", "pt-PT", "pt-BR", "zh-CN" };
+
+            // Act
+            var names = cultureNames
+                .Select(cultureName => Strings.ResourceManager.GetString(key, CultureInfo.GetCultureInfo(cultureName)))
+                .ToList();
+
+            // Assert
+            Assert.All(names, name =>
+            {
+                Assert.NotNull(name);
+                Assert.StartsWith(nativeName, name, StringComparison.Ordinal);
+            });
         }
     }
 }

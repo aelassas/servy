@@ -1060,4 +1060,13 @@ Copyright © {2} Akram El Assas. All rights reserved.</value>
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>Servy を日本語で表示します。</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>Servy をイタリア語で表示します。</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>Servy をポルトガル語 (ポルトガル) で表示します。</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>Servy をポルトガル語 (ブラジル) で表示します。</value>
+  </data>
 </root>

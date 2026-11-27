@@ -76,6 +76,15 @@ Servy services cannot start until it runs. See the file log for details.</value>
   <data name="Language_Japanese" xml:space="preserve">
     <value>日本語 (Japanese)</value>
   </data>
+  <data name="Language_Italian" xml:space="preserve">
+    <value>Italiano (Italian)</value>
+  </data>
+  <data name="Language_PortuguesePortugal" xml:space="preserve">
+    <value>Português (Portugal) (Portuguese, Portugal)</value>
+  </data>
+  <data name="Language_PortugueseBrazil" xml:space="preserve">
+    <value>Português (Brasil) (Portuguese, Brazil)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>Failed to save the language setting: {0}</value>
   </data>

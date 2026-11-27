@@ -76,6 +76,15 @@ Servy-Dienste können erst starten, wenn er ausgeführt wird. Details finden Sie
   <data name="Language_Japanese" xml:space="preserve">
     <value>日本語 (Japanisch)</value>
   </data>
+  <data name="Language_Italian" xml:space="preserve">
+    <value>Italiano (Italienisch)</value>
+  </data>
+  <data name="Language_PortuguesePortugal" xml:space="preserve">
+    <value>Português (Portugal) (Portugiesisch, Portugal)</value>
+  </data>
+  <data name="Language_PortugueseBrazil" xml:space="preserve">
+    <value>Português (Brasil) (Portugiesisch, Brasilien)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>Die Spracheinstellung konnte nicht gespeichert werden: {0}</value>
   </data>

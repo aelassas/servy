@@ -1085,4 +1085,13 @@ Servy Manager 提供简洁的界面，用于管理由 Servy 创建的 Windows �
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>以日语显示 Servy Manager。</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>以意大利语显示 Servy Manager。</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>以欧洲葡萄牙语显示 Servy Manager。</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>以巴西葡萄牙语显示 Servy Manager。</value>
+  </data>
 </root>

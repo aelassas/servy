@@ -97,11 +97,38 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Italiano (Italian).
+        /// </summary>
+        public static string Language_Italian {
+            get {
+                return ResourceManager.GetString("Language_Italian", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 日本語 (Japanese).
         /// </summary>
         public static string Language_Japanese {
             get {
                 return ResourceManager.GetString("Language_Japanese", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Português (Brasil) (Portuguese, Brazil).
+        /// </summary>
+        public static string Language_PortugueseBrazil {
+            get {
+                return ResourceManager.GetString("Language_PortugueseBrazil", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Português (Portugal) (Portuguese, Portugal).
+        /// </summary>
+        public static string Language_PortuguesePortugal {
+            get {
+                return ResourceManager.GetString("Language_PortuguesePortugal", resourceCulture);
             }
         }
         

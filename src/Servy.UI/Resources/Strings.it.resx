@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DocumentationOpenFailed" xml:space="preserve">
+    <value>Impossibile aprire la documentazione. Verificare che sia installato un browser Web. Dettagli: {0}</value>
+  </data>
+  <data name="Msg_NoUpdatesAvailable" xml:space="preserve">
+    <value>Al momento non sono disponibili aggiornamenti.</value>
+  </data>
+  <data name="Msg_UpdateCheckInvalidTag" xml:space="preserve">
+    <value>La verifica degli aggiornamenti è stata completata, ma non è stato possibile elaborare in modo sicuro il formato dell'identificatore dell'ultima versione: '{0}'. Consultare manualmente la pagina delle versioni del progetto.</value>
+    <comment>Displayed when the remote tag_name cannot be parsed into a deterministic .NET Version sequence.</comment>
+  </data>
+  <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
+    <value>È disponibile una nuova versione di Servy. Scaricarla?</value>
+  </data>
+  <data name="Msg_UpdateCheckCanceled" xml:space="preserve">
+    <value>La verifica degli aggiornamenti è stata annullata.</value>
+    <comment>Displayed when the update check is canceled by application shutdown or by the caller, as opposed to the fixed update-check timeout.</comment>
+  </data>
+  <data name="Msg_UpdateCheckTimeout" xml:space="preserve">
+    <value>Timeout della verifica degli aggiornamenti. Riprovare più tardi.</value>
+  </data>
+  <data name="Msg_UpdateCheckFailed" xml:space="preserve">
+    <value>Impossibile verificare gli aggiornamenti: {0}</value>
+  </data>
+  <data name="Msg_ReleaseLinkOpenFailed" xml:space="preserve">
+    <value>Impossibile aprire il collegamento alla versione: {0}</value>
+  </data>
+  <data name="Msg_FailedCopyingEmbeddedResource" xml:space="preserve">
+    <value>Impossibile copiare la risorsa incorporata: {0}</value>
+  </data>
+  <data name="Msg_ResourceExtractionWarningTitle" xml:space="preserve">
+    <value>Avviso di estrazione risorse</value>
+  </data>
+  <data name="Msg_ServyHostUnavailableTitle" xml:space="preserve">
+    <value>Host di Servy non disponibile</value>
+  </data>
+  <data name="Msg_StartupWarningsTitle" xml:space="preserve">
+    <value>Avvisi di avvio di Servy</value>
+  </data>  
+  <data name="Msg_ServyHostUnavailable" xml:space="preserve">
+    <value>Impossibile installare o avviare il servizio host di Servy: {0}
+I servizi Servy non possono avviarsi finché non è in esecuzione. Per i dettagli, vedere il file di log.</value>
+  </data>
+  <data name="Language_System" xml:space="preserve">
+    <value>Usa la lingua di sistema</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English (inglese)</value>
+  </data>
+  <data name="Language_ChineseSimplified" xml:space="preserve">
+    <value>简体中文 (cinese semplificato)</value>
+  </data>
+  <data name="Language_French" xml:space="preserve">
+    <value>Français (francese)</value>
+  </data>
+  <data name="Language_German" xml:space="preserve">
+    <value>Deutsch (tedesco)</value>
+  </data>
+  <data name="Language_Spanish" xml:space="preserve">
+    <value>Español (spagnolo)</value>
+  </data>
+  <data name="Language_Japanese" xml:space="preserve">
+    <value>日本語 (giapponese)</value>
+  </data>
+  <data name="Language_Italian" xml:space="preserve">
+    <value>Italiano</value>
+  </data>
+  <data name="Language_PortuguesePortugal" xml:space="preserve">
+    <value>Português (Portugal) (portoghese, Portogallo)</value>
+  </data>
+  <data name="Language_PortugueseBrazil" xml:space="preserve">
+    <value>Português (Brasil) (portoghese, Brasile)</value>
+  </data>
+  <data name="Msg_LanguageSaveFailed" xml:space="preserve">
+    <value>Impossibile salvare l'impostazione della lingua: {0}</value>
+  </data>
+  <data name="Msg_LanguageRestartConfirm" xml:space="preserve">
+    <value>{1} verrà riavviato per passare alla lingua {0}. Tutti i dati non salvati andranno persi. Riavviare ora?</value>
+  </data>
+</root>
