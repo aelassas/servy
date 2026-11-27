@@ -1,0 +1,1072 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_SecurityWarningTitle" xml:space="preserve">
+    <value>Elevação necessária</value>
+  </data>
+  <data name="Msg_SecurityWarningMessage" xml:space="preserve">
+    <value>O Servy requer privilégios de administrador para gerir serviços do sistema.</value>
+  </data>
+
+  <data name="Msg_SqliteVersionWarningTitle" xml:space="preserve">
+    <value>Alerta de segurança</value>
+  </data>
+  <data name="Msg_SqliteVersionWarningMessage" xml:space="preserve">
+    <value>Risco de segurança crítico: o sistema está a utilizar um motor SQLite desatualizado ({0}). Esta versão da aplicação requer o SQLite {1} ou superior para mitigar a CVE-2025-6965.</value>
+  </data>
+
+  <!-- Splash screen -->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>A carregar o Servy...</value>
+  </data>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>Importar</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>Importar configuração XML...</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>Importar configuração JSON...</value>
+  </data>
+  <data name="Menu_Export" xml:space="preserve">
+    <value>Exportar</value>
+  </data>
+  <data name="Menu_ExportXml" xml:space="preserve">
+    <value>Exportar configuração XML...</value>
+  </data>
+  <data name="Menu_ExportJson" xml:space="preserve">
+    <value>Exportar configuração JSON...</value>
+  </data>
+
+  <data name="Menu_Manager" xml:space="preserve">
+    <value>Gestor</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>Ajuda</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>Ajuda / Documentação</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>Procurar atualizações</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>Acerca do Servy</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+    <value>
+Servy {0}
+
+O Servy permite executar qualquer aplicação como um serviço nativo do Windows, com controlo total sobre a pasta de trabalho, o comportamento de arranque, os registos, as verificações de estado de funcionamento e as opções de recuperação.
+
+Inclui uma aplicação de ambiente de trabalho, uma CLI e um módulo PowerShell, permitindo gerir serviços manualmente ou automatizar tudo em scripts e pipelines de CI/CD.
+
+Desenvolvido com {1}
+
+Licenciado ao abrigo da Licença MIT.
+
+Copyright © {2} Akram El Assas. Todos os direitos reservados.</value>
+  </data>
+
+  <!-- Tabs -->
+  <data name="Label_MainTab" xml:space="preserve">
+    <value>Principal</value>
+  </data>
+  <data name="Label_LoggingTab" xml:space="preserve">
+    <value>Registo</value>
+  </data>
+  <data name="Label_RecoveryTab" xml:space="preserve">
+    <value>Recuperação</value>
+  </data>
+  <data name="Label_AdvancedTab" xml:space="preserve">
+    <value>Avançadas</value>
+  </data>
+  <data name="Label_LogOnTab" xml:space="preserve">
+    <value>Início de sessão</value>
+  </data>
+  <data name="Label_PreLaunchTab" xml:space="preserve">
+    <value>Pré-arranque</value>
+  </data>
+  <data name="Label_PreStopTab" xml:space="preserve">
+    <value>Pré-paragem</value>
+  </data>
+  <data name="Label_PostStopTab" xml:space="preserve">
+    <value>Pós-paragem</value>
+  </data>
+
+  <!-- Labels / Info -->
+  <data name="Label_ServiceName" xml:space="preserve">
+    <value>Nome do serviço *</value>
+  </data>
+  <data name="Label_ServiceDisplayName" xml:space="preserve">
+    <value>Nome a apresentar</value>
+  </data>
+  <data name="Info_ServiceDisplayName" xml:space="preserve">
+    <value>O nome legível apresentado na consola Serviços do Windows (services.msc).</value>
+  </data>
+  <data name="Label_ServiceDescription" xml:space="preserve">
+    <value>Descrição do serviço</value>
+  </data>
+  <data name="Label_ProcessPath" xml:space="preserve">
+    <value>Caminho do processo *</value>
+  </data>
+  <data name="Info_ProcessPath" xml:space="preserve">
+    <value>Suporta a expansão de variáveis de ambiente. Exemplo: %JAVA_HOME%\bin\java.exe</value>
+  </data>
+  <data name="Label_StartupDirectory" xml:space="preserve">
+    <value>Pasta de arranque</value>
+  </data>
+  <data name="Info_StartupDirectory" xml:space="preserve">
+    <value>Suporta a expansão de variáveis de ambiente. Exemplo: %ProgramData%\MyApp</value>
+  </data>
+  <data name="Label_ProcessParameters" xml:space="preserve">
+    <value>Parâmetros do processo</value>
+  </data>
+  <data name="Info_ProcessParameters" xml:space="preserve">
+    <value>Suporta a expansão de variáveis de ambiente. Exemplo: --param="%MY_VAR%\bin"</value>
+  </data>
+  <data name="Label_RequiredFields" xml:space="preserve">
+    <value>* Campos obrigatórios</value>
+  </data>
+
+  <data name="Dialog_SelectStdoutFile" xml:space="preserve">
+    <value>Selecionar ficheiro de saída padrão</value>
+  </data>
+  <data name="Dialog_SelectStderrFile" xml:space="preserve">
+    <value>Selecionar ficheiro de erro padrão</value>
+  </data>
+
+  <!-- Startup Type ComboBox Items -->
+  <data name="Label_StartupType" xml:space="preserve">
+    <value>Tipo de arranque</value>
+  </data>
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>Automático (predefinição)</value>
+  </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>Automático (Início Atrasado)</value>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>Desativado</value>
+  </data>
+
+  <!-- Process Priority ComboBox Items -->
+  <data name="Label_ProcessPriority" xml:space="preserve">
+    <value>Prioridade do processo</value>
+  </data>
+  <data name="ProcessPriority_Idle" xml:space="preserve">
+    <value>Baixa</value>
+  </data>
+  <data name="ProcessPriority_BelowNormal" xml:space="preserve">
+    <value>Abaixo do normal</value>
+  </data>
+  <data name="ProcessPriority_Normal" xml:space="preserve">
+    <value>Normal (predefinição)</value>
+  </data>
+  <data name="ProcessPriority_AboveNormal" xml:space="preserve">
+    <value>Acima do normal</value>
+  </data>
+  <data name="ProcessPriority_High" xml:space="preserve">
+    <value>Alta</value>
+  </data>
+  <data name="ProcessPriority_RealTime" xml:space="preserve">
+    <value>Tempo real (utilizar com cuidado)</value>
+  </data>
+
+  <!-- CPU Affinity -->
+  <data name="Label_CpuAffinity" xml:space="preserve">
+    <value>Afinidade de CPU</value>
+  </data>
+  <data name="Info_CpuAffinity" xml:space="preserve">
+    <value>CPUs lógicas em que o processo pode ser executado (por exemplo, '0-3,8' ou '0xFF00').</value>
+  </data>
+
+  <!-- EnableConsoleUI -->
+  <data name="Label_EnableConsoleUI" xml:space="preserve">
+    <value>Ativar interface de consola (para aplicações de consola interativas; desativa o redirecionamento de stdout/stderr)</value>
+  </data>
+
+  <!-- I/O redirection -->
+  <data name="Label_StdoutPath" xml:space="preserve">
+    <value>Caminho do ficheiro stdout</value>
+  </data>
+  <data name="Label_StderrPath" xml:space="preserve">
+    <value>Caminho do ficheiro stderr</value>
+  </data>
+  <data name="Label_EnableSizeRotation" xml:space="preserve">
+    <value>Ativar rotação por tamanho</value>
+  </data>
+  <data name="Label_RotationSize" xml:space="preserve">
+    <value>Tamanho de rotação</value>
+  </data>
+  <data name="Label_RotationSizeUnit" xml:space="preserve">
+    <value>Megabytes (MB)</value>
+  </data>
+  <data name="Label_EnableDateRotation" xml:space="preserve">
+    <value>Ativar rotação por data</value>
+  </data>
+  <data name="Label_DateRotationType" xml:space="preserve">
+    <value>Intervalo de rotação por data</value>
+  </data>
+  <data name="DateRotationType_Daily" xml:space="preserve">
+    <value>Diária (predefinição)</value>
+  </data>
+  <data name="DateRotationType_Weekly" xml:space="preserve">
+    <value>Semanal</value>
+  </data>
+  <data name="DateRotationType_Monthly" xml:space="preserve">
+    <value>Mensal</value>
+  </data>
+  <data name="DateRotationType_None" xml:space="preserve">
+    <value>Nenhuma</value>
+  </data>
+  <data name="Info_DateRotation" xml:space="preserve">
+    <value>Quando a rotação por tamanho e a rotação por data estão ambas ativadas, a rotação por tamanho tem prioridade.</value>
+  </data>
+  <data name="Label_UseLocalTimeForRotation" xml:space="preserve">
+    <value>Utilizar a hora local para a rotação de registos (predefinição: UTC)</value>
+  </data>
+
+  <data name="Label_MaxRotations" xml:space="preserve">
+    <value>Máximo de rotações</value>
+  </data>
+  <data name="Info_MaxRotations" xml:space="preserve">
+    <value>Número máximo de ficheiros de registo rodados a manter. Defina 0 para ilimitado.</value>
+  </data>
+
+  <!-- Health monitoring -->
+  <data name="Label_EnableHealthMonitoring" xml:space="preserve">
+    <value>Ativar monitorização do estado de funcionamento</value>
+  </data>
+  <data name="Label_HeartbeatInterval" xml:space="preserve">
+    <value>Intervalo de pulsação</value>
+  </data>
+  <data name="Label_Seconds" xml:space="preserve">
+    <value>segundos</value>
+  </data>
+  <data name="Label_MaxFailedChecks" xml:space="preserve">
+    <value>Máximo de verificações falhadas</value>
+  </data>
+
+  <data name="Label_Attempts" xml:space="preserve">
+    <value>tentativas</value>
+  </data>
+  <data name="Info_MaxRestartAttempts" xml:space="preserve">
+    <value>Defina 0 para tentativas de reinício ilimitadas.</value>
+  </data>
+  <data name="Label_RecoveryAction" xml:space="preserve">
+    <value>Ação de recuperação</value>
+  </data>
+  <data name="RecoveryAction_None" xml:space="preserve">
+    <value>Nenhuma</value>
+  </data>
+  <data name="RecoveryAction_RestartService" xml:space="preserve">
+    <value>Reiniciar o serviço (predefinição)</value>
+  </data>
+  <data name="RecoveryAction_RestartProcess" xml:space="preserve">
+    <value>Reiniciar o processo</value>
+  </data>
+  <data name="RecoveryAction_RestartComputer" xml:space="preserve">
+    <value>Reiniciar o computador</value>
+  </data>
+  <data name="Tooltip_RecoveryActionHelp" xml:space="preserve">
+    <value>Ajuda sobre a ação de recuperação</value>
+  </data>
+  <data name="Info_RecoveryAction" xml:space="preserve">
+    <value>As ações de reiniciar o serviço e reiniciar o computador não estão disponíveis se o serviço for executado como NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, uma identidade de AppPool do IIS (IIS APPPOOL\...) ou uma conta de utilizador sem os privilégios necessários.</value>
+  </data>
+
+  <data name="Label_RecoveryOnCleanExit" xml:space="preserve">
+    <value>Recuperar mesmo após uma saída bem-sucedida</value>
+  </data>
+  <data name="Info_RecoveryOnCleanExit" xml:space="preserve">
+    <value>Executar a ação de recuperação mesmo que o processo termine com êxito.</value>
+  </data>
+
+  <data name="Label_MaxRestartAttempts" xml:space="preserve">
+    <value>Máximo de tentativas de reinício</value>
+  </data>
+
+  <data name="Label_HeartbeatUrl" xml:space="preserve">
+    <value>URL de pulsação</value>
+  </data>
+  <data name="Label_HeartbeatUrlTimeoutSeconds" xml:space="preserve">
+    <value>Tempo limite do URL de pulsação</value>
+  </data>
+  <data name="Label_EnableHeartbeatUrlFlags" xml:space="preserve">
+    <value>Ativar sinalizadores do URL de pulsação (/start, /fail)</value>
+  </data>
+
+  <data name="Info_FailureProgram" xml:space="preserve">
+    <value>Configure um script ou executável opcional a executar quando o processo falhar. Se a monitorização do estado de funcionamento estiver desativada, o programa é executado quando o processo terminar com um código diferente de zero. Se a monitorização estiver ativada, o programa só é executado depois de todas as tentativas da ação de recuperação configurada terem falhado. Não é executado quando o processo não consegue arrancar.</value>
+  </data>
+  <data name="Info_HookStartupDirectory" xml:space="preserve">
+    <value>Opcional. Se não for definida, é utilizada a pasta de trabalho do serviço.</value>
+  </data>
+
+  <!-- Environment Variables -->
+  <data name="Label_EnvironmentVariables" xml:space="preserve">
+    <value>Variáveis de ambiente</value>
+  </data>
+  <data name="Info_EnvironmentVariables" xml:space="preserve">
+    <value>Introduza as variáveis no formato varName=varValue, uma por linha ou separadas por ponto e vírgula (;). Utilize \= para escapar '=', \" para escapar '"', \; para escapar ';', \\ para escapar '\' e %% para escapar '%' (reduz-se a um único '%'). Suporta a expansão de variáveis de ambiente. Exemplo: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
+  </data>
+  <data name="Label_AllowOverriddenRuntimeVars" xml:space="preserve">
+    <value>Permitir a substituição de variáveis de ambiente de runtime (por exemplo, JAVA_HOME, JAVA_OPTS)</value>
+  </data>
+  <data name="Automation_CheckBoxAllowOverriddenRuntimeVars_HelpText" xml:space="preserve">
+    <value>Permitir a substituição de variáveis de ambiente de runtime.</value>
+  </data>
+  <data name="Label_RuntimeVariablesLink" xml:space="preserve">
+    <value>Ver a lista de variáveis de runtime.</value>
+  </data>
+
+  <!-- Service Dependencies -->
+  <data name="Label_ServiceDependencies" xml:space="preserve">
+    <value>Dependências do serviço</value>
+  </data>
+  <data name="Info_ServiceDependencies" xml:space="preserve">
+    <value>Especifique um ou mais nomes de serviços do Windows (não os nomes a apresentar) dos quais este serviço depende. Introduza cada nome de serviço numa nova linha ou separe-os com ponto e vírgula (;). Cada nome de serviço só pode conter letras, dígitos, hífenes, carateres de sublinhado, pontos, espaços e cifrões ($), opcionalmente precedidos de '+' para referenciar um grupo de ordem de carregamento, e não pode exceder 256 carateres. O Windows inicia automaticamente as dependências paradas quando este serviço é iniciado; se uma dependência estiver desativada ou não conseguir iniciar, este serviço não será iniciado.</value>
+  </data>
+
+  <!-- User Account -->
+  <data name="Label_RunAsLocalSystem" xml:space="preserve">
+    <value>Executar como Sistema Local</value>
+  </data>
+  <data name="Label_UserAccount" xml:space="preserve">
+    <value>Conta de utilizador</value>
+  </data>
+  <data name="Info_UserAccount" xml:space="preserve">
+    <value>O nome de utilizador da conta de serviço (por exemplo, .\username, DOMAIN\username, DOMAIN\gMSA$ ou uma identidade incorporada como NT AUTHORITY\LocalService, NT AUTHORITY\NetworkService, NT SERVICE\MyService ou IIS APPPOOL\MyPool). Deixe os campos de palavra-passe vazios para contas incorporadas, virtuais e gMSA.</value>
+  </data>
+  <data name="Label_Password" xml:space="preserve">
+    <value>Palavra-passe</value>
+  </data>
+  <data name="Label_ConfirmPassword" xml:space="preserve">
+    <value>Confirmar palavra-passe</value>
+  </data>
+
+  <!-- Pre-Launch -->
+  <data name="Info_PreLaunch" xml:space="preserve">
+    <value>Configure um script ou executável opcional a executar antes de o serviço iniciar. Se falhar, o serviço não será iniciado, a menos que a opção Ignorar falha esteja ativada.</value>
+  </data>
+  <data name="Label_ProcessPathNotRequired" xml:space="preserve">
+    <value>Caminho do processo</value>
+  </data>
+  <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
+    <value>Tempo limite</value>
+  </data>
+  <data name="Label_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>Tentativas</value>
+  </data>
+  <data name="Label_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>Ignorar falha</value>
+  </data>
+  <data name="Info_PreLaunchTimeout" xml:space="preserve">
+    <value>O tempo limite, em segundos, de espera pelo processo de pré-arranque. Defina o tempo limite como 0 para executar no modo sem espera. O redirecionamento de stdout/stderr e as novas tentativas não estão disponíveis neste modo.</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>Falha ao carregar a configuração XML do serviço.</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>Falha ao carregar a configuração JSON do serviço.</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>Exportar configuração XML</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>Exportar configuração JSON</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>Configuração XML exportada com êxito.</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>Configuração JSON exportada com êxito.</value>
+  </data>
+
+  <!-- Clear Action -->
+  <data name="Menu_ClearAll" xml:space="preserve">
+    <value>Limpar tudo...</value>
+  </data>
+  <data name="Confirm_ClearAll" xml:space="preserve">
+    <value>Tem a certeza de que pretende limpar todos os valores de configuração?</value>
+  </data>
+
+  <!-- Buttons -->
+  <data name="Button_Install" xml:space="preserve">
+    <value>Instalar</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>Desinstalar</value>
+  </data>
+  <data name="Button_Start" xml:space="preserve">
+    <value>Iniciar</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>Parar</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>Reiniciar</value>
+  </data>
+  <data name="Button_Browse" xml:space="preserve">
+    <value>Procurar</value>
+  </data>
+
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>O serviço '{0}' foi removido com êxito.</value>
+  </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>São necessários privilégios de administrador.</value>
+  </data>
+
+
+  <data name="Msg_ManagerAppNotFound" xml:space="preserve">
+    <value>O Servy Manager não foi encontrado.</value>
+  </data>
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>Já existe um serviço '{0}' com este nome. Pretende substituí-lo?
+
+Se o serviço estiver desativado e marcado para eliminação, a instalação falhará até reiniciar o computador.</value>
+  </data>
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>O serviço especificado está desativado.</value>
+  </data>
+
+  <!-- Post-Launch -->
+  <data name="Label_PostLaunchTab" xml:space="preserve">
+    <value>Pós-arranque</value>
+  </data>
+
+  <data name="Info_PostLaunch" xml:space="preserve">
+    <value>Configure um script ou executável opcional a executar depois de o processo iniciar com êxito.</value>
+  </data>
+
+  <!-- Debug-Logs -->
+  <data name="Label_EnableDebugLogs" xml:space="preserve">
+    <value>Ativar registos de depuração</value>
+  </data>
+  <data name="Info_EnableDebugLogs" xml:space="preserve">
+    <value>Quando esta opção está ativada, as variáveis de ambiente e os parâmetros do processo são registados no ficheiro Servy.Service.log. Não é recomendado para ambientes de produção, uma vez que estes registos podem conter informações confidenciais.</value>
+  </data>
+
+  <!-- Start/Stop timeouts -->
+  <data name="Label_StartTimeout" xml:space="preserve">
+    <value>Tempo limite de início</value>
+  </data>
+  <data name="Info_StartTimeout" xml:space="preserve">
+    <value>O tempo limite, em segundos, de espera para que o processo inicie com êxito antes de o arranque ser considerado falhado.</value>
+  </data>
+
+  <data name="Label_StopTimeout" xml:space="preserve">
+    <value>Tempo limite de paragem</value>
+  </data>
+  <data name="Info_StopTimeout" xml:space="preserve">
+    <value>O tempo limite, em segundos, de espera para que o processo termine.</value>
+  </data>
+
+  <!-- Pre-Stop -->
+  <data name="Info_PreStop" xml:space="preserve">
+    <value>Configure um script ou executável opcional a executar antes de o serviço principal parar. Utilize-o para tarefas de encerramento ordenado, como notificar sistemas externos ou libertar recursos. O processo de pré-paragem é executado de forma síncrona e prolonga o tempo limite de paragem do serviço enquanto está em execução, exceto se o tempo limite estiver definido como 0.</value>
+  </data>
+  <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
+    <value>Tempo limite</value>
+  </data>
+  <data name="Label_PreStopLogAsError" xml:space="preserve">
+    <value>Registar a falha de pré-paragem como erro</value>
+  </data>
+  <data name="Info_PreStopTimeout" xml:space="preserve">
+    <value>O tempo limite, em segundos, de espera pelo processo de pré-paragem. Defina o tempo limite como 0 para executar no modo sem espera.</value>
+  </data>
+
+  <!-- Post-Stop -->
+  <data name="Info_PostStop" xml:space="preserve">
+    <value>Configure um script ou executável opcional a executar depois de o processo encapsulado e todos os respetivos processos subordinados terem terminado. O processo de pós-paragem é iniciado no modo sem espera e não bloqueia o encerramento do serviço.</value>
+  </data>
+
+  <!-- Miscellaneous -->
+  <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
+    <value>Falha ao iniciar o Servy Manager.</value>
+  </data>
+
+  <!-- Automation Properties -->
+  <!-- Conventions: AutomationProperties.HelpText entries use the IMPERATIVE mood ("Enter...", "Select...", "Browse..."). -->
+  <data name="Automation_ConfigMainWindow_Name" xml:space="preserve">
+    <value>Janela de configuração do Servy</value>
+  </data>
+  <data name="Automation_ConfigMainWindow_HelpText" xml:space="preserve">
+    <value>Criar e configurar um serviço Windows do Servy.</value>
+  </data>
+
+  <data name="Automation_MainMenu_Name" xml:space="preserve">
+    <value>Menu principal</value>
+  </data>
+  <data name="Automation_MainMenu_HelpText" xml:space="preserve">
+    <value>Aceder às opções do menu da aplicação para exportar, importar e obter ajuda.</value>
+  </data>
+
+  <data name="Automation_MenuExport_HelpText" xml:space="preserve">
+    <value>Abrir o menu de exportação da configuração do serviço.</value>
+  </data>
+  <data name="Automation_MenuExportXml_HelpText" xml:space="preserve">
+    <value>Exportar a configuração para um ficheiro XML.</value>
+  </data>
+  <data name="Automation_MenuExportJson_HelpText" xml:space="preserve">
+    <value>Exportar a configuração para um ficheiro JSON.</value>
+  </data>
+
+  <data name="Automation_MenuImport_HelpText" xml:space="preserve">
+    <value>Abrir o menu de importação da configuração do serviço.</value>
+  </data>
+  <data name="Automation_MenuImportXml_HelpText" xml:space="preserve">
+    <value>Importar a configuração de um ficheiro XML.</value>
+  </data>
+  <data name="Automation_MenuImportJson_HelpText" xml:space="preserve">
+    <value>Importar a configuração de um ficheiro JSON.</value>
+  </data>
+
+  <data name="Automation_MenuManager_HelpText" xml:space="preserve">
+    <value>Abrir a aplicação Servy Manager.</value>
+  </data>
+  <data name="Automation_MenuClearAll_HelpText" xml:space="preserve">
+    <value>Limpar todos os campos do formulário de configuração.</value>
+  </data>
+
+  <data name="Automation_MenuHelp_HelpText" xml:space="preserve">
+    <value>Abrir o menu de ajuda e documentação.</value>
+  </data>
+  <data name="Automation_MenuDoc_HelpText" xml:space="preserve">
+    <value>Abrir a documentação oficial do Servy.</value>
+  </data>
+  <data name="Automation_MenuCheckUpdates_HelpText" xml:space="preserve">
+    <value>Procurar online atualizações da aplicação.</value>
+  </data>
+  <data name="Automation_MenuAbout_HelpText" xml:space="preserve">
+    <value>Mostrar informações sobre a aplicação Servy.</value>
+  </data>
+
+  <data name="Automation_ConfigurationTabControl_Name" xml:space="preserve">
+    <value>Separadores de configuração</value>
+  </data>
+  <data name="Automation_ConfigurationTabControl_HelpText" xml:space="preserve">
+    <value>Navegar entre as diferentes secções de configuração do serviço.</value>
+  </data>
+
+  <data name="Automation_TabItemMain_HelpText" xml:space="preserve">
+    <value>Configurar as opções gerais do serviço.</value>
+  </data>
+
+  <data name="Automation_TextBoxServiceName_Name" xml:space="preserve">
+    <value>Nome do serviço</value>
+  </data>
+  <data name="Automation_TextBoxServiceName_HelpText" xml:space="preserve">
+    <value>Introduza o nome de sistema do serviço.</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_Name" xml:space="preserve">
+    <value>Nome a apresentar do serviço</value>
+  </data>
+  <data name="Automation_TextBoxServiceDisplayName_HelpText" xml:space="preserve">
+    <value>Introduza o nome a apresentar do serviço.</value>
+  </data>
+  <data name="Automation_TextBoxServiceDescription_HelpText" xml:space="preserve">
+    <value>Introduza a descrição do serviço.</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_Name" xml:space="preserve">
+    <value>Caminho do processo</value>
+  </data>
+  <data name="Automation_TextBoxProcessPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do executável do serviço.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseProcessPath_Name" xml:space="preserve">
+    <value>Procurar caminho do processo</value>
+  </data>
+  <data name="Automation_ButtonBrowseProcessPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o caminho do executável do processo.</value>
+  </data>
+
+  <data name="Automation_TextBoxStartupDirectory_HelpText" xml:space="preserve">
+    <value>Introduza a pasta de trabalho de arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStartupDirectory_Name" xml:space="preserve">
+    <value>Procurar pasta de arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowseStartupDirectory_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar a pasta de arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxProcessParameters_HelpText" xml:space="preserve">
+    <value>Introduza os parâmetros da linha de comandos do processo.</value>
+  </data>
+  <data name="Automation_ComboBoxStartupType_HelpText" xml:space="preserve">
+    <value>Selecione o tipo de arranque do serviço.</value>
+  </data>
+  <data name="Automation_ComboBoxProcessPriority_HelpText" xml:space="preserve">
+    <value>Selecione o nível de prioridade do processo.</value>
+  </data>
+  <data name="Automation_TextBoxCpuAffinity_HelpText" xml:space="preserve">
+    <value>Introduza as CPUs lógicas em que o processo pode ser executado (por exemplo, '0-3,8' ou '0xFF00').</value>
+  </data>
+  <data name="Automation_TextBoxStartTimeout_HelpText" xml:space="preserve">
+    <value>Introduza o tempo limite, em segundos, para iniciar o serviço.</value>
+  </data>
+  <data name="Automation_TextBoxStopTimeout_HelpText" xml:space="preserve">
+    <value>Introduza o tempo limite, em segundos, para parar o serviço.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableConsoleUI_HelpText" xml:space="preserve">
+    <value>Selecione para ativar o suporte de interface de consola.</value>
+  </data>
+
+  <data name="Automation_TabItemLogging_HelpText" xml:space="preserve">
+    <value>Configurar as definições de registo da saída padrão e de erros.</value>
+  </data>
+
+  <data name="Automation_TextBoxStdoutPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do ficheiro de registo da saída padrão.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStdoutPath_Name" xml:space="preserve">
+    <value>Procurar caminho da saída padrão</value>
+  </data>
+  <data name="Automation_ButtonBrowseStdoutPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o ficheiro de registo da saída padrão.</value>
+  </data>
+
+  <data name="Automation_TextBoxStderrPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do ficheiro de registo de erro padrão.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseStderrPath_Name" xml:space="preserve">
+    <value>Procurar caminho de erro padrão</value>
+  </data>
+  <data name="Automation_ButtonBrowseStderrPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o ficheiro de registo de erro padrão.</value>
+  </data>
+
+  <data name="Automation_CheckBoxEnableSizeRotation_HelpText" xml:space="preserve">
+    <value>Selecione para ativar a rotação de registos com base no tamanho do ficheiro.</value>
+  </data>
+  <data name="Automation_TextBoxRotationSize_HelpText" xml:space="preserve">
+    <value>Introduza o tamanho máximo do ficheiro de registo antes da rotação.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDateRotation_HelpText" xml:space="preserve">
+    <value>Selecione para ativar a rotação de registos com base em datas.</value>
+  </data>
+  <data name="Automation_ComboBoxDateRotationType_HelpText" xml:space="preserve">
+    <value>Selecione o intervalo da rotação de registos por data.</value>
+  </data>
+  <data name="Automation_TextBoxMaxRotations_HelpText" xml:space="preserve">
+    <value>Introduza o número máximo de registos rodados a manter.</value>
+  </data>
+  <data name="Automation_CheckBoxUseLocalTimeForRotation_HelpText" xml:space="preserve">
+    <value>Selecione para utilizar a hora local em vez de UTC nas rotações de registos.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableDebugLogs_HelpText" xml:space="preserve">
+    <value>Selecione para ativar o registo de depuração para diagnóstico.</value>
+  </data>
+
+  <data name="Automation_TabItemRecovery_HelpText" xml:space="preserve">
+    <value>Configurar verificações de estado de funcionamento automáticas e ações de recuperação.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHealthMonitoring_HelpText" xml:space="preserve">
+    <value>Selecione para ativar a monitorização do estado de funcionamento em segundo plano para este serviço.</value>
+  </data>
+  <data name="Automation_TextBoxHeartbeatInterval_HelpText" xml:space="preserve">
+    <value>Introduza o intervalo de pulsação da verificação de estado, em segundos.</value>
+  </data>
+  <data name="Automation_TextBoxMaxFailedChecks_HelpText" xml:space="preserve">
+    <value>Introduza o número máximo de verificações falhadas antes de acionar a recuperação.</value>
+  </data>
+  <data name="Automation_ComboBoxRecoveryAction_HelpText" xml:space="preserve">
+    <value>Selecione a ação a executar quando o serviço falhar as verificações de estado.</value>
+  </data>
+  <data name="Automation_ButtonRecoveryActionHelp_HelpText" xml:space="preserve">
+    <value>Mostrar informações de ajuda sobre as ações de recuperação.</value>
+  </data>
+  <data name="Automation_CheckBoxRecoveryOnCleanExit_HelpText" xml:space="preserve">
+    <value>Selecione para executar a ação de recuperação mesmo que o processo termine com êxito.</value>
+  </data>
+  <data name="Automation_TextBoxMaxRestartAttempts_HelpText" xml:space="preserve">
+    <value>Introduza o número máximo de tentativas de reinício.</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrl_HelpText" xml:space="preserve">
+    <value>Introduza o URL do ponto final de pulsação.</value>
+  </data>
+
+  <data name="Automation_TextBoxHeartbeatUrlTimeoutSeconds_HelpText" xml:space="preserve">
+    <value>Introduza o tempo limite do URL de pulsação da verificação de estado, em segundos.</value>
+  </data>
+  <data name="Automation_CheckBoxEnableHeartbeatUrlFlags_HelpText" xml:space="preserve">
+    <value>Selecione para ativar os sinalizadores do URL de pulsação (/start, /fail).</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramPath_Name" xml:space="preserve">
+    <value>Caminho do programa de falha</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do executável a executar em caso de falha.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramPath_Name" xml:space="preserve">
+    <value>Procurar caminho do programa de falha</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o executável do programa de falha.</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramStartupDir_Name" xml:space="preserve">
+    <value>Pasta de arranque do programa de falha</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramStartupDir_HelpText" xml:space="preserve">
+    <value>Introduza a pasta de arranque do programa de falha.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowseFailureProgramStartupDir_Name" xml:space="preserve">
+    <value>Procurar pasta de arranque do programa de falha</value>
+  </data>
+  <data name="Automation_ButtonBrowseFailureProgramStartupDir_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar a pasta de arranque do programa de falha.</value>
+  </data>
+
+  <data name="Automation_TextBoxFailureProgramParams_Name" xml:space="preserve">
+    <value>Parâmetros do programa de falha</value>
+  </data>
+  <data name="Automation_TextBoxFailureProgramParams_HelpText" xml:space="preserve">
+    <value>Introduza os parâmetros da linha de comandos do programa de falha.</value>
+  </data>
+
+  <data name="Automation_TabItemAdvanced_HelpText" xml:space="preserve">
+    <value>Configurar variáveis de ambiente e dependências do serviço.</value>
+  </data>
+  <data name="Automation_TextBoxEnvVars_HelpText" xml:space="preserve">
+    <value>Introduza as variáveis de ambiente do serviço.</value>
+  </data>
+  <data name="Automation_TextBoxServiceDependencies_HelpText" xml:space="preserve">
+    <value>Introduza as dependências de serviços do Windows.</value>
+  </data>
+
+  <data name="Automation_TabItemLogOn_HelpText" xml:space="preserve">
+    <value>Configurar o contexto da conta de utilizador do serviço.</value>
+  </data>
+  <data name="Automation_RadioButtonLocalSystem_HelpText" xml:space="preserve">
+    <value>Executar o serviço com a conta incorporada Sistema Local.</value>
+  </data>
+  <data name="Automation_RadioButtonUserAccount_HelpText" xml:space="preserve">
+    <value>Executar o serviço com uma conta de utilizador específica.</value>
+  </data>
+
+  <data name="Automation_TextBoxUserAccount_Name" xml:space="preserve">
+    <value>Nome da conta de utilizador</value>
+  </data>
+  <data name="Automation_TextBoxUserAccount_HelpText" xml:space="preserve">
+    <value>Introduza o nome de utilizador da conta de serviço.</value>
+  </data>
+
+  <data name="Automation_PasswordBoxUser_HelpText" xml:space="preserve">
+    <value>Introduza a palavra-passe da conta de serviço.</value>
+  </data>
+  <data name="Automation_PasswordBoxConfirm_HelpText" xml:space="preserve">
+    <value>Confirme a palavra-passe da conta de serviço.</value>
+  </data>
+
+  <data name="Automation_TabItemPreLaunch_HelpText" xml:space="preserve">
+    <value>Configurar um script ou processo a executar antes de o serviço iniciar.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchPath_Name" xml:space="preserve">
+    <value>Caminho do processo de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do executável de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchPath_Name" xml:space="preserve">
+    <value>Procurar caminho do processo de pré-arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o executável de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchDir_Name" xml:space="preserve">
+    <value>Pasta de arranque de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchDir_HelpText" xml:space="preserve">
+    <value>Introduza a pasta de arranque do processo de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchDir_Name" xml:space="preserve">
+    <value>Procurar pasta de arranque de pré-arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchDir_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar a pasta de arranque de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchParams_Name" xml:space="preserve">
+    <value>Parâmetros do processo de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchParams_HelpText" xml:space="preserve">
+    <value>Introduza os parâmetros da linha de comandos do processo de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchEnvVars_Name" xml:space="preserve">
+    <value>Variáveis de ambiente de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchEnvVars_HelpText" xml:space="preserve">
+    <value>Introduza as variáveis de ambiente do processo de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStdout_Name" xml:space="preserve">
+    <value>Caminho da saída padrão de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStdout_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do registo da saída padrão de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStdout_Name" xml:space="preserve">
+    <value>Procurar caminho da saída padrão de pré-arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStdout_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o ficheiro de registo da saída padrão de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchStderr_Name" xml:space="preserve">
+    <value>Caminho de erro padrão de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchStderr_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do registo de erro padrão de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreLaunchStderr_Name" xml:space="preserve">
+    <value>Procurar caminho de erro padrão de pré-arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreLaunchStderr_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o ficheiro de registo de erro padrão de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchTimeout_Name" xml:space="preserve">
+    <value>Tempo limite de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchTimeout_HelpText" xml:space="preserve">
+    <value>Introduza o tempo limite de pré-arranque, em segundos.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreLaunchRetries_Name" xml:space="preserve">
+    <value>Tentativas de pré-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPreLaunchRetries_HelpText" xml:space="preserve">
+    <value>Introduza o número de tentativas para o processo de pré-arranque.</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreLaunchIgnoreFailure_HelpText" xml:space="preserve">
+    <value>Selecione para iniciar o serviço mesmo que o processo de pré-arranque falhe.</value>
+  </data>
+
+  <data name="Automation_TabItemPostLaunch_HelpText" xml:space="preserve">
+    <value>Configurar um script ou processo a executar depois de o serviço iniciar com êxito.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchPath_Name" xml:space="preserve">
+    <value>Caminho do processo de pós-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do executável de pós-arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchPath_Name" xml:space="preserve">
+    <value>Procurar caminho do processo de pós-arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o executável de pós-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchDir_Name" xml:space="preserve">
+    <value>Pasta de arranque de pós-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchDir_HelpText" xml:space="preserve">
+    <value>Introduza a pasta de arranque do processo de pós-arranque.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostLaunchDir_Name" xml:space="preserve">
+    <value>Procurar pasta de arranque de pós-arranque</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostLaunchDir_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar a pasta de arranque de pós-arranque.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostLaunchParams_Name" xml:space="preserve">
+    <value>Parâmetros do processo de pós-arranque</value>
+  </data>
+  <data name="Automation_TextBoxPostLaunchParams_HelpText" xml:space="preserve">
+    <value>Introduza os parâmetros da linha de comandos do processo de pós-arranque.</value>
+  </data>
+
+  <data name="Automation_TabItemPreStop_HelpText" xml:space="preserve">
+    <value>Configurar um script ou processo a executar antes de o serviço parar.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopPath_Name" xml:space="preserve">
+    <value>Caminho do processo de pré-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPreStopPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do executável de pré-paragem.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopPath_Name" xml:space="preserve">
+    <value>Procurar caminho do processo de pré-paragem</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o executável de pré-paragem.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopDir_Name" xml:space="preserve">
+    <value>Pasta de arranque de pré-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPreStopDir_HelpText" xml:space="preserve">
+    <value>Introduza a pasta de arranque do processo de pré-paragem.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePreStopDir_Name" xml:space="preserve">
+    <value>Procurar pasta de arranque de pré-paragem</value>
+  </data>
+  <data name="Automation_ButtonBrowsePreStopDir_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar a pasta de arranque de pré-paragem.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopParams_Name" xml:space="preserve">
+    <value>Parâmetros do processo de pré-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPreStopParams_HelpText" xml:space="preserve">
+    <value>Introduza os parâmetros da linha de comandos do processo de pré-paragem.</value>
+  </data>
+
+  <data name="Automation_TextBoxPreStopTimeout_Name" xml:space="preserve">
+    <value>Tempo limite de pré-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPreStopTimeout_HelpText" xml:space="preserve">
+    <value>Introduza o tempo limite de pré-paragem, em segundos.</value>
+  </data>
+
+  <data name="Automation_CheckBoxPreStopLogAsError_HelpText" xml:space="preserve">
+    <value>Selecione para registar as falhas do processo de pré-paragem como erros.</value>
+  </data>
+
+  <data name="Automation_TabItemPostStop_HelpText" xml:space="preserve">
+    <value>Configurar um script ou processo a executar depois de o serviço parar.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopPath_Name" xml:space="preserve">
+    <value>Caminho do processo de pós-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPostStopPath_HelpText" xml:space="preserve">
+    <value>Introduza o caminho do executável de pós-paragem.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopPath_Name" xml:space="preserve">
+    <value>Procurar caminho do processo de pós-paragem</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopPath_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar o executável de pós-paragem.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopDir_Name" xml:space="preserve">
+    <value>Pasta de arranque de pós-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPostStopDir_HelpText" xml:space="preserve">
+    <value>Introduza a pasta de arranque do processo de pós-paragem.</value>
+  </data>
+
+  <data name="Automation_ButtonBrowsePostStopDir_Name" xml:space="preserve">
+    <value>Procurar pasta de arranque de pós-paragem</value>
+  </data>
+  <data name="Automation_ButtonBrowsePostStopDir_HelpText" xml:space="preserve">
+    <value>Procurar para selecionar a pasta de arranque de pós-paragem.</value>
+  </data>
+
+  <data name="Automation_TextBoxPostStopParams_Name" xml:space="preserve">
+    <value>Parâmetros do processo de pós-paragem</value>
+  </data>
+  <data name="Automation_TextBoxPostStopParams_HelpText" xml:space="preserve">
+    <value>Introduza os parâmetros da linha de comandos do processo de pós-paragem.</value>
+  </data>
+
+  <data name="Automation_RequiredFieldsNote_Name" xml:space="preserve">
+    <value>Nota sobre campos obrigatórios</value>
+  </data>
+
+  <data name="Automation_ButtonInstall_HelpText" xml:space="preserve">
+    <value>Instalar o serviço configurado.</value>
+  </data>
+  <data name="Automation_ButtonUninstall_HelpText" xml:space="preserve">
+    <value>Desinstalar o serviço configurado.</value>
+  </data>
+  <data name="Automation_ButtonStart_HelpText" xml:space="preserve">
+    <value>Iniciar o serviço configurado.</value>
+  </data>
+  <data name="Automation_ButtonStop_HelpText" xml:space="preserve">
+    <value>Parar o serviço configurado.</value>
+  </data>
+  <data name="Automation_ButtonRestart_HelpText" xml:space="preserve">
+    <value>Reiniciar o serviço configurado.</value>
+  </data>
+  <data name="Menu_Language" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="Automation_LanguageMenu_HelpText" xml:space="preserve">
+    <value>Escolher o idioma de apresentação do Servy.</value>
+  </data>
+  <data name="Automation_LanguageSystemMenuItem_HelpText" xml:space="preserve">
+    <value>Seguir o idioma de apresentação do Windows.</value>
+  </data>
+  <data name="Automation_LanguageEnglishMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em inglês.</value>
+  </data>
+  <data name="Automation_LanguageChineseSimplifiedMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em chinês simplificado.</value>
+  </data>
+  <data name="Automation_LanguageFrenchMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em francês.</value>
+  </data>
+  <data name="Automation_LanguageGermanMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em alemão.</value>
+  </data>
+  <data name="Automation_LanguageSpanishMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em espanhol.</value>
+  </data>
+  <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em japonês.</value>
+  </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em italiano.</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em português europeu.</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>Apresentar o Servy em português do Brasil.</value>
+  </data>
+</root>

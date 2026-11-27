@@ -1085,4 +1085,13 @@ Si le service est désactivé et marqué pour suppression, l'installation échou
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>Afficher Servy Manager en japonais.</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en italien.</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en portugais européen.</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>Afficher Servy Manager en portugais brésilien.</value>
+  </data>
 </root>

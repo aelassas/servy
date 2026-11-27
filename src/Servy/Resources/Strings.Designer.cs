@@ -610,6 +610,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Display Servy in Italian.
+        /// </summary>
+        public static string Automation_LanguageItalianMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguageItalianMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Display Servy in Japanese.
         /// </summary>
         public static string Automation_LanguageJapaneseMenuItem_HelpText {
@@ -624,6 +633,24 @@ namespace Servy.Resources {
         public static string Automation_LanguageMenu_HelpText {
             get {
                 return ResourceManager.GetString("Automation_LanguageMenu_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy in Brazilian Portuguese.
+        /// </summary>
+        public static string Automation_LanguagePortugueseBrazilMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguagePortugueseBrazilMenuItem_HelpText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display Servy in European Portuguese.
+        /// </summary>
+        public static string Automation_LanguagePortuguesePortugalMenuItem_HelpText {
+            get {
+                return ResourceManager.GetString("Automation_LanguagePortuguesePortugalMenuItem_HelpText", resourceCulture);
             }
         }
         

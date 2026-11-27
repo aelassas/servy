@@ -86,6 +86,9 @@ Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
+Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
 english.SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
@@ -94,6 +97,9 @@ french.SetupAppRunningError=Le programme d'installation a détecté que %1 est e
 german.SetupAppRunningError=Das Setup hat festgestellt, dass %1 gerade ausgeführt wird.%n%nSchließen Sie jetzt alle Instanzen, und klicken Sie dann auf OK, um fortzufahren, oder auf Abbrechen, um das Setup zu beenden.
 spanish.SetupAppRunningError=El programa de instalación detectó que %1 se está ejecutando.%n%nCierre ahora todas sus instancias y, a continuación, haga clic en Aceptar para continuar o en Cancelar para salir.
 japanese.SetupAppRunningError=セットアップは %1 が実行中であることを検出しました。%n%n今すぐすべてのインスタンスを閉じてから、[OK] をクリックして続行するか、[キャンセル] をクリックして終了してください。
+italian.SetupAppRunningError=Il programma di installazione ha rilevato che %1 è in esecuzione.%n%nChiudere ora tutte le istanze, quindi fare clic su OK per continuare oppure su Annulla per uscire.
+portuguese.SetupAppRunningError=O programa de configuração detetou que %1 está em execução.%n%nFeche agora todas as instâncias e, em seguida, clique em OK para continuar ou em Cancelar para sair.
+brazilianportuguese.SetupAppRunningError=O programa de instalação detectou que %1 está em execução no momento.%n%nFeche todas as instâncias agora e clique em OK para continuar ou em Cancelar para sair.
 
 [CustomMessages]
 ; Types
@@ -103,12 +109,18 @@ french.FullInstallation=Installation complète
 german.FullInstallation=Vollständige Installation
 spanish.FullInstallation=Instalación completa
 japanese.FullInstallation=完全インストール
+italian.FullInstallation=Installazione completa
+portuguese.FullInstallation=Instalação completa
+brazilianportuguese.FullInstallation=Instalação completa
 english.CustomInstallation=Custom installation
 chinesesimplified.CustomInstallation=自定义安装
 french.CustomInstallation=Installation personnalisée
 german.CustomInstallation=Benutzerdefinierte Installation
 spanish.CustomInstallation=Instalación personalizada
 japanese.CustomInstallation=カスタム インストール
+italian.CustomInstallation=Installazione personalizzata
+portuguese.CustomInstallation=Instalação personalizada
+brazilianportuguese.CustomInstallation=Instalação personalizada
 
 ; Components
 english.InstallDesktopApp=Install Desktop App (%1)
@@ -117,18 +129,27 @@ french.InstallDesktopApp=Installer l'application de bureau (%1)
 german.InstallDesktopApp=Desktop-App installieren (%1)
 spanish.InstallDesktopApp=Instalar la aplicación de escritorio (%1)
 japanese.InstallDesktopApp=デスクトップ アプリをインストール (%1)
+italian.InstallDesktopApp=Installa l'app desktop (%1)
+portuguese.InstallDesktopApp=Instalar a aplicação de ambiente de trabalho (%1)
+brazilianportuguese.InstallDesktopApp=Instalar o aplicativo da área de trabalho (%1)
 english.InstallCli=Install CLI (%1)
 chinesesimplified.InstallCli=安装命令行工具 (%1)
 french.InstallCli=Installer l'interface de ligne de commande (%1)
 german.InstallCli=Befehlszeilentool installieren (%1)
 spanish.InstallCli=Instalar la herramienta de línea de comandos (%1)
 japanese.InstallCli=コマンド ライン ツールをインストール (%1)
+italian.InstallCli=Installa lo strumento da riga di comando (%1)
+portuguese.InstallCli=Instalar a ferramenta da linha de comandos (%1)
+brazilianportuguese.InstallCli=Instalar a ferramenta de linha de comando (%1)
 english.InstallManagerApp=Install Manager App (%1)
 chinesesimplified.InstallManagerApp=安装管理器应用程序 (%1)
 french.InstallManagerApp=Installer l'application Manager (%1)
 german.InstallManagerApp=Manager-App installieren (%1)
 spanish.InstallManagerApp=Instalar la aplicación Manager (%1)
 japanese.InstallManagerApp=Manager アプリをインストール (%1)
+italian.InstallManagerApp=Installa l'app Manager (%1)
+portuguese.InstallManagerApp=Instalar a aplicação Manager (%1)
+brazilianportuguese.InstallManagerApp=Instalar o aplicativo Manager (%1)
 
 ; Tasks & Groups
 english.AdditionalOptions=Additional Options
@@ -137,12 +158,18 @@ french.AdditionalOptions=Options supplémentaires
 german.AdditionalOptions=Zusätzliche Optionen
 spanish.AdditionalOptions=Opciones adicionales
 japanese.AdditionalOptions=追加オプション
+italian.AdditionalOptions=Opzioni aggiuntive
+portuguese.AdditionalOptions=Opções adicionais
+brazilianportuguese.AdditionalOptions=Opções adicionais
 english.AddServyToPath=Add Servy to PATH
 chinesesimplified.AddServyToPath=将 Servy 添加到环境变量 PATH
 french.AddServyToPath=Ajouter Servy à la variable d'environnement PATH
 german.AddServyToPath=Servy zur Umgebungsvariablen PATH hinzufügen
 spanish.AddServyToPath=Agregar Servy a la variable de entorno PATH
 japanese.AddServyToPath=Servy を環境変数 PATH に追加
+italian.AddServyToPath=Aggiungi Servy alla variabile di ambiente PATH
+portuguese.AddServyToPath=Adicionar o Servy à variável de ambiente PATH
+brazilianportuguese.AddServyToPath=Adicionar o Servy à variável de ambiente PATH
 
 ; Icons & Run
 english.UninstallShortcut=Uninstall
@@ -151,12 +178,18 @@ french.UninstallShortcut=Désinstaller
 german.UninstallShortcut=Deinstallieren
 spanish.UninstallShortcut=Desinstalar
 japanese.UninstallShortcut=アンインストール
+italian.UninstallShortcut=Disinstalla
+portuguese.UninstallShortcut=Desinstalar
+brazilianportuguese.UninstallShortcut=Desinstalar
 english.OpenDocumentation=Open Documentation
 chinesesimplified.OpenDocumentation=打开在线文档
 french.OpenDocumentation=Ouvrir la documentation en ligne
 german.OpenDocumentation=Onlinedokumentation öffnen
 spanish.OpenDocumentation=Abrir la documentación en línea
 japanese.OpenDocumentation=オンライン ドキュメントを開く
+italian.OpenDocumentation=Apri la documentazione online
+portuguese.OpenDocumentation=Abrir a documentação online
+brazilianportuguese.OpenDocumentation=Abrir a documentação online
 
 ; [Code] Wizard & Error Messages
 english.SelectAtLeastOneComponent=You must select at least one component to continue.
@@ -165,6 +198,9 @@ french.SelectAtLeastOneComponent=Vous devez sélectionner au moins un composant 
 german.SelectAtLeastOneComponent=Sie müssen mindestens eine Komponente auswählen, um fortzufahren.
 spanish.SelectAtLeastOneComponent=Debe seleccionar al menos un componente para continuar.
 japanese.SelectAtLeastOneComponent=続行するには、少なくとも 1 つのコンポーネントを選択する必要があります。
+italian.SelectAtLeastOneComponent=Per continuare è necessario selezionare almeno un componente.
+portuguese.SelectAtLeastOneComponent=Tem de selecionar pelo menos um componente para continuar.
+brazilianportuguese.SelectAtLeastOneComponent=Você deve selecionar pelo menos um componente para continuar.
 
 english.Arm64ArchMismatchError=This installer is built for ARM64 systems. Please download and run the x64 installer (servy-%1-x64-installer.exe).
 chinesesimplified.Arm64ArchMismatchError=此安装程序专为 ARM64 系统构建。请下载并运行 x64 安装程序 (servy-%1-x64-installer.exe)。
@@ -172,6 +208,9 @@ french.Arm64ArchMismatchError=Ce programme d'installation est conçu pour les sy
 german.Arm64ArchMismatchError=Dieses Installationsprogramm ist für ARM64-Systeme erstellt. Laden Sie das x64-Installationsprogramm (servy-%1-x64-installer.exe) herunter, und führen Sie es aus.
 spanish.Arm64ArchMismatchError=Este instalador está diseñado para sistemas ARM64. Descargue y ejecute el instalador x64 (servy-%1-x64-installer.exe).
 japanese.Arm64ArchMismatchError=このインストーラーは ARM64 システム用にビルドされています。x64 インストーラー (servy-%1-x64-installer.exe) をダウンロードして実行してください。
+italian.Arm64ArchMismatchError=Questo programma di installazione è progettato per i sistemi ARM64. Scaricare ed eseguire il programma di installazione x64 (servy-%1-x64-installer.exe).
+portuguese.Arm64ArchMismatchError=Este instalador foi concebido para sistemas ARM64. Transfira e execute o instalador x64 (servy-%1-x64-installer.exe).
+brazilianportuguese.Arm64ArchMismatchError=Este instalador foi criado para sistemas ARM64. Baixe e execute o instalador x64 (servy-%1-x64-installer.exe).
 
 english.X64OnArm64Warning=You are running the x64 installer on an ARM64 system. An ARM64-native version (servy-%1-arm64-installer.exe) is available for optimal performance.%n%nDo you want to continue with the x64 installation anyway?
 chinesesimplified.X64OnArm64Warning=您正在 ARM64 系统上运行 x64 安装程序。我们提供了原生 ARM64 版本 (servy-%1-arm64-installer.exe) 以获得最佳性能。%n%n是否仍要继续运行 x64 安装？
@@ -179,6 +218,9 @@ french.X64OnArm64Warning=Vous exécutez le programme d'installation x64 sur un s
 german.X64OnArm64Warning=Sie führen das x64-Installationsprogramm auf einem ARM64-System aus. Für optimale Leistung ist eine native ARM64-Version (servy-%1-arm64-installer.exe) verfügbar.%n%nMöchten Sie die x64-Installation trotzdem fortsetzen?
 spanish.X64OnArm64Warning=Está ejecutando el instalador x64 en un sistema ARM64. Hay disponible una versión nativa para ARM64 (servy-%1-arm64-installer.exe) que ofrece un rendimiento óptimo.%n%n¿Desea continuar de todos modos con la instalación x64?
 japanese.X64OnArm64Warning=ARM64 システムで x64 インストーラーを実行しています。最適なパフォーマンスを得られる ARM64 ネイティブ版 (servy-%1-arm64-installer.exe) が用意されています。%n%nこのまま x64 版のインストールを続行しますか?
+italian.X64OnArm64Warning=Si sta eseguendo il programma di installazione x64 su un sistema ARM64. Per prestazioni ottimali è disponibile una versione nativa ARM64 (servy-%1-arm64-installer.exe).%n%nContinuare comunque con l'installazione x64?
+portuguese.X64OnArm64Warning=Está a executar o instalador x64 num sistema ARM64. Está disponível uma versão nativa ARM64 (servy-%1-arm64-installer.exe) para um desempenho ideal.%n%nPretende continuar mesmo assim com a instalação x64?
+brazilianportuguese.X64OnArm64Warning=Você está executando o instalador x64 em um sistema ARM64. Uma versão nativa ARM64 (servy-%1-arm64-installer.exe) está disponível para obter o desempenho ideal.%n%nDeseja continuar com a instalação x64 mesmo assim?
 
 english.UpgradePrompt=An older version of Servy is already installed. Would you like to upgrade to this newer version?
 chinesesimplified.UpgradePrompt=检测到已安装旧版本的 Servy。是否要升级到此新版本？
@@ -186,6 +228,9 @@ french.UpgradePrompt=Une version antérieure de Servy est déjà installée. Vou
 german.UpgradePrompt=Eine ältere Version von Servy ist bereits installiert. Möchten Sie auf diese neuere Version aktualisieren?
 spanish.UpgradePrompt=Ya hay instalada una versión anterior de Servy. ¿Desea actualizarla a esta versión más reciente?
 japanese.UpgradePrompt=以前のバージョンの Servy が既にインストールされています。この新しいバージョンにアップグレードしますか?
+italian.UpgradePrompt=Una versione precedente di Servy è già installata. Aggiornarla a questa versione più recente?
+portuguese.UpgradePrompt=Já está instalada uma versão anterior do Servy. Pretende atualizar para esta versão mais recente?
+brazilianportuguese.UpgradePrompt=Uma versão anterior do Servy já está instalada. Deseja atualizar para esta versão mais recente?
 
 english.DowngradePrompt=A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?
 chinesesimplified.DowngradePrompt=检测到已安装更新版本的 Servy。确定要降级到此旧版本吗？
@@ -193,6 +238,9 @@ french.DowngradePrompt=Une version plus récente de Servy est déjà installée.
 german.DowngradePrompt=Eine neuere Version von Servy ist bereits installiert. Möchten Sie wirklich auf diese ältere Version zurückstufen?
 spanish.DowngradePrompt=Ya hay instalada una versión más reciente de Servy. ¿Está seguro de que desea cambiar a esta versión anterior?
 japanese.DowngradePrompt=新しいバージョンの Servy が既にインストールされています。この古いバージョンにダウングレードしてもよろしいですか?
+italian.DowngradePrompt=Una versione più recente di Servy è già installata. Tornare davvero a questa versione precedente?
+portuguese.DowngradePrompt=Já está instalada uma versão mais recente do Servy. Tem a certeza de que pretende reverter para esta versão anterior?
+brazilianportuguese.DowngradePrompt=Uma versão mais recente do Servy já está instalada. Tem certeza de que deseja reverter para esta versão anterior?
 
 english.ReinstallPrompt=The same version of Servy is already installed. Would you like to reinstall it?
 chinesesimplified.ReinstallPrompt=检测到已安装相同版本的 Servy。是否要重新安装？
@@ -200,6 +248,9 @@ french.ReinstallPrompt=La même version de Servy est déjà installée. Voulez-v
 german.ReinstallPrompt=Dieselbe Version von Servy ist bereits installiert. Möchten Sie sie erneut installieren?
 spanish.ReinstallPrompt=Ya está instalada la misma versión de Servy. ¿Desea volver a instalarla?
 japanese.ReinstallPrompt=同じバージョンの Servy が既にインストールされています。再インストールしますか?
+italian.ReinstallPrompt=La stessa versione di Servy è già installata. Reinstallarla?
+portuguese.ReinstallPrompt=Já está instalada a mesma versão do Servy. Pretende reinstalá-la?
+brazilianportuguese.ReinstallPrompt=A mesma versão do Servy já está instalada. Deseja reinstalá-la?
 
 english.CreateDataDirFailed=Failed to create the service data directory "%1".
 chinesesimplified.CreateDataDirFailed=无法创建服务数据目录“%1”。
@@ -207,6 +258,9 @@ french.CreateDataDirFailed=Impossible de créer le répertoire de données du se
 german.CreateDataDirFailed=Das Datenverzeichnis des Dienstes „%1“ konnte nicht erstellt werden.
 spanish.CreateDataDirFailed=No se pudo crear el directorio de datos del servicio "%1".
 japanese.CreateDataDirFailed=サービス データ ディレクトリ "%1" を作成できませんでした。
+italian.CreateDataDirFailed=Impossibile creare la directory dei dati del servizio "%1".
+portuguese.CreateDataDirFailed=Não foi possível criar a pasta de dados do serviço "%1".
+brazilianportuguese.CreateDataDirFailed=Não foi possível criar a pasta de dados do serviço "%1".
 
 english.DataDirReparsePointWarning=The service data directory "%1" is a symbolic link or junction, so setup did not secure it. Replace it with a real directory.
 chinesesimplified.DataDirReparsePointWarning=服务数据目录“%1”是符号链接或联接点，因此安装程序未对其进行权限保护。请将其替换为真实目录。
@@ -214,6 +268,9 @@ french.DataDirReparsePointWarning=Le répertoire de données du service « %1 »
 german.DataDirReparsePointWarning=Das Datenverzeichnis des Dienstes „%1“ ist eine symbolische Verknüpfung oder ein Verbindungspunkt, daher hat das Setup es nicht geschützt. Ersetzen Sie es durch ein echtes Verzeichnis.
 spanish.DataDirReparsePointWarning=El directorio de datos del servicio "%1" es un vínculo simbólico o una unión, por lo que el programa de instalación no lo protegió. Reemplácelo por un directorio real.
 japanese.DataDirReparsePointWarning=サービス データ ディレクトリ "%1" はシンボリック リンクまたはジャンクションであるため、セットアップはアクセス許可を保護しませんでした。実際のディレクトリに置き換えてください。
+italian.DataDirReparsePointWarning=La directory dei dati del servizio "%1" è un collegamento simbolico o una giunzione, pertanto il programma di installazione non l'ha protetta. Sostituirla con una directory reale.
+portuguese.DataDirReparsePointWarning=A pasta de dados do serviço "%1" é uma ligação simbólica ou uma junção, pelo que o programa de configuração não a protegeu. Substitua-a por uma pasta real.
+brazilianportuguese.DataDirReparsePointWarning=A pasta de dados do serviço "%1" é um link simbólico ou uma junção; portanto, o programa de instalação não a protegeu. Substitua-a por uma pasta real.
 
 english.DataDirOwnershipFailed=Failed to give the ownership of the service data directory "%1" to Administrators.
 chinesesimplified.DataDirOwnershipFailed=无法将服务数据目录“%1”的所有权授予 Administrators 组。
@@ -221,6 +278,9 @@ french.DataDirOwnershipFailed=Impossible d'attribuer la propriété du répertoi
 german.DataDirOwnershipFailed=Der Besitz des Datenverzeichnisses des Dienstes „%1“ konnte nicht an die Gruppe „Administratoren“ übertragen werden.
 spanish.DataDirOwnershipFailed=No se pudo asignar la propiedad del directorio de datos del servicio "%1" al grupo Administradores.
 japanese.DataDirOwnershipFailed=サービス データ ディレクトリ "%1" の所有権を Administrators グループに付与できませんでした。
+italian.DataDirOwnershipFailed=Impossibile assegnare la proprietà della directory dei dati del servizio "%1" al gruppo Administrators.
+portuguese.DataDirOwnershipFailed=Não foi possível atribuir a propriedade da pasta de dados do serviço "%1" ao grupo Administradores.
+brazilianportuguese.DataDirOwnershipFailed=Não foi possível atribuir a propriedade da pasta de dados do serviço "%1" ao grupo Administradores.
 
 english.DataDirPermissionsFailed=Failed to secure the permissions of the service data directory "%1".
 chinesesimplified.DataDirPermissionsFailed=无法保护服务数据目录“%1”的访问权限。
@@ -228,6 +288,9 @@ french.DataDirPermissionsFailed=Impossible de sécuriser les autorisations du r�
 german.DataDirPermissionsFailed=Die Berechtigungen des Datenverzeichnisses des Dienstes „%1“ konnten nicht geschützt werden.
 spanish.DataDirPermissionsFailed=No se pudieron proteger los permisos del directorio de datos del servicio "%1".
 japanese.DataDirPermissionsFailed=サービス データ ディレクトリ "%1" のアクセス許可を保護できませんでした。
+italian.DataDirPermissionsFailed=Impossibile proteggere le autorizzazioni della directory dei dati del servizio "%1".
+portuguese.DataDirPermissionsFailed=Não foi possível proteger as permissões da pasta de dados do serviço "%1".
+brazilianportuguese.DataDirPermissionsFailed=Não foi possível proteger as permissões da pasta de dados do serviço "%1".
 
 english.UninstallPreviousFailed=Failed to uninstall the previous version.
 chinesesimplified.UninstallPreviousFailed=卸载旧版本失败。
@@ -235,6 +298,9 @@ french.UninstallPreviousFailed=Échec de la désinstallation de la version préc
 german.UninstallPreviousFailed=Die vorherige Version konnte nicht deinstalliert werden.
 spanish.UninstallPreviousFailed=No se pudo desinstalar la versión anterior.
 japanese.UninstallPreviousFailed=以前のバージョンをアンインストールできませんでした。
+italian.UninstallPreviousFailed=Impossibile disinstallare la versione precedente.
+portuguese.UninstallPreviousFailed=Não foi possível desinstalar a versão anterior.
+brazilianportuguese.UninstallPreviousFailed=Não foi possível desinstalar a versão anterior.
 
 english.UpdateSystemPathFailed=Failed to update system PATH environment variable.
 chinesesimplified.UpdateSystemPathFailed=更新系统 PATH 环境变量失败。
@@ -242,6 +308,9 @@ french.UpdateSystemPathFailed=Échec de la mise à jour de la variable d'environ
 german.UpdateSystemPathFailed=Die Systemumgebungsvariable PATH konnte nicht aktualisiert werden.
 spanish.UpdateSystemPathFailed=No se pudo actualizar la variable de entorno PATH del sistema.
 japanese.UpdateSystemPathFailed=システム環境変数 PATH を更新できませんでした。
+italian.UpdateSystemPathFailed=Impossibile aggiornare la variabile di ambiente PATH di sistema.
+portuguese.UpdateSystemPathFailed=Não foi possível atualizar a variável de ambiente PATH do sistema.
+brazilianportuguese.UpdateSystemPathFailed=Não foi possível atualizar a variável de ambiente PATH do sistema.
 
 [Types]
 Name: "full"; Description: "{cm:FullInstallation}"

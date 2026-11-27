@@ -76,6 +76,15 @@ Les services Servy ne peuvent pas démarrer tant qu'il n'est pas en cours d'exé
   <data name="Language_Japanese" xml:space="preserve">
     <value>日本語 (japonais)</value>
   </data>
+  <data name="Language_Italian" xml:space="preserve">
+    <value>Italiano (italien)</value>
+  </data>
+  <data name="Language_PortuguesePortugal" xml:space="preserve">
+    <value>Português (Portugal) (portugais, Portugal)</value>
+  </data>
+  <data name="Language_PortugueseBrazil" xml:space="preserve">
+    <value>Português (Brasil) (portugais, Brésil)</value>
+  </data>
   <data name="Msg_LanguageSaveFailed" xml:space="preserve">
     <value>Impossible d'enregistrer le paramètre de langue : {0}</value>
   </data>

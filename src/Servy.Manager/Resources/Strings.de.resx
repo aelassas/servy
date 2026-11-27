@@ -1085,4 +1085,13 @@ Wenn der Dienst deaktiviert und zum Löschen markiert ist, schlägt die Installa
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>Servy Manager auf Japanisch anzeigen.</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager auf Italienisch anzeigen.</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager auf Portugiesisch (Portugal) anzeigen.</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>Servy Manager auf Portugiesisch (Brasilien) anzeigen.</value>
+  </data>
 </root>

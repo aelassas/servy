@@ -41,6 +41,18 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("ja-JP", AppLanguage.Japanese)]
         [InlineData(" JA ", AppLanguage.Japanese)]
         [InlineData("Japanese", AppLanguage.Japanese)]
+        [InlineData("it", AppLanguage.Italian)]
+        [InlineData("it-IT", AppLanguage.Italian)]
+        [InlineData("it-CH", AppLanguage.Italian)]
+        [InlineData("Italian", AppLanguage.Italian)]
+        [InlineData("pt-PT", AppLanguage.PortuguesePortugal)]
+        [InlineData("PT-pt", AppLanguage.PortuguesePortugal)]
+        [InlineData("pt-AO", AppLanguage.PortuguesePortugal)]
+        [InlineData("PortuguesePortugal", AppLanguage.PortuguesePortugal)]
+        [InlineData("pt-BR", AppLanguage.PortugueseBrazil)]
+        [InlineData(" pt-br ", AppLanguage.PortugueseBrazil)]
+        [InlineData("pt", AppLanguage.PortugueseBrazil)]
+        [InlineData("PortugueseBrazil", AppLanguage.PortugueseBrazil)]
         public void TryParse_SupportedName_ReturnsTrueAndTheLanguage(string value, AppLanguage expected)
         {
             // Act
@@ -55,8 +67,11 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        [InlineData("it")]
-        [InlineData("pt-BR")]
+        [InlineData("ko")]
+        [InlineData("ru-RU")]
+        [InlineData("ita")]
+        [InlineData("ptx")]
+        [InlineData("portuguese")]
         [InlineData("fra")]
         [InlineData("deu")]
         [InlineData("esp")]
@@ -97,6 +112,9 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(AppLanguage.German, "de")]
         [InlineData(AppLanguage.Spanish, "es")]
         [InlineData(AppLanguage.Japanese, "ja")]
+        [InlineData(AppLanguage.Italian, "it")]
+        [InlineData(AppLanguage.PortuguesePortugal, "pt-PT")]
+        [InlineData(AppLanguage.PortugueseBrazil, "pt-BR")]
         public void Serialize_EveryLanguage_WritesTheNameTryParseReadsBack(AppLanguage language, string expected)
         {
             // Act
@@ -135,6 +153,7 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData(AppLanguage.German, "de")]
         [InlineData(AppLanguage.Spanish, "es")]
         [InlineData(AppLanguage.Japanese, "ja")]
+        [InlineData(AppLanguage.Italian, "it")]
         public void Resolve_TranslatedLanguage_ReturnsItsNeutralCultureWhateverTheSystemLanguageIs(AppLanguage language, string expected)
         {
             // Act
@@ -160,7 +179,39 @@ namespace Servy.UI.UnitTests.Localization
         [InlineData("es-419", "es")]
         [InlineData("ja", "ja")]
         [InlineData("ja-JP", "ja")]
+        [InlineData("it", "it")]
+        [InlineData("it-IT", "it")]
+        [InlineData("it-CH", "it")]
         public void Resolve_SystemOnATranslatedDisplayLanguage_ReturnsTheNeutralCultureOfThatLanguage(string systemCulture, string expected)
+        {
+            // Act
+            var culture = LocalizationCulture.Resolve(AppLanguage.System, CultureInfo.GetCultureInfo(systemCulture));
+
+            // Assert
+            Assert.NotNull(culture);
+            Assert.Equal(expected, culture.Name);
+        }
+
+        [Theory]
+        [InlineData(AppLanguage.PortuguesePortugal, "pt-PT")]
+        [InlineData(AppLanguage.PortugueseBrazil, "pt-BR")]
+        public void Resolve_Portuguese_ReturnsItsRegionalCultureWhateverTheSystemLanguageIs(AppLanguage language, string expected)
+        {
+            // Act
+            var culture = LocalizationCulture.Resolve(language, CultureInfo.GetCultureInfo("ja-JP"));
+
+            // Assert
+            Assert.NotNull(culture);
+            Assert.Equal(expected, culture.Name);
+        }
+
+        [Theory]
+        [InlineData("pt-PT", "pt-PT")]
+        [InlineData("pt-AO", "pt-PT")]
+        [InlineData("pt-MZ", "pt-PT")]
+        [InlineData("pt-BR", "pt-BR")]
+        [InlineData("pt", "pt-BR")]
+        public void Resolve_SystemOnAPortugueseDisplayLanguage_ReturnsBrazilianForBrazilAndNeutralPtAndEuropeanForTheOtherRegions(string systemCulture, string expected)
         {
             // Act
             var culture = LocalizationCulture.Resolve(AppLanguage.System, CultureInfo.GetCultureInfo(systemCulture));
@@ -186,8 +237,8 @@ namespace Servy.UI.UnitTests.Localization
 
         [Theory]
         [InlineData("en-US")]
-        [InlineData("it-IT")]
-        [InlineData("pt-BR")]
+        [InlineData("ru-RU")]
+        [InlineData("nl-NL")]
         [InlineData("ko-KR")]
         [InlineData("zh-TW")]
         [InlineData("zh-HK")]

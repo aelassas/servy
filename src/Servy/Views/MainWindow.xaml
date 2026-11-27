@@ -226,6 +226,30 @@
                   AutomationProperties.Name="{x:Static uires:Strings.Language_Japanese}"
                   AutomationProperties.AutomationId="LanguageJapaneseMenuItem"
                   AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageJapaneseMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static uires:Strings.Language_Italian}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsItalianSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.Italian}"
+                  AutomationProperties.Name="{x:Static uires:Strings.Language_Italian}"
+                  AutomationProperties.AutomationId="LanguageItalianMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguageItalianMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static uires:Strings.Language_PortuguesePortugal}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsPortuguesePortugalSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.PortuguesePortugal}"
+                  AutomationProperties.Name="{x:Static uires:Strings.Language_PortuguesePortugal}"
+                  AutomationProperties.AutomationId="LanguagePortuguesePortugalMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguagePortuguesePortugalMenuItem_HelpText}" />
+        <MenuItem Header="{x:Static uires:Strings.Language_PortugueseBrazil}"
+                  IsCheckable="True"
+                  IsChecked="{Binding IsPortugueseBrazilSelected, Mode=OneWay}"
+                  Command="{Binding SetLanguageCommand}"
+                  CommandParameter="{x:Static loc:AppLanguage.PortugueseBrazil}"
+                  AutomationProperties.Name="{x:Static uires:Strings.Language_PortugueseBrazil}"
+                  AutomationProperties.AutomationId="LanguagePortugueseBrazilMenuItem"
+                  AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LanguagePortugueseBrazilMenuItem_HelpText}" />
       </MenuItem>
 
       <MenuItem Header="{x:Static resx:Strings.Menu_Help}"

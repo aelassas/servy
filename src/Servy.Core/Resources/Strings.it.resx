@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <data name="Msg_DetailsUnavailableAccessDenied" xml:space="preserve">
+    <value>(dettagli non disponibili: accesso negato)</value>
+  </data>
+  <data name="Msg_DetailsUnavailableTimedOut" xml:space="preserve">
+    <value>(dettagli non disponibili: timeout della query nativa)</value>
+  </data>
+  <data name="Msg_DetailsUnavailableFaulted" xml:space="preserve">
+    <value>(dettagli non disponibili: {0})</value>
+  </data>
+  <data name="Msg_ValidationError" xml:space="preserve">
+    <value>Compilare tutti i campi obbligatori.</value>
+  </data>
+  <data name="Msg_ServiceNameRequired" xml:space="preserve">
+    <value>Il nome del servizio è obbligatorio.</value>
+  </data>
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>Il servizio specificato non è stato trovato.</value>
+  </data>
+  <data name="Msg_ServiceNotFoundDetailed" xml:space="preserve">
+    <value>Il servizio specificato '{0}' non è stato trovato.</value>
+  </data>
+  <data name="Msg_ExecutablePathRequired" xml:space="preserve">
+    <value>Il percorso del processo del servizio non può essere vuoto.</value>
+  </data>
+  <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
+    <value>Il nome del servizio non può terminare con spazi.</value>
+  </data>
+  <data name="Msg_ServiceNameContainsLeadingWhitespace" xml:space="preserve">
+    <value>Il nome del servizio non può iniziare con spazi.</value>
+  </data>
+  <data name="Msg_InvalidServiceName" xml:space="preserve">
+    <value>Il nome del servizio contiene caratteri non validi. Evitare '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|', ';' e i caratteri non stampabili.</value>
+  </data>
+  <data name="Msg_ServiceNameLeadingTrailingDot" xml:space="preserve">
+    <value>Il nome del servizio non può iniziare o terminare con un punto.</value>
+  </data>
+  <data name="Msg_ServiceNameReservedDeviceName" xml:space="preserve">
+    <value>'{0}' è un nome riservato da Windows e non può essere usato nel nome di un servizio.</value>
+  </data>
+  <data name="Msg_ServiceNameReservedForServyHost" xml:space="preserve">
+    <value>Il nome del servizio '{0}' è riservato al servizio host di Servy (Servy.Host.exe). Scegliere un altro nome.</value>
+  </data>
+
+  <data name="Msg_ValidationPassed" xml:space="preserve">
+    <value>Convalida riuscita per il servizio '{0}'.</value>
+  </data>
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>Eseguibile wrapper del servizio non trovato.</value>
+  </data>
+  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
+    <value>La directory di avvio specificata non è valida.</value>
+  </data>
+  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
+    <value>Il percorso del file stdout specificato non è valido.</value>
+  </data>
+  <data name="Msg_InvalidStderrPath" xml:space="preserve">
+    <value>Il percorso del file stderr specificato non è valido.</value>
+  </data>
+  <data name="Msg_InvalidRotationSize" xml:space="preserve">
+    <value>La dimensione di rotazione deve essere un numero di megabyte (MB) compreso tra {0} e {1}.</value>
+  </data>
+  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
+    <value>Il numero massimo di rotazioni deve essere compreso tra {0} e {1}. Impostare 0 per rotazioni illimitate.</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrlTimeout" xml:space="preserve">
+    <value>Il timeout dell'URL heartbeat deve essere un numero di secondi compreso tra {0} e {1}.</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
+    <value>L'intervallo heartbeat deve essere un numero di secondi compreso tra {0} e {1}.</value>
+  </data>
+  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
+    <value>Il numero massimo di controlli non riusciti deve essere compreso tra {0} e {1}.</value>
+  </data>
+  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
+    <value>Il numero massimo di tentativi di riavvio deve essere compreso tra {0} e {1}. Impostare 0 per tentativi illimitati.</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatUrl" xml:space="preserve">
+    <value>L'URL di monitoraggio heartbeat deve essere un URL HTTP o HTTPS assoluto e ben formato.</value>
+  </data>
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>Il servizio '{0}' è stato installato correttamente.</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>Si è verificato un errore imprevisto.</value>
+  </data>
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>Il servizio '{0}' è stato avviato correttamente.</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>Il servizio '{0}' è stato arrestato correttamente.</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>Il servizio '{0}' è stato riavviato correttamente.</value>
+  </data>
+
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>Il percorso del processo pre-avvio non è valido.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>La directory di avvio pre-avvio specificata non è valida.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>Il percorso del file stdout pre-avvio specificato non è valido.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>Il percorso del file stderr pre-avvio specificato non è valido.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>Il timeout pre-avvio deve essere un numero di secondi compreso tra {0} e {1}. Impostare il timeout su 0 per eseguire l'hook pre-avvio in modalità fire-and-forget. Con 0, l'hook viene avviato e il servizio parte subito senza attenderne il completamento. Usare fire-and-forget solo per attività che non influiscono sulla capacità del servizio di avviarsi o funzionare correttamente. Il reindirizzamento di stdout/stderr e i tentativi non sono disponibili in modalità fire-and-forget.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>I tentativi pre-avvio devono essere un numero compreso tra {0} e {1}.</value>
+  </data>
+
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>Il percorso del programma in caso di errore non è valido.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>La directory di avvio del programma in caso di errore non è valida.</value>
+  </data>
+
+  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
+    <value>Il percorso del processo post-avvio non è valido.</value>
+  </data>
+  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
+    <value>La directory di avvio post-avvio specificata non è valida.</value>
+  </data>
+
+  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
+    <value>Il timeout di avvio deve essere un numero di secondi compreso tra {0} e {1}.</value>
+  </data>
+  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
+    <value>Il timeout di arresto deve essere un numero di secondi compreso tra {0} e {1}.</value>
+  </data>
+
+  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
+    <value>Il percorso del processo pre-arresto non è valido.</value>
+  </data>
+  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
+    <value>La directory di avvio pre-arresto specificata non è valida.</value>
+  </data>
+  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
+    <value>Il timeout pre-arresto deve essere un numero di secondi compreso tra {0} e {1}. Impostare il timeout su 0 per eseguire il processo pre-arresto in modalità fire-and-forget.</value>
+  </data>
+
+  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
+    <value>Il percorso del processo post-arresto non è valido.</value>
+  </data>
+  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
+    <value>La directory di avvio post-arresto specificata non è valida.</value>
+  </data>
+
+  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
+    <value>Il nome del servizio supera {0} caratteri.</value>
+  </data>
+  <data name="Msg_ServiceDependencyNameLengthReachedForName" xml:space="preserve">
+    <value>La dipendenza del servizio '{0}' supera la lunghezza massima di {1} caratteri.</value>
+  </data>
+  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
+    <value>Il nome visualizzato supera {0} caratteri.</value>
+  </data>
+  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
+    <value>La descrizione supera {0} caratteri.</value>
+  </data>
+  <data name="Msg_ArgumentsLengthReachedForField" xml:space="preserve">
+    <value>Gli argomenti del campo '{0}' superano il limite della riga di comando di Windows di {1} caratteri.</value>
+  </data>
+  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
+    <value>Le password non corrispondono.</value>
+  </data>
+
+  <data name="Msg_FatalError_Title" xml:space="preserve">
+    <value>Servy - Errore irreversibile</value>
+  </data>
+  <data name="Msg_FatalError_Body" xml:space="preserve">
+    <value>Si è verificato un errore irreversibile e l'applicazione deve essere chiusa. La diagnostica dettagliata è stata salvata nel file di log.</value>
+  </data>
+  <data name="Msg_UnexpectedError_Title" xml:space="preserve">
+    <value>Servy - Errore imprevisto</value>
+  </data>
+  <data name="Msg_UnexpectedError_Body" xml:space="preserve">
+    <value>Si è verificato un errore imprevisto nell'interfaccia, ma l'applicazione tenterà di continuare. I dettagli sono stati registrati.</value>
+  </data>
+  <data name="Msg_StartupError_Format" xml:space="preserve">
+    <value>Errore di avvio: {0}</value>
+  </data>
+  <data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
+    <value>L'input {0} non può essere vuoto o contenere solo spazi.</value>
+  </data>
+  <data name="Msg_ImportPayloadTooLarge" xml:space="preserve">
+    <value>Il contenuto {0} supera la dimensione massima consentita di {1} MB.</value>
+  </data>
+  <data name="Msg_ImportInvalidStructure" xml:space="preserve">
+    <value>Struttura {0} non valida: {1}.</value>
+  </data>
+  <data name="Msg_ImportStructureError" xml:space="preserve">
+    <value>Errore nella struttura {0}: {1}.</value>
+  </data>
+  <data name="Msg_ImportEmptyDefinition" xml:space="preserve">
+    <value>La deserializzazione {0} ha prodotto una definizione di servizio vuota.</value>
+  </data>
+  <data name="Msg_ImportFileNotFound" xml:space="preserve">
+    <value>File non trovato: {0}</value>
+  </data>
+  <data name="Msg_InvalidServiceDependencyName" xml:space="preserve">
+    <value>Nome di servizio '{0}' non valido. Sono consentiti solo lettere, cifre, trattini, caratteri di sottolineatura, punti, spazi e simboli del dollaro ($), eventualmente preceduti da '+' per fare riferimento a un gruppo di ordine di caricamento.</value>
+  </data>
+  <data name="Msg_EnvironmentVariableMissingEquals" xml:space="preserve">
+    <value>Ogni variabile di ambiente deve contenere un carattere '=' non preceduto da escape che separi la chiave dal valore (record {0}).</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyEmpty" xml:space="preserve">
+    <value>La chiave della variabile di ambiente non può essere vuota (record {0}).</value>
+  </data>
+  <data name="Msg_EnvironmentVariableForbiddenNewline" xml:space="preserve">
+    <value>La variabile di ambiente '{0}' contiene un carattere di nuova riga non consentito. I valori su più righe non sono supportati.</value>
+  </data>
+  <data name="Msg_EnvironmentVariableKeyInvalidChars" xml:space="preserve">
+    <value>La chiave della variabile di ambiente '{0}' contiene caratteri non consentiti.</value>
+  </data>
+  <data name="Msg_EnvironmentVariableValueInvalidChars" xml:space="preserve">
+    <value>Il valore della variabile di ambiente '{0}' contiene caratteri non consentiti.</value>
+  </data>
+
+  <data name="FileFilter_Executable" xml:space="preserve">
+    <value>File eseguibili (*.exe)|*.exe|Tutti i file (*.*)|*.*</value>
+  </data>
+  <data name="FileFilter_Xml" xml:space="preserve">
+    <value>File XML (*.xml)|*.xml</value>
+  </data>
+  <data name="FileFilter_Json" xml:space="preserve">
+    <value>File JSON (*.json)|*.json</value>
+  </data>
+  <data name="FileFilter_AllFiles" xml:space="preserve">
+    <value>Tutti i file (*.*)|*.*</value>
+  </data>
+  <data name="Title_SelectExecutable" xml:space="preserve">
+    <value>Seleziona eseguibile del processo</value>
+  </data>
+  <data name="Title_SelectXml" xml:space="preserve">
+    <value>Seleziona file XML</value>
+  </data>
+  <data name="Title_SelectJson" xml:space="preserve">
+    <value>Seleziona file JSON</value>
+  </data>
+  <data name="Title_SelectStartupDirectory" xml:space="preserve">
+    <value>Seleziona directory di avvio</value>
+  </data>
+
+  <data name="Msg_SecurityUncPathProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'importazione da percorsi UNC è vietata per impedire l'iniezione di configurazioni dannose.</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'importazione da unità di rete (incluse le condivisioni UNC mappate) è vietata.</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'importazione di configurazioni tramite giunzioni di directory o collegamenti simbolici è vietata per impedire attacchi di reindirizzamento del percorso.</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'importazione di configurazioni tramite collegamenti simbolici o giunzioni di file è vietata per impedire attacchi di reindirizzamento del percorso.</value>
+  </data>
+  <data name="Msg_SecurityUncPathExportProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'esportazione verso percorsi UNC è vietata per impedire l'esfiltrazione della configurazione.</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveExportProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'esportazione verso unità di rete (incluse le condivisioni UNC mappate) è vietata.</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointExportProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'esportazione di configurazioni verso giunzioni di directory o collegamenti simbolici è vietata per impedire attacchi di reindirizzamento del percorso.</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointExportProhibited" xml:space="preserve">
+    <value>Avviso di sicurezza: l'esportazione di configurazioni verso collegamenti simbolici o giunzioni di file è vietata per impedire attacchi di reindirizzamento del percorso.</value>
+  </data>
+  <data name="Msg_SecurityReservedDeviceName" xml:space="preserve">
+    <value>Avviso di sicurezza: '{0}' è un nome di dispositivo riservato di Windows e non può essere usato.</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectory" xml:space="preserve">
+    <value>Avviso di sicurezza: il percorso risolto punta alla directory di sistema protetta '{0}'. Importazione vietata.</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectoryExport" xml:space="preserve">
+    <value>Avviso di sicurezza: il percorso risolto punta alla directory di sistema protetta '{0}'. Esportazione vietata.</value>
+  </data>
+  <data name="Msg_SecurityInvalidFileType" xml:space="preserve">
+    <value>Avviso di sicurezza: tipo di file '{0}' non valido. Sono supportati solo file .json e .xml.</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestination" xml:space="preserve">
+    <value>Avviso di sicurezza: la destinazione del file risolta punta direttamente a un percorso UNC. Importazione interrotta.</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestinationExport" xml:space="preserve">
+    <value>Avviso di sicurezza: la destinazione del file risolta punta direttamente a un percorso UNC. Esportazione interrotta.</value>
+  </data>
+  <data name="Msg_SecurityHandleInvalid" xml:space="preserve">
+    <value>Avviso di sicurezza: impossibile ottenere un handle di file per la destinazione.</value>
+  </data>
+  <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
+    <value>Avviso di sicurezza: la convalida dell'handle del file di destinazione è stata rifiutata ({0}).</value>
+  </data>
+  <data name="Msg_SecurityHandleSizeProbeFailed" xml:space="preserve">
+    <value>Avviso di sicurezza: convalida del percorso non riuscita nella verifica del kernel (allocazione dimensione).</value>
+  </data>
+  <data name="Msg_InvalidConfig" xml:space="preserve">
+    <value>{0} non valido nella configurazione.</value>
+  </data>
+  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
+    <value>{0} non valido nella configurazione. Verificare che il percorso esista e sia accessibile.</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>Il percorso specificato non è valido.</value>
+  </data>
+  <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
+    <value>Il file di configurazione '{0}' è di {1:N2} MB e supera la dimensione massima consentita di {2} MB.</value>
+  </data>
+
+  <data name="Msg_DependencyUnavailable" xml:space="preserve">
+    <value>La dipendenza '{0}' non è disponibile.</value>
+  </data>
+  <data name="Msg_DependencyAccessDenied" xml:space="preserve">
+    <value>La dipendenza '{0}' non è accessibile (accesso negato).</value>
+  </data>
+
+  <data name="Msg_InvalidHexAffinityFormat" xml:space="preserve">
+    <value>Formato esadecimale dell'affinità CPU non valido: '{0}'.</value>
+  </data>
+  <data name="Msg_CoreIndexRangeOutOfBounds" xml:space="preserve">
+    <value>L'indice di core dell'affinità CPU nell'intervallo '{0}' è fuori limite (0-{1}).</value>
+  </data>
+  <data name="Msg_CoreIndexOutOfBounds" xml:space="preserve">
+    <value>L'indice di core dell'affinità CPU '{0}' è fuori limite (0-{1}).</value>
+  </data>
+  <data name="Msg_InvalidCoreSpecification" xml:space="preserve">
+    <value>Specifica dei core dell'affinità CPU non valida: '{0}'.</value>
+  </data>
+  <data name="Msg_InvertedCoreRange" xml:space="preserve">
+    <value>Intervallo di core dell'affinità CPU '{0}' invertito: l'indice iniziale è maggiore di quello finale.</value>
+  </data>
+  <data name="Msg_EmptyAffinityMask" xml:space="preserve">
+    <value>La maschera di affinità CPU '{0}' non seleziona alcun processore.</value>
+  </data>
+  <data name="Msg_HexMaskOutOfBounds" xml:space="preserve">
+    <value>La maschera di affinità CPU '{0}' seleziona processori al di fuori dell'intervallo consentito (0-{1}).</value>
+  </data>
+
+  <data name="Msg_UnknownXmlElement" xml:space="preserve">
+    <value>Rilevato elemento XML sconosciuto: '{0}'.</value>
+  </data>
+  <data name="Msg_UnknownXmlAttribute" xml:space="preserve">
+    <value>Rilevato attributo XML sconosciuto: '{0}'.</value>
+  </data>
+
+  <data name="Msg_EventLogUnavailable" xml:space="preserve">
+    <value>Impossibile accedere al registro eventi di Windows. Verificare che il servizio 'Registro eventi di Windows' sia in esecuzione e che la query sia valida.</value>
+  </data>
+  <data name="Msg_EventLogAccessDenied" xml:space="preserve">
+    <value>Accesso negato al registro eventi di Windows. Verificare che l'applicazione sia in esecuzione con privilegi sufficienti (amministratore).</value>
+  </data>
+
+  <data name="Label_Parameters" xml:space="preserve">
+    <value>Parametri</value>
+  </data>
+  <data name="Label_PreLaunchParameters" xml:space="preserve">
+    <value>Parametri pre-avvio</value>
+  </data>
+  <data name="Label_PostLaunchParameters" xml:space="preserve">
+    <value>Parametri post-avvio</value>
+  </data>
+  <data name="Label_PreStopParameters" xml:space="preserve">
+    <value>Parametri pre-arresto</value>
+  </data>
+  <data name="Label_PostStopParameters" xml:space="preserve">
+    <value>Parametri post-arresto</value>
+  </data>
+  <data name="Label_FailureProgramParameters" xml:space="preserve">
+    <value>Parametri programma in caso di errore</value>
+  </data>
+  <data name="Msg_ExportDecryptionFailed" xml:space="preserve">
+    <value>Il servizio '{0}' non è stato esportato: almeno un campo sensibile non può essere decrittografato con la chiave di crittografia corrente (aes_key.dat), quindi il file verrebbe scritto senza i parametri e le variabili di ambiente. Se il file della chiave è danneggiato o è stato sostituito, ripristinare il file aes_key.dat originale oppure copiare Servy.db sul computer che lo contiene ed esportare la configurazione da lì.</value>
+  </data>
+  <data name="Msg_ExportLegacyEncryptionBlocked" xml:space="preserve">
+    <value>Il servizio '{0}' non è stato esportato: almeno un campo sensibile usa la crittografia pre-v2 di una versione precedente di Servy, che questa versione si rifiuta di decrittografare. La chiave di crittografia (aes_key.dat) non è coinvolta. Per aggiornare il servizio, esportarne la configurazione con una versione di Servy compatibile con v1, rimuovere qui il servizio, quindi importare il file esportato.</value>
+  </data>
+</root>

@@ -1060,4 +1060,13 @@ Si el servicio está deshabilitado y marcado para eliminación, la instalación 
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>Mostrar Servy en japonés.</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>Mostrar Servy en italiano.</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>Mostrar Servy en portugués europeo.</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>Mostrar Servy en portugués de Brasil.</value>
+  </data>
 </root>

@@ -1060,4 +1060,13 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Automation_LanguageJapaneseMenuItem_HelpText" xml:space="preserve">
     <value>Display Servy in Japanese.</value>
   </data>
+  <data name="Automation_LanguageItalianMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in Italian.</value>
+  </data>
+  <data name="Automation_LanguagePortuguesePortugalMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in European Portuguese.</value>
+  </data>
+  <data name="Automation_LanguagePortugueseBrazilMenuItem_HelpText" xml:space="preserve">
+    <value>Display Servy in Brazilian Portuguese.</value>
+  </data>
 </root>

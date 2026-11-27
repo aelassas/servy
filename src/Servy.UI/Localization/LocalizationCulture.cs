@@ -29,15 +29,27 @@ namespace Servy.UI.Localization
         /// <summary>The name that selects <see cref="AppLanguage.Japanese"/>, and the culture of its resources.</summary>
         public const string JapaneseCode = "ja";
 
+        /// <summary>The name that selects <see cref="AppLanguage.Italian"/>, and the culture of its resources.</summary>
+        public const string ItalianCode = "it";
+
+        /// <summary>The name that selects <see cref="AppLanguage.PortuguesePortugal"/>, and the culture of its resources.</summary>
+        public const string PortuguesePortugalCode = "pt-PT";
+
+        /// <summary>The name that selects <see cref="AppLanguage.PortugueseBrazil"/>, and the culture of its resources.</summary>
+        public const string PortugueseBrazilCode = "pt-BR";
+
         /// <summary>
         /// Parses a language name given on the command line or stored in a settings file.
         /// </summary>
         /// <param name="value">
-        /// <c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c> or <c>ja</c>, in any casing. A few
-        /// obvious spellings of each are accepted too: <c>auto</c>, the English name of the language (<c>english</c>,
-        /// <c>french</c>, <c>german</c>, <c>spanish</c>, <c>japanese</c>), any regional culture name of the language
-        /// (<c>en-*</c>, <c>fr-*</c>, <c>de-*</c>, <c>es-*</c>, <c>ja-*</c>), and the Simplified Chinese culture names
-        /// <c>zh</c>, <c>zh-Hans</c>, <c>zh-Hans-*</c>, <c>zh-SG</c> and <c>zh-CHS</c>.
+        /// <c>system</c>, <c>en</c>, <c>zh-CN</c>, <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c>
+        /// or <c>pt-BR</c>, in any casing. A few obvious spellings of each are accepted too: <c>auto</c>, the English
+        /// name of the language (<c>english</c>, <c>french</c>, <c>german</c>, <c>spanish</c>, <c>japanese</c>,
+        /// <c>italian</c>, <c>portugueseportugal</c>, <c>portuguesebrazil</c>), any regional culture name of the
+        /// language (<c>en-*</c>, <c>fr-*</c>, <c>de-*</c>, <c>es-*</c>, <c>ja-*</c>, <c>it-*</c>), the Simplified
+        /// Chinese culture names <c>zh</c>, <c>zh-Hans</c>, <c>zh-Hans-*</c>, <c>zh-SG</c> and <c>zh-CHS</c>, and the
+        /// Portuguese culture names as <see cref="Resolve"/> maps them (<c>pt</c> and <c>pt-BR</c> to Brazilian
+        /// Portuguese, every other <c>pt-*</c> to European Portuguese).
         /// </param>
         /// <param name="language">The parsed language; <see cref="AppLanguage.System"/> when the method returns <see langword="false"/>.</param>
         /// <returns><see langword="true"/> when <paramref name="value"/> names a supported language.</returns>
@@ -78,6 +90,20 @@ namespace Servy.UI.Localization
                 }
             }
 
+            if (Is(name, nameof(AppLanguage.PortuguesePortugal)) || Is(name, nameof(AppLanguage.PortugueseBrazil)))
+            {
+                language = Is(name, nameof(AppLanguage.PortuguesePortugal))
+                    ? AppLanguage.PortuguesePortugal
+                    : AppLanguage.PortugueseBrazil;
+                return true;
+            }
+
+            if (TryGetPortuguese(name, out var portuguese))
+            {
+                language = portuguese;
+                return true;
+            }
+
             return false;
         }
 
@@ -93,7 +119,7 @@ namespace Servy.UI.Localization
 
         /// <summary>
         /// Returns the name <paramref name="language"/> is stored under: <c>system</c>, <c>en</c>, <c>zh-CN</c>,
-        /// <c>fr</c>, <c>de</c>, <c>es</c> or <c>ja</c>.
+        /// <c>fr</c>, <c>de</c>, <c>es</c>, <c>ja</c>, <c>it</c>, <c>pt-PT</c> or <c>pt-BR</c>.
         /// </summary>
         /// <param name="language">The language to name.</param>
         /// <returns>The name <see cref="TryParse"/> maps back to <paramref name="language"/>.</returns>
@@ -113,6 +139,12 @@ namespace Servy.UI.Localization
                     return SpanishCode;
                 case AppLanguage.Japanese:
                     return JapaneseCode;
+                case AppLanguage.Italian:
+                    return ItalianCode;
+                case AppLanguage.PortuguesePortugal:
+                    return PortuguesePortugalCode;
+                case AppLanguage.PortugueseBrazil:
+                    return PortugueseBrazilCode;
                 default:
                     return SystemCode;
             }
@@ -126,9 +158,12 @@ namespace Servy.UI.Localization
         /// <returns>
         /// The UI culture to apply, or <see langword="null"/> to leave the UI culture as Windows set it. For
         /// <see cref="AppLanguage.System"/> a Simplified Chinese display language resolves to <c>zh-CN</c>, and a
-        /// French, German, Spanish or Japanese one, neutral or regional (<c>fr-CA</c>, <c>de-CH</c>, <c>es-419</c>,
-        /// <c>ja-JP</c>, ...), to the neutral culture of that language; every other display language is left alone,
-        /// because the neutral (English) resources are what such a culture falls back to anyway.
+        /// French, German, Spanish, Japanese or Italian one, neutral or regional (<c>fr-CA</c>, <c>de-CH</c>,
+        /// <c>es-419</c>, <c>ja-JP</c>, <c>it-CH</c>, ...), to the neutral culture of that language. A Portuguese one
+        /// resolves to <c>pt-BR</c> for Brazil and for the neutral <c>pt</c> (the region .NET picks for it), and to
+        /// <c>pt-PT</c> for Portugal and every other region (<c>pt-AO</c>, <c>pt-MZ</c>, ...), which writes European
+        /// Portuguese. Every other display language is left alone, because the neutral (English) resources are what
+        /// such a culture falls back to anyway.
         /// </returns>
         public static CultureInfo? Resolve(AppLanguage language, CultureInfo? systemUiCulture)
         {
@@ -141,6 +176,9 @@ namespace Servy.UI.Localization
                 case AppLanguage.German:
                 case AppLanguage.Spanish:
                 case AppLanguage.Japanese:
+                case AppLanguage.Italian:
+                case AppLanguage.PortuguesePortugal:
+                case AppLanguage.PortugueseBrazil:
                     return CultureInfo.GetCultureInfo(Serialize(language));
                 default:
                     if (systemUiCulture == null)
@@ -160,6 +198,11 @@ namespace Servy.UI.Localization
                         {
                             return CultureInfo.GetCultureInfo(code);
                         }
+                    }
+
+                    if (TryGetPortuguese(systemUiCulture.Name, out var portuguese))
+                    {
+                        return CultureInfo.GetCultureInfo(Serialize(portuguese));
                     }
 
                     return null;
@@ -221,7 +264,36 @@ namespace Servy.UI.Localization
             AppLanguage.German,
             AppLanguage.Spanish,
             AppLanguage.Japanese,
+            AppLanguage.Italian,
         };
+
+        /// <summary>
+        /// Tells which Portuguese language a culture name selects. Portuguese has two translations named after
+        /// regional cultures, so a regional culture other than <c>pt-BR</c> cannot reach either through the resource
+        /// fallback: <c>pt</c> and <c>pt-BR</c> (and <c>pt-BR-*</c>) select Brazilian Portuguese, the region .NET
+        /// picks for the neutral <c>pt</c>, and every other <c>pt-*</c> culture (<c>pt-PT</c>, <c>pt-AO</c>,
+        /// <c>pt-MZ</c>, ...) selects European Portuguese, which those regions write.
+        /// </summary>
+        /// <param name="cultureName">A culture name such as <c>pt</c>, <c>pt-BR</c> or <c>pt-AO</c>.</param>
+        /// <param name="language">
+        /// <see cref="AppLanguage.PortugueseBrazil"/> or <see cref="AppLanguage.PortuguesePortugal"/>;
+        /// <see cref="AppLanguage.System"/> when the method returns <see langword="false"/>.
+        /// </param>
+        /// <returns><see langword="true"/> for a Portuguese culture name.</returns>
+        private static bool TryGetPortuguese(string cultureName, out AppLanguage language)
+        {
+            language = AppLanguage.System;
+            var parts = cultureName.Trim().Split('-');
+            if (!Is(parts[0], "pt"))
+            {
+                return false;
+            }
+
+            language = parts.Length == 1 || Is(parts[1], "BR")
+                ? AppLanguage.PortugueseBrazil
+                : AppLanguage.PortuguesePortugal;
+            return true;
+        }
 
         /// <summary>
         /// Tells whether <paramref name="cultureName"/> is the neutral culture <paramref name="code"/> or one of its
