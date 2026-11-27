@@ -19,7 +19,8 @@ namespace Servy.Manager.Utils
     /// character cut across two reads is decoded once, whole.
     /// </para>
     /// <para>
-    /// Instances are not thread-safe; the tailing loop owns one and feeds it from a single task.
+    /// Instances are not thread-safe. Each caller creates its own and feeds it from a single task:
+    /// the tailing loop, and each branch of the history load (UTF-16/UTF-32 and UTF-8).
     /// </para>
     /// </remarks>
     internal sealed class LogLineSplitter
