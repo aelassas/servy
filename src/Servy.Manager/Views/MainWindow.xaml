@@ -31,6 +31,12 @@
     <managerConverters:CpuUsageConverter x:Key="CpuUsageConverter" />
     <managerConverters:RamUsageConverter x:Key="RamUsageConverter" />
     <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+
+    <!-- Default ComboBox Style to prevent stretching in multi-line label rows -->
+    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Padding" Value="5,4" />
+    </Style>
   </Window.Resources>
 
   <DockPanel>
