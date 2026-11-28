@@ -914,6 +914,14 @@ namespace Servy.Core.Security
                     return;
                 }
 
+                FileSystemSecurity acl = isDirectory
+                    ? new DirectoryInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner)
+                    : (FileSystemSecurity)new FileInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+
+                var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
+                if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
+                    return;
+
                 if (!isDirectory)
                 {
                     var links = GetHardLinkCount(path);
@@ -926,14 +934,6 @@ namespace Servy.Core.Security
                         return;
                     }
                 }
-
-                FileSystemSecurity acl = isDirectory
-                    ? new DirectoryInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner)
-                    : (FileSystemSecurity)new FileInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
-
-                var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
-                if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
-                    return;
 
                 acl.PurgeAccessRules(targetSid);
                 if (ownedByTarget)
