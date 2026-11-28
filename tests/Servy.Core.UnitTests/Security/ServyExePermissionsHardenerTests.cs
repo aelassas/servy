@@ -760,7 +760,8 @@ namespace Servy.Core.UnitTests.Security
 
             // Assert
             Assert.Contains("failed on: Servy.Restarter.exe", log);
-            Assert.Contains("keep their entries until the next elevated start", log);
+            Assert.Contains("tried again on the next elevated start of the desktop app, the Manager or the CLI (Release builds)", log);
+            Assert.Contains("is refused every time, so its entries and owner stay until they are changed by hand", log);
         }
 
         [Fact]
