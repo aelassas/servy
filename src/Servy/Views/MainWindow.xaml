@@ -112,6 +112,12 @@
       <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
       <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
     </Style>
+
+    <!-- Default ComboBox Style to prevent stretching in multi-line label rows -->
+    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Padding" Value="5,4" />
+    </Style>
   </Window.Resources>
 
   <DockPanel>
