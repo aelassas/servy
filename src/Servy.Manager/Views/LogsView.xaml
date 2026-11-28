@@ -101,7 +101,8 @@
 
       <Button Content="{Binding SearchButtonText}"
               Command="{Binding SearchCommand}"
-              Width="80"
+              MinWidth="80"
+              Padding="8,0"
               AutomationProperties.Name="{Binding SearchButtonText}"
               AutomationProperties.AutomationId="LogsSearchButton"
               AutomationProperties.HelpText="{x:Static resx:Strings.Automation_LogsSearchButton_HelpText}" />
