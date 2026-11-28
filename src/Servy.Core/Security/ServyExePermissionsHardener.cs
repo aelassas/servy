@@ -925,30 +925,22 @@ namespace Servy.Core.Security
                     }
                 }
 
+                FileSystemSecurity acl = isDirectory
+                    ? new DirectoryInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner)
+                    : (FileSystemSecurity)new FileInfo(path).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+
+                var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
+                if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
+                    return;
+
+                acl.PurgeAccessRules(targetSid);
+                if (ownedByTarget)
+                    acl.SetOwner(AdministratorsSid);
+
                 if (isDirectory)
-                {
-                    var directory = new DirectoryInfo(path);
-                    var acl = directory.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
-                    var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
-                    if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
-                        return;
-                    acl.PurgeAccessRules(targetSid);
-                    if (ownedByTarget)
-                        acl.SetOwner(AdministratorsSid);
-                    directory.SetAccessControl(acl);
-                }
+                    new DirectoryInfo(path).SetAccessControl((DirectorySecurity)acl);
                 else
-                {
-                    var file = new FileInfo(path);
-                    var acl = file.GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
-                    var ownedByTarget = targetSid.Equals(acl.GetOwner(typeof(SecurityIdentifier)));
-                    if (!HoldsExplicitEntry(acl, targetSid) && !ownedByTarget)
-                        return;
-                    acl.PurgeAccessRules(targetSid);
-                    if (ownedByTarget)
-                        acl.SetOwner(AdministratorsSid);
-                    file.SetAccessControl(acl);
-                }
+                    new FileInfo(path).SetAccessControl((FileSecurity)acl);
 
                 Logger.Debug($"Revoked the access of '{result.Account}' to '{name}'.");
                 result.AddRevoked(name);
