@@ -246,7 +246,7 @@
                     Height="24"
                     Command="{Binding SearchCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
-                    AutomationProperties.Name="{x:Static resx:Strings.Button_Search}"
+                    AutomationProperties.Name="{Binding SearchButtonText}"
                     AutomationProperties.AutomationId="SearchButton"
                     AutomationProperties.HelpText="{x:Static resx:Strings.Automation_SearchButton_HelpText}" />
           </Grid>
