@@ -682,6 +682,8 @@ namespace Servy.Core.IntegrationTests.Security
     [Collection(CoreOsIntegrationCollection.Name)]
     public class ProtectedKeyProviderLockFileIntegrationTests : TempDirectoryTestBase
     {
+        private const string NotElevatedSkipReason = "Creating the lock file in a directory that admits only Local System and Administrators requires an elevated process.";
+
         private static readonly SecurityIdentifier LocalSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
         private static readonly SecurityIdentifier AdministratorsSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
 
@@ -719,6 +721,9 @@ namespace Servy.Core.IntegrationTests.Security
         [Fact]
         public void RunUnderLock_ElevatedRun_SecuresTheKeyDirectoryForOnlyLocalSystemAndAdministratorsBeforeTakingTheLock()
         {
+            // A directory that admits only Local System and Administrators cannot hold a lock file this process creates unless it is elevated; read before the seam is forced to true
+            Assert.SkipUnless(SecurityHelper.IsAdministrator(), NotElevatedSkipReason);
+
             // Arrange
             var keyDirectory = Path.Combine(TempDirectory, "vault_elevated");
             var keyPath = Path.Combine(keyDirectory, "aes_key.dat");
