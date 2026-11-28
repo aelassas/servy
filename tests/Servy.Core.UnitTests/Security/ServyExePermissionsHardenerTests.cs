@@ -1378,6 +1378,29 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains("its hard link count could not be verified", capture.Log);
         }
 
+        [Theory]
+        [InlineData(2)]
+        [InlineData(-1)]
+        public void RevokeIfUnused_LinkedFileWithoutAnEntryOfTheAccount_IsNotReportedAsFailed(int links)
+        {
+            // Arrange: the binary carries no entry of the account and is not owned by it, so there is nothing to
+            // revoke and its hard link count must not be consulted (#8246)
+            var logs = GrantedFolder(AppConfig.LogsFolderName, LocalServiceSid);
+            var exe = Path.Combine(TempDirectory, AppConfig.ServyServiceUIExe);
+            File.WriteAllText(exe, "ui");
+            var sut = new TestableHardener(TempDirectory) { HardLinkCount = _ => links };
+
+            // Act
+            var capture = LogCapture.Run(() => sut.RevokeIfUnused("svc", ServiceName, NoServices, CancellationToken.None));
+
+            // Assert
+            Assert.Equal(ExePermissionsHardeningStatus.Revoked, capture.Result.Status);
+            Assert.Empty(capture.Result.Failed);
+            Assert.DoesNotContain(AppConfig.ServyServiceUIExe, sut.HardLinkQueries);
+            Assert.False(ItemHasAce(logs, LocalServiceSid));
+            Assert.DoesNotContain("hard link", capture.Log);
+        }
+
         [Fact]
         public void RevokeIfUnused_OneFileThrows_IsReportedAsFailedAndTheNextFileIsStillRevoked()
         {
