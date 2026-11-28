@@ -240,18 +240,15 @@ namespace Servy.Core.Security
             }
 
             // Once the purge has started, the grants are always written back, so neither step is cancelled
-            ExePermissionsHardeningResult purge;
             try
             {
-                purge = await Task.Run(() => PurgeVault(groups));
+                ReportPurgeResult(await Task.Run(() => PurgeVault(groups)));
             }
             catch (Exception ex)
             {
+                // Already reported with its cause; there is no per-item outcome to list
                 Logger.Error("Purging the non-administrative entries of Servy's vault failed.", ex);
-                purge = new ExePermissionsHardeningResult(VaultDirectory).Complete(ExePermissionsHardeningStatus.Failed, ex.Message);
             }
-
-            ReportPurgeResult(purge);
 
             foreach (var group in groups)
             {

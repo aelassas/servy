@@ -1964,6 +1964,31 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        public async Task SecureVaultAsync_PurgeThrows_LogsTheFailureOnceWithoutAnEmptyItemList()
+        {
+            // Arrange: the first resolution (grouping the services) succeeds, the second (inside PurgeVault) throws
+            var repository = new Mock<IServiceRepository>();
+            repository.Setup(r => r.GetAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(new List<ServiceDto>
+            {
+                new ServiceDto { Name = ServiceName, RunAsLocalSystem = false, UserAccount = @".\svc" },
+            });
+            var calls = 0;
+            var sut = new TestableHardener(TempDirectory)
+            {
+                RecordOnly = true,
+                Resolver = _ => ++calls == 1 ? LocalServiceSid : throw new InvalidOperationException("LSA unavailable"),
+            };
+
+            // Act
+            var log = await LogCapture.RunAsync(() => sut.SecureVaultAsync(repository.Object, TestContext.Current.CancellationToken));
+
+            // Assert: one Error line carries the exception, and no per-item report with an empty list follows it (#8245)
+            const string Failure = "Purging the non-administrative entries of Servy's vault failed";
+            Assert.Equal(1, log.Split(new[] { Failure }, StringSplitOptions.None).Length - 1);
+            Assert.DoesNotContain(Failure + " on:", log);
+        }
+
+        [Fact]
         public async Task SecureVaultAsync_NotElevated_DoesNotReadTheRepository()
         {
             // Arrange
