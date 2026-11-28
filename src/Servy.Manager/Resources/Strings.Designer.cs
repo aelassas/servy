@@ -565,7 +565,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in French.
+        ///   Looks up a localized string similar to Display Servy Manager in French..
         /// </summary>
         public static string Automation_LanguageFrenchMenuItem_HelpText {
             get {
@@ -574,7 +574,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in German.
+        ///   Looks up a localized string similar to Display Servy Manager in German..
         /// </summary>
         public static string Automation_LanguageGermanMenuItem_HelpText {
             get {
@@ -583,7 +583,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in Italian.
+        ///   Looks up a localized string similar to Display Servy Manager in Italian..
         /// </summary>
         public static string Automation_LanguageItalianMenuItem_HelpText {
             get {
@@ -592,7 +592,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in Japanese.
+        ///   Looks up a localized string similar to Display Servy Manager in Japanese..
         /// </summary>
         public static string Automation_LanguageJapaneseMenuItem_HelpText {
             get {
@@ -601,7 +601,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in Korean.
+        ///   Looks up a localized string similar to Display Servy Manager in Korean..
         /// </summary>
         public static string Automation_LanguageKoreanMenuItem_HelpText {
             get {
@@ -619,7 +619,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in Brazilian Portuguese.
+        ///   Looks up a localized string similar to Display Servy Manager in Brazilian Portuguese..
         /// </summary>
         public static string Automation_LanguagePortugueseBrazilMenuItem_HelpText {
             get {
@@ -628,7 +628,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in European Portuguese.
+        ///   Looks up a localized string similar to Display Servy Manager in European Portuguese..
         /// </summary>
         public static string Automation_LanguagePortuguesePortugalMenuItem_HelpText {
             get {
@@ -637,7 +637,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy Manager in Spanish.
+        ///   Looks up a localized string similar to Display Servy Manager in Spanish..
         /// </summary>
         public static string Automation_LanguageSpanishMenuItem_HelpText {
             get {
