@@ -574,7 +574,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in Simplified Chinese.
+        ///   Looks up a localized string similar to Display Servy in Simplified Chinese..
         /// </summary>
         public static string Automation_LanguageChineseSimplifiedMenuItem_HelpText {
             get {
@@ -583,7 +583,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in English.
+        ///   Looks up a localized string similar to Display Servy in English..
         /// </summary>
         public static string Automation_LanguageEnglishMenuItem_HelpText {
             get {
@@ -592,7 +592,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in French.
+        ///   Looks up a localized string similar to Display Servy in French..
         /// </summary>
         public static string Automation_LanguageFrenchMenuItem_HelpText {
             get {
@@ -601,7 +601,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in German.
+        ///   Looks up a localized string similar to Display Servy in German..
         /// </summary>
         public static string Automation_LanguageGermanMenuItem_HelpText {
             get {
@@ -610,7 +610,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in Italian.
+        ///   Looks up a localized string similar to Display Servy in Italian..
         /// </summary>
         public static string Automation_LanguageItalianMenuItem_HelpText {
             get {
@@ -619,7 +619,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in Japanese.
+        ///   Looks up a localized string similar to Display Servy in Japanese..
         /// </summary>
         public static string Automation_LanguageJapaneseMenuItem_HelpText {
             get {
@@ -628,7 +628,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in Korean.
+        ///   Looks up a localized string similar to Display Servy in Korean..
         /// </summary>
         public static string Automation_LanguageKoreanMenuItem_HelpText {
             get {
@@ -637,7 +637,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Choose the display language of Servy.
+        ///   Looks up a localized string similar to Choose the display language of Servy..
         /// </summary>
         public static string Automation_LanguageMenu_HelpText {
             get {
@@ -646,7 +646,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in Brazilian Portuguese.
+        ///   Looks up a localized string similar to Display Servy in Brazilian Portuguese..
         /// </summary>
         public static string Automation_LanguagePortugueseBrazilMenuItem_HelpText {
             get {
@@ -655,7 +655,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in European Portuguese.
+        ///   Looks up a localized string similar to Display Servy in European Portuguese..
         /// </summary>
         public static string Automation_LanguagePortuguesePortugalMenuItem_HelpText {
             get {
@@ -664,7 +664,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display Servy in Spanish.
+        ///   Looks up a localized string similar to Display Servy in Spanish..
         /// </summary>
         public static string Automation_LanguageSpanishMenuItem_HelpText {
             get {
@@ -673,7 +673,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Follow the Windows display language.
+        ///   Looks up a localized string similar to Follow the Windows display language..
         /// </summary>
         public static string Automation_LanguageSystemMenuItem_HelpText {
             get {
