@@ -1038,6 +1038,47 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void WriteFileAtomic_IOExceptionOnEveryMove_GivesUpAfterTheRetryBudget()
+        {
+            // Arrange
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+
+            void AlwaysFailingMove(string source, string destination)
+            {
+                moveAttempts++;
+
+                // A loop that never gives up must fail this test, not hang the run: past the budget the
+                // mover throws a type the transient arm does not catch.
+                if (moveAttempts > AppConfig.WriteFileAtomicMaxRetries + 2)
+                {
+                    throw new InvalidOperationException("The retry budget was exceeded.");
+                }
+
+                throw new IOException("The process cannot access the file because it is being used by another process.");
+            }
+
+            // Act
+            Assert.Throws<IOException>(() =>
+                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                {
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                    {
+                        writer.Write("new-content");
+                    }
+                }, AlwaysFailingMove, TestContext.Current.CancellationToken));
+
+            // Assert
+            // The first attempt plus WriteFileAtomicMaxRetries retries, then the IOException itself escapes.
+            Assert.Equal(AppConfig.WriteFileAtomicMaxRetries + 1, moveAttempts);
+            Assert.Equal("original-content", File.ReadAllText(targetPath));
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
+        }
+
+        [Fact]
         public void WriteFileAtomic_TempPathExceedsMaxPathLength_ThrowsPathTooLongException()
         {
             // Arrange: a target path that is itself within MAX_PATH, but whose 21-character
@@ -1550,6 +1591,42 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Equal(2, moveAttempts);
             Assert.Equal("new-content", File.ReadAllText(targetPath));
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicCore_IOExceptionOnEveryMove_GivesUpAfterTheRetryBudget()
+        {
+            // Arrange: the asynchronous twin of the synchronous case above. WriteFileAtomicCore carries its
+            // own copy of the retry filter, so its budget needs its own witness.
+            string tempDir = Path.Combine(_testRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            File.WriteAllText(targetPath, "original-content");
+            int moveAttempts = 0;
+
+            void AlwaysFailingMove(string source, string destination)
+            {
+                moveAttempts++;
+                if (moveAttempts > AppConfig.WriteFileAtomicMaxRetries + 2)
+                {
+                    throw new InvalidOperationException("The retry budget was exceeded.");
+                }
+
+                throw new IOException("The process cannot access the file because it is being used by another process.");
+            }
+
+            // Act
+            await Assert.ThrowsAsync<IOException>(async () =>
+                await Helper.WriteFileAtomicCore(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                {
+                    byte[] payload = Encoding.UTF8.GetBytes("new-content");
+                    await stream.WriteAsync(payload, cancellationToken);
+                }, AlwaysFailingMove, TestContext.Current.CancellationToken));
+
+            // Assert
+            Assert.Equal(AppConfig.WriteFileAtomicMaxRetries + 1, moveAttempts);
+            Assert.Equal("original-content", File.ReadAllText(targetPath));
+            Assert.Empty(Directory.GetFiles(tempDir, "*.tmp"));
         }
 
         [Fact]
