@@ -125,6 +125,7 @@
   <ItemGroup>
     <Compile Include="ProgramTests.cs" />
     <Compile Include="ProgramTestsCollection.cs" />
+    <Compile Include="RestarterBootstrapEnvironmentTests.cs" />
     <Compile Include="ServiceRestarterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
