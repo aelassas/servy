@@ -424,7 +424,8 @@ namespace Servy.Core.Security
                     break;
                 case ExePermissionsHardeningStatus.Failed:
                     Logger.Error($"Purging the non-administrative entries of Servy's vault failed on: {string.Join(", ", result.Failed)}. " +
-                        "Those items keep their entries until the next elevated start.");
+                        "The purge is tried again on the next elevated start of the desktop app, the Manager or the CLI (Release builds); " +
+                        "a link (a reparse point, or a file with more than one hard link) is refused every time, so its entries and owner stay until they are changed by hand.");
                     break;
                 default:
                     Logger.Warn($"Servy's vault was not purged of its non-administrative entries: {result.Reason}.");
