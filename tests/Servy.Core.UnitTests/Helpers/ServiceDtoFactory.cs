@@ -13,9 +13,9 @@ namespace Servy.Core.UnitTests.Helpers
         /// round-trip covers them: Id and Pid (database and runtime identity),
         /// PreviousStopTimeout, ActiveStdoutPath, ActiveStderrPath, RestartAttempts,
         /// RestartAttemptsUpdatedAtTicks, DecryptionFailed and LegacyEncryptionBlocked (runtime state).
-        /// The credential trio RunAsLocalSystem, UserAccount and Password is marked
-        /// [JsonIgnore] and [XmlIgnore] as well, but IS populated, because the mapper and
-        /// validation tests need it. <c>CreateFull_PopulatesEverySerializedProperty</c>
+        /// RunAsLocalSystem and Password are marked [JsonIgnore] and [XmlIgnore] as well,
+        /// but ARE populated, next to the serialized UserAccount, because the mapper and
+        /// validation tests need them. <c>CreateFull_PopulatesEverySerializedProperty</c>
         /// enforces the rest through its [XmlIgnore] filter.
         /// </summary>
         /// <param name="suffix">An optional string suffix used to vary property text values and numbers for specialized provider lookups (e.g., "Xml").</param>
