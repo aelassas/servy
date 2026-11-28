@@ -6,7 +6,8 @@ using System.Text;
 namespace Servy.Core.Security
 {
     /// <summary>
-    /// Provides thread-safe, authenticated encryption (Encrypt-then-MAC) for service credentials and large configuration files.
+    /// Provides thread-safe, authenticated encryption (Encrypt-then-MAC) for the sensitive fields of a service
+    /// configuration (the account password, the heartbeat URL, parameters and environment variables), whatever their size.
     /// Implements salted HKDF for key separation and follows strict memory-zeroing protocols for all sensitive buffers.
     /// Designed for a Singleton lifetime; internal keys are immutable after construction.
     /// </summary>
