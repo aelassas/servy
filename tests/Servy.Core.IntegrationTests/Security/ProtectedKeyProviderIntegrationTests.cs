@@ -938,6 +938,77 @@ namespace Servy.Core.IntegrationTests.Security
             }
         }
 
+        [Fact]
+        public void GetKey_KeyFileThatDeniesRead_RetriesAndReportsAccessDeniedWithThePath()
+        {
+            // Arrange: a key file whose DACL denies the current user FILE_READ_DATA, so the read throws
+            // UnauthorizedAccessException rather than the IOException a sharing lock gives
+            var keyPath = Path.Combine(TempDirectory, "denied.key");
+            var ivPath = Path.Combine(TempDirectory, "denied.iv");
+            File.WriteAllBytes(keyPath, new byte[] { 0x01, 0x02, 0x03, 0x04 });
+            var file = new FileInfo(keyPath);
+
+            int expectedSleepMs = 0;
+            for (int attempt = 0; attempt < AppConfig.KeyProviderReadMaxRetries - 1; attempt++)
+            {
+                expectedSleepMs += AppConfig.KeyProviderReadRetryBackoffBaseMs * (1 << attempt);
+            }
+
+            using (var identity = WindowsIdentity.GetCurrent())
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var deny = new FileSystemAccessRule(identity.User!, FileSystemRights.ReadData, AccessControlType.Deny);
+                var acl = file.GetAccessControl();
+                acl.AddAccessRule(deny);
+                file.SetAccessControl(acl);
+
+                try
+                {
+                    // The arrangement holds on this runner: a plain read is refused with the exception under test
+                    Assert.Throws<UnauthorizedAccessException>(() => File.ReadAllBytes(keyPath));
+                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                    // Act
+                    var captured = LogCapture.Run(() => Record.Exception(() => provider.GetKey()));
+                    stopwatch.Stop();
+
+                    // Assert: rethrown as it is, after the full backoff, and reported with its own verb and the path
+                    Assert.IsType<UnauthorizedAccessException>(captured.Result);
+                    Assert.True(stopwatch.ElapsedMilliseconds >= expectedSleepMs,
+                        $"Expected at least {expectedSleepMs}ms of backoff before the access-denied read was given up, but it took {stopwatch.ElapsedMilliseconds}ms.");
+                    Assert.Contains($"Access denied after {AppConfig.KeyProviderReadMaxRetries} attempts: {keyPath}", captured.Log);
+                    Assert.DoesNotContain("Failed to read file", captured.Log);
+                }
+                finally
+                {
+                    // Give the read right back so the temporary directory can be cleaned up
+                    acl.RemoveAccessRule(deny);
+                    file.SetAccessControl(acl);
+                }
+            }
+        }
+
+        [Fact]
+        public void GetKey_KeyFileHeldOpenByAnotherHandle_ReportsFailedToReadWithThePath()
+        {
+            // Arrange: a key file another handle holds with FileShare.None, so the read fails as a sharing violation
+            var keyPath = Path.Combine(TempDirectory, "held_open.key");
+            var ivPath = Path.Combine(TempDirectory, "held_open.iv");
+            File.WriteAllBytes(keyPath, new byte[] { 0x01, 0x02, 0x03, 0x04 });
+
+            using (var holder = new FileStream(keyPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var captured = LogCapture.Run(() => Record.Exception(() => provider.GetKey()));
+
+                // Assert: reported with the IO verb and the path, never as an access-denied read
+                Assert.IsAssignableFrom<IOException>(captured.Result);
+                Assert.Contains($"Failed to read file after {AppConfig.KeyProviderReadMaxRetries} attempts: {keyPath}", captured.Log);
+                Assert.DoesNotContain("Access denied", captured.Log);
+            }
+        }
+
         #endregion
     }
 
