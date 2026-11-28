@@ -242,7 +242,8 @@
 
             <Button Grid.Column="1"
                     Content="{Binding SearchButtonText}"
-                    Width="80"
+                    MinWidth="80"
+                    Padding="8,0"
                     Height="24"
                     Command="{Binding SearchCommand}"
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"
