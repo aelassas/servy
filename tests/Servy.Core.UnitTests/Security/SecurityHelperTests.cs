@@ -278,7 +278,7 @@ namespace Servy.Core.UnitTests.Security
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
             // Act
-            InvokeApplySecurityRules(security, sidToTest);
+            SecurityHelper.ApplySecurityRules(security, sidToTest);
 
             // Assert
             var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
@@ -306,7 +306,7 @@ namespace Servy.Core.UnitTests.Security
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
 
             // Act
-            InvokeApplySecurityRules(security, nonPrivilegedSid);
+            SecurityHelper.ApplySecurityRules(security, nonPrivilegedSid);
 
             // Assert
             var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
@@ -336,7 +336,7 @@ namespace Servy.Core.UnitTests.Security
             security.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, AccessControlType.Deny));
 
             // Act
-            InvokeApplySecurityRules(security, currentUserSid);
+            SecurityHelper.ApplySecurityRules(security, currentUserSid);
 
             // Assert
             var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier))
@@ -364,7 +364,7 @@ namespace Servy.Core.UnitTests.Security
 
             // Act
             // Pass breakInheritance: false explicitly to traverse the target code path
-            InvokeApplySecurityRules(security, null, breakInheritance: false);
+            SecurityHelper.ApplySecurityRules(security, null, breakInheritance: false);
 
             // Assert
             // Validate that protection is un-set, allowing parent DACL rules to cascade
@@ -443,15 +443,6 @@ namespace Servy.Core.UnitTests.Security
         }
 
         #endregion
-
-        /// <summary>
-        /// Invokes the public <see cref="SecurityHelper.ApplySecurityRules"/> through <see cref="TestReflection"/>.
-        /// </summary>
-        /// <param name="security">The security descriptor context.</param>
-        /// <param name="sid">The identity reference SID target.</param>
-        /// <param name="breakInheritance"><c>true</c> to break DACL cascading.</param>
-        private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference sid, bool breakInheritance = true)
-            => TestReflection.InvokePublicStatic(typeof(SecurityHelper), "ApplySecurityRules", security, sid, breakInheritance);
     }
 
     /// <summary>
